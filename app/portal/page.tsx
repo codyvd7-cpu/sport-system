@@ -46,6 +46,7 @@ type Athlete = {
   id: string;
   name: string;
   team: string;
+  sport: string;
 };
 
 type Team = {
@@ -136,6 +137,7 @@ function normalizeAthlete(row: GenericRow): Athlete {
         row.first_name
       ) || 'Unknown Athlete',
     team: firstString(row.team, row.team_name, row.squad, row.group_name) || 'Unassigned',
+    sport: firstString(row.sport, row.code, row.discipline) || '—',
   };
 }
 
