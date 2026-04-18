@@ -8,12 +8,14 @@ type GenericRow = Record<string, any>;
 
 type WeekPlan = {
   id: string;
+  created_at: string | null;
   week_label: string;
   published: boolean;
 };
 
 type WeekPlanItem = {
   id: string;
+  created_at: string | null;
   week_plan_id: string;
   day_label: string;
   title: string;
@@ -21,8 +23,18 @@ type WeekPlanItem = {
   sort_order: number;
 };
 
+type Reminder = {
+  id: string;
+  created_at: string | null;
+  title: string;
+  details: string;
+  is_published: boolean;
+  sort_order: number;
+};
+
 type Fixture = {
   id: string;
+  created_at: string | null;
   team: string;
   opponent: string;
   fixture_date: string;
@@ -33,11 +45,23 @@ type Fixture = {
 
 type Result = {
   id: string;
+  created_at: string | null;
   team: string;
   opponent: string;
   result_date: string;
-  score: string;
-  summary: string;
+  final_score: string;
+  goal_scorers: string;
+  is_published: boolean;
+  sort_order: number;
+};
+
+type Program = {
+  id: string;
+  created_at: string | null;
+  title: string;
+  category: string;
+  day_label: string;
+  details: string;
   is_published: boolean;
   sort_order: number;
 };
@@ -49,42 +73,38 @@ type Athlete = {
   sport: string;
 };
 
-type Team = {
-  id: string;
-  name: string;
-  sport: string;
-};
-
 type AttendanceRecord = {
   athlete_id: string;
   session_date: string;
   status: string;
+  session_type: string;
 };
 
 type PerformanceRecord = {
   athlete_id: string;
   test_date: string;
+  test_type: string;
+  result: number | null;
+  unit: string;
 };
 
-type AthleteLeaderboardRow = {
+type GymLeaderboardRow = {
   athleteId: string;
   athleteName: string;
   team: string;
-  score: number;
   attendanceRate: number;
-  performanceLogs: number;
-};
-
-type TeamLeaderboardRow = {
-  team: string;
-  sport: string;
+  gymSessions: number;
   score: number;
-  avgAttendanceRate: number;
-  performanceCount: number;
 };
 
-const LOW_ATTENDANCE_THRESHOLD = 70;
-const STALE_PERFORMANCE_DAYS = 30;
+type PerformanceLeaderboardRow = {
+  athleteId: string;
+  athleteName: string;
+  team: string;
+  testCount: number;
+  daysSinceTest: number | null;
+  score: number;
+};
 
 function firstString(...values: any[]) {
   for (const value of values) {
@@ -100,16 +120,20 @@ function firstValue(...values: any[]) {
   return '';
 }
 
-function daysSince(dateString?: string | null) {
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return null;
-  const now = new Date();
-  return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+function firstBoolean(...values: any[]) {
+  for (const value of values) {
+    if (typeof value === 'boolean') return value;
+  }
+  return false;
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value));
+function firstNumber(...values: any[]) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    const n = Number(value);
+    if (!Number.isNaN(n)) return n;
+  }
+  return null;
 }
 
 function formatDate(dateString?: string | null) {
@@ -122,6 +146,86 @@ function formatDate(dateString?: string | null) {
     month: 'short',
     year: 'numeric',
   });
+}
+
+function daysSince(dateString?: string | null) {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return null;
+  const now = new Date();
+  return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function normalizeWeekPlan(row: GenericRow): WeekPlan {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    week_label: firstString(row.week_label) || 'Week at a Glance',
+    published: firstBoolean(row.published),
+  };
+}
+
+function normalizeWeekPlanItem(row: GenericRow): WeekPlanItem {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    week_plan_id: firstValue(row.week_plan_id),
+    day_label: firstString(row.day_label),
+    title: firstString(row.title),
+    details: firstString(row.details),
+    sort_order: firstNumber(row.sort_order) ?? 0,
+  };
+}
+
+function normalizeReminder(row: GenericRow): Reminder {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    title: firstString(row.title),
+    details: firstString(row.details),
+    is_published: firstBoolean(row.is_published),
+    sort_order: firstNumber(row.sort_order) ?? 0,
+  };
+}
+
+function normalizeFixture(row: GenericRow): Fixture {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    team: firstString(row.team),
+    opponent: firstString(row.opponent),
+    fixture_date: firstString(row.fixture_date),
+    venue: firstString(row.venue),
+    is_published: firstBoolean(row.is_published),
+    sort_order: firstNumber(row.sort_order) ?? 0,
+  };
+}
+
+function normalizeResult(row: GenericRow): Result {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    team: firstString(row.team),
+    opponent: firstString(row.opponent),
+    result_date: firstString(row.result_date),
+    final_score: firstString(row.final_score, row.score),
+    goal_scorers: firstString(row.goal_scorers),
+    is_published: firstBoolean(row.is_published),
+    sort_order: firstNumber(row.sort_order) ?? 0,
+  };
+}
+
+function normalizeProgram(row: GenericRow): Program {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    title: firstString(row.title),
+    category: firstString(row.category) || 'Gym',
+    day_label: firstString(row.day_label),
+    details: firstString(row.details),
+    is_published: firstBoolean(row.is_published),
+    sort_order: firstNumber(row.sort_order) ?? 0,
+  };
 }
 
 function normalizeAthlete(row: GenericRow): Athlete {
@@ -141,19 +245,12 @@ function normalizeAthlete(row: GenericRow): Athlete {
   };
 }
 
-function normalizeTeam(row: GenericRow): Team {
-  return {
-    id: firstValue(row.id, row.team_id, crypto.randomUUID()),
-    name: firstString(row.name, row.team, row.team_name) || 'Unnamed Team',
-    sport: firstString(row.sport, row.code, row.discipline) || '—',
-  };
-}
-
 function normalizeAttendance(row: GenericRow): AttendanceRecord {
   return {
     athlete_id: firstValue(row.athlete_id),
     session_date: firstString(row.session_date),
     status: firstString(row.status),
+    session_type: firstString(row.session_type),
   };
 }
 
@@ -161,62 +258,70 @@ function normalizePerformance(row: GenericRow): PerformanceRecord {
   return {
     athlete_id: firstValue(row.athlete_id),
     test_date: firstString(row.test_date),
+    test_type: firstString(row.test_type),
+    result: firstNumber(row.result),
+    unit: firstString(row.unit),
   };
 }
 
 export default function PortalPage() {
-  const [weekPlans, setWeekPlans] = useState<WeekPlan[]>([]);
-  const [weekPlanItems, setWeekPlanItems] = useState<WeekPlanItem[]>([]);
-  const [fixtures, setFixtures] = useState<Fixture[]>([]);
-  const [results, setResults] = useState<Result[]>([]);
+  const [weekPlanRows, setWeekPlanRows] = useState<GenericRow[]>([]);
+  const [weekPlanItemRows, setWeekPlanItemRows] = useState<GenericRow[]>([]);
+  const [reminderRows, setReminderRows] = useState<GenericRow[]>([]);
+  const [fixtureRows, setFixtureRows] = useState<GenericRow[]>([]);
+  const [resultRows, setResultRows] = useState<GenericRow[]>([]);
+  const [programRows, setProgramRows] = useState<GenericRow[]>([]);
   const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
-  const [teamRows, setTeamRows] = useState<GenericRow[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<GenericRow[]>([]);
   const [performanceRows, setPerformanceRows] = useState<GenericRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  async function loadPortal() {
+  async function loadPortalData() {
     setLoading(true);
     setError('');
 
     const [
-      weekPlanRes,
+      weekPlansRes,
       weekPlanItemsRes,
+      remindersRes,
       fixturesRes,
       resultsRes,
+      programsRes,
       athletesRes,
-      teamsRes,
       attendanceRes,
       performanceRes,
     ] = await Promise.all([
       supabase.from('PortalWeekPlan').select('*').eq('published', true).order('created_at', { ascending: false }),
       supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
+      supabase.from('PortalReminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
       supabase.from('PortalFixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }).order('sort_order', { ascending: true }),
       supabase.from('PortalResults').select('*').eq('is_published', true).order('result_date', { ascending: false }).order('sort_order', { ascending: true }),
+      supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
       supabase.from('athletes').select('*'),
-      supabase.from('Teams').select('*'),
       supabase.from('Attendance').select('*'),
       supabase.from('Performance').select('*'),
     ]);
 
     if (
-      weekPlanRes.error ||
+      weekPlansRes.error ||
       weekPlanItemsRes.error ||
+      remindersRes.error ||
       fixturesRes.error ||
       resultsRes.error ||
+      programsRes.error ||
       athletesRes.error ||
-      teamsRes.error ||
       attendanceRes.error ||
       performanceRes.error
     ) {
       setError(
-        weekPlanRes.error?.message ||
+        weekPlansRes.error?.message ||
           weekPlanItemsRes.error?.message ||
+          remindersRes.error?.message ||
           fixturesRes.error?.message ||
           resultsRes.error?.message ||
+          programsRes.error?.message ||
           athletesRes.error?.message ||
-          teamsRes.error?.message ||
           attendanceRes.error?.message ||
           performanceRes.error?.message ||
           'Failed to load portal data.'
@@ -225,25 +330,42 @@ export default function PortalPage() {
       return;
     }
 
-    setWeekPlans((weekPlanRes.data as WeekPlan[]) || []);
-    setWeekPlanItems((weekPlanItemsRes.data as WeekPlanItem[]) || []);
-    setFixtures((fixturesRes.data as Fixture[]) || []);
-    setResults((resultsRes.data as Result[]) || []);
+    setWeekPlanRows((weekPlansRes.data as GenericRow[]) || []);
+    setWeekPlanItemRows((weekPlanItemsRes.data as GenericRow[]) || []);
+    setReminderRows((remindersRes.data as GenericRow[]) || []);
+    setFixtureRows((fixturesRes.data as GenericRow[]) || []);
+    setResultRows((resultsRes.data as GenericRow[]) || []);
+    setProgramRows((programsRes.data as GenericRow[]) || []);
     setAthleteRows((athletesRes.data as GenericRow[]) || []);
-    setTeamRows((teamsRes.data as GenericRow[]) || []);
     setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
     setPerformanceRows((performanceRes.data as GenericRow[]) || []);
     setLoading(false);
   }
 
   useEffect(() => {
-    loadPortal();
+    loadPortalData();
   }, []);
 
+  const weekPlans = useMemo(() => weekPlanRows.map(normalizeWeekPlan), [weekPlanRows]);
+  const weekPlanItems = useMemo(() => weekPlanItemRows.map(normalizeWeekPlanItem), [weekPlanItemRows]);
+  const reminders = useMemo(() => reminderRows.map(normalizeReminder), [reminderRows]);
+  const fixtures = useMemo(() => fixtureRows.map(normalizeFixture), [fixtureRows]);
+  const results = useMemo(() => resultRows.map(normalizeResult), [resultRows]);
+  const programs = useMemo(() => programRows.map(normalizeProgram).slice(0, 4), [programRows]);
   const athletes = useMemo(() => athleteRows.map(normalizeAthlete), [athleteRows]);
-  const teams = useMemo(() => teamRows.map(normalizeTeam), [teamRows]);
   const attendance = useMemo(() => attendanceRows.map(normalizeAttendance), [attendanceRows]);
   const performance = useMemo(() => performanceRows.map(normalizePerformance), [performanceRows]);
+
+  const latestWeekPlan = useMemo(() => {
+    return weekPlans.length > 0 ? weekPlans[0] : null;
+  }, [weekPlans]);
+
+  const currentWeekItems = useMemo(() => {
+    if (!latestWeekPlan) return [];
+    return weekPlanItems
+      .filter((item) => item.week_plan_id === latestWeekPlan.id)
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [latestWeekPlan, weekPlanItems]);
 
   const athleteMap = useMemo(() => {
     const map = new Map<string, Athlete>();
@@ -251,197 +373,113 @@ export default function PortalPage() {
     return map;
   }, [athletes]);
 
-  const latestWeekPlan = useMemo(() => {
-    return weekPlans.length > 0 ? weekPlans[0] : null;
-  }, [weekPlans]);
-
-  const latestWeekPlanItems = useMemo(() => {
-    if (!latestWeekPlan) return [];
-    return weekPlanItems
-      .filter((item) => item.week_plan_id === latestWeekPlan.id)
-      .sort((a, b) => a.sort_order - b.sort_order);
-  }, [latestWeekPlan, weekPlanItems]);
-
-  const overallTopAthletes = useMemo(() => {
-    const attendanceSummary = new Map<
+  const gymLeaderboard = useMemo(() => {
+    const groupedAttendance = new Map<
       string,
-      { total: number; positive: number; lastDate: string | null }
+      { total: number; positive: number; gymSessions: number }
     >();
 
     attendance.forEach((entry) => {
-      const current = attendanceSummary.get(entry.athlete_id) || {
+      const current = groupedAttendance.get(entry.athlete_id) || {
         total: 0,
         positive: 0,
-        lastDate: null,
+        gymSessions: 0,
       };
 
       current.total += 1;
-      if (entry.status.toLowerCase() === 'present' || entry.status.toLowerCase() === 'late') {
+
+      const status = entry.status.toLowerCase();
+      if (status === 'present' || status === 'late') {
         current.positive += 1;
       }
 
-      const currentLast = current.lastDate ? new Date(current.lastDate).getTime() : 0;
-      const entryTime = entry.session_date ? new Date(entry.session_date).getTime() : 0;
-      if (entryTime > currentLast) current.lastDate = entry.session_date;
+      if (entry.session_type.toLowerCase() === 'gym') {
+        current.gymSessions += 1;
+      }
 
-      attendanceSummary.set(entry.athlete_id, current);
+      groupedAttendance.set(entry.athlete_id, current);
     });
 
-    const performanceSummary = new Map<
-      string,
-      { totalTests: number; lastTestDate: string | null }
-    >();
-
-    performance.forEach((entry) => {
-      const current = performanceSummary.get(entry.athlete_id) || {
-        totalTests: 0,
-        lastTestDate: null,
-      };
-
-      current.totalTests += 1;
-
-      const currentLast = current.lastTestDate ? new Date(current.lastTestDate).getTime() : 0;
-      const entryTime = entry.test_date ? new Date(entry.test_date).getTime() : 0;
-      if (entryTime > currentLast) current.lastTestDate = entry.test_date;
-
-      performanceSummary.set(entry.athlete_id, current);
-    });
-
-    const rows: AthleteLeaderboardRow[] = athletes
+    const rows: GymLeaderboardRow[] = athletes
       .map((athlete) => {
-        const att = attendanceSummary.get(athlete.id);
-        const perf = performanceSummary.get(athlete.id);
+        const att = groupedAttendance.get(athlete.id);
+        const total = att?.total ?? 0;
+        const positive = att?.positive ?? 0;
+        const gymSessions = att?.gymSessions ?? 0;
+        const attendanceRate = total > 0 ? Math.round((positive / total) * 100) : 0;
 
-        const attendanceRate =
-          att && att.total > 0 ? Math.round((att.positive / att.total) * 100) : 0;
-        const attendanceLogs = att?.total ?? 0;
-        const performanceLogs = perf?.totalTests ?? 0;
-        const daysSinceTestValue = daysSince(perf?.lastTestDate ?? null);
-
-        const attendanceScore = attendanceRate * 0.5;
-        const attendanceVolumeScore = Math.min(attendanceLogs * 2, 20);
-        const performanceVolumeScore = Math.min(performanceLogs * 3, 20);
-
-        let testingRecencyScore = 0;
-        if (daysSinceTestValue === null) testingRecencyScore = 0;
-        else if (daysSinceTestValue <= 7) testingRecencyScore = 10;
-        else if (daysSinceTestValue <= 14) testingRecencyScore = 8;
-        else if (daysSinceTestValue <= 30) testingRecencyScore = 5;
-        else testingRecencyScore = 1;
-
-        const score = Math.round(
-          attendanceScore + attendanceVolumeScore + performanceVolumeScore + testingRecencyScore
-        );
+        const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
 
         return {
           athleteId: athlete.id,
           athleteName: athlete.name,
           team: athlete.team,
-          score,
           attendanceRate,
-          performanceLogs,
+          gymSessions,
+          score,
         };
       })
-      .sort((a, b) => b.score - a.score || b.attendanceRate - a.attendanceRate || b.performanceLogs - a.performanceLogs)
-      .slice(0, 3);
+      .filter((row) => row.gymSessions > 0 || row.attendanceRate > 0)
+      .sort((a, b) => b.score - a.score || b.gymSessions - a.gymSessions || b.attendanceRate - a.attendanceRate)
+      .slice(0, 5);
 
     return rows;
-  }, [athletes, attendance, performance]);
+  }, [athletes, attendance]);
 
-  const overallTopTeams = useMemo(() => {
-    const teamNames = new Set<string>([
-      ...teams.map((team) => team.name),
-      ...athletes.map((athlete) => athlete.team),
-    ]);
+  const performanceLeaderboard = useMemo(() => {
+    const groupedPerformance = new Map<
+      string,
+      { count: number; latestDate: string | null }
+    >();
 
-    const rows: TeamLeaderboardRow[] = Array.from(teamNames)
-      .filter(Boolean)
-      .map((teamName) => {
-        const roster = athletes.filter((athlete) => athlete.team === teamName);
-        const rosterIds = new Set(roster.map((athlete) => athlete.id));
-        const teamAttendance = attendance.filter((entry) => rosterIds.has(entry.athlete_id));
-        const teamPerformance = performance.filter((entry) => rosterIds.has(entry.athlete_id));
-        const teamMeta = teams.find((team) => team.name === teamName);
+    performance.forEach((entry) => {
+      const current = groupedPerformance.get(entry.athlete_id) || {
+        count: 0,
+        latestDate: null,
+      };
 
-        const attendanceByAthlete = new Map<
-          string,
-          { total: number; positive: number; lastDate: string | null }
-        >();
+      current.count += 1;
 
-        teamAttendance.forEach((entry) => {
-          const current = attendanceByAthlete.get(entry.athlete_id) || {
-            total: 0,
-            positive: 0,
-            lastDate: null,
-          };
+      const currentLast = current.latestDate ? new Date(current.latestDate).getTime() : 0;
+      const entryTime = entry.test_date ? new Date(entry.test_date).getTime() : 0;
+      if (entryTime > currentLast) {
+        current.latestDate = entry.test_date;
+      }
 
-          current.total += 1;
-          if (entry.status.toLowerCase() === 'present' || entry.status.toLowerCase() === 'late') {
-            current.positive += 1;
-          }
+      groupedPerformance.set(entry.athlete_id, current);
+    });
 
-          const currentLast = current.lastDate ? new Date(current.lastDate).getTime() : 0;
-          const entryTime = entry.session_date ? new Date(entry.session_date).getTime() : 0;
-          if (entryTime > currentLast) current.lastDate = entry.session_date;
+    const rows: PerformanceLeaderboardRow[] = athletes
+      .map((athlete) => {
+        const perf = groupedPerformance.get(athlete.id);
+        const testCount = perf?.count ?? 0;
+        const latestDate = perf?.latestDate ?? null;
+        const staleDays = daysSince(latestDate);
 
-          attendanceByAthlete.set(entry.athlete_id, current);
-        });
+        let recencyScore = 0;
+        if (staleDays === null) recencyScore = 0;
+        else if (staleDays <= 7) recencyScore = 40;
+        else if (staleDays <= 14) recencyScore = 30;
+        else if (staleDays <= 30) recencyScore = 20;
+        else recencyScore = 5;
 
-        const performanceByAthlete = new Map<string, string | null>();
-        teamPerformance.forEach((entry) => {
-          const currentLast = performanceByAthlete.get(entry.athlete_id);
-          const currentTime = currentLast ? new Date(currentLast).getTime() : 0;
-          const entryTime = entry.test_date ? new Date(entry.test_date).getTime() : 0;
-          if (entryTime > currentTime) performanceByAthlete.set(entry.athlete_id, entry.test_date);
-        });
-
-        const athleteRates = roster.map((athlete) => {
-          const entry = attendanceByAthlete.get(athlete.id);
-          if (!entry || entry.total === 0) return 0;
-          return Math.round((entry.positive / entry.total) * 100);
-        });
-
-        const avgAttendanceRate =
-          athleteRates.length > 0
-            ? Math.round(athleteRates.reduce((sum, value) => sum + value, 0) / athleteRates.length)
-            : 0;
-
-        const lowAttendanceAthletes = roster.filter((athlete) => {
-          const entry = attendanceByAthlete.get(athlete.id);
-          if (!entry || entry.total < 3) return false;
-          const rate = Math.round((entry.positive / entry.total) * 100);
-          return rate < LOW_ATTENDANCE_THRESHOLD;
-        }).length;
-
-        const staleTestingAthletes = roster.filter((athlete) => {
-          const lastTestDate = performanceByAthlete.get(athlete.id);
-          if (!lastTestDate) return true;
-          const staleDays = daysSince(lastTestDate);
-          return staleDays !== null && staleDays > STALE_PERFORMANCE_DAYS;
-        }).length;
-
-        const attendanceComponent = avgAttendanceRate * 0.6;
-        const rosterComponent = Math.min(roster.length * 2, 20);
-        const performanceComponent = Math.min(teamPerformance.length, 25);
-        const penalty = lowAttendanceAthletes * 5 + staleTestingAthletes * 4;
-
-        const score = Math.round(
-          clamp(attendanceComponent + rosterComponent + performanceComponent - penalty, 0, 100)
-        );
+        const score = Math.round(Math.min(testCount * 10, 60) + recencyScore);
 
         return {
-          team: teamName,
-          sport: teamMeta?.sport || roster[0]?.sport || '—',
+          athleteId: athlete.id,
+          athleteName: athlete.name,
+          team: athlete.team,
+          testCount,
+          daysSinceTest: staleDays,
           score,
-          avgAttendanceRate,
-          performanceCount: teamPerformance.length,
         };
       })
-      .sort((a, b) => b.score - a.score || b.avgAttendanceRate - a.avgAttendanceRate || b.performanceCount - a.performanceCount)
-      .slice(0, 3);
+      .filter((row) => row.testCount > 0)
+      .sort((a, b) => b.score - a.score || b.testCount - a.testCount || (a.daysSinceTest ?? 9999) - (b.daysSinceTest ?? 9999))
+      .slice(0, 5);
 
     return rows;
-  }, [teams, athletes, attendance, performance]);
+  }, [athletes, performance]);
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
@@ -454,15 +492,15 @@ export default function PortalPage() {
             Parent &amp; Player Portal
           </h1>
           <p className="mt-2 text-sm text-slate-400">
-            Weekly plans, fixtures, results, and public performance snapshots.
+            Week at a glance, reminders, fixtures, results, programs, and public leaderboards.
           </p>
 
           <div className="mt-5 flex flex-wrap justify-center gap-3">
             <Link
-              href="/"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800 hover:text-white"
+              href="/login"
+              className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2.5 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20"
             >
-              Coach System
+              Coach Login
             </Link>
           </div>
         </div>
@@ -481,19 +519,19 @@ export default function PortalPage() {
           <div className="space-y-8">
             <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
               <div className="mb-4">
-                <h2 className="text-lg font-semibold">Week Overview</h2>
+                <h2 className="text-lg font-semibold">Week at a Glance</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  {latestWeekPlan?.week_label || 'Current published week plan'}
+                  {latestWeekPlan?.week_label || 'Current week overview'}
                 </p>
               </div>
 
-              {latestWeekPlanItems.length === 0 ? (
+              {currentWeekItems.length === 0 ? (
                 <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
                   No week plan published yet.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {latestWeekPlanItems.map((item) => (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {currentWeekItems.map((item) => (
                     <div
                       key={item.id}
                       className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
@@ -503,8 +541,35 @@ export default function PortalPage() {
                       </p>
                       <h3 className="mt-2 text-sm font-semibold text-white">{item.title}</h3>
                       <p className="mt-2 text-sm text-slate-400">
-                        {item.details || 'No extra details provided.'}
+                        {item.details || 'No extra details.'}
                       </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Important Reminders</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Key reminders for players and parents.
+                </p>
+              </div>
+
+              {reminders.length === 0 ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                  No reminders published yet.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {reminders.map((reminder) => (
+                    <div
+                      key={reminder.id}
+                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
+                    >
+                      <p className="text-sm font-semibold text-white">{reminder.title}</p>
+                      <p className="mt-1 text-sm text-slate-400">{reminder.details || '—'}</p>
                     </div>
                   ))}
                 </div>
@@ -514,9 +579,9 @@ export default function PortalPage() {
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                 <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Upcoming Fixtures</h2>
+                  <h2 className="text-lg font-semibold">Fixtures</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Published match schedule for players and parents.
+                    Upcoming fixtures with venue information.
                   </p>
                 </div>
 
@@ -551,9 +616,9 @@ export default function PortalPage() {
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                 <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Recent Results</h2>
+                  <h2 className="text-lg font-semibold">Results</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Published recent match outcomes.
+                    Final scores and goal scorers.
                   </p>
                 </div>
 
@@ -566,20 +631,28 @@ export default function PortalPage() {
                     {results.map((result) => (
                       <div
                         key={result.id}
-                        className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:flex-row md:items-center md:justify-between"
+                        className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
                       >
-                        <div>
-                          <p className="text-sm font-semibold text-white">
-                            {result.team} vs {result.opponent}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-400">
-                            {formatDate(result.result_date)} • {result.summary || 'Final result'}
-                          </p>
-                        </div>
+                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              {result.team} vs {result.opponent}
+                            </p>
+                            <p className="mt-1 text-sm text-slate-400">
+                              {formatDate(result.result_date)}
+                            </p>
+                            <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">
+                              Goal Scorers
+                            </p>
+                            <p className="mt-1 text-sm text-slate-300">
+                              {result.goal_scorers || 'Not listed'}
+                            </p>
+                          </div>
 
-                        <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200">
-                          {result.score}
-                        </span>
+                          <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200">
+                            {result.final_score || '—'}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -587,22 +660,59 @@ export default function PortalPage() {
               </div>
             </section>
 
+            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold">Programs</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Current gym, mobility, and recovery programs available for players.
+                </p>
+              </div>
+
+              {programs.length === 0 ? (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                  No programs published yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                  {programs.map((program) => (
+                    <div
+                      key={program.id}
+                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+                          {program.category || 'Program'}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {program.day_label || '—'}
+                        </span>
+                      </div>
+                      <h3 className="mt-3 text-sm font-semibold text-white">{program.title}</h3>
+                      <p className="mt-2 text-sm text-slate-400">
+                        {program.details || 'No details added yet.'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                 <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Top 3 Athletes</h2>
+                  <h2 className="text-lg font-semibold">Gym Leaderboard</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Public leaderboard based on attendance and performance system health.
+                    Based on gym-related attendance and overall attendance quality.
                   </p>
                 </div>
 
-                {overallTopAthletes.length === 0 ? (
+                {gymLeaderboard.length === 0 ? (
                   <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No athlete leaderboard data yet.
+                    No gym leaderboard data yet.
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {overallTopAthletes.map((athlete, index) => (
+                    {gymLeaderboard.map((athlete, index) => (
                       <div
                         key={athlete.athleteId}
                         className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
@@ -620,10 +730,10 @@ export default function PortalPage() {
                               Score {athlete.score}
                             </span>
                             <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {athlete.attendanceRate}% attendance
+                              {athlete.gymSessions} gym sessions
                             </span>
                             <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {athlete.performanceLogs} tests
+                              {athlete.attendanceRate}% attendance
                             </span>
                           </div>
                         </div>
@@ -635,40 +745,40 @@ export default function PortalPage() {
 
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
                 <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Top 3 Teams</h2>
+                  <h2 className="text-lg font-semibold">Performance Leaderboard</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Public leaderboard based on attendance quality and team performance coverage.
+                    Based on performance data volume and testing recency.
                   </p>
                 </div>
 
-                {overallTopTeams.length === 0 ? (
+                {performanceLeaderboard.length === 0 ? (
                   <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No team leaderboard data yet.
+                    No performance leaderboard data yet.
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {overallTopTeams.map((team, index) => (
+                    {performanceLeaderboard.map((athlete, index) => (
                       <div
-                        key={team.team}
+                        key={athlete.athleteId}
                         className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
                       >
                         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                           <div>
                             <p className="text-sm font-semibold text-white">
-                              #{index + 1} {team.team}
+                              #{index + 1} {athlete.athleteName}
                             </p>
-                            <p className="mt-1 text-sm text-slate-400">{team.sport}</p>
+                            <p className="mt-1 text-sm text-slate-400">{athlete.team}</p>
                           </div>
 
                           <div className="flex flex-wrap gap-2">
                             <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-200">
-                              Score {team.score}
+                              Score {athlete.score}
                             </span>
                             <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {team.avgAttendanceRate}% attendance
+                              {athlete.testCount} tests
                             </span>
                             <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {team.performanceCount} logs
+                              {athlete.daysSinceTest === null ? 'No recent date' : `${athlete.daysSinceTest} days ago`}
                             </span>
                           </div>
                         </div>
