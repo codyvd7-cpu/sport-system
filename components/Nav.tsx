@@ -10,11 +10,10 @@ const coachNavItems = [
   { href: '/teams', label: 'Teams' },
   { href: '/attendance', label: 'Attendance' },
   { href: '/performance', label: 'Performance' },
+  { href: '/portal-admin', label: 'Portal Admin' },
 ];
 
-const publicNavItems = [
-  { href: '/portal', label: 'Parent & Player Portal' },
-];
+const publicNavItems = [{ href: '/portal', label: 'Parent & Player Portal' }];
 
 function isActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
@@ -26,6 +25,7 @@ export default function Nav() {
   const [logoFailed, setLogoFailed] = useState(false);
 
   const inPortal = pathname === '/portal' || pathname.startsWith('/portal/');
+  const inPortalAdmin = pathname === '/portal-admin' || pathname.startsWith('/portal-admin/');
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur">
@@ -113,11 +113,11 @@ export default function Nav() {
                     : 'bg-sky-500/15 text-sky-200'
                 }`}
               >
-                {inPortal ? 'Public Portal View' : 'Coach Operations View'}
+                {inPortal ? 'Public Portal View' : inPortalAdmin ? 'Portal Admin View' : 'Coach Operations View'}
               </span>
 
               <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                Bennies Hockey / S&C / Performance
+                Bennies Hockey / S&amp;C / Performance
               </span>
             </div>
           </div>
