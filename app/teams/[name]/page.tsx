@@ -1200,7 +1200,7 @@ export default function TeamProfilePage({ params }: PageProps) {
                       <div>
                         <p className="text-sm font-semibold text-white">{record.athlete_name}</p>
                         <p className="mt-1 text-sm text-slate-400">
-                          {record.test_type} • {formatDate(record.date)}
+                          {record.test_type} • {formatDate(record.test_date)}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">{record.notes || 'No notes'}</p>
                       </div>

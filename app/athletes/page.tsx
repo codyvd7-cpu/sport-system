@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 type GenericRow = Record<string, any>;
 
 type Athlete = {
-  id: number | string;
+  id: string;
   name: string;
   team: string;
   sport: string;
@@ -24,7 +24,7 @@ function firstString(...values: any[]) {
 
 function firstValue(...values: any[]) {
   for (const value of values) {
-    if (value !== null && value !== undefined && value !== '') return value;
+    if (value !== null && value !== undefined && value !== '') return String(value);
   }
   return '';
 }
@@ -94,6 +94,21 @@ async function tryInsertAthlete(input: {
     {
       name: input.name,
       team: input.team,
+      sport: input.sport,
+    },
+    {
+      full_name: input.name,
+      team: input.team,
+      sport: input.sport,
+    },
+    {
+      athlete_name: input.name,
+      team: input.team,
+      sport: input.sport,
+    },
+    {
+      name: input.name,
+      team: input.team,
     },
     {
       full_name: input.name,
@@ -109,11 +124,7 @@ async function tryInsertAthlete(input: {
 
   for (const payload of attempts) {
     const result = await supabase.from('athletes').insert([payload]).select('*').single();
-
-    if (!result.error) {
-      return result;
-    }
-
+    if (!result.error) return result;
     lastError = result.error;
   }
 
@@ -121,7 +132,7 @@ async function tryInsertAthlete(input: {
 }
 
 export default function AthletesPage() {
-  const [rows, setRows] = useState<GenericRow[]>([]);
+  const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -133,24 +144,22 @@ export default function AthletesPage() {
   const [ageGroup, setAgeGroup] = useState('');
 
   const [teamFilter, setTeamFilter] = useState('All');
+  const [searchTerm, setSearchTerm] = useState('');
 
   async function loadAthletes() {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase
-      .from('athletes')
-      .select('*')
-      .order('id', { ascending: true });
+    const { data, error } = await supabase.from('athletes').select('*').order('id', { ascending: true });
 
     if (error) {
-      setError(error.message);
-      setRows([]);
+      setError(error.message || 'Failed to load athletes.');
+      setAthleteRows([]);
       setLoading(false);
       return;
     }
 
-    setRows((data as GenericRow[]) || []);
+    setAthleteRows((data as GenericRow[]) || []);
     setLoading(false);
   }
 
@@ -159,25 +168,34 @@ export default function AthletesPage() {
   }, []);
 
   const athletes = useMemo(() => {
-    return rows.map(normalizeAthlete);
-  }, [rows]);
+    return athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name));
+  }, [athleteRows]);
 
   const uniqueTeams = useMemo(() => {
-    const teams = Array.from(
+    return Array.from(
       new Set(
         athletes
           .map((athlete) => athlete.team)
           .filter((value) => value && value !== 'Unassigned')
       )
-    );
-
-    return teams.sort((a, b) => a.localeCompare(b));
+    ).sort((a, b) => a.localeCompare(b));
   }, [athletes]);
 
   const filteredAthletes = useMemo(() => {
-    if (teamFilter === 'All') return athletes;
-    return athletes.filter((athlete) => athlete.team === teamFilter);
-  }, [athletes, teamFilter]);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return athletes.filter((athlete) => {
+      const matchesTeam = teamFilter === 'All' || athlete.team === teamFilter;
+      const matchesSearch =
+        !normalizedSearch ||
+        athlete.name.toLowerCase().includes(normalizedSearch) ||
+        athlete.team.toLowerCase().includes(normalizedSearch) ||
+        athlete.sport.toLowerCase().includes(normalizedSearch) ||
+        athlete.ageGroup.toLowerCase().includes(normalizedSearch);
+
+      return matchesTeam && matchesSearch;
+    });
+  }, [athletes, teamFilter, searchTerm]);
 
   const summary = useMemo(() => {
     const totalAthletes = athletes.length;
@@ -198,9 +216,10 @@ export default function AthletesPage() {
       totalAthletes,
       totalTeams,
       unassignedAthletes,
+      filteredCount: filteredAthletes.length,
       topSports: sportBreakdown,
     };
-  }, [athletes, uniqueTeams]);
+  }, [athletes, uniqueTeams, filteredAthletes]);
 
   async function handleAddAthlete(e: React.FormEvent) {
     e.preventDefault();
@@ -236,17 +255,17 @@ export default function AthletesPage() {
     setSubmitting(false);
   }
 
-  async function handleDeleteAthlete(id: number | string, athleteName: string) {
-    const confirmed = window.confirm(`Delete ${athleteName}? This action cannot be undone.`);
+  async function handleDeleteAthlete(athlete: Athlete) {
+    const confirmed = window.confirm(`Delete ${athlete.name}? This cannot be undone.`);
     if (!confirmed) return;
 
     setError('');
     setSuccessMessage('');
 
-    const { error } = await supabase.from('athletes').delete().eq('id', id);
+    const result = await supabase.from('athletes').delete().eq('id', athlete.id);
 
-    if (error) {
-      setError(error.message || 'Failed to delete athlete.');
+    if (result.error) {
+      setError(result.error.message || 'Failed to delete athlete.');
       return;
     }
 
@@ -264,12 +283,18 @@ export default function AthletesPage() {
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-white">Athletes</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              Manage your athlete database, assign athletes to teams, and move quickly into each
-              athlete profile for attendance and performance tracking.
+              Manage your athlete roster, assign athletes to teams, and jump straight into each athlete
+              profile for attendance and performance tracking.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
+            <Link
+              href="/teams"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Open Teams
+            </Link>
             <Link
               href="/attendance"
               className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
@@ -281,12 +306,6 @@ export default function AthletesPage() {
               className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
             >
               Open Performance
-            </Link>
-            <Link
-              href="/teams"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Open Teams
             </Link>
           </div>
         </div>
@@ -303,7 +322,7 @@ export default function AthletesPage() {
           </div>
         ) : null}
 
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-xs uppercase tracking-wide text-slate-400">Total Athletes</p>
             <p className="mt-3 text-3xl font-bold">{summary.totalAthletes}</p>
@@ -313,15 +332,19 @@ export default function AthletesPage() {
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-xs uppercase tracking-wide text-slate-400">Teams Represented</p>
             <p className="mt-3 text-3xl font-bold">{summary.totalTeams}</p>
-            <p className="mt-2 text-sm text-slate-300">Unique teams currently linked to athletes.</p>
+            <p className="mt-2 text-sm text-slate-300">Unique teams linked to athletes.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Unassigned Athletes</p>
+            <p className="text-xs uppercase tracking-wide text-slate-400">Unassigned</p>
             <p className="mt-3 text-3xl font-bold">{summary.unassignedAthletes}</p>
-            <p className="mt-2 text-sm text-slate-300">
-              Athletes without a clear team allocation yet.
-            </p>
+            <p className="mt-2 text-sm text-slate-300">Athletes without a clear team allocation.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Filtered View</p>
+            <p className="mt-3 text-3xl font-bold">{summary.filteredCount}</p>
+            <p className="mt-2 text-sm text-slate-300">Athletes currently matching filters.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -343,8 +366,8 @@ export default function AthletesPage() {
           </div>
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="xl:col-span-1 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
             <div className="mb-4">
               <h2 className="text-lg font-semibold">Add Athlete</h2>
               <p className="mt-1 text-sm text-slate-400">
@@ -354,9 +377,7 @@ export default function AthletesPage() {
 
             <form onSubmit={handleAddAthlete} className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">
-                  Athlete Name
-                </label>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Athlete Name</label>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -405,31 +426,41 @@ export default function AthletesPage() {
             </form>
           </div>
 
-          <div className="xl:col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
+            <div className="mb-4 flex flex-col gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Athlete Directory</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Filter athletes by team and open their profile for deeper management.
+                  Search athletes by name and filter by team before opening their profile.
                 </p>
               </div>
 
-              <div className="w-full md:w-72">
-                <label className="mb-2 block text-sm font-medium text-slate-200">
-                  Filter by Team
-                </label>
-                <select
-                  value={teamFilter}
-                  onChange={(e) => setTeamFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="All">All Teams</option>
-                  {uniqueTeams.map((teamName) => (
-                    <option key={teamName} value={teamName}>
-                      {teamName}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Search</label>
+                  <input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search athlete, team, sport, or age group"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Filter by Team</label>
+                  <select
+                    value={teamFilter}
+                    onChange={(e) => setTeamFilter(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  >
+                    <option value="All">All Teams</option>
+                    {uniqueTeams.map((teamName) => (
+                      <option key={teamName} value={teamName}>
+                        {teamName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -439,54 +470,60 @@ export default function AthletesPage() {
               </div>
             ) : filteredAthletes.length === 0 ? (
               <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-sm text-slate-300">
-                No athletes found for the selected filter.
+                No athletes found for the current search/filter.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-slate-800 text-slate-400">
-                    <tr>
-                      <th className="px-3 py-3 font-medium">Athlete</th>
-                      <th className="px-3 py-3 font-medium">Team</th>
-                      <th className="px-3 py-3 font-medium">Sport</th>
-                      <th className="px-3 py-3 font-medium">Age Group</th>
-                      <th className="px-3 py-3 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAthletes.map((athlete) => (
-                      <tr key={String(athlete.id)} className="border-b border-slate-900">
-                        <td className="px-3 py-4">
+              <div className="space-y-4">
+                {filteredAthletes.map((athlete) => (
+                  <div
+                    key={athlete.id}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-4">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Athlete</p>
                           <Link
                             href={`/athletes/${athlete.id}`}
-                            className="font-medium text-white transition hover:text-sky-400"
+                            className="mt-1 block text-sm font-semibold text-white transition hover:text-sky-400"
                           >
                             {athlete.name}
                           </Link>
-                        </td>
-                        <td className="px-3 py-4 text-slate-300">{athlete.team}</td>
-                        <td className="px-3 py-4 text-slate-300">{athlete.sport}</td>
-                        <td className="px-3 py-4 text-slate-300">{athlete.ageGroup}</td>
-                        <td className="px-3 py-4">
-                          <div className="flex justify-end gap-2">
-                            <Link
-                              href={`/athletes/${athlete.id}`}
-                              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-sky-500 hover:text-white"
-                            >
-                              Open
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteAthlete(athlete.id, athlete.name)}
-                              className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-200 transition hover:bg-red-500/20"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        </div>
+
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Team</p>
+                          <p className="mt-1 text-sm text-slate-300">{athlete.team}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
+                          <p className="mt-1 text-sm text-slate-300">{athlete.sport}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Age Group</p>
+                          <p className="mt-1 text-sm text-slate-300">{athlete.ageGroup}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={`/athletes/${athlete.id}`}
+                          className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800 hover:text-white"
+                        >
+                          Open
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteAthlete(athlete)}
+                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

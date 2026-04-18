@@ -7,58 +7,59 @@ import { supabase } from '@/lib/supabase';
 type GenericRow = Record<string, any>;
 
 type Athlete = {
-  id: number | string;
+  id: string;
   name: string;
   team: string;
   sport: string;
-  age_group: string;
+  ageGroup: string;
+  raw: GenericRow;
 };
 
 type Team = {
-  id?: number | string;
+  id: string;
   name: string;
   sport: string;
   season: string;
+  raw: GenericRow;
 };
 
 type AttendanceRecord = {
-  id: number | string;
-  athlete_id: number | string | null;
-  athlete_name: string | null;
-  team: string | null;
-  session_type: string | null;
-  status: string | null;
-  date: string | null;
-  created_at?: string | null;
+  id: string;
+  athlete_id: string;
+  session_date: string;
+  session_type: string;
+  status: string;
+  created_at: string | null;
+  raw: GenericRow;
 };
 
 type PerformanceRecord = {
-  id: number | string;
-  athlete_id: number | string | null;
-  athlete_name: string | null;
-  team: string | null;
-  test_name: string | null;
-  value: number | string | null;
-  unit: string | null;
-  date: string | null;
-  created_at?: string | null;
+  id: string;
+  athlete_id: string;
+  test_date: string;
+  test_type: string;
+  result: number | null;
+  unit: string;
+  notes: string;
+  created_at: string | null;
+  raw: GenericRow;
 };
 
-type AthleteAttendanceSummary = {
-  athleteId: number | string;
+type AttendanceSummary = {
+  athleteId: string;
   athleteName: string;
   team: string;
   total: number;
   present: number;
-  absent: number;
   late: number;
+  absent: number;
   excused: number;
   rate: number;
   lastDate: string | null;
 };
 
-type AthletePerformanceSummary = {
-  athleteId: number | string;
+type PerformanceSummary = {
+  athleteId: string;
   athleteName: string;
   team: string;
   totalTests: number;
@@ -73,7 +74,29 @@ type TeamHealth = {
   performanceCount: number;
   avgAttendanceRate: number;
   lowAttendanceAthletes: number;
-  staleAthletes: number;
+  staleTestingAthletes: number;
+};
+
+type AthleteLeaderboardRow = {
+  athleteId: string;
+  athleteName: string;
+  team: string;
+  attendanceRate: number;
+  attendanceLogs: number;
+  performanceLogs: number;
+  daysSinceTest: number | null;
+  score: number;
+};
+
+type TeamLeaderboardRow = {
+  team: string;
+  sport: string;
+  rosterCount: number;
+  avgAttendanceRate: number;
+  performanceCount: number;
+  lowAttendanceAthletes: number;
+  staleTestingAthletes: number;
+  score: number;
 };
 
 const LOW_ATTENDANCE_THRESHOLD = 70;
@@ -87,81 +110,79 @@ function firstString(...values: any[]) {
   return '';
 }
 
-function firstNumberOrString(...values: any[]) {
+function firstValue(...values: any[]) {
   for (const value of values) {
-    if (value !== null && value !== undefined && value !== '') return value;
+    if (value !== null && value !== undefined && value !== '') return String(value);
   }
   return '';
 }
 
+function firstNumber(...values: any[]) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    const num = Number(value);
+    if (!Number.isNaN(num)) return num;
+  }
+  return null;
+}
+
 function normalizeAthlete(row: GenericRow): Athlete {
   return {
-    id: firstNumberOrString(row.id, row.athlete_id, crypto.randomUUID()),
-    name: firstString(
-      row.name,
-      row.full_name,
-      row.athlete_name,
-      row.player_name,
-      row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
-      row.first_name
-    ) || 'Unknown Athlete',
+    id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
+    name:
+      firstString(
+        row.name,
+        row.full_name,
+        row.athlete_name,
+        row.player_name,
+        row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
+        row.first_name
+      ) || 'Unknown Athlete',
     team: firstString(row.team, row.team_name, row.squad, row.group_name) || 'Unassigned',
     sport: firstString(row.sport, row.code, row.discipline) || '—',
-    age_group: firstString(row.age_group, row.agegroup, row.grade_group, row.group) || '—',
+    ageGroup: firstString(row.age_group, row.agegroup, row.grade_group, row.group) || '—',
+    raw: row,
   };
 }
 
 function normalizeTeam(row: GenericRow): Team {
   return {
-    id: firstNumberOrString(row.id, row.team_id, crypto.randomUUID()),
+    id: firstValue(row.id, row.team_id, crypto.randomUUID()),
     name: firstString(row.name, row.team, row.team_name) || 'Unnamed Team',
     sport: firstString(row.sport, row.code, row.discipline) || '—',
     season: firstString(row.season, row.year, row.phase) || '—',
+    raw: row,
   };
 }
 
 function normalizeAttendance(row: GenericRow): AttendanceRecord {
   return {
-    id: firstNumberOrString(row.id, row.attendance_id, crypto.randomUUID()),
-    athlete_id: firstNumberOrString(row.athlete_id, row.player_id, null) || null,
-    athlete_name:
-      firstString(
-        row.athlete_name,
-        row.name,
-        row.full_name,
-        row.player_name
-      ) || null,
-    team: firstString(row.team, row.team_name, row.squad) || null,
-    session_type: firstString(row.session_type, row.session, row.type) || null,
-    status: firstString(row.status, row.attendance_status) || null,
-    date: firstString(row.date, row.session_date, row.created_at) || null,
+    id: firstValue(row.id, crypto.randomUUID()),
+    athlete_id: firstValue(row.athlete_id),
+    session_date: firstString(row.session_date),
+    session_type: firstString(row.session_type) || '—',
+    status: firstString(row.status) || '—',
     created_at: firstString(row.created_at) || null,
+    raw: row,
   };
 }
 
 function normalizePerformance(row: GenericRow): PerformanceRecord {
   return {
-    id: firstNumberOrString(row.id, row.performance_id, crypto.randomUUID()),
-    athlete_id: firstNumberOrString(row.athlete_id, row.player_id, null) || null,
-    athlete_name:
-      firstString(
-        row.athlete_name,
-        row.name,
-        row.full_name,
-        row.player_name
-      ) || null,
-    team: firstString(row.team, row.team_name, row.squad) || null,
-    test_name: firstString(row.test_name, row.test, row.metric, row.exercise) || null,
-    value: firstNumberOrString(row.value, row.score, row.result, null) ?? null,
-    unit: firstString(row.unit, row.units) || null,
-    date: firstString(row.date, row.test_date, row.created_at) || null,
+    id: firstValue(row.id, crypto.randomUUID()),
+    athlete_id: firstValue(row.athlete_id),
+    test_date: firstString(row.test_date),
+    test_type: firstString(row.test_type) || '—',
+    result: firstNumber(row.result),
+    unit: firstString(row.unit) || '',
+    notes: firstString(row.notes) || '',
     created_at: firstString(row.created_at) || null,
+    raw: row,
   };
 }
 
 function formatDate(dateString?: string | null) {
   if (!dateString) return '—';
-
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return '—';
 
@@ -174,175 +195,164 @@ function formatDate(dateString?: string | null) {
 
 function daysSince(dateString?: string | null) {
   if (!dateString) return null;
-
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return null;
 
   const now = new Date();
   const diff = now.getTime() - date.getTime();
-
   return Math.floor(diff / (1000 * 60 * 60 * 24));
 }
 
-function slugifyTeamName(name: string) {
-  return encodeURIComponent(name);
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
 }
 
 export default function DashboardPage() {
-  const [athletes, setAthletes] = useState<Athlete[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
-  const [performance, setPerformance] = useState<PerformanceRecord[]>([]);
+  const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
+  const [teamRows, setTeamRows] = useState<GenericRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = useState<GenericRow[]>([]);
+  const [performanceRows, setPerformanceRows] = useState<GenericRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const loadDashboard = async () => {
-      setLoading(true);
-      setError('');
+  async function loadDashboard() {
+    setLoading(true);
+    setError('');
 
-      const [athletesRes, teamsRes, attendanceRes, performanceRes] = await Promise.all([
-        supabase.from('athletes').select('*'),
-        supabase.from('Teams').select('*'),
-        supabase.from('Attendance').select('*'),
-        supabase.from('Performance').select('*'),
-      ]);
+    const [athletesRes, teamsRes, attendanceRes, performanceRes] = await Promise.all([
+      supabase.from('athletes').select('*'),
+      supabase.from('Teams').select('*'),
+      supabase.from('Attendance').select('*').order('session_date', { ascending: false }),
+      supabase.from('Performance').select('*').order('test_date', { ascending: false }),
+    ]);
 
-      if (athletesRes.error || teamsRes.error || attendanceRes.error || performanceRes.error) {
-        setError(
-          athletesRes.error?.message ||
-            teamsRes.error?.message ||
-            attendanceRes.error?.message ||
-            performanceRes.error?.message ||
-            'Failed to load dashboard data.'
-        );
-        setLoading(false);
-        return;
-      }
-
-      const normalizedAthletes = ((athletesRes.data as GenericRow[]) || []).map(normalizeAthlete);
-      const normalizedTeams = ((teamsRes.data as GenericRow[]) || []).map(normalizeTeam);
-      const normalizedAttendance = ((attendanceRes.data as GenericRow[]) || [])
-        .map(normalizeAttendance)
-        .sort((a, b) => {
-          const aTime = a.date ? new Date(a.date).getTime() : 0;
-          const bTime = b.date ? new Date(b.date).getTime() : 0;
-          return bTime - aTime;
-        });
-
-      const normalizedPerformance = ((performanceRes.data as GenericRow[]) || [])
-        .map(normalizePerformance)
-        .sort((a, b) => {
-          const aTime = a.date ? new Date(a.date).getTime() : 0;
-          const bTime = b.date ? new Date(b.date).getTime() : 0;
-          return bTime - aTime;
-        });
-
-      setAthletes(normalizedAthletes);
-      setTeams(normalizedTeams);
-      setAttendance(normalizedAttendance);
-      setPerformance(normalizedPerformance);
+    if (athletesRes.error || teamsRes.error || attendanceRes.error || performanceRes.error) {
+      setError(
+        athletesRes.error?.message ||
+          teamsRes.error?.message ||
+          attendanceRes.error?.message ||
+          performanceRes.error?.message ||
+          'Failed to load dashboard data.'
+      );
+      setAthleteRows([]);
+      setTeamRows([]);
+      setAttendanceRows([]);
+      setPerformanceRows([]);
       setLoading(false);
-    };
+      return;
+    }
 
+    setAthleteRows((athletesRes.data as GenericRow[]) || []);
+    setTeamRows((teamsRes.data as GenericRow[]) || []);
+    setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
+    setPerformanceRows((performanceRes.data as GenericRow[]) || []);
+    setLoading(false);
+  }
+
+  useEffect(() => {
     loadDashboard();
   }, []);
 
+  const athletes = useMemo(() => {
+    return athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name));
+  }, [athleteRows]);
+
+  const teams = useMemo(() => {
+    return teamRows.map(normalizeTeam).sort((a, b) => a.name.localeCompare(b.name));
+  }, [teamRows]);
+
+  const attendance = useMemo(() => {
+    return attendanceRows
+      .map(normalizeAttendance)
+      .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+  }, [attendanceRows]);
+
+  const performance = useMemo(() => {
+    return performanceRows
+      .map(normalizePerformance)
+      .sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
+  }, [performanceRows]);
+
   const athleteMap = useMemo(() => {
     const map = new Map<string, Athlete>();
-    athletes.forEach((athlete) => {
-      map.set(String(athlete.id), athlete);
-    });
+    athletes.forEach((athlete) => map.set(athlete.id, athlete));
     return map;
   }, [athletes]);
 
   const attendanceSummary = useMemo(() => {
-    const grouped = new Map<string, AthleteAttendanceSummary>();
+    const grouped = new Map<string, AttendanceSummary>();
 
     attendance.forEach((entry) => {
-      const athleteId = entry.athlete_id ?? `name:${entry.athlete_name ?? 'unknown'}`;
-      const key = String(athleteId);
+      const athlete = athleteMap.get(entry.athlete_id);
+      const athleteId = entry.athlete_id;
+      const athleteName = athlete?.name || 'Unknown Athlete';
+      const team = athlete?.team || 'Unassigned';
 
-      const linkedAthlete = entry.athlete_id ? athleteMap.get(String(entry.athlete_id)) : undefined;
-      const athleteName = linkedAthlete?.name || entry.athlete_name || 'Unknown Athlete';
-      const athleteTeam = linkedAthlete?.team || entry.team || 'Unassigned';
-
-      if (!grouped.has(key)) {
-        grouped.set(key, {
+      if (!grouped.has(athleteId)) {
+        grouped.set(athleteId, {
           athleteId,
           athleteName,
-          team: athleteTeam,
+          team,
           total: 0,
           present: 0,
-          absent: 0,
           late: 0,
+          absent: 0,
           excused: 0,
           rate: 0,
-          lastDate: entry.date ?? null,
+          lastDate: entry.session_date || null,
         });
       }
 
-      const current = grouped.get(key)!;
+      const current = grouped.get(athleteId)!;
       current.total += 1;
 
-      const status = (entry.status || '').toLowerCase();
-
+      const status = entry.status.toLowerCase();
       if (status === 'present') current.present += 1;
-      else if (status === 'absent') current.absent += 1;
       else if (status === 'late') current.late += 1;
+      else if (status === 'absent') current.absent += 1;
       else if (status === 'excused') current.excused += 1;
 
-      const currentLastDate = current.lastDate ? new Date(current.lastDate).getTime() : 0;
-      const entryDate = entry.date ? new Date(entry.date).getTime() : 0;
-
-      if (entryDate > currentLastDate) {
-        current.lastDate = entry.date ?? current.lastDate;
-      }
+      const currentLast = current.lastDate ? new Date(current.lastDate).getTime() : 0;
+      const entryTime = entry.session_date ? new Date(entry.session_date).getTime() : 0;
+      if (entryTime > currentLast) current.lastDate = entry.session_date;
     });
 
     return Array.from(grouped.values())
       .map((item) => {
-        const positiveCount = item.present + item.late;
-        const rate = item.total > 0 ? Math.round((positiveCount / item.total) * 100) : 0;
-
+        const positive = item.present + item.late;
         return {
           ...item,
-          rate,
+          rate: item.total > 0 ? Math.round((positive / item.total) * 100) : 0,
         };
       })
       .sort((a, b) => a.athleteName.localeCompare(b.athleteName));
   }, [attendance, athleteMap]);
 
   const performanceSummary = useMemo(() => {
-    const grouped = new Map<string, AthletePerformanceSummary>();
+    const grouped = new Map<string, PerformanceSummary>();
 
     performance.forEach((entry) => {
-      const athleteId = entry.athlete_id ?? `name:${entry.athlete_name ?? 'unknown'}`;
-      const key = String(athleteId);
+      const athlete = athleteMap.get(entry.athlete_id);
+      const athleteId = entry.athlete_id;
+      const athleteName = athlete?.name || 'Unknown Athlete';
+      const team = athlete?.team || 'Unassigned';
 
-      const linkedAthlete = entry.athlete_id ? athleteMap.get(String(entry.athlete_id)) : undefined;
-      const athleteName = linkedAthlete?.name || entry.athlete_name || 'Unknown Athlete';
-      const athleteTeam = linkedAthlete?.team || entry.team || 'Unassigned';
-
-      if (!grouped.has(key)) {
-        grouped.set(key, {
+      if (!grouped.has(athleteId)) {
+        grouped.set(athleteId, {
           athleteId,
           athleteName,
-          team: athleteTeam,
+          team,
           totalTests: 0,
-          lastTestDate: entry.date ?? null,
+          lastTestDate: entry.test_date || null,
         });
       }
 
-      const current = grouped.get(key)!;
+      const current = grouped.get(athleteId)!;
       current.totalTests += 1;
 
-      const currentLastDate = current.lastTestDate ? new Date(current.lastTestDate).getTime() : 0;
-      const entryDate = entry.date ? new Date(entry.date).getTime() : 0;
-
-      if (entryDate > currentLastDate) {
-        current.lastTestDate = entry.date ?? current.lastTestDate;
-      }
+      const currentLast = current.lastTestDate ? new Date(current.lastTestDate).getTime() : 0;
+      const entryTime = entry.test_date ? new Date(entry.test_date).getTime() : 0;
+      if (entryTime > currentLast) current.lastTestDate = entry.test_date;
     });
 
     return Array.from(grouped.values()).sort((a, b) => a.athleteName.localeCompare(b.athleteName));
@@ -350,27 +360,25 @@ export default function DashboardPage() {
 
   const lowAttendanceAthletes = useMemo(() => {
     return attendanceSummary
-      .filter((athlete) => athlete.total >= 3 && athlete.rate < LOW_ATTENDANCE_THRESHOLD)
+      .filter((item) => item.total >= 3 && item.rate < LOW_ATTENDANCE_THRESHOLD)
       .sort((a, b) => a.rate - b.rate)
       .slice(0, 8);
   }, [attendanceSummary]);
 
   const stalePerformanceAthletes = useMemo(() => {
-    const perfMap = new Map<string, AthletePerformanceSummary>();
-    performanceSummary.forEach((item) => {
-      perfMap.set(String(item.athleteId), item);
-    });
+    const perfMap = new Map<string, PerformanceSummary>();
+    performanceSummary.forEach((item) => perfMap.set(item.athleteId, item));
 
     return athletes
       .map((athlete) => {
-        const perf = perfMap.get(String(athlete.id));
-        const staleDays = daysSince(perf?.lastTestDate ?? null);
+        const perf = perfMap.get(athlete.id);
+        const staleDays = daysSince(perf?.lastTestDate || null);
 
         return {
           athleteId: athlete.id,
           athleteName: athlete.name,
-          team: athlete.team || 'Unassigned',
-          lastTestDate: perf?.lastTestDate ?? null,
+          team: athlete.team,
+          lastTestDate: perf?.lastTestDate || null,
           staleDays,
           hasNoTests: !perf,
         };
@@ -385,21 +393,19 @@ export default function DashboardPage() {
   }, [athletes, performanceSummary]);
 
   const staleAttendanceAthletes = useMemo(() => {
-    const attMap = new Map<string, AthleteAttendanceSummary>();
-    attendanceSummary.forEach((item) => {
-      attMap.set(String(item.athleteId), item);
-    });
+    const attMap = new Map<string, AttendanceSummary>();
+    attendanceSummary.forEach((item) => attMap.set(item.athleteId, item));
 
     return athletes
       .map((athlete) => {
-        const att = attMap.get(String(athlete.id));
-        const staleDays = daysSince(att?.lastDate ?? null);
+        const att = attMap.get(athlete.id);
+        const staleDays = daysSince(att?.lastDate || null);
 
         return {
           athleteId: athlete.id,
           athleteName: athlete.name,
-          team: athlete.team || 'Unassigned',
-          lastAttendanceDate: att?.lastDate ?? null,
+          team: athlete.team,
+          lastAttendanceDate: att?.lastDate || null,
           staleDays,
           hasNoAttendance: !att,
         };
@@ -414,73 +420,44 @@ export default function DashboardPage() {
   }, [athletes, attendanceSummary]);
 
   const teamHealth = useMemo(() => {
-    const attendanceByTeam = new Map<string, AttendanceRecord[]>();
-    const performanceByTeam = new Map<string, PerformanceRecord[]>();
-    const rosterByTeam = new Map<string, Athlete[]>();
-    const attendanceRateByAthleteId = new Map<string, AthleteAttendanceSummary>();
-    const performanceByAthleteId = new Map<string, AthletePerformanceSummary>();
+    const attendanceByAthlete = new Map<string, AttendanceSummary>();
+    attendanceSummary.forEach((item) => attendanceByAthlete.set(item.athleteId, item));
 
-    attendanceSummary.forEach((item) => {
-      attendanceRateByAthleteId.set(String(item.athleteId), item);
-    });
-
-    performanceSummary.forEach((item) => {
-      performanceByAthleteId.set(String(item.athleteId), item);
-    });
-
-    attendance.forEach((item) => {
-      const key = item.team || 'Unassigned';
-      if (!attendanceByTeam.has(key)) attendanceByTeam.set(key, []);
-      attendanceByTeam.get(key)!.push(item);
-    });
-
-    performance.forEach((item) => {
-      const key = item.team || 'Unassigned';
-      if (!performanceByTeam.has(key)) performanceByTeam.set(key, []);
-      performanceByTeam.get(key)!.push(item);
-    });
-
-    athletes.forEach((athlete) => {
-      const key = athlete.team || 'Unassigned';
-      if (!rosterByTeam.has(key)) rosterByTeam.set(key, []);
-      rosterByTeam.get(key)!.push(athlete);
-    });
+    const performanceByAthlete = new Map<string, PerformanceSummary>();
+    performanceSummary.forEach((item) => performanceByAthlete.set(item.athleteId, item));
 
     const teamNames = new Set<string>([
-      ...teams.map((t) => t.name),
-      ...athletes.map((a) => a.team || 'Unassigned'),
-      ...attendance.map((a) => a.team || 'Unassigned'),
-      ...performance.map((p) => p.team || 'Unassigned'),
+      ...teams.map((team) => team.name),
+      ...athletes.map((athlete) => athlete.team),
     ]);
 
-    const results: TeamHealth[] = Array.from(teamNames)
+    const rows: TeamHealth[] = Array.from(teamNames)
       .filter(Boolean)
       .map((teamName) => {
-        const roster = rosterByTeam.get(teamName) || [];
-        const teamAttendance = attendanceByTeam.get(teamName) || [];
-        const teamPerformance = performanceByTeam.get(teamName) || [];
-        const teamMeta = teams.find((t) => t.name === teamName);
+        const roster = athletes.filter((athlete) => athlete.team === teamName);
+        const rosterIds = new Set(roster.map((athlete) => athlete.id));
+        const teamAttendance = attendance.filter((entry) => rosterIds.has(entry.athlete_id));
+        const teamPerformance = performance.filter((entry) => rosterIds.has(entry.athlete_id));
+        const teamMeta = teams.find((team) => team.name === teamName);
 
-        const athleteRates = roster
-          .map((athlete) => attendanceRateByAthleteId.get(String(athlete.id)))
-          .filter(Boolean) as AthleteAttendanceSummary[];
+        const attendanceRates = roster
+          .map((athlete) => attendanceByAthlete.get(athlete.id))
+          .filter(Boolean) as AttendanceSummary[];
 
         const avgAttendanceRate =
-          athleteRates.length > 0
-            ? Math.round(
-                athleteRates.reduce((sum, item) => sum + item.rate, 0) / athleteRates.length
-              )
+          attendanceRates.length > 0
+            ? Math.round(attendanceRates.reduce((sum, item) => sum + item.rate, 0) / attendanceRates.length)
             : 0;
 
-        const lowAttendanceAthletes = roster.filter((athlete) => {
-          const att = attendanceRateByAthleteId.get(String(athlete.id));
-          return att && att.total >= 3 && att.rate < LOW_ATTENDANCE_THRESHOLD;
+        const lowAttendanceCount = roster.filter((athlete) => {
+          const item = attendanceByAthlete.get(athlete.id);
+          return item && item.total >= 3 && item.rate < LOW_ATTENDANCE_THRESHOLD;
         }).length;
 
-        const staleAthletes = roster.filter((athlete) => {
-          const perf = performanceByAthleteId.get(String(athlete.id));
-          if (!perf) return true;
-          const staleDays = daysSince(perf.lastTestDate);
+        const staleTestingCount = roster.filter((athlete) => {
+          const item = performanceByAthlete.get(athlete.id);
+          if (!item) return true;
+          const staleDays = daysSince(item.lastTestDate);
           return staleDays !== null && staleDays > STALE_PERFORMANCE_DAYS;
         }).length;
 
@@ -491,64 +468,138 @@ export default function DashboardPage() {
           attendanceCount: teamAttendance.length,
           performanceCount: teamPerformance.length,
           avgAttendanceRate,
-          lowAttendanceAthletes,
-          staleAthletes,
+          lowAttendanceAthletes: lowAttendanceCount,
+          staleTestingAthletes: staleTestingCount,
         };
-      });
+      })
+      .sort((a, b) => a.team.localeCompare(b.team));
 
-    return results.sort((a, b) => a.team.localeCompare(b.team));
+    return rows;
   }, [teams, athletes, attendance, performance, attendanceSummary, performanceSummary]);
 
-  const recentActivity = useMemo(() => {
-    const attendanceActivity = attendance.slice(0, 6).map((entry) => ({
-      type: 'Attendance',
-      title: `${entry.athlete_name || 'Unknown Athlete'} • ${entry.status || 'No status'}`,
-      subtitle: `${entry.team || 'Unassigned'}${entry.session_type ? ` • ${entry.session_type}` : ''}`,
-      date: entry.date,
-      href: '/attendance',
-    }));
+  const overallTopAthletes = useMemo(() => {
+    const attendanceMap = new Map<string, AttendanceSummary>();
+    attendanceSummary.forEach((item) => attendanceMap.set(item.athleteId, item));
 
-    const performanceActivity = performance.slice(0, 6).map((entry) => ({
-      type: 'Performance',
-      title: `${entry.athlete_name || 'Unknown Athlete'} • ${entry.test_name || 'Test'}`,
-      subtitle: `${entry.team || 'Unassigned'}${
-        entry.value !== null && entry.value !== undefined && entry.value !== ''
-          ? ` • ${entry.value}${entry.unit ? ` ${entry.unit}` : ''}`
-          : ''
-      }`,
-      date: entry.date,
-      href: '/performance',
-    }));
+    const performanceMap = new Map<string, PerformanceSummary>();
+    performanceSummary.forEach((item) => performanceMap.set(item.athleteId, item));
 
-    return [...attendanceActivity, ...performanceActivity]
-      .sort((a, b) => {
-        const aTime = a.date ? new Date(a.date).getTime() : 0;
-        const bTime = b.date ? new Date(b.date).getTime() : 0;
-        return bTime - aTime;
+    const rows: AthleteLeaderboardRow[] = athletes
+      .map((athlete) => {
+        const att = attendanceMap.get(athlete.id);
+        const perf = performanceMap.get(athlete.id);
+
+        const attendanceRate = att?.rate ?? 0;
+        const attendanceLogs = att?.total ?? 0;
+        const performanceLogs = perf?.totalTests ?? 0;
+        const daysSinceTestValue = daysSince(perf?.lastTestDate ?? null);
+
+        const attendanceScore = attendanceRate * 0.5;
+        const attendanceVolumeScore = Math.min(attendanceLogs * 2, 20);
+        const performanceVolumeScore = Math.min(performanceLogs * 3, 20);
+
+        let testingRecencyScore = 0;
+        if (daysSinceTestValue === null) testingRecencyScore = 0;
+        else if (daysSinceTestValue <= 7) testingRecencyScore = 10;
+        else if (daysSinceTestValue <= 14) testingRecencyScore = 8;
+        else if (daysSinceTestValue <= 30) testingRecencyScore = 5;
+        else testingRecencyScore = 1;
+
+        const score = Math.round(attendanceScore + attendanceVolumeScore + performanceVolumeScore + testingRecencyScore);
+
+        return {
+          athleteId: athlete.id,
+          athleteName: athlete.name,
+          team: athlete.team,
+          attendanceRate,
+          attendanceLogs,
+          performanceLogs,
+          daysSinceTest: daysSinceTestValue,
+          score,
+        };
       })
+      .sort((a, b) => b.score - a.score || b.attendanceRate - a.attendanceRate || b.performanceLogs - a.performanceLogs);
+
+    return rows.slice(0, 3);
+  }, [athletes, attendanceSummary, performanceSummary]);
+
+  const overallTopTeams = useMemo(() => {
+    const rows: TeamLeaderboardRow[] = teamHealth
+      .map((team) => {
+        const attendanceComponent = team.avgAttendanceRate * 0.6;
+        const rosterComponent = Math.min(team.rosterCount * 2, 20);
+        const performanceComponent = Math.min(team.performanceCount, 25);
+        const penalty =
+          team.lowAttendanceAthletes * 5 +
+          team.staleTestingAthletes * 4;
+
+        const score = Math.round(clamp(attendanceComponent + rosterComponent + performanceComponent - penalty, 0, 100));
+
+        return {
+          team: team.team,
+          sport: team.sport,
+          rosterCount: team.rosterCount,
+          avgAttendanceRate: team.avgAttendanceRate,
+          performanceCount: team.performanceCount,
+          lowAttendanceAthletes: team.lowAttendanceAthletes,
+          staleTestingAthletes: team.staleTestingAthletes,
+          score,
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.score - a.score ||
+          b.avgAttendanceRate - a.avgAttendanceRate ||
+          b.performanceCount - a.performanceCount
+      );
+
+    return rows.slice(0, 3);
+  }, [teamHealth]);
+
+  const recentActivity = useMemo(() => {
+    const recentAttendance = attendance.slice(0, 5).map((entry) => {
+      const athlete = athleteMap.get(entry.athlete_id);
+      return {
+        type: 'Attendance',
+        title: `${athlete?.name || 'Unknown Athlete'} • ${entry.status}`,
+        subtitle: `${athlete?.team || 'Unassigned'} • ${entry.session_type}`,
+        date: entry.session_date,
+        href: '/attendance',
+      };
+    });
+
+    const recentPerformance = performance.slice(0, 5).map((entry) => {
+      const athlete = athleteMap.get(entry.athlete_id);
+      return {
+        type: 'Performance',
+        title: `${athlete?.name || 'Unknown Athlete'} • ${entry.test_type}`,
+        subtitle: `${athlete?.team || 'Unassigned'} • ${
+          entry.result === null ? '—' : `${entry.result}${entry.unit ? ` ${entry.unit}` : ''}`
+        }`,
+        date: entry.test_date,
+        href: '/performance',
+      };
+    });
+
+    return [...recentAttendance, ...recentPerformance]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       .slice(0, 10);
-  }, [attendance, performance]);
+  }, [attendance, performance, athleteMap]);
 
   const headlineStats = useMemo(() => {
     const totalAthletes = athletes.length;
-    const totalTeams = teams.length || new Set(athletes.map((a) => a.team).filter(Boolean)).size;
+    const totalTeams = teams.length || new Set(athletes.map((athlete) => athlete.team).filter(Boolean)).size;
     const totalAttendance = attendance.length;
     const totalPerformance = performance.length;
 
-    const presentStatuses = attendance.filter((item) => {
-      const status = (item.status || '').toLowerCase();
+    const positiveAttendance = attendance.filter((entry) => {
+      const status = entry.status.toLowerCase();
       return status === 'present' || status === 'late';
     }).length;
 
-    const attendanceRate =
-      totalAttendance > 0 ? Math.round((presentStatuses / totalAttendance) * 100) : 0;
+    const attendanceRate = totalAttendance > 0 ? Math.round((positiveAttendance / totalAttendance) * 100) : 0;
 
-    const athletesWithTests = new Set(
-      performance
-        .map((item) => item.athlete_id)
-        .filter((value) => value !== null && value !== undefined)
-        .map((value) => String(value))
-    ).size;
+    const athletesWithTests = new Set(performance.map((entry) => entry.athlete_id)).size;
 
     return {
       totalAthletes,
@@ -558,10 +609,7 @@ export default function DashboardPage() {
       attendanceRate,
       athletesWithTests,
       athletesWithoutTests: Math.max(totalAthletes - athletesWithTests, 0),
-      urgentIssues:
-        lowAttendanceAthletes.length +
-        stalePerformanceAthletes.length +
-        staleAttendanceAthletes.length,
+      urgentIssues: lowAttendanceAthletes.length + stalePerformanceAthletes.length + staleAttendanceAthletes.length,
     };
   }, [athletes, teams, attendance, performance, lowAttendanceAthletes, stalePerformanceAthletes, staleAttendanceAthletes]);
 
@@ -572,7 +620,7 @@ export default function DashboardPage() {
       alerts.push({
         level: 'high',
         title: `${lowAttendanceAthletes.length} athlete${lowAttendanceAthletes.length === 1 ? '' : 's'} below ${LOW_ATTENDANCE_THRESHOLD}% attendance`,
-        detail: 'These athletes are consistently missing or arriving late to sessions.',
+        detail: 'These athletes are consistently missing sessions or arriving late.',
         href: '/attendance',
       });
     }
@@ -581,7 +629,7 @@ export default function DashboardPage() {
       alerts.push({
         level: 'medium',
         title: `${stalePerformanceAthletes.length} athlete${stalePerformanceAthletes.length === 1 ? '' : 's'} need updated testing`,
-        detail: `No recent performance data in the last ${STALE_PERFORMANCE_DAYS} days, or no tests recorded at all.`,
+        detail: `No recent performance data in the last ${STALE_PERFORMANCE_DAYS} days or no tests recorded.`,
         href: '/performance',
       });
     }
@@ -589,8 +637,8 @@ export default function DashboardPage() {
     if (staleAttendanceAthletes.length > 0) {
       alerts.push({
         level: 'medium',
-        title: `${staleAttendanceAthletes.length} athlete${staleAttendanceAthletes.length === 1 ? '' : 's'} have stale attendance records`,
-        detail: `No attendance activity in the last ${STALE_ATTENDANCE_DAYS} days, or no attendance logged yet.`,
+        title: `${staleAttendanceAthletes.length} athlete${staleAttendanceAthletes.length === 1 ? '' : 's'} have stale attendance logs`,
+        detail: `No attendance activity in the last ${STALE_ATTENDANCE_DAYS} days or no attendance logged yet.`,
         href: '/attendance',
       });
     }
@@ -599,8 +647,8 @@ export default function DashboardPage() {
     if (emptyTeams.length > 0) {
       alerts.push({
         level: 'medium',
-        title: `${emptyTeams.length} team${emptyTeams.length === 1 ? '' : 's'} with no roster`,
-        detail: 'These teams exist in the system but currently have no assigned athletes.',
+        title: `${emptyTeams.length} team${emptyTeams.length === 1 ? '' : 's'} have no roster`,
+        detail: 'These teams exist but currently have no assigned athletes.',
         href: '/teams',
       });
     }
@@ -628,12 +676,10 @@ export default function DashboardPage() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
               High-Performance Operations
             </p>
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Coach Operations Board
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Coach Operations Board</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              This dashboard highlights where attention is needed right now: attendance risk,
-              missing testing, stale records, team health, and recent activity.
+              This dashboard shows where coach attention is needed right now: attendance risk, stale testing,
+              team health, recent activity, and overall leaderboard performance.
             </p>
           </div>
 
@@ -675,45 +721,137 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-xs uppercase tracking-wide text-slate-400">Athletes</p>
             <p className="mt-3 text-3xl font-bold">{headlineStats.totalAthletes}</p>
-            <p className="mt-2 text-sm text-slate-300">
-              Across all active school sport groups in the system.
-            </p>
+            <p className="mt-2 text-sm text-slate-300">Across all athlete records in the system.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-xs uppercase tracking-wide text-slate-400">Teams</p>
             <p className="mt-3 text-3xl font-bold">{headlineStats.totalTeams}</p>
-            <p className="mt-2 text-sm text-slate-300">
-              Team environments being monitored and managed.
-            </p>
+            <p className="mt-2 text-sm text-slate-300">Team environments currently being managed.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Rate</p>
             <p className="mt-3 text-3xl font-bold">{headlineStats.attendanceRate}%</p>
-            <p className="mt-2 text-sm text-slate-300">
-              Based on all logged attendance records marked present or late.
-            </p>
+            <p className="mt-2 text-sm text-slate-300">Present + late as a percentage of all attendance logs.</p>
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <p className="text-xs uppercase tracking-wide text-slate-400">Urgent Issues</p>
             <p className="mt-3 text-3xl font-bold">{headlineStats.urgentIssues}</p>
-            <p className="mt-2 text-sm text-slate-300">
-              Flags requiring coach follow-up across attendance and testing.
-            </p>
+            <p className="mt-2 text-sm text-slate-300">Flags requiring coach follow-up.</p>
+          </div>
+        </section>
+
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Overall Top 3 Athletes</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Ranked by attendance quality, data volume, and testing recency.
+                </p>
+              </div>
+              <Link href="/athletes" className="text-sm font-medium text-sky-400 hover:text-sky-300">
+                Open Athletes
+              </Link>
+            </div>
+
+            {overallTopAthletes.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No athlete leaderboard data yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {overallTopAthletes.map((athlete, index) => (
+                  <div
+                    key={athlete.athleteId}
+                    className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          #{index + 1} {athlete.athleteName}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">{athlete.team}</p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-200">
+                          Score {athlete.score}
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                          {athlete.attendanceRate}% attendance
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                          {athlete.performanceLogs} tests
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Overall Top 3 Teams</h2>
+                <p className="mt-1 text-sm text-slate-400">
+                  Ranked by attendance quality, roster health, and performance coverage.
+                </p>
+              </div>
+              <Link href="/teams" className="text-sm font-medium text-sky-400 hover:text-sky-300">
+                Open Teams
+              </Link>
+            </div>
+
+            {overallTopTeams.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No team leaderboard data yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {overallTopTeams.map((team, index) => (
+                  <div
+                    key={team.team}
+                    className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">
+                          #{index + 1} {team.team}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {team.sport} • {team.rosterCount} athletes
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-200">
+                          Score {team.score}
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                          {team.avgAttendanceRate}% attendance
+                        </span>
+                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                          {team.performanceCount} performance logs
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="xl:col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">Priority Alerts</h2>
-                <p className="mt-1 text-sm text-slate-400">
-                  Immediate operational issues the system is detecting.
-                </p>
-              </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Priority Alerts</h2>
+              <p className="mt-1 text-sm text-slate-400">Immediate operational issues detected by the system.</p>
             </div>
 
             {urgentAlerts.length === 0 ? (
@@ -755,9 +893,7 @@ export default function DashboardPage() {
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
             <h2 className="text-lg font-semibold">Data Coverage</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Are you collecting enough usable information?
-            </p>
+            <p className="mt-1 text-sm text-slate-400">A quick view of how complete the system is.</p>
 
             <div className="mt-5 space-y-4">
               <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
@@ -774,8 +910,7 @@ export default function DashboardPage() {
                 <p className="text-xs uppercase tracking-wide text-slate-400">Athletes With Tests</p>
                 <p className="mt-2 text-2xl font-bold">{headlineStats.athletesWithTests}</p>
                 <p className="mt-1 text-sm text-slate-400">
-                  {headlineStats.athletesWithoutTests} athlete
-                  {headlineStats.athletesWithoutTests === 1 ? '' : 's'} still need baseline or updated testing.
+                  {headlineStats.athletesWithoutTests} athlete{headlineStats.athletesWithoutTests === 1 ? '' : 's'} still need baseline or updated testing.
                 </p>
               </div>
             </div>
@@ -804,7 +939,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {lowAttendanceAthletes.map((athlete) => (
                   <div
-                    key={`low-attendance-${athlete.athleteId}`}
+                    key={athlete.athleteId}
                     className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -860,7 +995,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {stalePerformanceAthletes.map((athlete) => (
                   <div
-                    key={`stale-performance-${athlete.athleteId}`}
+                    key={athlete.athleteId}
                     className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -904,7 +1039,7 @@ export default function DashboardPage() {
               <div>
                 <h2 className="text-lg font-semibold">Attendance Logging Gaps</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Athletes with no attendance yet, or no recent logged attendance.
+                  Athletes with no attendance yet or no recent attendance logs.
                 </p>
               </div>
               <Link href="/attendance" className="text-sm font-medium text-sky-400 hover:text-sky-300">
@@ -920,7 +1055,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {staleAttendanceAthletes.map((athlete) => (
                   <div
-                    key={`stale-attendance-${athlete.athleteId}`}
+                    key={athlete.athleteId}
                     className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -958,13 +1093,9 @@ export default function DashboardPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">Recent Activity</h2>
-                <p className="mt-1 text-sm text-slate-400">
-                  Latest attendance and performance actions across the system.
-                </p>
-              </div>
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Recent Activity</h2>
+              <p className="mt-1 text-sm text-slate-400">Latest attendance and performance activity across the system.</p>
             </div>
 
             {recentActivity.length === 0 ? (
@@ -1003,7 +1134,7 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-lg font-semibold">Team Health Snapshot</h2>
               <p className="mt-1 text-sm text-slate-400">
-                A coach-friendly view of roster size, data volume, attendance quality, and follow-up needs.
+                Roster size, data volume, attendance quality, and testing follow-up needs.
               </p>
             </div>
             <Link href="/teams" className="text-sm font-medium text-sky-400 hover:text-sky-300">
@@ -1035,7 +1166,7 @@ export default function DashboardPage() {
                     <tr key={team.team} className="border-b border-slate-900">
                       <td className="px-3 py-3">
                         <Link
-                          href={`/teams/${slugifyTeamName(team.team)}`}
+                          href={`/teams/${encodeURIComponent(team.team)}`}
                           className="font-medium text-white hover:text-sky-400"
                         >
                           {team.team}
@@ -1064,12 +1195,12 @@ export default function DashboardPage() {
                       <td className="px-3 py-3">
                         <span
                           className={`rounded-full px-2.5 py-1 text-xs ${
-                            team.staleAthletes > 0
+                            team.staleTestingAthletes > 0
                               ? 'bg-amber-500/15 text-amber-200'
                               : 'bg-emerald-500/15 text-emerald-200'
                           }`}
                         >
-                          {team.staleAthletes}
+                          {team.staleTestingAthletes}
                         </span>
                       </td>
                     </tr>
