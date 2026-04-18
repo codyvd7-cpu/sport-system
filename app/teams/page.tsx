@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 type GenericRow = Record<string, any>;
 
 type Team = {
-  id: number | string;
+  id: string;
   name: string;
   sport: string;
   season: string;
@@ -15,15 +15,15 @@ type Team = {
 };
 
 function firstString(...values: any[]) {
-  for (const v of values) {
-    if (typeof v === 'string' && v.trim() !== '') return v.trim();
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim() !== '') return value.trim();
   }
   return '';
 }
 
 function firstValue(...values: any[]) {
-  for (const v of values) {
-    if (v !== null && v !== undefined && v !== '') return v;
+  for (const value of values) {
+    if (value !== null && value !== undefined && value !== '') return String(value);
   }
   return '';
 }
@@ -38,38 +38,65 @@ function normalizeTeam(row: GenericRow): Team {
   };
 }
 
-async function tryInsertTeam(input: {
-  name: string;
-  sport: string;
-  season: string;
-}) {
+async function tryInsertTeam(input: { name: string; sport: string; season: string }) {
   const attempts = [
-    { name: input.name, sport: input.sport, season: input.season },
-    { team_name: input.name, sport: input.sport, season: input.season },
-    { name: input.name, sport: input.sport },
-    { team_name: input.name, sport: input.sport },
-    { name: input.name },
-    { team_name: input.name },
+    {
+      name: input.name,
+      sport: input.sport,
+      season: input.season,
+    },
+    {
+      team_name: input.name,
+      sport: input.sport,
+      season: input.season,
+    },
+    {
+      team: input.name,
+      sport: input.sport,
+      season: input.season,
+    },
+    {
+      name: input.name,
+      sport: input.sport,
+    },
+    {
+      team_name: input.name,
+      sport: input.sport,
+    },
+    {
+      team: input.name,
+      sport: input.sport,
+    },
+    {
+      name: input.name,
+    },
+    {
+      team_name: input.name,
+    },
+    {
+      team: input.name,
+    },
   ];
 
   let lastError: any = null;
 
   for (const payload of attempts) {
-    const res = await supabase.from('Teams').insert([payload]).select('*').single();
-    if (!res.error) return res;
-    lastError = res.error;
+    const result = await supabase.from('Teams').insert([payload]).select('*').single();
+    if (!result.error) return result;
+    lastError = result.error;
   }
 
   return { data: null, error: lastError };
 }
 
 export default function TeamsPage() {
-  const [rows, setRows] = useState<GenericRow[]>([]);
+  const [teamRows, setTeamRows] = useState<GenericRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const [name, setName] = useState('');
+  const [teamName, setTeamName] = useState('');
   const [sport, setSport] = useState('');
   const [season, setSeason] = useState('');
 
@@ -79,19 +106,16 @@ export default function TeamsPage() {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase
-      .from('Teams')
-      .select('*')
-      .order('id', { ascending: true });
+    const { data, error } = await supabase.from('Teams').select('*').order('id', { ascending: true });
 
     if (error) {
-      setError(error.message);
-      setRows([]);
+      setError(error.message || 'Failed to load teams.');
+      setTeamRows([]);
       setLoading(false);
       return;
     }
 
-    setRows((data as GenericRow[]) || []);
+    setTeamRows((data as GenericRow[]) || []);
     setLoading(false);
   }
 
@@ -99,241 +123,306 @@ export default function TeamsPage() {
     loadTeams();
   }, []);
 
-  const teams = useMemo(() => rows.map(normalizeTeam), [rows]);
+  const teams = useMemo(() => {
+    return teamRows.map(normalizeTeam).sort((a, b) => a.name.localeCompare(b.name));
+  }, [teamRows]);
 
-  const sports = useMemo(() => {
-    return Array.from(new Set(teams.map((t) => t.sport).filter(Boolean))).sort();
+  const uniqueSports = useMemo(() => {
+    return Array.from(new Set(teams.map((team) => team.sport).filter((value) => value && value !== '—'))).sort((a, b) =>
+      a.localeCompare(b)
+    );
   }, [teams]);
 
   const filteredTeams = useMemo(() => {
     if (sportFilter === 'All') return teams;
-    return teams.filter((t) => t.sport === sportFilter);
+    return teams.filter((team) => team.sport === sportFilter);
   }, [teams, sportFilter]);
+
+  const summary = useMemo(() => {
+    const totalTeams = teams.length;
+    const sportsRepresented = uniqueSports.length;
+    const filteredCount = filteredTeams.length;
+
+    const seasonBreakdown = Array.from(
+      teams.reduce((map, team) => {
+        const key = team.season || '—';
+        map.set(key, (map.get(key) || 0) + 1);
+        return map;
+      }, new Map<string, number>())
+    )
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    return {
+      totalTeams,
+      sportsRepresented,
+      filteredCount,
+      topSeasons: seasonBreakdown,
+    };
+  }, [teams, uniqueSports, filteredTeams]);
 
   async function handleAddTeam(e: React.FormEvent) {
     e.preventDefault();
+    setSubmitting(true);
     setError('');
-    setSuccess('');
+    setSuccessMessage('');
 
-    if (!name.trim()) {
-      setError('Team name required');
+    if (!teamName.trim()) {
+      setError('Team name is required.');
+      setSubmitting(false);
       return;
     }
 
-    const res = await tryInsertTeam({
-      name: name.trim(),
+    const result = await tryInsertTeam({
+      name: teamName.trim(),
       sport: sport.trim(),
       season: season.trim(),
     });
 
-    if (res.error) {
-      setError(res.error.message);
+    if (result.error) {
+      setError(result.error.message || 'Failed to add team.');
+      setSubmitting(false);
       return;
     }
 
-    setName('');
+    setTeamName('');
     setSport('');
     setSeason('');
-    setSuccess('Team added');
-    loadTeams();
+    setSuccessMessage('Team added successfully.');
+    await loadTeams();
+    setSubmitting(false);
   }
 
-  async function handleDelete(id: any, name: string) {
-    if (!confirm(`Delete ${name}?`)) return;
+  async function handleDeleteTeam(team: Team) {
+    const confirmed = window.confirm(`Delete ${team.name}? This cannot be undone.`);
+    if (!confirmed) return;
 
-    const { error } = await supabase.from('Teams').delete().eq('id', id);
+    setError('');
+    setSuccessMessage('');
 
-    if (error) {
-      setError(error.message);
+    const result = await supabase.from('Teams').delete().eq('id', team.id);
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to delete team.');
       return;
     }
 
-    setSuccess('Team deleted');
-    loadTeams();
+    setSuccessMessage('Team deleted successfully.');
+    await loadTeams();
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        
-        {/* HEADER */}
-        <div className="mb-8">
-          <p className="text-xs uppercase tracking-[0.2em] text-sky-400">
-            Team Management
-          </p>
-          <h1 className="text-3xl font-bold mt-2">Teams</h1>
-          <p className="text-slate-400 mt-2">
-            Manage team structures and navigate into team environments.
-          </p>
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
+              Team Management
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">Teams</h1>
+            <p className="mt-2 max-w-3xl text-sm text-slate-300">
+              Manage team environments, create new squads, and jump directly into team pages for roster,
+              attendance, and performance oversight.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/athletes"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Open Athletes
+            </Link>
+            <Link
+              href="/attendance"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Open Attendance
+            </Link>
+            <Link
+              href="/performance"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Open Performance
+            </Link>
+          </div>
         </div>
 
-        {/* MESSAGES */}
-        {error && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/30 p-4 rounded-xl text-red-200">
+        {error ? (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
             {error}
           </div>
-        )}
-        {success && (
-          <div className="mb-6 bg-green-500/10 border border-green-500/30 p-4 rounded-xl text-green-200">
-            {success}
-          </div>
-        )}
+        ) : null}
 
-        {/* SUMMARY */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="card">
-            <p className="text-slate-400 text-sm">Total Teams</p>
-            <p className="text-3xl font-bold">{teams.length}</p>
+        {successMessage ? (
+          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+            {successMessage}
           </div>
-          <div className="card">
-            <p className="text-slate-400 text-sm">Sports</p>
-            <p className="text-3xl font-bold">{sports.length}</p>
-          </div>
-          <div className="card">
-            <p className="text-slate-400 text-sm">Filtered</p>
-            <p className="text-3xl font-bold">{filteredTeams.length}</p>
-          </div>
-        </div>
+        ) : null}
 
-        {/* LAYOUT */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Total Teams</p>
+            <p className="mt-3 text-3xl font-bold">{summary.totalTeams}</p>
+            <p className="mt-2 text-sm text-slate-300">All team groups currently in the system.</p>
+          </div>
 
-          {/* ADD TEAM */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-            <h2 className="font-semibold text-lg mb-4">Add Team</h2>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Sports Represented</p>
+            <p className="mt-3 text-3xl font-bold">{summary.sportsRepresented}</p>
+            <p className="mt-2 text-sm text-slate-300">Unique sports currently represented.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Filtered Teams</p>
+            <p className="mt-3 text-3xl font-bold">{summary.filteredCount}</p>
+            <p className="mt-2 text-sm text-slate-300">Teams matching the current filter.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Top Seasons</p>
+            <div className="mt-3 space-y-2">
+              {summary.topSeasons.length === 0 ? (
+                <p className="text-sm text-slate-300">No season data yet.</p>
+              ) : (
+                summary.topSeasons.map(([seasonName, count]) => (
+                  <div key={String(seasonName)} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-200">{String(seasonName)}</span>
+                    <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+                      {count}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Add Team</h2>
+              <p className="mt-1 text-sm text-slate-400">Create a new team environment in the system.</p>
+            </div>
 
             <form onSubmit={handleAddTeam} className="space-y-4">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Team Name"
-                className="input"
-              />
-              <input
-                value={sport}
-                onChange={(e) => setSport(e.target.value)}
-                placeholder="Sport"
-                className="input"
-              />
-              <input
-                value={season}
-                onChange={(e) => setSeason(e.target.value)}
-                placeholder="Season"
-                className="input"
-              />
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Team Name</label>
+                <input
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="e.g. 1st XI Hockey"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
 
-              <button className="btn-primary w-full">
-                Add Team
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
+                <input
+                  value={sport}
+                  onChange={(e) => setSport(e.target.value)}
+                  placeholder="e.g. Hockey"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Season</label>
+                <input
+                  value={season}
+                  onChange={(e) => setSeason(e.target.value)}
+                  placeholder="e.g. 2026"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? 'Adding Team...' : 'Add Team'}
               </button>
             </form>
           </div>
 
-          {/* TABLE */}
-          <div className="xl:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
+            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Team Directory</h2>
+                <p className="mt-1 text-sm text-slate-400">Filter teams by sport and open the full team page.</p>
+              </div>
 
-            <div className="flex justify-between mb-4">
-              <h2 className="font-semibold text-lg">Teams</h2>
-
-              <select
-                value={sportFilter}
-                onChange={(e) => setSportFilter(e.target.value)}
-                className="input w-48"
-              >
-                <option>All</option>
-                {sports.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
+              <div className="w-full md:w-72">
+                <label className="mb-2 block text-sm font-medium text-slate-200">Filter by Sport</label>
+                <select
+                  value={sportFilter}
+                  onChange={(e) => setSportFilter(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                >
+                  <option value="All">All Sports</option>
+                  {uniqueSports.map((sportName) => (
+                    <option key={sportName} value={sportName}>
+                      {sportName}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {loading ? (
-              <p>Loading...</p>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                Loading teams...
+              </div>
+            ) : filteredTeams.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-sm text-slate-300">
+                No teams found for the selected filter.
+              </div>
             ) : (
-              <table className="w-full text-sm">
-                <thead className="text-slate-400 border-b border-slate-800">
-                  <tr>
-                    <th className="py-3 text-left">Team</th>
-                    <th>Sport</th>
-                    <th>Season</th>
-                    <th></th>
-                  </tr>
-                </thead>
+              <div className="space-y-4">
+                {filteredTeams.map((team) => (
+                  <div
+                    key={team.id}
+                    className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Team</p>
+                          <p className="mt-1 text-sm font-semibold text-white">{team.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
+                          <p className="mt-1 text-sm text-slate-300">{team.sport}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-wide text-slate-500">Season</p>
+                          <p className="mt-1 text-sm text-slate-300">{team.season}</p>
+                        </div>
+                      </div>
 
-                <tbody>
-                  {filteredTeams.map((team) => (
-                    <tr key={team.id} className="border-b border-slate-900">
-                      <td className="py-4">
+                      <div className="flex flex-wrap gap-2">
                         <Link
                           href={`/teams/${encodeURIComponent(team.name)}`}
-                          className="text-white hover:text-sky-400"
-                        >
-                          {team.name}
-                        </Link>
-                      </td>
-                      <td>{team.sport}</td>
-                      <td>{team.season}</td>
-                      <td className="text-right space-x-2">
-                        <Link
-                          href={`/teams/${encodeURIComponent(team.name)}`}
-                          className="btn-secondary"
+                          className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800 hover:text-white"
                         >
                           Open
                         </Link>
                         <button
-                          onClick={() => handleDelete(team.id, team.name)}
-                          className="btn-danger"
+                          onClick={() => handleDeleteTeam(team)}
+                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
                         >
                           Delete
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-
-        </div>
+        </section>
       </div>
-
-      {/* QUICK STYLES */}
-      <style jsx>{`
-        .input {
-          width: 100%;
-          padding: 12px;
-          border-radius: 12px;
-          background: #020617;
-          border: 1px solid #1e293b;
-          color: white;
-        }
-
-        .btn-primary {
-          background: rgba(56,189,248,0.15);
-          border: 1px solid #38bdf8;
-          padding: 12px;
-          border-radius: 12px;
-        }
-
-        .btn-secondary {
-          padding: 6px 10px;
-          border: 1px solid #334155;
-          border-radius: 8px;
-        }
-
-        .btn-danger {
-          padding: 6px 10px;
-          border: 1px solid rgba(239,68,68,0.3);
-          background: rgba(239,68,68,0.1);
-          border-radius: 8px;
-        }
-
-        .card {
-          background: #0f172a;
-          border: 1px solid #1e293b;
-          padding: 20px;
-          border-radius: 16px;
-        }
-      `}</style>
     </main>
   );
 }

@@ -1,1071 +1,1221 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import Nav from '@/components/Nav'
+import Link from 'next/link';
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
-const HIGHER_IS_BETTER = ['Yo-Yo Test', 'CMJ', 'Pull-Ups']
-const LOWER_IS_BETTER = ['10m Sprint', '40m Sprint', 'Bronco']
+type GenericRow = Record<string, any>;
 
-export default function TeamPage({
-  params,
-}: {
-  params: Promise<{ name: string }>
-}) {
-  const { name } = React.use(params)
-  const teamName = decodeURIComponent(name)
-  const router = useRouter()
+type PageProps = {
+  params: Promise<{
+    name: string;
+  }>;
+};
 
-  const [team, setTeam] = useState<any | null>(null)
-  const [roster, setRoster] = useState<any[]>([])
-  const [attendance, setAttendance] = useState<any[]>([])
-  const [performance, setPerformance] = useState<any[]>([])
+type Team = {
+  id: string;
+  name: string;
+  sport: string;
+  season: string;
+  raw: GenericRow;
+};
 
-  const [isEditingTeam, setIsEditingTeam] = useState(false)
-  const [editTeamName, setEditTeamName] = useState('')
-  const [editAgeGroup, setEditAgeGroup] = useState('')
-  const [editSquad, setEditSquad] = useState('')
-  const [editSport, setEditSport] = useState('')
-  const [editSeason, setEditSeason] = useState('')
+type Athlete = {
+  id: string;
+  name: string;
+  team: string;
+  sport: string;
+  ageGroup: string;
+  raw: GenericRow;
+};
 
-  const [fullName, setFullName] = useState('')
-  const [age, setAge] = useState('')
-  const [sport, setSport] = useState('')
-  const [position, setPosition] = useState('')
+type AttendanceRecord = {
+  id: string;
+  athlete_id: string;
+  session_date: string;
+  session_type: string;
+  status: string;
+  created_at: string | null;
+  raw: GenericRow;
+};
 
-  const [attendanceFilterDate, setAttendanceFilterDate] = useState('')
-  const [attendanceFilterStatus, setAttendanceFilterStatus] = useState('')
+type PerformanceRecord = {
+  id: string;
+  athlete_id: string;
+  test_date: string;
+  test_type: string;
+  result: number | null;
+  unit: string;
+  notes: string;
+  created_at: string | null;
+  raw: GenericRow;
+};
 
-  const [editingAthleteId, setEditingAthleteId] = useState<string | null>(null)
-  const [editAthleteFullName, setEditAthleteFullName] = useState('')
-  const [editAthleteAge, setEditAthleteAge] = useState('')
-  const [editAthleteSport, setEditAthleteSport] = useState('')
-  const [editAthletePosition, setEditAthletePosition] = useState('')
+function firstString(...values: any[]) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim() !== '') return value.trim();
+  }
+  return '';
+}
 
-  const [bulkDate, setBulkDate] = useState('')
-  const [bulkSessionType, setBulkSessionType] = useState('')
-  const [bulkNotes, setBulkNotes] = useState('')
-  const [bulkStatuses, setBulkStatuses] = useState<Record<string, string>>({})
+function firstValue(...values: any[]) {
+  for (const value of values) {
+    if (value !== null && value !== undefined && value !== '') return String(value);
+  }
+  return '';
+}
 
-  useEffect(() => {
-    fetchTeamPage()
-  }, [teamName])
+function firstNumber(...values: any[]) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    const num = Number(value);
+    if (!Number.isNaN(num)) return num;
+  }
+  return null;
+}
 
-  async function fetchTeamPage() {
-    const { data: teamData, error: teamError } = await supabase
-      .from('Teams')
-      .select('*')
-      .eq('name', teamName)
-      .maybeSingle()
+function normalizeTeam(row: GenericRow): Team {
+  return {
+    id: firstValue(row.id, row.team_id, crypto.randomUUID()),
+    name: firstString(row.name, row.team, row.team_name) || 'Unnamed Team',
+    sport: firstString(row.sport, row.code, row.discipline) || '—',
+    season: firstString(row.season, row.year, row.phase) || '—',
+    raw: row,
+  };
+}
 
-    if (teamError) {
-      console.error('team error:', teamError)
-    } else {
-      setTeam(teamData)
+function normalizeAthlete(row: GenericRow): Athlete {
+  return {
+    id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
+    name:
+      firstString(
+        row.name,
+        row.full_name,
+        row.athlete_name,
+        row.player_name,
+        row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
+        row.first_name
+      ) || 'Unknown Athlete',
+    team: firstString(row.team, row.team_name, row.squad, row.group_name) || 'Unassigned',
+    sport: firstString(row.sport, row.code, row.discipline) || '—',
+    ageGroup: firstString(row.age_group, row.agegroup, row.grade_group, row.group) || '—',
+    raw: row,
+  };
+}
 
-      if (teamData) {
-        setEditTeamName(teamData.name || '')
-        setEditAgeGroup(teamData.age_group || '')
-        setEditSquad(teamData.squad || '')
-        setEditSport(teamData.sport || '')
-        setEditSeason(teamData.season || '')
-        setSport(teamData.sport || '')
+function normalizeAttendance(row: GenericRow): AttendanceRecord {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    athlete_id: firstValue(row.athlete_id),
+    session_date: firstString(row.session_date),
+    session_type: firstString(row.session_type) || '—',
+    status: firstString(row.status) || '—',
+    created_at: firstString(row.created_at) || null,
+    raw: row,
+  };
+}
+
+function normalizePerformance(row: GenericRow): PerformanceRecord {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    athlete_id: firstValue(row.athlete_id),
+    test_date: firstString(row.test_date),
+    test_type: firstString(row.test_type) || '—',
+    result: firstNumber(row.result),
+    unit: firstString(row.unit) || '',
+    notes: firstString(row.notes) || '',
+    created_at: firstString(row.created_at) || null,
+    raw: row,
+  };
+}
+
+function buildTeamUpdatePayload(raw: GenericRow, input: { name: string; sport: string; season: string }) {
+  const payload: GenericRow = {};
+
+  if ('name' in raw) payload.name = input.name;
+  else if ('team' in raw) payload.team = input.name;
+  else if ('team_name' in raw) payload.team_name = input.name;
+
+  if ('sport' in raw) payload.sport = input.sport;
+  else if ('code' in raw) payload.code = input.sport;
+  else if ('discipline' in raw) payload.discipline = input.sport;
+
+  if ('season' in raw) payload.season = input.season;
+  else if ('year' in raw) payload.year = input.season;
+  else if ('phase' in raw) payload.phase = input.season;
+
+  return payload;
+}
+
+function buildAthleteUpdatePayload(raw: GenericRow, input: { name?: string; team?: string; sport?: string; ageGroup?: string }) {
+  const payload: GenericRow = {};
+
+  if (input.name !== undefined) {
+    if ('name' in raw) payload.name = input.name;
+    else if ('full_name' in raw) payload.full_name = input.name;
+    else if ('athlete_name' in raw) payload.athlete_name = input.name;
+    else if ('player_name' in raw) payload.player_name = input.name;
+    else if ('first_name' in raw && 'last_name' in raw) {
+      const parts = input.name.trim().split(' ');
+      payload.first_name = parts.shift() || input.name;
+      payload.last_name = parts.join(' ');
+    }
+  }
+
+  if (input.team !== undefined) {
+    if ('team' in raw) payload.team = input.team;
+    else if ('team_name' in raw) payload.team_name = input.team;
+    else if ('squad' in raw) payload.squad = input.team;
+    else if ('group_name' in raw) payload.group_name = input.team;
+  }
+
+  if (input.sport !== undefined) {
+    if ('sport' in raw) payload.sport = input.sport;
+    else if ('code' in raw) payload.code = input.sport;
+    else if ('discipline' in raw) payload.discipline = input.sport;
+  }
+
+  if (input.ageGroup !== undefined) {
+    if ('age_group' in raw) payload.age_group = input.ageGroup;
+    else if ('agegroup' in raw) payload.agegroup = input.ageGroup;
+    else if ('grade_group' in raw) payload.grade_group = input.ageGroup;
+    else if ('group' in raw) payload.group = input.ageGroup;
+  }
+
+  return payload;
+}
+
+function formatDate(dateString?: string | null) {
+  if (!dateString) return '—';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '—';
+
+  return date.toLocaleDateString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function formatDateTime(dateString?: string | null) {
+  if (!dateString) return '—';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '—';
+
+  return date.toLocaleString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatStatus(status: string) {
+  const cleaned = (status || '').toLowerCase();
+  if (!cleaned) return '—';
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
+function getStatusClasses(status: string) {
+  const cleaned = (status || '').toLowerCase();
+
+  if (cleaned === 'present') return 'bg-emerald-500/15 text-emerald-200 border border-emerald-500/20';
+  if (cleaned === 'late') return 'bg-amber-500/15 text-amber-200 border border-amber-500/20';
+  if (cleaned === 'absent') return 'bg-red-500/15 text-red-200 border border-red-500/20';
+  if (cleaned === 'excused') return 'bg-sky-500/15 text-sky-200 border border-sky-500/20';
+
+  return 'bg-slate-800 text-slate-300 border border-slate-700';
+}
+
+function formatResult(result: number | null, unit: string) {
+  if (result === null || Number.isNaN(result)) return '—';
+  return `${result}${unit ? ` ${unit}` : ''}`;
+}
+
+export default function TeamProfilePage({ params }: PageProps) {
+  const resolvedParams = React.use(params);
+  const routeTeamName = decodeURIComponent(resolvedParams.name);
+  const router = useRouter();
+
+  const [teamRows, setTeamRows] = React.useState<GenericRow[]>([]);
+  const [athleteRows, setAthleteRows] = React.useState<GenericRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = React.useState<GenericRow[]>([]);
+  const [performanceRows, setPerformanceRows] = React.useState<GenericRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+  const [successMessage, setSuccessMessage] = React.useState('');
+
+  const [isEditingTeam, setIsEditingTeam] = React.useState(false);
+  const [teamNameInput, setTeamNameInput] = React.useState('');
+  const [teamSportInput, setTeamSportInput] = React.useState('');
+  const [teamSeasonInput, setTeamSeasonInput] = React.useState('');
+  const [savingTeam, setSavingTeam] = React.useState(false);
+
+  const [quickAthleteName, setQuickAthleteName] = React.useState('');
+  const [quickAthleteSport, setQuickAthleteSport] = React.useState('');
+  const [quickAthleteAgeGroup, setQuickAthleteAgeGroup] = React.useState('');
+  const [savingQuickAthlete, setSavingQuickAthlete] = React.useState(false);
+
+  const [editingRosterAthleteId, setEditingRosterAthleteId] = React.useState<string | null>(null);
+  const [editRosterName, setEditRosterName] = React.useState('');
+  const [editRosterSport, setEditRosterSport] = React.useState('');
+  const [editRosterAgeGroup, setEditRosterAgeGroup] = React.useState('');
+  const [savingRosterEdit, setSavingRosterEdit] = React.useState(false);
+
+  const [bulkAttendanceDate, setBulkAttendanceDate] = React.useState(() => new Date().toISOString().split('T')[0]);
+  const [bulkAttendanceSessionType, setBulkAttendanceSessionType] = React.useState('Training');
+  const [bulkAttendanceStatusMap, setBulkAttendanceStatusMap] = React.useState<Record<string, string>>({});
+  const [savingBulkAttendance, setSavingBulkAttendance] = React.useState(false);
+
+  async function loadPageData() {
+    setLoading(true);
+    setError('');
+
+    const [teamsRes, athletesRes, attendanceRes, performanceRes] = await Promise.all([
+      supabase.from('Teams').select('*'),
+      supabase.from('athletes').select('*'),
+      supabase.from('Attendance').select('*').order('session_date', { ascending: false }),
+      supabase.from('Performance').select('*').order('test_date', { ascending: false }),
+    ]);
+
+    if (teamsRes.error || athletesRes.error || attendanceRes.error || performanceRes.error) {
+      setError(
+        teamsRes.error?.message ||
+          athletesRes.error?.message ||
+          attendanceRes.error?.message ||
+          performanceRes.error?.message ||
+          'Failed to load team page.'
+      );
+      setTeamRows([]);
+      setAthleteRows([]);
+      setAttendanceRows([]);
+      setPerformanceRows([]);
+      setLoading(false);
+      return;
+    }
+
+    setTeamRows((teamsRes.data as GenericRow[]) || []);
+    setAthleteRows((athletesRes.data as GenericRow[]) || []);
+    setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
+    setPerformanceRows((performanceRes.data as GenericRow[]) || []);
+    setLoading(false);
+  }
+
+  React.useEffect(() => {
+    loadPageData();
+  }, []);
+
+  const teams = React.useMemo(() => {
+    return teamRows.map(normalizeTeam).sort((a, b) => a.name.localeCompare(b.name));
+  }, [teamRows]);
+
+  const team = React.useMemo(() => {
+    return teams.find((item) => item.name === routeTeamName) || null;
+  }, [teams, routeTeamName]);
+
+  const athletes = React.useMemo(() => {
+    return athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name));
+  }, [athleteRows]);
+
+  const roster = React.useMemo(() => {
+    return athletes.filter((athlete) => athlete.team === routeTeamName);
+  }, [athletes, routeTeamName]);
+
+  const athleteMap = React.useMemo(() => {
+    const map = new Map<string, Athlete>();
+    athletes.forEach((athlete) => map.set(athlete.id, athlete));
+    return map;
+  }, [athletes]);
+
+  const rosterAthleteIds = React.useMemo(() => new Set(roster.map((athlete) => athlete.id)), [roster]);
+
+  const attendance = React.useMemo(() => {
+    return attendanceRows
+      .map(normalizeAttendance)
+      .filter((record) => rosterAthleteIds.has(record.athlete_id))
+      .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+  }, [attendanceRows, rosterAthleteIds]);
+
+  const performance = React.useMemo(() => {
+    return performanceRows
+      .map(normalizePerformance)
+      .filter((record) => rosterAthleteIds.has(record.athlete_id))
+      .sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
+  }, [performanceRows, rosterAthleteIds]);
+
+  const recentAttendance = React.useMemo(() => attendance.slice(0, 10), [attendance]);
+
+  const recentPerformance = React.useMemo(() => {
+    return performance.slice(0, 10).map((record) => ({
+      ...record,
+      athlete_name: athleteMap.get(record.athlete_id)?.name || 'Unknown Athlete',
+      team: athleteMap.get(record.athlete_id)?.team || 'Unassigned',
+    }));
+  }, [performance, athleteMap]);
+
+  const attendanceSummary = React.useMemo(() => {
+    const total = attendance.length;
+    const present = attendance.filter((item) => item.status.toLowerCase() === 'present').length;
+    const late = attendance.filter((item) => item.status.toLowerCase() === 'late').length;
+    const absent = attendance.filter((item) => item.status.toLowerCase() === 'absent').length;
+    const excused = attendance.filter((item) => item.status.toLowerCase() === 'excused').length;
+    const positive = present + late;
+    const rate = total > 0 ? Math.round((positive / total) * 100) : 0;
+
+    return { total, present, late, absent, excused, rate };
+  }, [attendance]);
+
+  const playerAttendanceSnapshot = React.useMemo(() => {
+    return roster
+      .map((athlete) => {
+        const athleteAttendance = attendance.filter((entry) => entry.athlete_id === athlete.id);
+        const total = athleteAttendance.length;
+        const positive = athleteAttendance.filter((entry) => {
+          const status = entry.status.toLowerCase();
+          return status === 'present' || status === 'late';
+        }).length;
+
+        return {
+          athleteId: athlete.id,
+          athleteName: athlete.name,
+          total,
+          rate: total > 0 ? Math.round((positive / total) * 100) : 0,
+          latest: athleteAttendance.length > 0 ? athleteAttendance[0].session_date : '',
+        };
+      })
+      .sort((a, b) => a.athleteName.localeCompare(b.athleteName));
+  }, [roster, attendance]);
+
+  const teamPerformanceLeaderboard = React.useMemo(() => {
+    const grouped = new Map<string, { athleteName: string; testType: string; result: number; unit: string; date: string }[]>();
+
+    performance.forEach((record) => {
+      if (record.result === null) return;
+      const athleteName = athleteMap.get(record.athlete_id)?.name || 'Unknown Athlete';
+      if (!grouped.has(record.test_type)) grouped.set(record.test_type, []);
+      grouped.get(record.test_type)!.push({
+        athleteName,
+        testType: record.test_type,
+        result: record.result,
+        unit: record.unit,
+        date: record.test_date,
+      });
+    });
+
+    return Array.from(grouped.entries())
+      .map(([testType, rows]) => ({
+        testType,
+        entries: rows.sort((a, b) => b.result - a.result).slice(0, 5),
+      }))
+      .slice(0, 4);
+  }, [performance, athleteMap]);
+
+  React.useEffect(() => {
+    if (!team) return;
+    setTeamNameInput(team.name);
+    setTeamSportInput(team.sport === '—' ? '' : team.sport);
+    setTeamSeasonInput(team.season === '—' ? '' : team.season);
+  }, [team]);
+
+  React.useEffect(() => {
+    const initial: Record<string, string> = {};
+    roster.forEach((athlete) => {
+      initial[athlete.id] = 'Present';
+    });
+    setBulkAttendanceStatusMap(initial);
+  }, [roster]);
+
+  async function handleSaveTeam() {
+    if (!team) return;
+
+    setSavingTeam(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!teamNameInput.trim()) {
+      setError('Team name is required.');
+      setSavingTeam(false);
+      return;
+    }
+
+    const oldTeamName = team.name;
+    const newTeamName = teamNameInput.trim();
+    const newSport = teamSportInput.trim();
+
+    const teamPayload = buildTeamUpdatePayload(team.raw, {
+      name: newTeamName,
+      sport: newSport,
+      season: teamSeasonInput.trim(),
+    });
+
+    const teamResult = await supabase.from('Teams').update(teamPayload).eq('id', team.id).select('*').single();
+
+    if (teamResult.error) {
+      setError(teamResult.error.message || 'Failed to update team.');
+      setSavingTeam(false);
+      return;
+    }
+
+    for (const athlete of roster) {
+      const athletePayload = buildAthleteUpdatePayload(athlete.raw, {
+        team: newTeamName,
+        sport: newSport || athlete.sport,
+      });
+
+      const athleteResult = await supabase.from('athletes').update(athletePayload).eq('id', athlete.id);
+      if (athleteResult.error) {
+        setError(athleteResult.error.message || 'Team updated, but athlete sync failed.');
+        setSavingTeam(false);
+        await loadPageData();
+        return;
       }
     }
 
-    const { data: rosterData, error: rosterError } = await supabase
-      .from('athletes')
-      .select('*')
-      .eq('team', teamName)
-      .order('full_name', { ascending: true })
+    setSuccessMessage('Team updated and athlete records synced successfully.');
+    setIsEditingTeam(false);
+    await loadPageData();
+    setSavingTeam(false);
 
-    if (rosterError) {
-      console.error('roster error:', rosterError)
-      return
-    }
-
-    const rosterRows = rosterData || []
-    setRoster(rosterRows)
-
-    const initialStatuses: Record<string, string> = {}
-    rosterRows.forEach((athlete) => {
-      initialStatuses[athlete.id] = bulkStatuses[athlete.id] || 'Present'
-    })
-    setBulkStatuses(initialStatuses)
-
-    const athleteIds = rosterRows.map((a) => a.id)
-
-    if (athleteIds.length === 0) {
-      setAttendance([])
-      setPerformance([])
-      return
-    }
-
-    const { data: attendanceData, error: attendanceError } = await supabase
-      .from('Attendance')
-      .select('*')
-      .in('athlete_id', athleteIds)
-      .order('session_date', { ascending: false })
-
-    if (attendanceError) {
-      console.error('attendance error:', attendanceError)
-    } else {
-      setAttendance(attendanceData || [])
-    }
-
-    const { data: performanceData, error: performanceError } = await supabase
-      .from('Performance')
-      .select('*')
-      .in('athlete_id', athleteIds)
-      .order('test_date', { ascending: false })
-
-    if (performanceError) {
-      console.error('performance error:', performanceError)
-    } else {
-      setPerformance(performanceData || [])
+    if (oldTeamName !== newTeamName) {
+      router.replace(`/teams/${encodeURIComponent(newTeamName)}`);
     }
   }
 
-  async function updateTeam() {
-    if (!team?.id) return
+  async function handleQuickAddAthlete(e: React.FormEvent) {
+    e.preventDefault();
+    if (!team) return;
 
-    if (!editTeamName || !editSport) {
-      alert('Team name and sport are required')
-      return
+    setSavingQuickAthlete(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!quickAthleteName.trim()) {
+      setError('Athlete name is required.');
+      setSavingQuickAthlete(false);
+      return;
     }
 
-    const oldTeamName = team.name
+    const payload = {
+      name: quickAthleteName.trim(),
+      team: team.name,
+      sport: team.sport === '—' ? quickAthleteSport.trim() : team.sport,
+      age_group: quickAthleteAgeGroup.trim(),
+    };
 
-    const { error: teamUpdateError } = await supabase
-      .from('Teams')
-      .update({
-        name: editTeamName,
-        age_group: editAgeGroup || null,
-        squad: editSquad || null,
-        sport: editSport,
-        season: editSeason || null,
-      })
-      .eq('id', team.id)
+    const result = await supabase.from('athletes').insert([payload]).select('*').single();
 
-    if (teamUpdateError) {
-      console.error('team update error:', teamUpdateError)
-      alert('Error updating team')
-      return
+    if (result.error) {
+      setError(result.error.message || 'Failed to add athlete to team.');
+      setSavingQuickAthlete(false);
+      return;
     }
 
-    if (oldTeamName !== editTeamName) {
-      const { error: athleteUpdateError } = await supabase
-        .from('athletes')
-        .update({
-          team: editTeamName,
-          sport: editSport,
-        })
-        .eq('team', oldTeamName)
-
-      if (athleteUpdateError) {
-        console.error('athlete team sync error:', athleteUpdateError)
-        alert('Team updated, but athlete team names did not sync')
-        return
-      }
-    } else {
-      const { error: athleteSportUpdateError } = await supabase
-        .from('athletes')
-        .update({
-          sport: editSport,
-        })
-        .eq('team', editTeamName)
-
-      if (athleteSportUpdateError) {
-        console.error('athlete sport sync error:', athleteSportUpdateError)
-      }
-    }
-
-    alert('Team updated ✅')
-    setIsEditingTeam(false)
-
-    if (oldTeamName !== editTeamName) {
-      router.push(`/teams/${encodeURIComponent(editTeamName)}`)
-      return
-    }
-
-    fetchTeamPage()
+    setQuickAthleteName('');
+    setQuickAthleteSport('');
+    setQuickAthleteAgeGroup('');
+    setSuccessMessage('Athlete added to team.');
+    await loadPageData();
+    setSavingQuickAthlete(false);
   }
 
-  function cancelTeamEdit() {
-    if (!team) return
-    setEditTeamName(team.name || '')
-    setEditAgeGroup(team.age_group || '')
-    setEditSquad(team.squad || '')
-    setEditSport(team.sport || '')
-    setEditSeason(team.season || '')
-    setIsEditingTeam(false)
+  function startRosterEdit(athlete: Athlete) {
+    setEditingRosterAthleteId(athlete.id);
+    setEditRosterName(athlete.name);
+    setEditRosterSport(athlete.sport === '—' ? '' : athlete.sport);
+    setEditRosterAgeGroup(athlete.ageGroup === '—' ? '' : athlete.ageGroup);
   }
 
-  async function addAthleteToTeam() {
-    if (!fullName || !teamName || !sport) {
-      alert('Full name, team, and sport are required')
-      return
+  function cancelRosterEdit() {
+    setEditingRosterAthleteId(null);
+    setEditRosterName('');
+    setEditRosterSport('');
+    setEditRosterAgeGroup('');
+  }
+
+  async function handleSaveRosterAthlete(athlete: Athlete) {
+    setSavingRosterEdit(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!editRosterName.trim()) {
+      setError('Athlete name is required.');
+      setSavingRosterEdit(false);
+      return;
     }
 
-    const { error } = await supabase.from('athletes').insert([
-      {
-        full_name: fullName,
-        age: age ? Number(age) : null,
-        team: teamName,
-        sport,
-        position: position || null,
-      },
-    ])
+    const payload = buildAthleteUpdatePayload(athlete.raw, {
+      name: editRosterName.trim(),
+      team: team?.name || athlete.team,
+      sport: editRosterSport.trim(),
+      ageGroup: editRosterAgeGroup.trim(),
+    });
 
-    if (error) {
-      console.error('add athlete error:', error)
-      alert('Error adding athlete')
-      return
+    const result = await supabase.from('athletes').update(payload).eq('id', athlete.id).select('*').single();
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to update athlete.');
+      setSavingRosterEdit(false);
+      return;
     }
 
-    alert('Athlete added to team ✅')
-    setFullName('')
-    setAge('')
-    setPosition('')
-    fetchTeamPage()
+    setSuccessMessage('Athlete updated.');
+    cancelRosterEdit();
+    await loadPageData();
+    setSavingRosterEdit(false);
   }
 
-  function startEditAthlete(athlete: any) {
-    setEditingAthleteId(athlete.id)
-    setEditAthleteFullName(athlete.full_name || '')
-    setEditAthleteAge(athlete.age ? String(athlete.age) : '')
-    setEditAthleteSport(athlete.sport || '')
-    setEditAthletePosition(athlete.position || '')
-  }
+  async function handleRemoveAthleteFromTeam(athlete: Athlete) {
+    const confirmed = window.confirm(`Remove ${athlete.name} from ${team?.name}?`);
+    if (!confirmed) return;
 
-  function cancelEditAthlete() {
-    setEditingAthleteId(null)
-    setEditAthleteFullName('')
-    setEditAthleteAge('')
-    setEditAthleteSport('')
-    setEditAthletePosition('')
-  }
+    setError('');
+    setSuccessMessage('');
 
-  async function updateAthlete() {
-    if (!editingAthleteId || !editAthleteFullName || !editAthleteSport) {
-      alert('Full name and sport are required')
-      return
+    const payload = buildAthleteUpdatePayload(athlete.raw, {
+      team: '',
+    });
+
+    const result = await supabase.from('athletes').update(payload).eq('id', athlete.id);
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to remove athlete from team.');
+      return;
     }
 
-    const { error } = await supabase
-      .from('athletes')
-      .update({
-        full_name: editAthleteFullName,
-        age: editAthleteAge ? Number(editAthleteAge) : null,
-        sport: editAthleteSport,
-        position: editAthletePosition || null,
-      })
-      .eq('id', editingAthleteId)
-
-    if (error) {
-      console.error('update athlete error:', error)
-      alert('Error updating athlete')
-      return
-    }
-
-    alert('Athlete updated ✅')
-    cancelEditAthlete()
-    fetchTeamPage()
+    setSuccessMessage('Athlete removed from team.');
+    await loadPageData();
   }
 
-  async function removeAthleteFromTeam(athleteId: string, athleteName: string) {
-    const confirmed = window.confirm(`Remove ${athleteName} from ${teamName}?`)
-    if (!confirmed) return
+  async function handleBulkAttendanceSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!team) return;
 
-    const { error } = await supabase
-      .from('athletes')
-      .update({
-        team: null,
-      })
-      .eq('id', athleteId)
+    setSavingBulkAttendance(true);
+    setError('');
+    setSuccessMessage('');
 
-    if (error) {
-      console.error('remove athlete error:', error)
-      alert('Error removing athlete from team')
-      return
-    }
-
-    fetchTeamPage()
-  }
-
-  async function saveTeamAttendanceSession() {
-    if (!bulkDate || !bulkSessionType) {
-      alert('Date and session type are required')
-      return
+    if (!bulkAttendanceDate) {
+      setError('Date is required.');
+      setSavingBulkAttendance(false);
+      return;
     }
 
     if (roster.length === 0) {
-      alert('No athletes in this team')
-      return
+      setError('There are no athletes in this team.');
+      setSavingBulkAttendance(false);
+      return;
     }
 
-    const rows = roster.map((athlete) => ({
+    const payloads = roster.map((athlete) => ({
       athlete_id: athlete.id,
-      session_date: bulkDate,
-      session_type: bulkSessionType,
-      status: bulkStatuses[athlete.id] || 'Present',
-      notes: bulkNotes || null,
-    }))
+      session_date: bulkAttendanceDate,
+      session_type: bulkAttendanceSessionType.trim(),
+      status: (bulkAttendanceStatusMap[athlete.id] || 'Present').trim(),
+    }));
 
-    const { error } = await supabase.from('Attendance').insert(rows)
+    const result = await supabase.from('Attendance').insert(payloads).select('*');
 
-    if (error) {
-      console.error('bulk attendance error:', error)
-      alert('Error saving team attendance')
-      return
+    if (result.error) {
+      setError(result.error.message || 'Failed to log bulk team attendance.');
+      setSavingBulkAttendance(false);
+      return;
     }
 
-    alert('Team attendance saved ✅')
-    setBulkDate('')
-    setBulkSessionType('')
-    setBulkNotes('')
-    const resetStatuses: Record<string, string> = {}
-    roster.forEach((athlete) => {
-      resetStatuses[athlete.id] = 'Present'
-    })
-    setBulkStatuses(resetStatuses)
-    fetchTeamPage()
+    setSuccessMessage('Bulk team attendance logged successfully.');
+    await loadPageData();
+    setSavingBulkAttendance(false);
   }
 
-  const present = attendance.filter((a) => a.status === 'Present').length
-  const absent = attendance.filter((a) => a.status === 'Absent').length
-  const late = attendance.filter((a) => a.status === 'Late').length
-  const attendancePercent =
-    attendance.length > 0 ? Math.round((present / attendance.length) * 100) : 0
-
-  const testCounts = performance.reduce((acc: Record<string, number>, entry) => {
-    acc[entry.test_type] = (acc[entry.test_type] || 0) + 1
-    return acc
-  }, {})
-
-  const mostCommonTest =
-    Object.entries(testCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '—'
-
-  const latestTestDate =
-    performance.length > 0
-      ? [...performance].sort(
-          (a, b) =>
-            new Date(b.test_date).getTime() - new Date(a.test_date).getTime()
-        )[0].test_date
-      : '—'
-
-  const athleteAttendanceSummary = useMemo(() => {
-    return roster.map((athlete) => {
-      const athleteAttendance = attendance.filter((a) => a.athlete_id === athlete.id)
-      const athletePresent = athleteAttendance.filter((a) => a.status === 'Present').length
-      const athleteAbsent = athleteAttendance.filter((a) => a.status === 'Absent').length
-      const athleteLate = athleteAttendance.filter((a) => a.status === 'Late').length
-      const percent =
-        athleteAttendance.length > 0
-          ? Math.round((athletePresent / athleteAttendance.length) * 100)
-          : 0
-
-      return {
-        athlete,
-        total: athleteAttendance.length,
-        present: athletePresent,
-        absent: athleteAbsent,
-        late: athleteLate,
-        percent,
-      }
-    })
-  }, [roster, attendance])
-
-  const filteredAttendance = attendance.filter((entry) => {
-    if (attendanceFilterDate && entry.session_date !== attendanceFilterDate) return false
-    if (attendanceFilterStatus && entry.status !== attendanceFilterStatus) return false
-    return true
-  })
-
-  function getAthleteById(id: string) {
-    return roster.find((a) => a.id === id)
-  }
-
-  function getPercentColor(percent: number) {
-    if (percent >= 85) return 'text-green-400'
-    if (percent >= 70) return 'text-yellow-400'
-    return 'text-red-400'
-  }
-
-  function buildLeaderboard(testType: string) {
-    const testEntries = performance.filter((entry) => entry.test_type === testType)
-    const bestByAthlete = new Map<string, any>()
-
-    for (const entry of testEntries) {
-      const existing = bestByAthlete.get(entry.athlete_id)
-
-      if (!existing) {
-        bestByAthlete.set(entry.athlete_id, entry)
-        continue
-      }
-
-      if (HIGHER_IS_BETTER.includes(testType)) {
-        if (Number(entry.result) > Number(existing.result)) {
-          bestByAthlete.set(entry.athlete_id, entry)
-        }
-      } else if (LOWER_IS_BETTER.includes(testType)) {
-        if (Number(entry.result) < Number(existing.result)) {
-          bestByAthlete.set(entry.athlete_id, entry)
-        }
-      }
-    }
-
-    const leaderboard = Array.from(bestByAthlete.values()).map((entry) => {
-      const athlete = getAthleteById(entry.athlete_id)
-      return {
-        ...entry,
-        athlete_name: athlete?.full_name || 'Unknown',
-      }
-    })
-
-    leaderboard.sort((a, b) => {
-      if (HIGHER_IS_BETTER.includes(testType)) {
-        return Number(b.result) - Number(a.result)
-      }
-      return Number(a.result) - Number(b.result)
-    })
-
-    return leaderboard.slice(0, 5)
-  }
-
-  const sprint10Leaderboard = buildLeaderboard('10m Sprint')
-  const yoyoLeaderboard = buildLeaderboard('Yo-Yo Test')
-  const cmjLeaderboard = buildLeaderboard('CMJ')
-
-  function LeaderboardCard({
-    title,
-    entries,
-    colorClass,
-  }: {
-    title: string
-    entries: any[]
-    colorClass: string
-  }) {
+  if (loading) {
     return (
-      <div className="rounded-xl border border-white/20 p-5">
-        <h3 className={`mb-4 text-xl font-semibold ${colorClass}`}>{title}</h3>
-
-        <div className="space-y-3">
-          {entries.length === 0 ? (
-            <p className="text-white/60">No records yet.</p>
-          ) : (
-            entries.map((entry, index) => (
-              <div key={entry.id} className="rounded-lg bg-white/5 p-3">
-                <p className="font-semibold">
-                  {index + 1}. {entry.athlete_name}
-                </p>
-                <p className={`text-sm ${colorClass}`}>
-                  {entry.result} {entry.unit || ''}
-                </p>
-                <p className="text-sm text-white/50">{entry.test_date}</p>
-              </div>
-            ))
-          )}
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
+            Loading team page...
+          </div>
         </div>
-      </div>
-    )
+      </main>
+    );
   }
 
-  if (!team && roster.length === 0) {
+  if (!team) {
     return (
-      <main className="min-h-screen bg-black p-10 text-white">
-        <Nav />
-        <p>Loading team page...</p>
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <h1 className="text-2xl font-bold text-white">Team not found</h1>
+            <p className="mt-2 text-sm text-slate-300">This team does not exist in the current dataset.</p>
+            <Link
+              href="/teams"
+              className="mt-4 inline-flex rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Back to Teams
+            </Link>
+          </div>
+        </div>
       </main>
-    )
+    );
   }
 
   return (
-    <main className="min-h-screen bg-black p-10 text-white">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-4xl font-bold">{teamName}</h1>
-          <p className="mt-2 text-white/60">Team Page</p>
-        </div>
-
-        <Link
-          href="/teams"
-          className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-        >
-          Back to Teams
-        </Link>
-      </div>
-
-      <Nav />
-
-      <div className="mb-10 rounded-xl border border-white/20 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Team Info</h2>
-
-          {!isEditingTeam ? (
-            <button
-              onClick={() => setIsEditingTeam(true)}
-              className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-            >
-              Edit Team
-            </button>
-          ) : (
-            <div className="flex gap-3">
-              <button
-                onClick={updateTeam}
-                className="rounded bg-white px-4 py-2 text-black"
-              >
-                Save Team
-              </button>
-              <button
-                onClick={cancelTeamEdit}
-                className="rounded border border-white/20 px-4 py-2"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-
-        {isEditingTeam ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <input
-              placeholder="Team Name"
-              value={editTeamName}
-              onChange={(e) => setEditTeamName(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              placeholder="Age Group"
-              value={editAgeGroup}
-              onChange={(e) => setEditAgeGroup(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              placeholder="Squad"
-              value={editSquad}
-              onChange={(e) => setEditSquad(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <select
-              value={editSport}
-              onChange={(e) => setEditSport(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            >
-              <option value="">Select Sport</option>
-              <option value="Hockey">Hockey</option>
-              <option value="Rugby">Rugby</option>
-              <option value="Swimming">Swimming</option>
-            </select>
-
-            <input
-              placeholder="Season"
-              value={editSeason}
-              onChange={(e) => setEditSeason(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
+              Team Profile
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">{team.name}</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              {team.sport} • {team.season} • {roster.length} athlete{roster.length === 1 ? '' : 's'}
+            </p>
           </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-4">
-            <div>
-              <p className="text-white/60">Team</p>
-              <p className="text-xl font-bold">{team?.name || teamName}</p>
-            </div>
-
-            <div>
-              <p className="text-white/60">Age Group</p>
-              <p className="text-xl font-bold">{team?.age_group || '-'}</p>
-            </div>
-
-            <div>
-              <p className="text-white/60">Squad</p>
-              <p className="text-xl font-bold">{team?.squad || '-'}</p>
-            </div>
-
-            <div>
-              <p className="text-white/60">Sport</p>
-              <p className="text-xl font-bold">{team?.sport || '-'}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="mb-10 grid gap-6 xl:grid-cols-2">
-        <div className="rounded-xl border border-white/20 p-5">
-          <h2 className="mb-4 text-2xl font-semibold">Quick Add Athlete</h2>
-
-          <div className="space-y-3">
-            <input
-              placeholder="Full Name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              type="number"
-              placeholder="Age"
-              value={age}
-              onChange={(e) => setAge(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              value={teamName}
-              disabled
-              className="block w-full rounded bg-white/5 p-3 text-white/60"
-            />
-
-            <input
-              value={sport}
-              disabled
-              className="block w-full rounded bg-white/5 p-3 text-white/60"
-            />
-
-            <select
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            >
-              <option value="">Select Position</option>
-              <option value="Forward">Forward</option>
-              <option value="Midfield">Midfield</option>
-              <option value="Defense">Defense</option>
-              <option value="Goalkeeper">Goalkeeper</option>
-            </select>
-
-            <button
-              onClick={addAthleteToTeam}
-              className="rounded bg-white px-4 py-2 text-black"
-            >
-              Add Athlete to Team
-            </button>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-white/20 p-5">
-          <h2 className="mb-4 text-2xl font-semibold">Team Summary</h2>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <div className="rounded-xl border border-white/10 p-4">
-              <p className="text-white/60">Roster Size</p>
-              <p className="text-3xl font-bold">{roster.length}</p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 p-4">
-              <p className="text-white/60">Attendance %</p>
-              <p className={`text-3xl font-bold ${getPercentColor(attendancePercent)}`}>
-                {attendancePercent}%
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-white/10 p-4">
-              <p className="text-white/60">Most Common Test</p>
-              <p className="text-xl font-bold">{mostCommonTest}</p>
-            </div>
-
-            <div className="rounded-xl border border-green-500/20 p-4">
-              <p className="text-white/60">Present</p>
-              <p className="text-3xl font-bold text-green-400">{present}</p>
-            </div>
-
-            <div className="rounded-xl border border-red-500/20 p-4">
-              <p className="text-white/60">Absent</p>
-              <p className="text-3xl font-bold text-red-400">{absent}</p>
-            </div>
-
-            <div className="rounded-xl border border-yellow-500/20 p-4">
-              <p className="text-white/60">Late</p>
-              <p className="text-3xl font-bold text-yellow-400">{late}</p>
-            </div>
-          </div>
-
-          <p className="mt-4 text-white/50">Latest performance test: {latestTestDate}</p>
-        </div>
-      </div>
-
-      <div className="mb-10 rounded-xl border border-white/20 p-5">
-        <h2 className="mb-4 text-2xl font-semibold">Log Team Attendance Session</h2>
-
-        <div className="grid gap-3 md:grid-cols-3">
-          <input
-            type="date"
-            value={bulkDate}
-            onChange={(e) => setBulkDate(e.target.value)}
-            className="block w-full rounded bg-white/10 p-3"
-          />
-
-          <select
-            value={bulkSessionType}
-            onChange={(e) => setBulkSessionType(e.target.value)}
-            className="block w-full rounded bg-white/10 p-3"
-          >
-            <option value="">Session Type</option>
-            <option value="Gym">Gym</option>
-            <option value="Field">Field</option>
-            <option value="Match">Match</option>
-          </select>
-
-          <input
-            placeholder="Shared notes for session"
-            value={bulkNotes}
-            onChange={(e) => setBulkNotes(e.target.value)}
-            className="block w-full rounded bg-white/10 p-3"
-          />
-        </div>
-
-        <div className="mt-4 space-y-3">
-          {roster.length === 0 ? (
-            <div className="rounded-xl border border-white/10 p-4 text-white/60">
-              No athletes in this team yet.
-            </div>
-          ) : (
-            roster.map((athlete) => (
-              <div
-                key={athlete.id}
-                className="grid gap-3 rounded-xl border border-white/10 p-4 md:grid-cols-[1fr_220px]"
-              >
-                <div>
-                  <p className="font-semibold">{athlete.full_name}</p>
-                  <p className="text-white/60">
-                    Age: {athlete.age ?? '-'} • Position: {athlete.position || '-'}
-                  </p>
-                </div>
-
-                <select
-                  value={bulkStatuses[athlete.id] || 'Present'}
-                  onChange={(e) =>
-                    setBulkStatuses((prev) => ({
-                      ...prev,
-                      [athlete.id]: e.target.value,
-                    }))
-                  }
-                  className="block w-full rounded bg-white/10 p-3"
-                >
-                  <option value="Present">Present</option>
-                  <option value="Absent">Absent</option>
-                  <option value="Late">Late</option>
-                </select>
-              </div>
-            ))
-          )}
-        </div>
-
-        <button
-          onClick={saveTeamAttendanceSession}
-          className="mt-4 rounded bg-white px-4 py-2 text-black"
-        >
-          Save Team Attendance
-        </button>
-      </div>
-
-      <div className="mb-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Roster</h2>
-        </div>
-
-        <div className="space-y-4">
-          {roster.length === 0 ? (
-            <div className="rounded-xl border border-white/20 p-5 text-white/60">
-              No athletes in this team yet.
-            </div>
-          ) : (
-            roster.map((athlete) => {
-              const isEditing = editingAthleteId === athlete.id
-
-              return (
-                <div
-                  key={athlete.id}
-                  className="rounded-xl border border-white/20 p-5"
-                >
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      <input
-                        placeholder="Full Name"
-                        value={editAthleteFullName}
-                        onChange={(e) => setEditAthleteFullName(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <input
-                        type="number"
-                        placeholder="Age"
-                        value={editAthleteAge}
-                        onChange={(e) => setEditAthleteAge(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <input
-                        value={teamName}
-                        disabled
-                        className="block w-full rounded bg-white/5 p-3 text-white/60"
-                      />
-
-                      <select
-                        value={editAthleteSport}
-                        onChange={(e) => setEditAthleteSport(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      >
-                        <option value="">Select Sport</option>
-                        <option value="Hockey">Hockey</option>
-                        <option value="Rugby">Rugby</option>
-                        <option value="Swimming">Swimming</option>
-                      </select>
-
-                      <select
-                        value={editAthletePosition}
-                        onChange={(e) => setEditAthletePosition(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      >
-                        <option value="">Select Position</option>
-                        <option value="Forward">Forward</option>
-                        <option value="Midfield">Midfield</option>
-                        <option value="Defense">Defense</option>
-                        <option value="Goalkeeper">Goalkeeper</option>
-                      </select>
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={updateAthlete}
-                          className="rounded bg-white px-4 py-2 text-black"
-                        >
-                          Save Athlete
-                        </button>
-                        <button
-                          onClick={cancelEditAthlete}
-                          className="rounded border border-white/20 px-4 py-2"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <Link
-                          href={`/athletes/${athlete.id}`}
-                          className="text-2xl font-semibold hover:underline"
-                        >
-                          {athlete.full_name}
-                        </Link>
-                        <div className="mt-2 space-y-1 text-white/80">
-                          <p>Age: {athlete.age ?? '-'}</p>
-                          <p>Sport: {athlete.sport ?? '-'}</p>
-                          <p>Position: {athlete.position ?? '-'}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-3">
-                        <Link
-                          href={`/athletes/${athlete.id}`}
-                          className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-                        >
-                          Open Profile
-                        </Link>
-
-                        <button
-                          onClick={() => startEditAthlete(athlete)}
-                          className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-                        >
-                          Edit Athlete
-                        </button>
-
-                        <button
-                          onClick={() =>
-                            removeAthleteFromTeam(athlete.id, athlete.full_name)
-                          }
-                          className="rounded border border-red-500/40 px-4 py-2 text-red-400 hover:bg-red-500/10"
-                        >
-                          Remove from Team
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
-
-      <div className="mb-10 rounded-xl border border-white/20 p-5">
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <h2 className="text-2xl font-semibold">Quick Attendance View</h2>
 
           <div className="flex flex-wrap gap-3">
-            <input
-              type="date"
-              value={attendanceFilterDate}
-              onChange={(e) => setAttendanceFilterDate(e.target.value)}
-              className="rounded bg-white/10 p-3"
-            />
-
-            <select
-              value={attendanceFilterStatus}
-              onChange={(e) => setAttendanceFilterStatus(e.target.value)}
-              className="rounded bg-white/10 p-3"
+            <Link
+              href="/teams"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
             >
-              <option value="">All Statuses</option>
-              <option value="Present">Present</option>
-              <option value="Absent">Absent</option>
-              <option value="Late">Late</option>
-            </select>
+              Back to Teams
+            </Link>
+            <Link
+              href="/attendance"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Attendance Page
+            </Link>
+            <Link
+              href="/performance"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Performance Page
+            </Link>
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filteredAttendance.length === 0 ? (
-            <div className="rounded-xl border border-white/10 p-5 text-white/60">
-              No attendance records for this filter.
-            </div>
-          ) : (
-            filteredAttendance.map((entry) => {
-              const athlete = getAthleteById(entry.athlete_id)
+        {error ? (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            {error}
+          </div>
+        ) : null}
 
-              return (
-                <div
-                  key={entry.id}
-                  className="rounded-xl border border-white/10 p-4"
+        {successMessage ? (
+          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+            {successMessage}
+          </div>
+        ) : null}
+
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Roster Size</p>
+            <p className="mt-3 text-3xl font-bold">{roster.length}</p>
+            <p className="mt-2 text-sm text-slate-300">Athletes currently assigned to this team.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Rate</p>
+            <p className="mt-3 text-3xl font-bold">{attendanceSummary.rate}%</p>
+            <p className="mt-2 text-sm text-slate-300">Present + late across all logged sessions.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Entries</p>
+            <p className="mt-3 text-3xl font-bold">{attendanceSummary.total}</p>
+            <p className="mt-2 text-sm text-slate-300">Attendance records linked to this team roster.</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Performance Entries</p>
+            <p className="mt-3 text-3xl font-bold">{performance.length}</p>
+            <p className="mt-2 text-sm text-slate-300">Performance records linked to this team roster.</p>
+          </div>
+        </section>
+
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Team Info</h2>
+                <p className="mt-1 text-sm text-slate-400">Edit team details and sync team data to athletes.</p>
+              </div>
+              {!isEditingTeam ? (
+                <button
+                  onClick={() => setIsEditingTeam(true)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
                 >
-                  <p className="font-semibold">{athlete?.full_name || 'Unknown'}</p>
-                  <p>Date: {entry.session_date}</p>
-                  <p>Session: {entry.session_type}</p>
-                  <p
-                    className={`font-bold ${
-                      entry.status === 'Present'
-                        ? 'text-green-400'
-                        : entry.status === 'Absent'
-                        ? 'text-red-400'
-                        : 'text-yellow-400'
-                    }`}
-                  >
-                    Status: {entry.status}
-                  </p>
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
-
-      <div className="mb-10">
-        <h2 className="mb-4 text-2xl font-semibold">Team Performance Leaderboard</h2>
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <LeaderboardCard
-            title="Fastest 10m Sprint"
-            entries={sprint10Leaderboard}
-            colorClass="text-cyan-400"
-          />
-          <LeaderboardCard
-            title="Best Yo-Yo Test"
-            entries={yoyoLeaderboard}
-            colorClass="text-green-400"
-          />
-          <LeaderboardCard
-            title="Best CMJ"
-            entries={cmjLeaderboard}
-            colorClass="text-pink-400"
-          />
-        </div>
-      </div>
-
-      <div className="mb-10">
-        <h2 className="mb-4 text-2xl font-semibold">Player Attendance Snapshot</h2>
-
-        <div className="space-y-4">
-          {athleteAttendanceSummary.length === 0 ? (
-            <div className="rounded-xl border border-white/20 p-5 text-white/60">
-              No attendance data for this team yet.
+                  Edit
+                </button>
+              ) : null}
             </div>
-          ) : (
-            athleteAttendanceSummary.map((row) => (
-              <div
-                key={row.athlete.id}
-                className="rounded-xl border border-white/20 p-5"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <Link
-                      href={`/athletes/${row.athlete.id}`}
-                      className="text-xl font-semibold hover:underline"
-                    >
-                      {row.athlete.full_name}
-                    </Link>
-                    <p className="text-white/60">Position: {row.athlete.position || '-'}</p>
-                  </div>
 
-                  <div className="text-right">
-                    <p className="text-sm text-white/60">Attendance %</p>
-                    <p className={`text-2xl font-bold ${getPercentColor(row.percent)}`}>
-                      {row.percent}%
-                    </p>
-                  </div>
+            {!isEditingTeam ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Name</p>
+                  <p className="mt-1 text-sm font-semibold text-white">{team.name}</p>
                 </div>
-
-                <div className="mt-4 grid gap-3 md:grid-cols-4">
-                  <div>
-                    <p className="text-sm text-white/60">Total</p>
-                    <p className="text-2xl font-bold">{row.total}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-white/60">Present</p>
-                    <p className="text-2xl font-bold text-green-400">{row.present}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-white/60">Absent</p>
-                    <p className="text-2xl font-bold text-red-400">{row.absent}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-white/60">Late</p>
-                    <p className="text-2xl font-bold text-yellow-400">{row.late}</p>
-                  </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
+                  <p className="mt-1 text-sm text-slate-300">{team.sport}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Season</p>
+                  <p className="mt-1 text-sm text-slate-300">{team.season}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Quick View</p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    {attendanceSummary.present} present • {attendanceSummary.late} late • {attendanceSummary.absent} absent
+                  </p>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Team Name</label>
+                  <input
+                    value={teamNameInput}
+                    onChange={(e) => setTeamNameInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
 
-      <div>
-        <h2 className="mb-4 text-2xl font-semibold">Recent Performance Entries</h2>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
+                  <input
+                    value={teamSportInput}
+                    onChange={(e) => setTeamSportInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
 
-        <div className="space-y-4">
-          {performance.length === 0 ? (
-            <div className="rounded-xl border border-white/20 p-5 text-white/60">
-              No performance records for this team yet.
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Season</label>
+                  <input
+                    value={teamSeasonInput}
+                    onChange={(e) => setTeamSeasonInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleSaveTeam}
+                    disabled={savingTeam}
+                    className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingTeam ? 'Saving...' : 'Save Team'}
+                  </button>
+                  <button
+                    onClick={() => setIsEditingTeam(false)}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Quick Add Athlete</h2>
+              <p className="mt-1 text-sm text-slate-400">Add an athlete directly into this team roster.</p>
+            </div>
+
+            <form onSubmit={handleQuickAddAthlete} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Athlete Name</label>
+                <input
+                  value={quickAthleteName}
+                  onChange={(e) => setQuickAthleteName(e.target.value)}
+                  placeholder="e.g. John Smith"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
+                <input
+                  value={quickAthleteSport}
+                  onChange={(e) => setQuickAthleteSport(e.target.value)}
+                  placeholder={team.sport !== '—' ? team.sport : 'e.g. Hockey'}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Age Group</label>
+                <input
+                  value={quickAthleteAgeGroup}
+                  onChange={(e) => setQuickAthleteAgeGroup(e.target.value)}
+                  placeholder="e.g. U16"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingQuickAthlete}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingQuickAthlete ? 'Adding...' : 'Add Athlete'}
+              </button>
+            </form>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Bulk Team Attendance</h2>
+              <p className="mt-1 text-sm text-slate-400">Log one session for the whole team in a single action.</p>
+            </div>
+
+            <form onSubmit={handleBulkAttendanceSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
+                  <input
+                    type="date"
+                    value={bulkAttendanceDate}
+                    onChange={(e) => setBulkAttendanceDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Session Type</label>
+                  <select
+                    value={bulkAttendanceSessionType}
+                    onChange={(e) => setBulkAttendanceSessionType(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  >
+                    <option value="Training">Training</option>
+                    <option value="Match">Match</option>
+                    <option value="Gym">Gym</option>
+                    <option value="Recovery">Recovery</option>
+                    <option value="Testing">Testing</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+                {roster.length === 0 ? (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                    No athletes in roster yet.
+                  </div>
+                ) : (
+                  roster.map((athlete) => (
+                    <div
+                      key={athlete.id}
+                      className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-white">{athlete.name}</p>
+                        <p className="text-xs text-slate-400">{athlete.ageGroup}</p>
+                      </div>
+
+                      <select
+                        value={bulkAttendanceStatusMap[athlete.id] || 'Present'}
+                        onChange={(e) =>
+                          setBulkAttendanceStatusMap((prev) => ({
+                            ...prev,
+                            [athlete.id]: e.target.value,
+                          }))
+                        }
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white outline-none transition md:w-40 focus:border-sky-500"
+                      >
+                        <option value="Present">Present</option>
+                        <option value="Late">Late</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Excused">Excused</option>
+                      </select>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingBulkAttendance}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingBulkAttendance ? 'Logging...' : 'Log Team Attendance'}
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">Roster</h2>
+            <p className="mt-1 text-sm text-slate-400">Edit athletes inside the roster or remove them from the team.</p>
+          </div>
+
+          {roster.length === 0 ? (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+              No athletes assigned to this team yet.
             </div>
           ) : (
-            performance.slice(0, 10).map((entry) => {
-              const athlete = getAthleteById(entry.athlete_id)
+            <div className="space-y-4">
+              {roster.map((athlete) => {
+                const isEditing = editingRosterAthleteId === athlete.id;
 
-              return (
-                <div
-                  key={entry.id}
-                  className="rounded-xl border border-white/20 p-5"
-                >
-                  <p className="font-semibold">{athlete?.full_name || 'Unknown'}</p>
-                  <p>Date: {entry.test_date}</p>
-                  <p>Test: {entry.test_type}</p>
-                  <p>
-                    Result: {entry.result} {entry.unit || ''}
-                  </p>
-                  <p>Notes: {entry.notes || '-'}</p>
-                </div>
-              )
-            })
+                return (
+                  <div key={athlete.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                    {isEditing ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-200">Name</label>
+                            <input
+                              value={editRosterName}
+                              onChange={(e) => setEditRosterName(e.target.value)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
+                            <input
+                              value={editRosterSport}
+                              onChange={(e) => setEditRosterSport(e.target.value)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-slate-200">Age Group</label>
+                            <input
+                              value={editRosterAgeGroup}
+                              onChange={(e) => setEditRosterAgeGroup(e.target.value)}
+                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => handleSaveRosterAthlete(athlete)}
+                            disabled={savingRosterEdit}
+                            className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {savingRosterEdit ? 'Saving...' : 'Save'}
+                          </button>
+                          <button
+                            onClick={cancelRosterEdit}
+                            className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500">Athlete</p>
+                            <p className="mt-1 text-sm font-semibold text-white">{athlete.name}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
+                            <p className="mt-1 text-sm text-slate-300">{athlete.sport}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500">Age Group</p>
+                            <p className="mt-1 text-sm text-slate-300">{athlete.ageGroup}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-slate-500">Profile</p>
+                            <Link
+                              href={`/athletes/${athlete.id}`}
+                              className="mt-1 inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
+                            >
+                              Open Athlete
+                            </Link>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => startRosterEdit(athlete)}
+                            className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleRemoveAthleteFromTeam(athlete)}
+                            className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           )}
-        </div>
+        </section>
+
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Player Attendance Snapshot</h2>
+              <p className="mt-1 text-sm text-slate-400">Fast attendance view across the roster.</p>
+            </div>
+
+            {playerAttendanceSnapshot.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No attendance data yet.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {playerAttendanceSnapshot.map((row) => (
+                  <div
+                    key={row.athleteId}
+                    className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-white">{row.athleteName}</p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {row.total} entries • Latest: {row.latest ? formatDate(row.latest) : '—'}
+                      </p>
+                    </div>
+
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        row.rate >= 80
+                          ? 'bg-emerald-500/15 text-emerald-200'
+                          : row.rate >= 60
+                          ? 'bg-amber-500/15 text-amber-200'
+                          : 'bg-red-500/15 text-red-200'
+                      }`}
+                    >
+                      {row.rate}% attendance
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Team Performance Leaderboard</h2>
+              <p className="mt-1 text-sm text-slate-400">Top performers across recent tests in this team.</p>
+            </div>
+
+            {teamPerformanceLeaderboard.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No performance data yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {teamPerformanceLeaderboard.map((group) => (
+                  <div key={group.testType} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                    <h3 className="text-sm font-semibold text-white">{group.testType}</h3>
+                    <div className="mt-3 space-y-2">
+                      {group.entries.map((entry, index) => (
+                        <div
+                          key={`${group.testType}-${entry.athleteName}-${index}`}
+                          className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-white">
+                              #{index + 1} {entry.athleteName}
+                            </p>
+                            <p className="text-xs text-slate-400">{formatDate(entry.date)}</p>
+                          </div>
+                          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
+                            {entry.result}
+                            {entry.unit ? ` ${entry.unit}` : ''}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Quick Attendance View</h2>
+              <p className="mt-1 text-sm text-slate-400">Recent team attendance records.</p>
+            </div>
+
+            {recentAttendance.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No recent attendance entries.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentAttendance.map((record) => (
+                  <div
+                    key={record.id}
+                    className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:flex-row md:items-center md:justify-between"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {athleteMap.get(record.athlete_id)?.name || 'Unknown Athlete'}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {record.session_type} • {formatDate(record.session_date)}
+                      </p>
+                    </div>
+
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusClasses(record.status)}`}>
+                      {formatStatus(record.status)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Recent Performance Entries</h2>
+              <p className="mt-1 text-sm text-slate-400">Most recent testing results across the roster.</p>
+            </div>
+
+            {recentPerformance.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No recent performance entries.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {recentPerformance.map((record) => (
+                  <div
+                    key={record.id}
+                    className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white">{record.athlete_name}</p>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {record.test_type} • {formatDate(record.date)}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">{record.notes || 'No notes'}</p>
+                      </div>
+
+                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
+                        {formatResult(record.result, record.unit)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </main>
-  )
+  );
 }

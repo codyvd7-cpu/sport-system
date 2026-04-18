@@ -1,1062 +1,1436 @@
-'use client'
+'use client';
 
-import * as React from 'react'
-import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import Nav from '@/components/Nav'
+import Link from 'next/link';
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
-const HIGHER_IS_BETTER = ['Yo-Yo Test', 'CMJ', 'Pull-Ups']
-const LOWER_IS_BETTER = ['10m Sprint', '40m Sprint', 'Bronco']
+type GenericRow = Record<string, any>;
 
-export default function AthleteProfilePage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
-  const { id: athleteId } = React.use(params)
-  const router = useRouter()
+type PageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
-  const [allAthletes, setAllAthletes] = useState<any[]>([])
-  const [athlete, setAthlete] = useState<any | null>(null)
-  const [teams, setTeams] = useState<any[]>([])
-  const [attendance, setAttendance] = useState<any[]>([])
-  const [performance, setPerformance] = useState<any[]>([])
+type Athlete = {
+  id: string;
+  name: string;
+  team: string;
+  sport: string;
+  ageGroup: string;
+  raw: GenericRow;
+};
 
-  const [isEditingProfile, setIsEditingProfile] = useState(false)
-  const [editFullName, setEditFullName] = useState('')
-  const [editAge, setEditAge] = useState('')
-  const [editTeam, setEditTeam] = useState('')
-  const [editSport, setEditSport] = useState('')
-  const [editPosition, setEditPosition] = useState('')
+type AttendanceRecord = {
+  id: string;
+  athlete_id: string;
+  session_date: string;
+  session_type: string;
+  status: string;
+  created_at: string | null;
+  raw: GenericRow;
+};
 
-  const [attendanceDate, setAttendanceDate] = useState('')
-  const [attendanceSessionType, setAttendanceSessionType] = useState('')
-  const [attendanceStatus, setAttendanceStatus] = useState('')
-  const [attendanceNotes, setAttendanceNotes] = useState('')
+type PerformanceRecord = {
+  id: string;
+  athlete_id: string;
+  test_date: string;
+  test_type: string;
+  result: number | null;
+  unit: string;
+  notes: string;
+  created_at: string | null;
+  raw: GenericRow;
+};
 
-  const [performanceDate, setPerformanceDate] = useState('')
-  const [performanceTestType, setPerformanceTestType] = useState('')
-  const [performanceResult, setPerformanceResult] = useState('')
-  const [performanceUnit, setPerformanceUnit] = useState('')
-  const [performanceNotes, setPerformanceNotes] = useState('')
+function firstString(...values: any[]) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim() !== '') return value.trim();
+  }
+  return '';
+}
 
-  const [editingAttendanceId, setEditingAttendanceId] = useState<string | null>(null)
-  const [editAttendanceDate, setEditAttendanceDate] = useState('')
-  const [editAttendanceSessionType, setEditAttendanceSessionType] = useState('')
-  const [editAttendanceStatus, setEditAttendanceStatus] = useState('')
-  const [editAttendanceNotes, setEditAttendanceNotes] = useState('')
+function firstValue(...values: any[]) {
+  for (const value of values) {
+    if (value !== null && value !== undefined && value !== '') return String(value);
+  }
+  return '';
+}
 
-  const [editingPerformanceId, setEditingPerformanceId] = useState<string | null>(null)
-  const [editPerformanceDate, setEditPerformanceDate] = useState('')
-  const [editPerformanceTestType, setEditPerformanceTestType] = useState('')
-  const [editPerformanceResult, setEditPerformanceResult] = useState('')
-  const [editPerformanceUnit, setEditPerformanceUnit] = useState('')
-  const [editPerformanceNotes, setEditPerformanceNotes] = useState('')
+function firstNumber(...values: any[]) {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue;
+    const num = Number(value);
+    if (!Number.isNaN(num)) return num;
+  }
+  return null;
+}
 
-  useEffect(() => {
-    fetchAthleteProfile()
-  }, [athleteId])
+function normalizeAthlete(row: GenericRow): Athlete {
+  return {
+    id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
+    name:
+      firstString(
+        row.name,
+        row.full_name,
+        row.athlete_name,
+        row.player_name,
+        row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
+        row.first_name
+      ) || 'Unknown Athlete',
+    team: firstString(row.team, row.team_name, row.squad, row.group_name) || 'Unassigned',
+    sport: firstString(row.sport, row.code, row.discipline) || '—',
+    ageGroup: firstString(row.age_group, row.agegroup, row.grade_group, row.group) || '—',
+    raw: row,
+  };
+}
 
-  async function fetchAthleteProfile() {
-    const { data: allAthletesData, error: allAthletesError } = await supabase
-      .from('athletes')
-      .select('*')
-      .order('full_name', { ascending: true })
+function normalizeAttendance(row: GenericRow): AttendanceRecord {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    athlete_id: firstValue(row.athlete_id),
+    session_date: firstString(row.session_date),
+    session_type: firstString(row.session_type) || '—',
+    status: firstString(row.status) || '—',
+    created_at: firstString(row.created_at) || null,
+    raw: row,
+  };
+}
 
-    if (allAthletesError) {
-      console.error('all athletes error:', allAthletesError)
-    } else {
-      setAllAthletes(allAthletesData || [])
-    }
+function normalizePerformance(row: GenericRow): PerformanceRecord {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    athlete_id: firstValue(row.athlete_id),
+    test_date: firstString(row.test_date),
+    test_type: firstString(row.test_type) || '—',
+    result: firstNumber(row.result),
+    unit: firstString(row.unit) || '',
+    notes: firstString(row.notes) || '',
+    created_at: firstString(row.created_at) || null,
+    raw: row,
+  };
+}
 
-    const { data: athleteData, error: athleteError } = await supabase
-      .from('athletes')
-      .select('*')
-      .eq('id', athleteId)
-      .single()
+function formatDate(dateString?: string | null) {
+  if (!dateString) return '—';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '—';
 
-    if (athleteError) {
-      console.error('athlete error:', athleteError)
-      return
-    }
+  return date.toLocaleDateString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
-    setAthlete(athleteData)
-    setEditFullName(athleteData.full_name || '')
-    setEditAge(athleteData.age ? String(athleteData.age) : '')
-    setEditTeam(athleteData.team || '')
-    setEditSport(athleteData.sport || '')
-    setEditPosition(athleteData.position || '')
+function formatDateTime(dateString?: string | null) {
+  if (!dateString) return '—';
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '—';
 
-    const { data: teamsData, error: teamsError } = await supabase
-      .from('Teams')
-      .select('*')
-      .order('name', { ascending: true })
+  return date.toLocaleString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
-    if (teamsError) {
-      console.error('teams error:', teamsError)
-    } else {
-      setTeams(teamsData || [])
-    }
+function formatStatus(status: string) {
+  const cleaned = (status || '').toLowerCase();
+  if (!cleaned) return '—';
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
 
-    const { data: attendanceData, error: attendanceError } = await supabase
-      .from('Attendance')
-      .select('*')
-      .eq('athlete_id', athleteId)
-      .order('session_date', { ascending: false })
+function getStatusClasses(status: string) {
+  const cleaned = (status || '').toLowerCase();
 
-    if (attendanceError) {
-      console.error('attendance error:', attendanceError)
-    } else {
-      setAttendance(attendanceData || [])
-    }
-
-    const { data: performanceData, error: performanceError } = await supabase
-      .from('Performance')
-      .select('*')
-      .eq('athlete_id', athleteId)
-      .order('test_date', { ascending: false })
-
-    if (performanceError) {
-      console.error('performance error:', performanceError)
-    } else {
-      setPerformance(performanceData || [])
-    }
+  if (cleaned === 'present') {
+    return 'bg-emerald-500/15 text-emerald-200 border border-emerald-500/20';
   }
 
-  async function updateAthleteProfile() {
-    if (!editFullName || !editTeam || !editSport) {
-      alert('Full name, team, and sport are required')
-      return
-    }
-
-    const { error } = await supabase
-      .from('athletes')
-      .update({
-        full_name: editFullName,
-        age: editAge ? Number(editAge) : null,
-        team: editTeam,
-        sport: editSport,
-        position: editPosition || null,
-      })
-      .eq('id', athleteId)
-
-    if (error) {
-      console.error('update athlete error:', error)
-      alert('Error updating athlete')
-      return
-    }
-
-    alert('Profile updated ✅')
-    setIsEditingProfile(false)
-    fetchAthleteProfile()
+  if (cleaned === 'late') {
+    return 'bg-amber-500/15 text-amber-200 border border-amber-500/20';
   }
 
-  function cancelProfileEdit() {
-    if (!athlete) return
-    setEditFullName(athlete.full_name || '')
-    setEditAge(athlete.age ? String(athlete.age) : '')
-    setEditTeam(athlete.team || '')
-    setEditSport(athlete.sport || '')
-    setEditPosition(athlete.position || '')
-    setIsEditingProfile(false)
+  if (cleaned === 'absent') {
+    return 'bg-red-500/15 text-red-200 border border-red-500/20';
   }
 
-  async function deleteAthleteFromProfile() {
-    const confirmed = window.confirm(
-      'Delete this athlete? This may also remove related attendance and performance records.'
-    )
-    if (!confirmed) return
-
-    const { error } = await supabase.from('athletes').delete().eq('id', athleteId)
-
-    if (error) {
-      console.error('delete athlete error:', error)
-      alert('Error deleting athlete')
-      return
-    }
-
-    alert('Athlete deleted ✅')
-    router.push('/athletes')
+  if (cleaned === 'excused') {
+    return 'bg-sky-500/15 text-sky-200 border border-sky-500/20';
   }
 
-  async function addAttendanceForAthlete() {
-    if (!attendanceDate || !attendanceSessionType || !attendanceStatus) {
-      alert('Fill all attendance fields')
-      return
-    }
+  return 'bg-slate-800 text-slate-300 border border-slate-700';
+}
 
-    const { error } = await supabase.from('Attendance').insert([
-      {
-        athlete_id: athleteId,
-        session_date: attendanceDate,
-        session_type: attendanceSessionType,
-        status: attendanceStatus,
-        notes: attendanceNotes,
-      },
-    ])
+function formatResult(result: number | null, unit: string) {
+  if (result === null || Number.isNaN(result)) return '—';
+  return `${result}${unit ? ` ${unit}` : ''}`;
+}
 
-    if (error) {
-      console.error('add attendance error:', error)
-      alert('Error adding attendance')
-      return
-    }
+function buildAthleteUpdatePayload(raw: GenericRow, input: { name: string; team: string; sport: string; ageGroup: string }) {
+  const payload: GenericRow = {};
 
-    alert('Attendance added ✅')
-    setAttendanceDate('')
-    setAttendanceSessionType('')
-    setAttendanceStatus('')
-    setAttendanceNotes('')
-    fetchAthleteProfile()
+  if ('name' in raw) payload.name = input.name;
+  else if ('full_name' in raw) payload.full_name = input.name;
+  else if ('athlete_name' in raw) payload.athlete_name = input.name;
+  else if ('player_name' in raw) payload.player_name = input.name;
+  else if ('first_name' in raw && 'last_name' in raw) {
+    const parts = input.name.trim().split(' ');
+    payload.first_name = parts.shift() || input.name;
+    payload.last_name = parts.join(' ');
   }
 
-  function startEditAttendance(entry: any) {
-    setEditingAttendanceId(entry.id)
-    setEditAttendanceDate(entry.session_date)
-    setEditAttendanceSessionType(entry.session_type)
-    setEditAttendanceStatus(entry.status)
-    setEditAttendanceNotes(entry.notes || '')
+  if ('team' in raw) payload.team = input.team;
+  else if ('team_name' in raw) payload.team_name = input.team;
+  else if ('squad' in raw) payload.squad = input.team;
+  else if ('group_name' in raw) payload.group_name = input.team;
+
+  if ('sport' in raw) payload.sport = input.sport;
+  else if ('code' in raw) payload.code = input.sport;
+  else if ('discipline' in raw) payload.discipline = input.sport;
+
+  if ('age_group' in raw) payload.age_group = input.ageGroup;
+  else if ('agegroup' in raw) payload.agegroup = input.ageGroup;
+  else if ('grade_group' in raw) payload.grade_group = input.ageGroup;
+  else if ('group' in raw) payload.group = input.ageGroup;
+
+  return payload;
+}
+
+function trendBadge(delta: number | null, unit: string) {
+  if (delta === null) {
+    return (
+      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+        Δ —
+      </span>
+    );
   }
 
-  function cancelEditAttendance() {
-    setEditingAttendanceId(null)
-    setEditAttendanceDate('')
-    setEditAttendanceSessionType('')
-    setEditAttendanceStatus('')
-    setEditAttendanceNotes('')
+  if (delta > 0) {
+    return (
+      <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs text-emerald-200">
+        Δ +{delta}
+        {unit ? ` ${unit}` : ''}
+      </span>
+    );
   }
 
-  async function updateAttendanceEntry() {
-    if (!editingAttendanceId || !editAttendanceDate || !editAttendanceSessionType || !editAttendanceStatus) {
-      alert('Fill all attendance edit fields')
-      return
-    }
-
-    const { error } = await supabase
-      .from('Attendance')
-      .update({
-        session_date: editAttendanceDate,
-        session_type: editAttendanceSessionType,
-        status: editAttendanceStatus,
-        notes: editAttendanceNotes,
-      })
-      .eq('id', editingAttendanceId)
-
-    if (error) {
-      console.error('update attendance error:', error)
-      alert('Error updating attendance')
-      return
-    }
-
-    alert('Attendance updated ✅')
-    cancelEditAttendance()
-    fetchAthleteProfile()
+  if (delta < 0) {
+    return (
+      <span className="rounded-full bg-red-500/15 px-2.5 py-1 text-xs text-red-200">
+        Δ {delta}
+        {unit ? ` ${unit}` : ''}
+      </span>
+    );
   }
 
-  async function deleteAttendanceEntry(id: string) {
-    const confirmed = window.confirm('Delete this attendance entry?')
-    if (!confirmed) return
+  return (
+    <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
+      Δ 0
+      {unit ? ` ${unit}` : ''}
+    </span>
+  );
+}
 
-    const { error } = await supabase.from('Attendance').delete().eq('id', id)
+export default function AthleteProfilePage({ params }: PageProps) {
+  const resolvedParams = React.use(params);
+  const athleteId = resolvedParams.id;
+  const router = useRouter();
 
-    if (error) {
-      console.error('delete attendance error:', error)
-      alert('Error deleting attendance')
-      return
+  const [athleteRows, setAthleteRows] = React.useState<GenericRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = React.useState<GenericRow[]>([]);
+  const [performanceRows, setPerformanceRows] = React.useState<GenericRow[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState('');
+  const [successMessage, setSuccessMessage] = React.useState('');
+
+  const [isEditingAthlete, setIsEditingAthlete] = React.useState(false);
+  const [athleteNameInput, setAthleteNameInput] = React.useState('');
+  const [athleteTeamInput, setAthleteTeamInput] = React.useState('');
+  const [athleteSportInput, setAthleteSportInput] = React.useState('');
+  const [athleteAgeGroupInput, setAthleteAgeGroupInput] = React.useState('');
+  const [savingAthlete, setSavingAthlete] = React.useState(false);
+
+  const [quickAttendanceDate, setQuickAttendanceDate] = React.useState(() => new Date().toISOString().split('T')[0]);
+  const [quickAttendanceSessionType, setQuickAttendanceSessionType] = React.useState('Training');
+  const [quickAttendanceStatus, setQuickAttendanceStatus] = React.useState('Present');
+  const [savingQuickAttendance, setSavingQuickAttendance] = React.useState(false);
+
+  const [quickPerformanceDate, setQuickPerformanceDate] = React.useState(() => new Date().toISOString().split('T')[0]);
+  const [quickPerformanceTestType, setQuickPerformanceTestType] = React.useState('');
+  const [quickPerformanceResult, setQuickPerformanceResult] = React.useState('');
+  const [quickPerformanceUnit, setQuickPerformanceUnit] = React.useState('');
+  const [quickPerformanceNotes, setQuickPerformanceNotes] = React.useState('');
+  const [savingQuickPerformance, setSavingQuickPerformance] = React.useState(false);
+
+  const [editingAttendanceId, setEditingAttendanceId] = React.useState<string | null>(null);
+  const [editAttendanceDate, setEditAttendanceDate] = React.useState('');
+  const [editAttendanceSessionType, setEditAttendanceSessionType] = React.useState('Training');
+  const [editAttendanceStatus, setEditAttendanceStatus] = React.useState('Present');
+  const [savingAttendanceEdit, setSavingAttendanceEdit] = React.useState(false);
+
+  const [editingPerformanceId, setEditingPerformanceId] = React.useState<string | null>(null);
+  const [editPerformanceDate, setEditPerformanceDate] = React.useState('');
+  const [editPerformanceTestType, setEditPerformanceTestType] = React.useState('');
+  const [editPerformanceResult, setEditPerformanceResult] = React.useState('');
+  const [editPerformanceUnit, setEditPerformanceUnit] = React.useState('');
+  const [editPerformanceNotes, setEditPerformanceNotes] = React.useState('');
+  const [savingPerformanceEdit, setSavingPerformanceEdit] = React.useState(false);
+
+  async function loadPageData() {
+    setLoading(true);
+    setError('');
+
+    const [athletesRes, attendanceRes, performanceRes] = await Promise.all([
+      supabase.from('athletes').select('*').order('id', { ascending: true }),
+      supabase.from('Attendance').select('*').eq('athlete_id', athleteId).order('session_date', { ascending: false }),
+      supabase.from('Performance').select('*').eq('athlete_id', athleteId).order('test_date', { ascending: false }),
+    ]);
+
+    if (athletesRes.error || attendanceRes.error || performanceRes.error) {
+      setError(
+        athletesRes.error?.message ||
+          attendanceRes.error?.message ||
+          performanceRes.error?.message ||
+          'Failed to load athlete profile.'
+      );
+      setAthleteRows([]);
+      setAttendanceRows([]);
+      setPerformanceRows([]);
+      setLoading(false);
+      return;
     }
 
-    fetchAthleteProfile()
+    setAthleteRows((athletesRes.data as GenericRow[]) || []);
+    setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
+    setPerformanceRows((performanceRes.data as GenericRow[]) || []);
+    setLoading(false);
   }
 
-  async function addPerformanceForAthlete() {
-    if (!performanceDate || !performanceTestType || !performanceResult) {
-      alert('Fill all performance fields')
-      return
-    }
+  React.useEffect(() => {
+    loadPageData();
+  }, [athleteId]);
 
-    const { error } = await supabase.from('Performance').insert([
-      {
-        athlete_id: athleteId,
-        test_date: performanceDate,
-        test_type: performanceTestType,
-        result: Number(performanceResult),
-        unit: performanceUnit,
-        notes: performanceNotes,
-      },
-    ])
+  const athletes = React.useMemo(() => {
+    return athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name));
+  }, [athleteRows]);
 
-    if (error) {
-      console.error('add performance error:', error)
-      alert('Error adding performance')
-      return
-    }
+  const athlete = React.useMemo(() => {
+    return athletes.find((item) => String(item.id) === String(athleteId)) || null;
+  }, [athletes, athleteId]);
 
-    alert('Performance added ✅')
-    setPerformanceDate('')
-    setPerformanceTestType('')
-    setPerformanceResult('')
-    setPerformanceUnit('')
-    setPerformanceNotes('')
-    fetchAthleteProfile()
-  }
+  const athleteIndex = React.useMemo(() => {
+    return athletes.findIndex((item) => String(item.id) === String(athleteId));
+  }, [athletes, athleteId]);
 
-  function startEditPerformance(entry: any) {
-    setEditingPerformanceId(entry.id)
-    setEditPerformanceDate(entry.test_date)
-    setEditPerformanceTestType(entry.test_type)
-    setEditPerformanceResult(String(entry.result))
-    setEditPerformanceUnit(entry.unit || '')
-    setEditPerformanceNotes(entry.notes || '')
-  }
+  const previousAthlete = athleteIndex > 0 ? athletes[athleteIndex - 1] : null;
+  const nextAthlete = athleteIndex >= 0 && athleteIndex < athletes.length - 1 ? athletes[athleteIndex + 1] : null;
 
-  function cancelEditPerformance() {
-    setEditingPerformanceId(null)
-    setEditPerformanceDate('')
-    setEditPerformanceTestType('')
-    setEditPerformanceResult('')
-    setEditPerformanceUnit('')
-    setEditPerformanceNotes('')
-  }
+  const attendance = React.useMemo(() => {
+    return attendanceRows.map(normalizeAttendance).sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
+  }, [attendanceRows]);
 
-  async function updatePerformanceEntry() {
-    if (!editingPerformanceId || !editPerformanceDate || !editPerformanceTestType || !editPerformanceResult) {
-      alert('Fill all performance edit fields')
-      return
-    }
+  const performance = React.useMemo(() => {
+    return performanceRows.map(normalizePerformance).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
+  }, [performanceRows]);
 
-    const { error } = await supabase
-      .from('Performance')
-      .update({
-        test_date: editPerformanceDate,
-        test_type: editPerformanceTestType,
-        result: Number(editPerformanceResult),
-        unit: editPerformanceUnit,
-        notes: editPerformanceNotes,
-      })
-      .eq('id', editingPerformanceId)
+  React.useEffect(() => {
+    if (!athlete) return;
+    setAthleteNameInput(athlete.name);
+    setAthleteTeamInput(athlete.team);
+    setAthleteSportInput(athlete.sport === '—' ? '' : athlete.sport);
+    setAthleteAgeGroupInput(athlete.ageGroup === '—' ? '' : athlete.ageGroup);
+  }, [athlete]);
 
-    if (error) {
-      console.error('update performance error:', error)
-      alert('Error updating performance')
-      return
-    }
+  const attendanceSummary = React.useMemo(() => {
+    const total = attendance.length;
+    const present = attendance.filter((item) => item.status.toLowerCase() === 'present').length;
+    const late = attendance.filter((item) => item.status.toLowerCase() === 'late').length;
+    const absent = attendance.filter((item) => item.status.toLowerCase() === 'absent').length;
+    const excused = attendance.filter((item) => item.status.toLowerCase() === 'excused').length;
+    const positive = present + late;
+    const rate = total > 0 ? Math.round((positive / total) * 100) : 0;
+    const latest = total > 0 ? attendance[0].session_date : '';
 
-    alert('Performance updated ✅')
-    cancelEditPerformance()
-    fetchAthleteProfile()
-  }
+    return { total, present, late, absent, excused, rate, latest };
+  }, [attendance]);
 
-  async function deletePerformanceEntry(id: string) {
-    const confirmed = window.confirm('Delete this performance entry?')
-    if (!confirmed) return
+  const performanceSummary = React.useMemo(() => {
+    const total = performance.length;
+    const latest = total > 0 ? performance[0].test_date : '';
+    const uniqueTests = new Set(performance.map((item) => item.test_type)).size;
+    const bestRecent = [...performance]
+      .filter((item) => item.result !== null)
+      .sort((a, b) => (b.result ?? Number.NEGATIVE_INFINITY) - (a.result ?? Number.NEGATIVE_INFINITY))[0];
 
-    const { error } = await supabase.from('Performance').delete().eq('id', id)
+    return {
+      total,
+      latest,
+      uniqueTests,
+      bestRecent,
+    };
+  }, [performance]);
 
-    if (error) {
-      console.error('delete performance error:', error)
-      alert('Error deleting performance')
-      return
-    }
+  const performanceTrends = React.useMemo(() => {
+    const grouped = new Map<string, PerformanceRecord[]>();
 
-    fetchAthleteProfile()
-  }
+    performance.forEach((entry) => {
+      if (!grouped.has(entry.test_type)) grouped.set(entry.test_type, []);
+      grouped.get(entry.test_type)!.push(entry);
+    });
 
-  const performanceTrends = useMemo(() => {
-    const groups: Record<string, any[]> = {}
+    const rows: {
+      testType: string;
+      latest: number | null;
+      previous: number | null;
+      delta: number | null;
+      unit: string;
+      latestDate: string;
+    }[] = [];
 
-    for (const entry of performance) {
-      const key = entry.test_type
-      if (!groups[key]) groups[key] = []
-      groups[key].push(entry)
-    }
+    grouped.forEach((entries, testType) => {
+      const sorted = [...entries]
+        .filter((entry) => entry.result !== null)
+        .sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
 
-    return Object.entries(groups).map(([testType, entries]) => {
-      const sorted = [...entries].sort(
-        (a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime()
-      )
+      if (sorted.length === 0) return;
 
-      const first = sorted[0]
-      const latest = sorted[sorted.length - 1]
+      const latest = sorted[0];
+      const previous = sorted.length > 1 ? sorted[1] : undefined;
 
-      let best = sorted[0]
-
-      if (HIGHER_IS_BETTER.includes(testType)) {
-        best = sorted.reduce((prev, curr) =>
-          Number(curr.result) > Number(prev.result) ? curr : prev
-        )
-      } else if (LOWER_IS_BETTER.includes(testType)) {
-        best = sorted.reduce((prev, curr) =>
-          Number(curr.result) < Number(prev.result) ? curr : prev
-        )
-      } else {
-        best = latest
-      }
-
-      let improvement = 0
-      if (HIGHER_IS_BETTER.includes(testType)) {
-        improvement = Number(latest.result) - Number(first.result)
-      } else if (LOWER_IS_BETTER.includes(testType)) {
-        improvement = Number(first.result) - Number(latest.result)
-      } else {
-        improvement = Number(latest.result) - Number(first.result)
-      }
-
-      return {
+      rows.push({
         testType,
-        unit: latest.unit || first.unit || '',
-        totalTests: sorted.length,
-        firstResult: Number(first.result),
-        firstDate: first.test_date,
-        latestResult: Number(latest.result),
+        latest: latest.result,
+        previous: previous ? previous.result : null,
+        delta:
+          latest.result !== null && previous && previous.result !== null
+            ? latest.result - previous.result
+            : null,
+        unit: latest.unit,
         latestDate: latest.test_date,
-        bestResult: Number(best.result),
-        bestDate: best.test_date,
-        improvement,
-      }
-    })
-  }, [performance])
+      });
+    });
 
-  const currentAthleteIndex = allAthletes.findIndex((a) => a.id === athleteId)
-  const previousAthlete =
-    currentAthleteIndex > 0 ? allAthletes[currentAthleteIndex - 1] : null
-  const nextAthlete =
-    currentAthleteIndex >= 0 && currentAthleteIndex < allAthletes.length - 1
-      ? allAthletes[currentAthleteIndex + 1]
-      : null
+    return rows.sort((a, b) => {
+      const aVal = a.delta === null ? -1 : Math.abs(a.delta);
+      const bVal = b.delta === null ? -1 : Math.abs(b.delta);
+      return bVal - aVal;
+    });
+  }, [performance]);
 
-  function getImprovementColor(improvement: number) {
-    if (improvement > 0) return 'text-green-400'
-    if (improvement < 0) return 'text-red-400'
-    return 'text-yellow-400'
+  async function handleSaveAthleteProfile() {
+    if (!athlete) return;
+
+    setSavingAthlete(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!athleteNameInput.trim()) {
+      setError('Athlete name is required.');
+      setSavingAthlete(false);
+      return;
+    }
+
+    const payload = buildAthleteUpdatePayload(athlete.raw, {
+      name: athleteNameInput.trim(),
+      team: athleteTeamInput.trim(),
+      sport: athleteSportInput.trim(),
+      ageGroup: athleteAgeGroupInput.trim(),
+    });
+
+    const result = await supabase.from('athletes').update(payload).eq('id', athlete.id).select('*').single();
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to update athlete.');
+      setSavingAthlete(false);
+      return;
+    }
+
+    setSuccessMessage('Athlete profile updated successfully.');
+    setIsEditingAthlete(false);
+    await loadPageData();
+    setSavingAthlete(false);
   }
 
-  function getImprovementLabel(improvement: number) {
-    if (improvement > 0) return 'Improved'
-    if (improvement < 0) return 'Declined'
-    return 'No Change'
+  async function handleDeleteAthlete() {
+    if (!athlete) return;
+
+    const confirmed = window.confirm(`Delete ${athlete.name}? This cannot be undone.`);
+    if (!confirmed) return;
+
+    setError('');
+    setSuccessMessage('');
+
+    const result = await supabase.from('athletes').delete().eq('id', athlete.id);
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to delete athlete.');
+      return;
+    }
+
+    router.push('/athletes');
+  }
+
+  async function handleQuickAddAttendance(e: React.FormEvent) {
+    e.preventDefault();
+    if (!athlete) return;
+
+    setSavingQuickAttendance(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!quickAttendanceDate) {
+      setError('Attendance date is required.');
+      setSavingQuickAttendance(false);
+      return;
+    }
+
+    const payload = {
+      athlete_id: athlete.id,
+      session_date: quickAttendanceDate,
+      session_type: quickAttendanceSessionType.trim(),
+      status: quickAttendanceStatus.trim(),
+    };
+
+    const result = await supabase.from('Attendance').insert([payload]).select('*').single();
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to add attendance entry.');
+      setSavingQuickAttendance(false);
+      return;
+    }
+
+    setQuickAttendanceDate(new Date().toISOString().split('T')[0]);
+    setQuickAttendanceSessionType('Training');
+    setQuickAttendanceStatus('Present');
+    setSuccessMessage('Attendance entry added.');
+    await loadPageData();
+    setSavingQuickAttendance(false);
+  }
+
+  async function handleQuickAddPerformance(e: React.FormEvent) {
+    e.preventDefault();
+    if (!athlete) return;
+
+    setSavingQuickPerformance(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!quickPerformanceTestType.trim()) {
+      setError('Test type is required.');
+      setSavingQuickPerformance(false);
+      return;
+    }
+
+    if (!quickPerformanceDate) {
+      setError('Test date is required.');
+      setSavingQuickPerformance(false);
+      return;
+    }
+
+    const numericResult = Number(quickPerformanceResult);
+    if (quickPerformanceResult === '' || Number.isNaN(numericResult)) {
+      setError('Result must be a valid number.');
+      setSavingQuickPerformance(false);
+      return;
+    }
+
+    const payload = {
+      athlete_id: athlete.id,
+      test_date: quickPerformanceDate,
+      test_type: quickPerformanceTestType.trim(),
+      result: numericResult,
+      unit: quickPerformanceUnit.trim(),
+      notes: quickPerformanceNotes.trim(),
+    };
+
+    const result = await supabase.from('Performance').insert([payload]).select('*').single();
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to add performance entry.');
+      setSavingQuickPerformance(false);
+      return;
+    }
+
+    setQuickPerformanceDate(new Date().toISOString().split('T')[0]);
+    setQuickPerformanceTestType('');
+    setQuickPerformanceResult('');
+    setQuickPerformanceUnit('');
+    setQuickPerformanceNotes('');
+    setSuccessMessage('Performance entry added.');
+    await loadPageData();
+    setSavingQuickPerformance(false);
+  }
+
+  function startAttendanceEdit(record: AttendanceRecord) {
+    setEditingAttendanceId(record.id);
+    setEditAttendanceDate(record.session_date);
+    setEditAttendanceSessionType(record.session_type || 'Training');
+    setEditAttendanceStatus(formatStatus(record.status) || 'Present');
+  }
+
+  function cancelAttendanceEdit() {
+    setEditingAttendanceId(null);
+    setEditAttendanceDate('');
+    setEditAttendanceSessionType('Training');
+    setEditAttendanceStatus('Present');
+  }
+
+  async function handleSaveAttendanceEdit(id: string) {
+    setSavingAttendanceEdit(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!editAttendanceDate) {
+      setError('Attendance date is required.');
+      setSavingAttendanceEdit(false);
+      return;
+    }
+
+    const payload = {
+      session_date: editAttendanceDate,
+      session_type: editAttendanceSessionType.trim(),
+      status: editAttendanceStatus.trim(),
+    };
+
+    const result = await supabase.from('Attendance').update(payload).eq('id', id).select('*').single();
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to update attendance entry.');
+      setSavingAttendanceEdit(false);
+      return;
+    }
+
+    setSuccessMessage('Attendance entry updated.');
+    cancelAttendanceEdit();
+    await loadPageData();
+    setSavingAttendanceEdit(false);
+  }
+
+  async function handleDeleteAttendance(id: string) {
+    const confirmed = window.confirm('Delete this attendance entry?');
+    if (!confirmed) return;
+
+    setError('');
+    setSuccessMessage('');
+
+    const result = await supabase.from('Attendance').delete().eq('id', id);
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to delete attendance entry.');
+      return;
+    }
+
+    setSuccessMessage('Attendance entry deleted.');
+    await loadPageData();
+  }
+
+  function startPerformanceEdit(record: PerformanceRecord) {
+    setEditingPerformanceId(record.id);
+    setEditPerformanceDate(record.test_date);
+    setEditPerformanceTestType(record.test_type || '');
+    setEditPerformanceResult(record.result !== null ? String(record.result) : '');
+    setEditPerformanceUnit(record.unit || '');
+    setEditPerformanceNotes(record.notes || '');
+  }
+
+  function cancelPerformanceEdit() {
+    setEditingPerformanceId(null);
+    setEditPerformanceDate('');
+    setEditPerformanceTestType('');
+    setEditPerformanceResult('');
+    setEditPerformanceUnit('');
+    setEditPerformanceNotes('');
+  }
+
+  async function handleSavePerformanceEdit(id: string) {
+    setSavingPerformanceEdit(true);
+    setError('');
+    setSuccessMessage('');
+
+    if (!editPerformanceTestType.trim()) {
+      setError('Test type is required.');
+      setSavingPerformanceEdit(false);
+      return;
+    }
+
+    if (!editPerformanceDate) {
+      setError('Test date is required.');
+      setSavingPerformanceEdit(false);
+      return;
+    }
+
+    const numericResult = Number(editPerformanceResult);
+    if (editPerformanceResult === '' || Number.isNaN(numericResult)) {
+      setError('Result must be a valid number.');
+      setSavingPerformanceEdit(false);
+      return;
+    }
+
+    const payload = {
+      test_date: editPerformanceDate,
+      test_type: editPerformanceTestType.trim(),
+      result: numericResult,
+      unit: editPerformanceUnit.trim(),
+      notes: editPerformanceNotes.trim(),
+    };
+
+    const result = await supabase.from('Performance').update(payload).eq('id', id).select('*').single();
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to update performance entry.');
+      setSavingPerformanceEdit(false);
+      return;
+    }
+
+    setSuccessMessage('Performance entry updated.');
+    cancelPerformanceEdit();
+    await loadPageData();
+    setSavingPerformanceEdit(false);
+  }
+
+  async function handleDeletePerformance(id: string) {
+    const confirmed = window.confirm('Delete this performance entry?');
+    if (!confirmed) return;
+
+    setError('');
+    setSuccessMessage('');
+
+    const result = await supabase.from('Performance').delete().eq('id', id);
+
+    if (result.error) {
+      setError(result.error.message || 'Failed to delete performance entry.');
+      return;
+    }
+
+    setSuccessMessage('Performance entry deleted.');
+    await loadPageData();
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
+            Loading athlete profile...
+          </div>
+        </div>
+      </main>
+    );
   }
 
   if (!athlete) {
     return (
-      <main className="min-h-screen bg-black p-10 text-white">
-        <Nav />
-        <p>Loading athlete profile...</p>
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <h1 className="text-2xl font-bold text-white">Athlete not found</h1>
+            <p className="mt-2 text-sm text-slate-300">This athlete does not exist in the current dataset.</p>
+            <Link
+              href="/athletes"
+              className="mt-4 inline-flex rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+            >
+              Back to Athletes
+            </Link>
+          </div>
+        </div>
       </main>
-    )
+    );
   }
 
-  const present = attendance.filter((a) => a.status === 'Present').length
-  const absent = attendance.filter((a) => a.status === 'Absent').length
-  const late = attendance.filter((a) => a.status === 'Late').length
-  const attendancePercent =
-    attendance.length > 0 ? Math.round((present / attendance.length) * 100) : 0
-
   return (
-    <main className="min-h-screen bg-black p-10 text-white">
-      <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h1 className="text-4xl font-bold">{athlete.full_name}</h1>
-          <p className="mt-2 text-white/60">Athlete Profile</p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/athletes"
-            className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-          >
-            Back to Athletes
-          </Link>
-
-          <button
-            onClick={deleteAthleteFromProfile}
-            className="rounded border border-red-500/40 px-4 py-2 text-red-400 hover:bg-red-500/10"
-          >
-            Delete Athlete
-          </button>
-        </div>
-      </div>
-
-      <Nav />
-
-      <div className="mb-8 flex flex-wrap gap-3">
-        {previousAthlete ? (
-          <Link
-            href={`/athletes/${previousAthlete.id}`}
-            className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-          >
-            ← {previousAthlete.full_name}
-          </Link>
-        ) : (
-          <div className="rounded border border-white/10 px-4 py-2 text-white/30">
-            ← No previous athlete
+    <main className="min-h-screen bg-slate-950 text-white">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
+              Athlete Profile
+            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">{athlete.name}</h1>
+            <p className="mt-2 text-sm text-slate-300">
+              {athlete.team} • {athlete.sport} • {athlete.ageGroup}
+            </p>
           </div>
-        )}
 
-        {nextAthlete ? (
-          <Link
-            href={`/athletes/${nextAthlete.id}`}
-            className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-          >
-            {nextAthlete.full_name} →
-          </Link>
-        ) : (
-          <div className="rounded border border-white/10 px-4 py-2 text-white/30">
-            No next athlete →
-          </div>
-        )}
-      </div>
-
-      <div className="mb-10 rounded-xl border border-white/20 p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Athlete Info</h2>
-
-          {!isEditingProfile ? (
-            <button
-              onClick={() => setIsEditingProfile(true)}
-              className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/athletes"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
             >
-              Edit Profile
-            </button>
-          ) : (
-            <div className="flex gap-3">
-              <button
-                onClick={updateAthleteProfile}
-                className="rounded bg-white px-4 py-2 text-black"
-              >
-                Save Profile
-              </button>
-              <button
-                onClick={cancelProfileEdit}
-                className="rounded border border-white/20 px-4 py-2"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-
-        {isEditingProfile ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            <input
-              placeholder="Full Name"
-              value={editFullName}
-              onChange={(e) => setEditFullName(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              type="number"
-              placeholder="Age"
-              value={editAge}
-              onChange={(e) => setEditAge(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <select
-              value={editTeam}
-              onChange={(e) => {
-                const selected = e.target.value
-                setEditTeam(selected)
-
-                const found = teams.find((t) => t.name === selected)
-                if (found?.sport) {
-                  setEditSport(found.sport)
-                }
-              }}
-              className="block w-full rounded bg-white/10 p-3"
+              Back to Athletes
+            </Link>
+            <Link
+              href="/attendance"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
             >
-              <option value="">Select Team</option>
-              {teams.map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={editSport}
-              onChange={(e) => setEditSport(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
+              Attendance Page
+            </Link>
+            <Link
+              href="/performance"
+              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
             >
-              <option value="">Select Sport</option>
-              <option value="Hockey">Hockey</option>
-              <option value="Rugby">Rugby</option>
-              <option value="Swimming">Swimming</option>
-            </select>
-
-            <select
-              value={editPosition}
-              onChange={(e) => setEditPosition(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3 md:col-span-2"
-            >
-              <option value="">Select Position</option>
-              <option value="Forward">Forward</option>
-              <option value="Midfield">Midfield</option>
-              <option value="Defense">Defense</option>
-              <option value="Goalkeeper">Goalkeeper</option>
-            </select>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-4">
-            <div>
-              <p className="text-white/60">Age</p>
-              <p className="text-xl font-bold">{athlete.age ?? '-'}</p>
-            </div>
-
-            <div>
-              <p className="text-white/60">Team</p>
-              <p className="text-xl font-bold">{athlete.team ?? '-'}</p>
-            </div>
-
-            <div>
-              <p className="text-white/60">Sport</p>
-              <p className="text-xl font-bold">{athlete.sport ?? '-'}</p>
-            </div>
-
-            <div>
-              <p className="text-white/60">Position</p>
-              <p className="text-xl font-bold">{athlete.position ?? '-'}</p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="mb-10 grid gap-6 xl:grid-cols-2">
-        <div className="rounded-xl border border-white/20 p-5">
-          <h2 className="mb-4 text-2xl font-semibold">Quick Add Attendance</h2>
-
-          <div className="space-y-3">
-            <input
-              type="date"
-              value={attendanceDate}
-              onChange={(e) => setAttendanceDate(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <select
-              value={attendanceSessionType}
-              onChange={(e) => setAttendanceSessionType(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            >
-              <option value="">Session Type</option>
-              <option value="Gym">Gym</option>
-              <option value="Field">Field</option>
-              <option value="Match">Match</option>
-            </select>
-
-            <select
-              value={attendanceStatus}
-              onChange={(e) => setAttendanceStatus(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            >
-              <option value="">Status</option>
-              <option value="Present">Present</option>
-              <option value="Absent">Absent</option>
-              <option value="Late">Late</option>
-            </select>
-
-            <input
-              placeholder="Notes"
-              value={attendanceNotes}
-              onChange={(e) => setAttendanceNotes(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <button
-              onClick={addAttendanceForAthlete}
-              className="rounded bg-white px-4 py-2 text-black"
-            >
-              Add Attendance
-            </button>
+              Performance Page
+            </Link>
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/20 p-5">
-          <h2 className="mb-4 text-2xl font-semibold">Quick Add Performance</h2>
-
-          <div className="space-y-3">
-            <input
-              type="date"
-              value={performanceDate}
-              onChange={(e) => setPerformanceDate(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <select
-              value={performanceTestType}
-              onChange={(e) => setPerformanceTestType(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            >
-              <option value="">Select Test Type</option>
-              <option value="10m Sprint">10m Sprint</option>
-              <option value="40m Sprint">40m Sprint</option>
-              <option value="Yo-Yo Test">Yo-Yo Test</option>
-              <option value="Bronco">Bronco</option>
-              <option value="CMJ">CMJ</option>
-              <option value="Pull-Ups">Pull-Ups</option>
-              <option value="Body Mass">Body Mass</option>
-            </select>
-
-            <input
-              type="number"
-              placeholder="Result"
-              value={performanceResult}
-              onChange={(e) => setPerformanceResult(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              placeholder="Unit"
-              value={performanceUnit}
-              onChange={(e) => setPerformanceUnit(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <input
-              placeholder="Notes"
-              value={performanceNotes}
-              onChange={(e) => setPerformanceNotes(e.target.value)}
-              className="block w-full rounded bg-white/10 p-3"
-            />
-
-            <button
-              onClick={addPerformanceForAthlete}
-              className="rounded bg-white px-4 py-2 text-black"
-            >
-              Add Performance
-            </button>
+        {error ? (
+          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+            {error}
           </div>
-        </div>
-      </div>
+        ) : null}
 
-      <div className="mb-10">
-        <h2 className="mb-4 text-2xl font-semibold">Attendance Summary</h2>
+        {successMessage ? (
+          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
+            {successMessage}
+          </div>
+        ) : null}
 
-        <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-white/20 p-5">
-            <p className="text-white/60">Attendance %</p>
-            <p className="text-3xl font-bold">{attendancePercent}%</p>
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Rate</p>
+            <p className="mt-3 text-3xl font-bold">{attendanceSummary.rate}%</p>
+            <p className="mt-2 text-sm text-slate-300">Present + late as a percentage of all logged sessions.</p>
           </div>
 
-          <div className="rounded-xl border border-green-500/30 p-5">
-            <p className="text-white/60">Present</p>
-            <p className="text-3xl font-bold text-green-400">{present}</p>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Entries</p>
+            <p className="mt-3 text-3xl font-bold">{attendanceSummary.total}</p>
+            <p className="mt-2 text-sm text-slate-300">Total attendance records for this athlete.</p>
           </div>
 
-          <div className="rounded-xl border border-red-500/30 p-5">
-            <p className="text-white/60">Absent</p>
-            <p className="text-3xl font-bold text-red-400">{absent}</p>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Performance Entries</p>
+            <p className="mt-3 text-3xl font-bold">{performanceSummary.total}</p>
+            <p className="mt-2 text-sm text-slate-300">Total performance results on file.</p>
           </div>
 
-          <div className="rounded-xl border border-yellow-500/30 p-5">
-            <p className="text-white/60">Late</p>
-            <p className="text-3xl font-bold text-yellow-400">{late}</p>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Tests Logged</p>
+            <p className="mt-3 text-3xl font-bold">{performanceSummary.uniqueTests}</p>
+            <p className="mt-2 text-sm text-slate-300">Unique test types recorded for this athlete.</p>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="mb-10">
-        <h2 className="mb-4 text-2xl font-semibold">Performance Trends</h2>
-
-        <div className="space-y-4">
-          {performanceTrends.length === 0 ? (
-            <div className="rounded-xl border border-white/20 p-5 text-white/60">
-              No performance trend data yet.
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Athlete Info</h2>
+                <p className="mt-1 text-sm text-slate-400">Profile details and athlete actions.</p>
+              </div>
+              {!isEditingAthlete ? (
+                <button
+                  onClick={() => setIsEditingAthlete(true)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+                >
+                  Edit
+                </button>
+              ) : null}
             </div>
-          ) : (
-            performanceTrends.map((entry) => (
-              <div
-                key={entry.testType}
-                className="rounded-xl border border-white/20 p-5"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h3 className="text-xl font-semibold">{entry.testType}</h3>
-                    <p className="text-white/70">
-                      {entry.totalTests} test{entry.totalTests === 1 ? '' : 's'}
-                    </p>
-                  </div>
 
-                  <div className="text-right">
-                    <p className="text-sm text-white/60">Trend</p>
-                    <p
-                      className={`text-lg font-bold ${getImprovementColor(
-                        entry.improvement
-                      )}`}
-                    >
-                      {getImprovementLabel(entry.improvement)}
-                    </p>
-                  </div>
+            {!isEditingAthlete ? (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Name</p>
+                  <p className="mt-1 text-sm font-semibold text-white">{athlete.name}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Team</p>
+                  <p className="mt-1 text-sm text-slate-300">{athlete.team}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
+                  <p className="mt-1 text-sm text-slate-300">{athlete.sport}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Age Group</p>
+                  <p className="mt-1 text-sm text-slate-300">{athlete.ageGroup}</p>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-4">
-                  <div>
-                    <p className="text-sm text-white/60">First</p>
-                    <p className="text-2xl font-bold">
-                      {entry.firstResult} {entry.unit}
-                    </p>
-                    <p className="text-sm text-white/50">{entry.firstDate}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-white/60">Latest</p>
-                    <p className="text-2xl font-bold">
-                      {entry.latestResult} {entry.unit}
-                    </p>
-                    <p className="text-sm text-white/50">{entry.latestDate}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-white/60">Best</p>
-                    <p className="text-2xl font-bold">
-                      {entry.bestResult} {entry.unit}
-                    </p>
-                    <p className="text-sm text-white/50">{entry.bestDate}</p>
-                  </div>
-
-                  <div>
-                    <p className="text-sm text-white/60">Change</p>
-                    <p
-                      className={`text-2xl font-bold ${getImprovementColor(
-                        entry.improvement
-                      )}`}
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {previousAthlete ? (
+                    <Link
+                      href={`/athletes/${previousAthlete.id}`}
+                      className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
                     >
-                      {entry.improvement > 0 ? '+' : ''}
-                      {entry.improvement} {entry.unit}
-                    </p>
-                    <p className="text-sm text-white/50">from first to latest</p>
-                  </div>
+                      Previous
+                    </Link>
+                  ) : null}
+
+                  {nextAthlete ? (
+                    <Link
+                      href={`/athletes/${nextAthlete.id}`}
+                      className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+                    >
+                      Next
+                    </Link>
+                  ) : null}
+
+                  <button
+                    onClick={handleDeleteAthlete}
+                    className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
+                  >
+                    Delete Athlete
+                  </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
-      </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Name</label>
+                  <input
+                    value={athleteNameInput}
+                    onChange={(e) => setAthleteNameInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
 
-      <div className="mb-10">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Attendance History</h2>
-        </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Team</label>
+                  <input
+                    value={athleteTeamInput}
+                    onChange={(e) => setAthleteTeamInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
 
-        <div className="space-y-4">
-          {attendance.length === 0 ? (
-            <div className="rounded-xl border border-white/20 p-5 text-white/60">
-              No attendance records yet.
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
+                  <input
+                    value={athleteSportInput}
+                    onChange={(e) => setAthleteSportInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Age Group</label>
+                  <input
+                    value={athleteAgeGroupInput}
+                    onChange={(e) => setAthleteAgeGroupInput(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleSaveAthleteProfile}
+                    disabled={savingAthlete}
+                    className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {savingAthlete ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setIsEditingAthlete(false)}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Quick Add Attendance</h2>
+              <p className="mt-1 text-sm text-slate-400">Log a session for this athlete directly from the profile.</p>
+            </div>
+
+            <form onSubmit={handleQuickAddAttendance} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
+                <input
+                  type="date"
+                  value={quickAttendanceDate}
+                  onChange={(e) => setQuickAttendanceDate(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Session Type</label>
+                <select
+                  value={quickAttendanceSessionType}
+                  onChange={(e) => setQuickAttendanceSessionType(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                >
+                  <option value="Training">Training</option>
+                  <option value="Match">Match</option>
+                  <option value="Gym">Gym</option>
+                  <option value="Recovery">Recovery</option>
+                  <option value="Testing">Testing</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Status</label>
+                <select
+                  value={quickAttendanceStatus}
+                  onChange={(e) => setQuickAttendanceStatus(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                >
+                  <option value="Present">Present</option>
+                  <option value="Late">Late</option>
+                  <option value="Absent">Absent</option>
+                  <option value="Excused">Excused</option>
+                </select>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingQuickAttendance}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingQuickAttendance ? 'Saving...' : 'Add Attendance'}
+              </button>
+            </form>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Quick Add Performance</h2>
+              <p className="mt-1 text-sm text-slate-400">Add a testing result without leaving the athlete profile.</p>
+            </div>
+
+            <form onSubmit={handleQuickAddPerformance} className="space-y-4">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Test Date</label>
+                <input
+                  type="date"
+                  value={quickPerformanceDate}
+                  onChange={(e) => setQuickPerformanceDate(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Test Type</label>
+                <input
+                  value={quickPerformanceTestType}
+                  onChange={(e) => setQuickPerformanceTestType(e.target.value)}
+                  placeholder="e.g. Pull-Ups"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-200">Result</label>
+                <input
+                  type="number"
+                  step="any"
+                  value={quickPerformanceResult}
+                  onChange={(e) => setQuickPerformanceResult(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Unit</label>
+                  <input
+                    value={quickPerformanceUnit}
+                    onChange={(e) => setQuickPerformanceUnit(e.target.value)}
+                    placeholder="e.g. reps"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-slate-200">Notes</label>
+                  <input
+                    value={quickPerformanceNotes}
+                    onChange={(e) => setQuickPerformanceNotes(e.target.value)}
+                    placeholder="Optional"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={savingQuickPerformance}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {savingQuickPerformance ? 'Saving...' : 'Add Performance'}
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Attendance Summary</h2>
+              <p className="mt-1 text-sm text-slate-400">Overview of session attendance for this athlete.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
+                <p className="mt-2 text-2xl font-bold">{attendanceSummary.total}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Present</p>
+                <p className="mt-2 text-2xl font-bold text-emerald-300">{attendanceSummary.present}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Late</p>
+                <p className="mt-2 text-2xl font-bold text-amber-300">{attendanceSummary.late}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Absent</p>
+                <p className="mt-2 text-2xl font-bold text-red-300">{attendanceSummary.absent}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Excused</p>
+                <p className="mt-2 text-2xl font-bold text-sky-300">{attendanceSummary.excused}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Latest</p>
+                <p className="mt-2 text-sm font-semibold text-white">{attendanceSummary.latest ? formatDate(attendanceSummary.latest) : '—'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Performance Snapshot</h2>
+              <p className="mt-1 text-sm text-slate-400">Latest performance status for this athlete.</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Entries</p>
+                <p className="mt-2 text-2xl font-bold">{performanceSummary.total}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Tests</p>
+                <p className="mt-2 text-2xl font-bold">{performanceSummary.uniqueTests}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Latest</p>
+                <p className="mt-2 text-sm font-semibold text-white">{performanceSummary.latest ? formatDate(performanceSummary.latest) : '—'}</p>
+              </div>
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:col-span-3">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Best Recorded Result</p>
+                <p className="mt-2 text-sm font-semibold text-white">
+                  {performanceSummary.bestRecent
+                    ? `${performanceSummary.bestRecent.test_type} • ${formatResult(
+                        performanceSummary.bestRecent.result,
+                        performanceSummary.bestRecent.unit
+                      )}`
+                    : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold">Performance Trends</h2>
+            <p className="mt-1 text-sm text-slate-400">Latest change between the two most recent results per test.</p>
+          </div>
+
+          {performanceTrends.length === 0 ? (
+            <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+              No trend data available yet.
             </div>
           ) : (
-            attendance.map((entry) => {
-              const isEditing = editingAttendanceId === entry.id
-
-              return (
+            <div className="space-y-3">
+              {performanceTrends.map((trend) => (
                 <div
-                  key={entry.id}
-                  className="rounded-xl border border-white/20 p-5"
+                  key={trend.testType}
+                  className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
                 >
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      <input
-                        type="date"
-                        value={editAttendanceDate}
-                        onChange={(e) => setEditAttendanceDate(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <select
-                        value={editAttendanceSessionType}
-                        onChange={(e) => setEditAttendanceSessionType(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      >
-                        <option value="">Session Type</option>
-                        <option value="Gym">Gym</option>
-                        <option value="Field">Field</option>
-                        <option value="Match">Match</option>
-                      </select>
-
-                      <select
-                        value={editAttendanceStatus}
-                        onChange={(e) => setEditAttendanceStatus(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      >
-                        <option value="">Status</option>
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Late">Late</option>
-                      </select>
-
-                      <input
-                        placeholder="Notes"
-                        value={editAttendanceNotes}
-                        onChange={(e) => setEditAttendanceNotes(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={updateAttendanceEntry}
-                          className="rounded bg-white px-4 py-2 text-black"
-                        >
-                          Save Attendance
-                        </button>
-                        <button
-                          onClick={cancelEditAttendance}
-                          className="rounded border border-white/20 px-4 py-2"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-white">{trend.testType}</p>
+                      <p className="mt-1 text-sm text-slate-400">Latest: {formatDate(trend.latestDate)}</p>
                     </div>
-                  ) : (
-                    <>
-                      <p>Date: {entry.session_date}</p>
-                      <p>Session: {entry.session_type}</p>
-                      <p
-                        className={`font-bold ${
-                          entry.status === 'Present'
-                            ? 'text-green-400'
-                            : entry.status === 'Absent'
-                            ? 'text-red-400'
-                            : 'text-yellow-400'
-                        }`}
-                      >
-                        Status: {entry.status}
-                      </p>
-                      <p>Notes: {entry.notes || '-'}</p>
 
-                      <div className="mt-4 flex gap-3">
-                        <button
-                          onClick={() => startEditAttendance(entry)}
-                          className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteAttendanceEntry(entry.id)}
-                          className="rounded border border-red-500/40 px-4 py-2 text-red-400 hover:bg-red-500/10"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
+                        Latest: {formatResult(trend.latest, trend.unit)}
+                      </span>
+                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
+                        Previous: {formatResult(trend.previous, trend.unit)}
+                      </span>
+                      {trendBadge(trend.delta, trend.unit)}
+                    </div>
+                  </div>
                 </div>
-              )
-            })
-          )}
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Performance History</h2>
-        </div>
-
-        <div className="space-y-4">
-          {performance.length === 0 ? (
-            <div className="rounded-xl border border-white/20 p-5 text-white/60">
-              No performance records yet.
+              ))}
             </div>
-          ) : (
-            performance.map((entry) => {
-              const isEditing = editingPerformanceId === entry.id
-
-              return (
-                <div
-                  key={entry.id}
-                  className="rounded-xl border border-white/20 p-5"
-                >
-                  {isEditing ? (
-                    <div className="space-y-3">
-                      <input
-                        type="date"
-                        value={editPerformanceDate}
-                        onChange={(e) => setEditPerformanceDate(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <select
-                        value={editPerformanceTestType}
-                        onChange={(e) => setEditPerformanceTestType(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      >
-                        <option value="">Select Test Type</option>
-                        <option value="10m Sprint">10m Sprint</option>
-                        <option value="40m Sprint">40m Sprint</option>
-                        <option value="Yo-Yo Test">Yo-Yo Test</option>
-                        <option value="Bronco">Bronco</option>
-                        <option value="CMJ">CMJ</option>
-                        <option value="Pull-Ups">Pull-Ups</option>
-                        <option value="Body Mass">Body Mass</option>
-                      </select>
-
-                      <input
-                        type="number"
-                        placeholder="Result"
-                        value={editPerformanceResult}
-                        onChange={(e) => setEditPerformanceResult(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <input
-                        placeholder="Unit"
-                        value={editPerformanceUnit}
-                        onChange={(e) => setEditPerformanceUnit(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <input
-                        placeholder="Notes"
-                        value={editPerformanceNotes}
-                        onChange={(e) => setEditPerformanceNotes(e.target.value)}
-                        className="block w-full rounded bg-white/10 p-3"
-                      />
-
-                      <div className="flex gap-3">
-                        <button
-                          onClick={updatePerformanceEntry}
-                          className="rounded bg-white px-4 py-2 text-black"
-                        >
-                          Save Performance
-                        </button>
-                        <button
-                          onClick={cancelEditPerformance}
-                          className="rounded border border-white/20 px-4 py-2"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <p>Date: {entry.test_date}</p>
-                      <p>Test: {entry.test_type}</p>
-                      <p>
-                        Result: {entry.result} {entry.unit || ''}
-                      </p>
-                      <p>Notes: {entry.notes || '-'}</p>
-
-                      <div className="mt-4 flex gap-3">
-                        <button
-                          onClick={() => startEditPerformance(entry)}
-                          className="rounded border border-white/20 px-4 py-2 hover:bg-white/5"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deletePerformanceEntry(entry.id)}
-                          className="rounded border border-red-500/40 px-4 py-2 text-red-400 hover:bg-red-500/10"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )
-            })
           )}
-        </div>
+        </section>
+
+        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Attendance History</h2>
+              <p className="mt-1 text-sm text-slate-400">Full attendance log for this athlete.</p>
+            </div>
+
+            {attendance.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No attendance history yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {attendance.map((record) => {
+                  const isEditing = editingAttendanceId === record.id;
+
+                  return (
+                    <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                      {isEditing ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
+                              <input
+                                type="date"
+                                value={editAttendanceDate}
+                                onChange={(e) => setEditAttendanceDate(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Session Type</label>
+                              <select
+                                value={editAttendanceSessionType}
+                                onChange={(e) => setEditAttendanceSessionType(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              >
+                                <option value="Training">Training</option>
+                                <option value="Match">Match</option>
+                                <option value="Gym">Gym</option>
+                                <option value="Recovery">Recovery</option>
+                                <option value="Testing">Testing</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Status</label>
+                              <select
+                                value={editAttendanceStatus}
+                                onChange={(e) => setEditAttendanceStatus(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              >
+                                <option value="Present">Present</option>
+                                <option value="Late">Late</option>
+                                <option value="Absent">Absent</option>
+                                <option value="Excused">Excused</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleSaveAttendanceEdit(record.id)}
+                              disabled={savingAttendanceEdit}
+                              className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {savingAttendanceEdit ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={cancelAttendanceEdit}
+                              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                          <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-4">
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Date</p>
+                              <p className="mt-1 text-sm text-slate-300">{formatDate(record.session_date)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Session</p>
+                              <p className="mt-1 text-sm text-slate-300">{record.session_type}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
+                              <div className="mt-1">
+                                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusClasses(record.status)}`}>
+                                  {formatStatus(record.status)}
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Logged</p>
+                              <p className="mt-1 text-sm text-slate-300">{formatDateTime(record.created_at)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => startAttendanceEdit(record)}
+                              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteAttendance(record.id)}
+                              className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">Performance History</h2>
+              <p className="mt-1 text-sm text-slate-400">Full testing record for this athlete.</p>
+            </div>
+
+            {performance.length === 0 ? (
+              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                No performance history yet.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {performance.map((record) => {
+                  const isEditing = editingPerformanceId === record.id;
+
+                  return (
+                    <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                      {isEditing ? (
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Test Date</label>
+                              <input
+                                type="date"
+                                value={editPerformanceDate}
+                                onChange={(e) => setEditPerformanceDate(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Test Type</label>
+                              <input
+                                value={editPerformanceTestType}
+                                onChange={(e) => setEditPerformanceTestType(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Result</label>
+                              <input
+                                type="number"
+                                step="any"
+                                value={editPerformanceResult}
+                                onChange={(e) => setEditPerformanceResult(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Unit</label>
+                              <input
+                                value={editPerformanceUnit}
+                                onChange={(e) => setEditPerformanceUnit(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              />
+                            </div>
+
+                            <div className="md:col-span-2">
+                              <label className="mb-2 block text-sm font-medium text-slate-200">Notes</label>
+                              <textarea
+                                rows={3}
+                                value={editPerformanceNotes}
+                                onChange={(e) => setEditPerformanceNotes(e.target.value)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleSavePerformanceEdit(record.id)}
+                              disabled={savingPerformanceEdit}
+                              className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              {savingPerformanceEdit ? 'Saving...' : 'Save'}
+                            </button>
+                            <button
+                              onClick={cancelPerformanceEdit}
+                              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                          <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-5">
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Date</p>
+                              <p className="mt-1 text-sm text-slate-300">{formatDate(record.test_date)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Test</p>
+                              <p className="mt-1 text-sm text-slate-300">{record.test_type}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Result</p>
+                              <p className="mt-1 text-sm text-slate-300">{formatResult(record.result, record.unit)}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Notes</p>
+                              <p className="mt-1 text-sm text-slate-300">{record.notes || '—'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs uppercase tracking-wide text-slate-500">Logged</p>
+                              <p className="mt-1 text-sm text-slate-300">{formatDateTime(record.created_at)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => startPerformanceEdit(record)}
+                              className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeletePerformance(record.id)}
+                              className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </main>
-  )
+  );
 }
