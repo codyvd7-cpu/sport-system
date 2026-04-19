@@ -367,12 +367,6 @@ export default function PortalPage() {
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [latestWeekPlan, weekPlanItems]);
 
-  const athleteMap = useMemo(() => {
-    const map = new Map<string, Athlete>();
-    athletes.forEach((athlete) => map.set(athlete.id, athlete));
-    return map;
-  }, [athletes]);
-
   const gymLeaderboard = useMemo(() => {
     const groupedAttendance = new Map<
       string,
@@ -442,9 +436,7 @@ export default function PortalPage() {
 
       const currentLast = current.latestDate ? new Date(current.latestDate).getTime() : 0;
       const entryTime = entry.test_date ? new Date(entry.test_date).getTime() : 0;
-      if (entryTime > currentLast) {
-        current.latestDate = entry.test_date;
-      }
+      if (entryTime > currentLast) current.latestDate = entry.test_date;
 
       groupedPerformance.set(entry.athlete_id, current);
     });
@@ -481,29 +473,68 @@ export default function PortalPage() {
     return rows;
   }, [athletes, performance]);
 
+  const quickStats = useMemo(() => {
+    return {
+      reminders: reminders.length,
+      fixtures: fixtures.length,
+      results: results.length,
+      programs: programs.length,
+    };
+  }, [reminders.length, fixtures.length, results.length, programs.length]);
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
-            St Benedict&apos;s College
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-white">
-            Parent &amp; Player Portal
-          </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Week at a glance, reminders, fixtures, results, programs, and public leaderboards.
-          </p>
+      <div className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6 lg:px-8">
+        <section className="mb-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950">
+          <div className="grid grid-cols-1 gap-8 px-6 py-8 md:px-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">
+                St Benedict&apos;s Hockey
+              </p>
+              <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Player &amp; Parent Portal
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                Everything in one place for the current week: plans, reminders, fixtures,
+                results, programs, and leaderboard updates.
+              </p>
 
-          <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2.5 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20"
-            >
-              Coach Login
-            </Link>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a
+                  href="#week-at-a-glance"
+                  className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                >
+                  View This Week
+                </a>
+                <a
+                  href="#programs"
+                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+                >
+                  Open Programs
+                </a>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Reminders</p>
+                <p className="mt-2 text-2xl font-bold text-white">{quickStats.reminders}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Fixtures</p>
+                <p className="mt-2 text-2xl font-bold text-white">{quickStats.fixtures}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Results</p>
+                <p className="mt-2 text-2xl font-bold text-white">{quickStats.results}</p>
+              </div>
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                <p className="text-xs uppercase tracking-wide text-slate-500">Programs</p>
+                <p className="mt-2 text-2xl font-bold text-white">{quickStats.programs}</p>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
         {error ? (
           <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
@@ -517,12 +548,17 @@ export default function PortalPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold">Week at a Glance</h2>
-                <p className="mt-1 text-sm text-slate-400">
-                  {latestWeekPlan?.week_label || 'Current week overview'}
-                </p>
+            <section id="week-at-a-glance" className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Week at a Glance</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {latestWeekPlan?.week_label || 'Current week overview'}
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                  Current Week
+                </span>
               </div>
 
               {currentWeekItems.length === 0 ? (
@@ -553,7 +589,7 @@ export default function PortalPage() {
               <div className="mb-4">
                 <h2 className="text-lg font-semibold">Important Reminders</h2>
                 <p className="mt-1 text-sm text-slate-400">
-                  Key reminders for players and parents.
+                  Key updates for players and parents.
                 </p>
               </div>
 
@@ -562,7 +598,7 @@ export default function PortalPage() {
                   No reminders published yet.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   {reminders.map((reminder) => (
                     <div
                       key={reminder.id}
@@ -581,7 +617,7 @@ export default function PortalPage() {
                 <div className="mb-4">
                   <h2 className="text-lg font-semibold">Fixtures</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Upcoming fixtures with venue information.
+                    Upcoming fixtures and venue information.
                   </p>
                 </div>
 
@@ -660,12 +696,17 @@ export default function PortalPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold">Programs</h2>
-                <p className="mt-1 text-sm text-slate-400">
-                  Current gym, mobility, and recovery programs available for players.
-                </p>
+            <section id="programs" className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Programs</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Current gym, mobility, and recovery work available for players.
+                  </p>
+                </div>
+                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                  Max 4 active
+                </span>
               </div>
 
               {programs.length === 0 ? (
@@ -702,7 +743,7 @@ export default function PortalPage() {
                 <div className="mb-4">
                   <h2 className="text-lg font-semibold">Gym Leaderboard</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Based on gym-related attendance and overall attendance quality.
+                    Based on gym attendance and overall attendance quality.
                   </p>
                 </div>
 
@@ -747,7 +788,7 @@ export default function PortalPage() {
                 <div className="mb-4">
                   <h2 className="text-lg font-semibold">Performance Leaderboard</h2>
                   <p className="mt-1 text-sm text-slate-400">
-                    Based on performance data volume and testing recency.
+                    Based on testing volume and testing recency.
                   </p>
                 </div>
 
@@ -786,6 +827,24 @@ export default function PortalPage() {
                     ))}
                   </div>
                 )}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold">Coach Access</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Coaches can log in to manage portal content and internal operations.
+                  </p>
+                </div>
+
+                <Link
+                  href="/login"
+                  className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2.5 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20"
+                >
+                  Coach Login
+                </Link>
               </div>
             </section>
           </div>

@@ -13,8 +13,6 @@ const coachNavItems = [
   { href: '/portal-admin', label: 'Portal Admin' },
 ];
 
-const publicNavItems = [{ href: '/portal', label: 'Parent & Player Portal' }];
-
 function isActive(pathname: string, href: string) {
   if (href === '/') return pathname === '/';
   return pathname === href || pathname.startsWith(`${href}/`);
@@ -30,8 +28,9 @@ export default function Nav() {
   const inLogin = pathname === '/login';
 
   const showCoachNav = !inPortal && !inLogin;
-  const showPublicButton = !inPortal;
-  const showCoachLoginButton = inPortal || inLogin;
+  const showPublicPortalButton = !inPortal;
+  const showCoachLoginButton = inLogin;
+  const showLogoutButton = showCoachNav;
 
   function handleLogout() {
     document.cookie = 'coach_access=; path=/; max-age=0; SameSite=Lax';
@@ -40,13 +39,25 @@ export default function Nav() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur">
-      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+    <header
+      className={`sticky top-0 z-50 border-b backdrop-blur ${
+        inPortal
+          ? 'border-slate-800/70 bg-slate-950/92'
+          : 'border-slate-800/80 bg-slate-950/95'
+      }`}
+    >
+      <div className={`${inPortal ? 'mx-auto max-w-6xl' : 'mx-auto max-w-7xl'} px-4 py-4 sm:px-6 lg:px-8`}>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex min-w-0 items-center gap-4">
-              <Link href={inPortal ? '/portal' : '/'} className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-slate-900">
+              <Link href={inPortal ? '/portal' : '/'} className="flex min-w-0 items-center gap-4">
+                <div
+                  className={`flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-slate-900 ${
+                    inPortal
+                      ? 'h-20 w-20 border-slate-700 p-1.5 sm:h-24 sm:w-24'
+                      : 'h-16 w-16 border-slate-700 p-1'
+                  }`}
+                >
                   {!logoFailed ? (
                     <img
                       src="/st-benedicts-logo.png"
@@ -55,22 +66,38 @@ export default function Nav() {
                       onError={() => setLogoFailed(true)}
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-slate-900 text-sm font-bold tracking-wide text-sky-300">
+                    <div
+                      className={`flex h-full w-full items-center justify-center bg-slate-900 font-bold tracking-wide text-sky-300 ${
+                        inPortal ? 'text-lg' : 'text-sm'
+                      }`}
+                    >
                       SB
                     </div>
                   )}
                 </div>
 
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-sky-400">
+                  <p
+                    className={`font-semibold uppercase text-sky-400 ${
+                      inPortal
+                        ? 'text-xs tracking-[0.32em]'
+                        : 'text-[11px] tracking-[0.28em]'
+                    }`}
+                  >
                     St Benedict&apos;s College
                   </p>
-                  <h1 className="mt-1 text-xl font-bold tracking-tight text-white sm:text-2xl">
-                    High-Performance Operations System
+
+                  <h1
+                    className={`mt-1 font-bold tracking-tight text-white ${
+                      inPortal ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
+                    }`}
+                  >
+                    {inPortal ? 'St Benedict’s Hockey Portal' : 'High-Performance Operations System'}
                   </h1>
-                  <p className="mt-1 text-sm text-slate-400">
+
+                  <p className={`mt-1 text-slate-400 ${inPortal ? 'text-sm sm:text-base' : 'text-sm'}`}>
                     {inPortal
-                      ? 'Public schedules, fixtures, results, and leaderboards.'
+                      ? 'Weekly communication, fixtures, results, programs, and leaderboards for players and parents.'
                       : inLogin
                       ? 'Protected coach access for internal operations.'
                       : 'Coach control, team operations, attendance, performance, and portal management.'}
@@ -80,25 +107,18 @@ export default function Nav() {
             </div>
 
             <div className="flex flex-wrap gap-2">
-              {showPublicButton
-                ? publicNavItems.map((item) => {
-                    const active = isActive(pathname, item.href);
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
-                          active
-                            ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                            : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-500 hover:bg-slate-800 hover:text-white'
-                        }`}
-                      >
-                        {item.label}
-                      </Link>
-                    );
-                  })
-                : null}
+              {showPublicPortalButton ? (
+                <Link
+                  href="/portal"
+                  className={`rounded-xl border px-4 py-2.5 text-sm font-medium transition ${
+                    isActive(pathname, '/portal')
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
+                      : 'border-slate-700 bg-slate-900 text-slate-200 hover:border-emerald-500 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  Parent &amp; Player Portal
+                </Link>
+              ) : null}
 
               {showCoachLoginButton ? (
                 <Link
@@ -109,7 +129,7 @@ export default function Nav() {
                 </Link>
               ) : null}
 
-              {showCoachNav ? (
+              {showLogoutButton ? (
                 <button
                   onClick={handleLogout}
                   className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
