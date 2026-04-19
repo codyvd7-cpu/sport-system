@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -156,6 +155,31 @@ function daysSince(dateString?: string | null) {
   return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
 }
 
+function getCurrentWeekRangeLabel() {
+  const today = new Date();
+  const day = today.getDay();
+  const mondayOffset = day === 0 ? -6 : 1 - day;
+
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const mondayText = monday.toLocaleDateString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+  });
+
+  const sundayText = sunday.toLocaleDateString('en-ZA', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+  return `${mondayText} – ${sundayText}`;
+}
+
 function normalizeWeekPlan(row: GenericRow): WeekPlan {
   return {
     id: firstValue(row.id, crypto.randomUUID()),
@@ -276,6 +300,7 @@ export default function PortalPage() {
   const [performanceRows, setPerformanceRows] = useState<GenericRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedWeekItem, setSelectedWeekItem] = useState<WeekPlanItem | null>(null);
 
   async function loadPortalData() {
     setLoading(true);
@@ -367,6 +392,8 @@ export default function PortalPage() {
       .sort((a, b) => a.sort_order - b.sort_order);
   }, [latestWeekPlan, weekPlanItems]);
 
+  const currentWeekRange = useMemo(() => getCurrentWeekRangeLabel(), []);
+
   const gymLeaderboard = useMemo(() => {
     const groupedAttendance = new Map<
       string,
@@ -401,7 +428,6 @@ export default function PortalPage() {
         const positive = att?.positive ?? 0;
         const gymSessions = att?.gymSessions ?? 0;
         const attendanceRate = total > 0 ? Math.round((positive / total) * 100) : 0;
-
         const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
 
         return {
@@ -473,25 +499,13 @@ export default function PortalPage() {
     return rows;
   }, [athletes, performance]);
 
-  const quickStats = useMemo(() => {
-    return {
-      reminders: reminders.length,
-      fixtures: fixtures.length,
-      results: results.length,
-      programs: programs.length,
-    };
-  }, [reminders.length, fixtures.length, results.length, programs.length]);
-
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6 lg:px-8">
         <section className="mb-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950">
-          <div className="grid grid-cols-1 gap-8 px-6 py-8 md:px-8 lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
+          <div className="grid grid-cols-1 gap-8 px-6 py-8 md:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">
-                St Benedict&apos;s Hockey
-              </p>
-              <h1 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
                 Player &amp; Parent Portal
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
@@ -506,35 +520,70 @@ export default function PortalPage() {
                 >
                   View This Week
                 </a>
-                <a
-                  href="#programs"
-                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
-                >
-                  Open Programs
-                </a>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Reminders</p>
-                <p className="mt-2 text-2xl font-bold text-white">{quickStats.reminders}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Fixtures</p>
-                <p className="mt-2 text-2xl font-bold text-white">{quickStats.fixtures}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Results</p>
-                <p className="mt-2 text-2xl font-bold text-white">{quickStats.results}</p>
-              </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-wide text-slate-500">Programs</p>
-                <p className="mt-2 text-2xl font-bold text-white">{quickStats.programs}</p>
+            <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/50 p-6">
+              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-500/10 blur-3xl" />
+              <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
+
+              <div className="relative">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
+                  Sponsors
+                </p>
+                <h2 className="mt-3 text-2xl font-bold text-white">Supported By Our Partners</h2>
+                <p className="mt-3 text-sm text-slate-300">
+                  This space highlights the partners and sponsors supporting St Benedict&apos;s Hockey.
+                </p>
+
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
+                  </div>
+
+                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
+                  </div>
+
+                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
+                  </div>
+
+                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
+                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
+                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
+
+        {selectedWeekItem ? (
+          <section className="mb-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">
+                  {selectedWeekItem.day_label}
+                </p>
+                <h2 className="mt-2 text-xl font-bold text-white">{selectedWeekItem.title}</h2>
+                <p className="mt-3 max-w-3xl text-sm text-slate-200">
+                  {selectedWeekItem.details || 'No extra details available for this day yet.'}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setSelectedWeekItem(null)}
+                className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+              >
+                Close
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         {error ? (
           <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
@@ -552,12 +601,10 @@ export default function PortalPage() {
               <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div>
                   <h2 className="text-lg font-semibold">Week at a Glance</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {latestWeekPlan?.week_label || 'Current week overview'}
-                  </p>
+                  <p className="mt-1 text-sm text-slate-400">{currentWeekRange}</p>
                 </div>
                 <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                  Current Week
+                  Tap a card for more
                 </span>
               </div>
 
@@ -568,18 +615,19 @@ export default function PortalPage() {
               ) : (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                   {currentWeekItems.map((item) => (
-                    <div
+                    <button
                       key={item.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
+                      onClick={() => setSelectedWeekItem(item)}
+                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-left transition hover:border-emerald-500/60 hover:bg-slate-900"
                     >
                       <p className="text-xs uppercase tracking-wide text-emerald-400">
                         {item.day_label}
                       </p>
                       <h3 className="mt-2 text-sm font-semibold text-white">{item.title}</h3>
-                      <p className="mt-2 text-sm text-slate-400">
-                        {item.details || 'No extra details.'}
+                      <p className="mt-2 line-clamp-3 text-sm text-slate-400">
+                        {item.details || 'Tap to open more details.'}
                       </p>
-                    </div>
+                    </button>
                   ))}
                 </div>
               )}
@@ -827,24 +875,6 @@ export default function PortalPage() {
                     ))}
                   </div>
                 )}
-              </div>
-            </section>
-
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">Coach Access</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Coaches can log in to manage portal content and internal operations.
-                  </p>
-                </div>
-
-                <Link
-                  href="/login"
-                  className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2.5 text-sm font-medium text-sky-300 transition hover:bg-sky-500/20"
-                >
-                  Coach Login
-                </Link>
               </div>
             </section>
           </div>

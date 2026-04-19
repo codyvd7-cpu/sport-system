@@ -29,7 +29,7 @@ export default function Nav() {
 
   const showCoachNav = !inPortal && !inLogin;
   const showPublicPortalButton = !inPortal;
-  const showCoachLoginButton = inLogin;
+  const showCoachLoginButton = inPortal || inLogin;
   const showLogoutButton = showCoachNav;
 
   function handleLogout() {
@@ -52,23 +52,24 @@ export default function Nav() {
             <div className="flex min-w-0 items-center gap-4">
               <Link href={inPortal ? '/portal' : '/'} className="flex min-w-0 items-center gap-4">
                 <div
-                  className={`flex shrink-0 items-center justify-center overflow-hidden rounded-2xl border bg-slate-900 ${
-                    inPortal
-                      ? 'h-20 w-20 border-slate-700 p-1.5 sm:h-24 sm:w-24'
-                      : 'h-16 w-16 border-slate-700 p-1'
+                  className={`relative flex shrink-0 items-center justify-center ${
+                    inPortal ? 'h-24 w-24 sm:h-28 sm:w-28' : 'h-16 w-16 sm:h-20 sm:w-20'
                   }`}
                 >
                   {!logoFailed ? (
-                    <img
-                      src="/st-benedicts-logo.png"
-                      alt="St Benedict's logo"
-                      className="h-full w-full object-contain"
-                      onError={() => setLogoFailed(true)}
-                    />
+                    <>
+                      <div className="absolute inset-0 rounded-full bg-sky-500/10 blur-xl" />
+                      <img
+                        src="/st-benedicts-logo.png"
+                        alt="St Benedict's logo"
+                        className="relative h-full w-full object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+                        onError={() => setLogoFailed(true)}
+                      />
+                    </>
                   ) : (
                     <div
-                      className={`flex h-full w-full items-center justify-center bg-slate-900 font-bold tracking-wide text-sky-300 ${
-                        inPortal ? 'text-lg' : 'text-sm'
+                      className={`flex h-full w-full items-center justify-center rounded-full border border-slate-700 bg-slate-900 font-bold tracking-wide text-sky-300 ${
+                        inPortal ? 'text-xl' : 'text-base'
                       }`}
                     >
                       SB
@@ -80,8 +81,8 @@ export default function Nav() {
                   <p
                     className={`font-semibold uppercase text-sky-400 ${
                       inPortal
-                        ? 'text-xs tracking-[0.32em]'
-                        : 'text-[11px] tracking-[0.28em]'
+                        ? 'text-sm tracking-[0.3em]'
+                        : 'text-xs tracking-[0.28em]'
                     }`}
                   >
                     St Benedict&apos;s College
@@ -89,15 +90,15 @@ export default function Nav() {
 
                   <h1
                     className={`mt-1 font-bold tracking-tight text-white ${
-                      inPortal ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
+                      inPortal ? 'text-3xl sm:text-4xl' : 'text-2xl sm:text-3xl'
                     }`}
                   >
-                    {inPortal ? 'St Benedict’s Hockey Portal' : 'High-Performance Operations System'}
+                    {inPortal ? 'St Benedicts Hockey' : 'High-Performance Operations System'}
                   </h1>
 
                   <p className={`mt-1 text-slate-400 ${inPortal ? 'text-sm sm:text-base' : 'text-sm'}`}>
                     {inPortal
-                      ? 'Weekly communication, fixtures, results, programs, and leaderboards for players and parents.'
+                      ? 'Weekly plans, fixtures, results, programs, and leaderboards.'
                       : inLogin
                       ? 'Protected coach access for internal operations.'
                       : 'Coach control, team operations, attendance, performance, and portal management.'}
