@@ -64,10 +64,10 @@ type Program = {
   details: string;
   is_published: boolean;
   sort_order: number;
+  file_name: string;
+  file_path: string;
+  file_url: string;
 };
-
-const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-const PROGRAM_CATEGORIES = ['Gym', 'Mobility', 'Recovery'];
 
 function firstString(...values: any[]) {
   for (const value of values) {
@@ -180,8 +180,15 @@ function normalizeProgram(row: GenericRow): Program {
     details: firstString(row.details),
     is_published: firstBoolean(row.is_published),
     sort_order: firstNumber(row.sort_order),
+    file_name: firstString(row.file_name),
+    file_path: firstString(row.file_path),
+    file_url: firstString(row.file_url),
   };
 }
+
+const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const PROGRAM_CATEGORIES = ['Gym', 'Mobility', 'Recovery'];
+const PROGRAM_BUCKET = 'portal-programs';
 
 export default function PortalAdminPage() {
   const [weekPlanRows, setWeekPlanRows] = useState<GenericRow[]>([]);
@@ -232,6 +239,7 @@ export default function PortalAdminPage() {
   const [newProgramDetails, setNewProgramDetails] = useState('');
   const [newProgramPublished, setNewProgramPublished] = useState(true);
   const [newProgramSortOrder, setNewProgramSortOrder] = useState('1');
+  const [newProgramFile, setNewProgramFile] = useState<File | null>(null);
 
   const [editingWeekPlanId, setEditingWeekPlanId] = useState<string | null>(null);
   const [editWeekLabel, setEditWeekLabel] = useState('');
@@ -273,6 +281,7 @@ export default function PortalAdminPage() {
   const [editProgramDetails, setEditProgramDetails] = useState('');
   const [editProgramPublished, setEditProgramPublished] = useState(true);
   const [editProgramSortOrder, setEditProgramSortOrder] = useState('1');
+  const [editProgramFile, setEditProgramFile] = useState<File | null>(null);
 
   async function loadPortalAdminData() {
     setLoading(true);
@@ -404,6 +413,73 @@ export default function PortalAdminPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function resetProgramCreateFields() {
+    setNewProgramTitle('');
+    setNewProgramCategory('Gym');
+    setNewProgramDayLabel('Monday');
+    setNewProgramDetails('');
+    setNewProgramPublished(true);
+    setNewProgramSortOrder(String(programs.length + 1));
+    setNewProgramFile(null);
+  }
+
+  function resetProgramEditFields() {
+    setEditingProgramId(null);
+    setEditProgramTitle('');
+    setEditProgramCategory('Gym');
+    setEditProgramDayLabel('Monday');
+    setEditProgramDetails('');
+    setEditProgramPublished(true);
+    setEditProgramSortOrder('1');
+    setEditProgramFile(null);
+  }
+
+  function validatePdf(file: File | null) {
+    if (!file) return true;
+    const isPdf =
+      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+    if (!isPdf) {
+      setError('Only PDF files can be uploaded for programs.');
+      return false;
+    }
+
+    return true;
+  }
+
+  async function uploadProgramPdf(file: File, programTitle: string) {
+    const safeTitle = programTitle
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const extension = file.name.split('.').pop() || 'pdf';
+    const path = `programs/${Date.now()}-${safeTitle || 'program'}.${extension}`;
+
+    const uploadRes = await supabase.storage.from(PROGRAM_BUCKET).upload(path, file, {
+      upsert: false,
+      contentType: 'application/pdf',
+    });
+
+    if (uploadRes.error) {
+      throw new Error(uploadRes.error.message || 'Failed to upload PDF.');
+    }
+
+    const publicRes = supabase.storage.from(PROGRAM_BUCKET).getPublicUrl(path);
+    const fileUrl = publicRes.data.publicUrl || '';
+
+    return {
+      file_name: file.name,
+      file_path: path,
+      file_url: fileUrl,
+    };
+  }
+
+  async function tryRemoveStoredFile(filePath?: string) {
+    if (!filePath) return;
+    await supabase.storage.from(PROGRAM_BUCKET).remove([filePath]);
   }
 
   async function handleCreateWeekPlan(e: React.FormEvent) {
@@ -585,9 +661,18 @@ export default function PortalAdminPage() {
         setError('Maximum 4 programs at a time. Delete one first if you want another.');
         return;
       }
+
       if (!newProgramTitle.trim()) {
         setError('Program title is required.');
         return;
+      }
+
+      if (!validatePdf(newProgramFile)) return;
+
+      let fileData: Partial<Program> = {};
+
+      if (newProgramFile) {
+        fileData = await uploadProgramPdf(newProgramFile, newProgramTitle.trim());
       }
 
       const { error: insertError } = await supabase.from('PortalPrograms').insert([
@@ -598,20 +683,19 @@ export default function PortalAdminPage() {
           details: newProgramDetails.trim(),
           is_published: newProgramPublished,
           sort_order: Number(newProgramSortOrder) || 0,
+          ...fileData,
         },
       ]);
 
       if (insertError) {
+        if ('file_path' in fileData && fileData.file_path) {
+          await tryRemoveStoredFile(fileData.file_path);
+        }
         setError(insertError.message || 'Failed to create program.');
         return;
       }
 
-      setNewProgramTitle('');
-      setNewProgramCategory('Gym');
-      setNewProgramDayLabel('Monday');
-      setNewProgramDetails('');
-      setNewProgramPublished(true);
-      setNewProgramSortOrder(String(programs.length + 1));
+      resetProgramCreateFields();
       setSuccessMessage('Program created.');
       await loadPortalAdminData();
     });
@@ -939,16 +1023,7 @@ export default function PortalAdminPage() {
     setEditProgramDetails(program.details);
     setEditProgramPublished(program.is_published);
     setEditProgramSortOrder(String(program.sort_order));
-  }
-
-  function cancelEditProgram() {
-    setEditingProgramId(null);
-    setEditProgramTitle('');
-    setEditProgramCategory('Gym');
-    setEditProgramDayLabel('Monday');
-    setEditProgramDetails('');
-    setEditProgramPublished(true);
-    setEditProgramSortOrder('1');
+    setEditProgramFile(null);
   }
 
   async function handleSaveProgram(id: string) {
@@ -956,6 +1031,25 @@ export default function PortalAdminPage() {
       if (!editProgramTitle.trim()) {
         setError('Program title is required.');
         return;
+      }
+
+      if (!validatePdf(editProgramFile)) return;
+
+      const currentProgram = programs.find((program) => program.id === id);
+      if (!currentProgram) {
+        setError('Program not found.');
+        return;
+      }
+
+      let fileData: Partial<Program> = {
+        file_name: currentProgram.file_name,
+        file_path: currentProgram.file_path,
+        file_url: currentProgram.file_url,
+      };
+
+      if (editProgramFile) {
+        const uploaded = await uploadProgramPdf(editProgramFile, editProgramTitle.trim());
+        fileData = uploaded;
       }
 
       const { error: updateError } = await supabase
@@ -967,16 +1061,24 @@ export default function PortalAdminPage() {
           details: editProgramDetails.trim(),
           is_published: editProgramPublished,
           sort_order: Number(editProgramSortOrder) || 0,
+          ...fileData,
         })
         .eq('id', id);
 
       if (updateError) {
+        if (editProgramFile && 'file_path' in fileData && fileData.file_path && fileData.file_path !== currentProgram.file_path) {
+          await tryRemoveStoredFile(fileData.file_path);
+        }
         setError(updateError.message || 'Failed to update program.');
         return;
       }
 
+      if (editProgramFile && currentProgram.file_path && currentProgram.file_path !== fileData.file_path) {
+        await tryRemoveStoredFile(currentProgram.file_path);
+      }
+
       setSuccessMessage('Program updated.');
-      cancelEditProgram();
+      resetProgramEditFields();
       await loadPortalAdminData();
     });
   }
@@ -986,11 +1088,17 @@ export default function PortalAdminPage() {
     if (!confirmed) return;
 
     await runAction(async () => {
+      const currentProgram = programs.find((program) => program.id === id);
+
       const { error: deleteError } = await supabase.from('PortalPrograms').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete program.');
         return;
+      }
+
+      if (currentProgram?.file_path) {
+        await tryRemoveStoredFile(currentProgram.file_path);
       }
 
       setSuccessMessage('Program deleted.');
@@ -1983,6 +2091,19 @@ export default function PortalAdminPage() {
                     />
                   </div>
 
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-200">Program PDF</label>
+                    <input
+                      type="file"
+                      accept="application/pdf,.pdf"
+                      onChange={(e) => setNewProgramFile(e.target.files?.[0] || null)}
+                      className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+                    />
+                    <p className="mt-2 text-xs text-slate-500">
+                      Upload a PDF that players can open or download.
+                    </p>
+                  </div>
+
                   <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
                     <input
                       type="checkbox"
@@ -2071,6 +2192,23 @@ export default function PortalAdminPage() {
                                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                               />
 
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-200">Replace PDF</label>
+                                <input
+                                  type="file"
+                                  accept="application/pdf,.pdf"
+                                  onChange={(e) => setEditProgramFile(e.target.files?.[0] || null)}
+                                  className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+                                />
+                                {program.file_url ? (
+                                  <p className="mt-2 text-xs text-slate-500">
+                                    Current file: {program.file_name || 'PDF attached'}
+                                  </p>
+                                ) : (
+                                  <p className="mt-2 text-xs text-slate-500">No PDF attached yet.</p>
+                                )}
+                              </div>
+
                               <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
                                 <input
                                   type="checkbox"
@@ -2089,7 +2227,7 @@ export default function PortalAdminPage() {
                                   Save
                                 </button>
                                 <button
-                                  onClick={cancelEditProgram}
+                                  onClick={resetProgramEditFields}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
                                 >
                                   Cancel
@@ -2107,9 +2245,22 @@ export default function PortalAdminPage() {
                                 <p className="mt-1 text-xs text-slate-500">
                                   Sort {program.sort_order} • {program.is_published ? 'Published' : 'Draft'}
                                 </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  File: {program.file_name || 'No PDF uploaded'}
+                                </p>
                               </div>
 
                               <div className="flex flex-wrap gap-2">
+                                {program.file_url ? (
+                                  <a
+                                    href={program.file_url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200"
+                                  >
+                                    Open PDF
+                                  </a>
+                                ) : null}
                                 <button
                                   onClick={() => startEditProgram(program)}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
