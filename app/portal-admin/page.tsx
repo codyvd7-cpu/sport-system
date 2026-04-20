@@ -69,6 +69,18 @@ type Program = {
   file_url: string;
 };
 
+type Sponsor = {
+  id: string;
+  created_at: string | null;
+  name: string;
+  image_name: string;
+  image_path: string;
+  image_url: string;
+  sponsor_link: string;
+  is_published: boolean;
+  sort_order: number;
+};
+
 function firstString(...values: any[]) {
   for (const value of values) {
     if (typeof value === 'string' && value.trim() !== '') return value.trim();
@@ -186,9 +198,24 @@ function normalizeProgram(row: GenericRow): Program {
   };
 }
 
+function normalizeSponsor(row: GenericRow): Sponsor {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    name: firstString(row.name),
+    image_name: firstString(row.image_name),
+    image_path: firstString(row.image_path),
+    image_url: firstString(row.image_url),
+    sponsor_link: firstString(row.sponsor_link),
+    is_published: firstBoolean(row.is_published),
+    sort_order: firstNumber(row.sort_order),
+  };
+}
+
 const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const PROGRAM_CATEGORIES = ['Gym', 'Mobility', 'Recovery'];
 const PROGRAM_BUCKET = 'portal-programs';
+const SPONSOR_BUCKET = 'portal-sponsors';
 
 export default function PortalAdminPage() {
   const [weekPlanRows, setWeekPlanRows] = useState<GenericRow[]>([]);
@@ -197,6 +224,7 @@ export default function PortalAdminPage() {
   const [fixtureRows, setFixtureRows] = useState<GenericRow[]>([]);
   const [resultRows, setResultRows] = useState<GenericRow[]>([]);
   const [programRows, setProgramRows] = useState<GenericRow[]>([]);
+  const [sponsorRows, setSponsorRows] = useState<GenericRow[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -241,6 +269,12 @@ export default function PortalAdminPage() {
   const [newProgramSortOrder, setNewProgramSortOrder] = useState('1');
   const [newProgramFile, setNewProgramFile] = useState<File | null>(null);
 
+  const [newSponsorName, setNewSponsorName] = useState('');
+  const [newSponsorLink, setNewSponsorLink] = useState('');
+  const [newSponsorPublished, setNewSponsorPublished] = useState(true);
+  const [newSponsorSortOrder, setNewSponsorSortOrder] = useState('1');
+  const [newSponsorImage, setNewSponsorImage] = useState<File | null>(null);
+
   const [editingWeekPlanId, setEditingWeekPlanId] = useState<string | null>(null);
   const [editWeekLabel, setEditWeekLabel] = useState('');
   const [editWeekPublished, setEditWeekPublished] = useState(true);
@@ -283,27 +317,42 @@ export default function PortalAdminPage() {
   const [editProgramSortOrder, setEditProgramSortOrder] = useState('1');
   const [editProgramFile, setEditProgramFile] = useState<File | null>(null);
 
+  const [editingSponsorId, setEditingSponsorId] = useState<string | null>(null);
+  const [editSponsorName, setEditSponsorName] = useState('');
+  const [editSponsorLink, setEditSponsorLink] = useState('');
+  const [editSponsorPublished, setEditSponsorPublished] = useState(true);
+  const [editSponsorSortOrder, setEditSponsorSortOrder] = useState('1');
+  const [editSponsorImage, setEditSponsorImage] = useState<File | null>(null);
+
   async function loadPortalAdminData() {
     setLoading(true);
     setError('');
 
-    const [weekPlansRes, weekPlanItemsRes, remindersRes, fixturesRes, resultsRes, programsRes] =
-      await Promise.all([
-        supabase.from('PortalWeekPlan').select('*').order('created_at', { ascending: false }),
-        supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
-        supabase.from('PortalReminders').select('*').order('sort_order', { ascending: true }),
-        supabase
-          .from('PortalFixtures')
-          .select('*')
-          .order('fixture_date', { ascending: true })
-          .order('sort_order', { ascending: true }),
-        supabase
-          .from('PortalResults')
-          .select('*')
-          .order('result_date', { ascending: false })
-          .order('sort_order', { ascending: true }),
-        supabase.from('PortalPrograms').select('*').order('sort_order', { ascending: true }),
-      ]);
+    const [
+      weekPlansRes,
+      weekPlanItemsRes,
+      remindersRes,
+      fixturesRes,
+      resultsRes,
+      programsRes,
+      sponsorsRes,
+    ] = await Promise.all([
+      supabase.from('PortalWeekPlan').select('*').order('created_at', { ascending: false }),
+      supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
+      supabase.from('PortalReminders').select('*').order('sort_order', { ascending: true }),
+      supabase
+        .from('PortalFixtures')
+        .select('*')
+        .order('fixture_date', { ascending: true })
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('PortalResults')
+        .select('*')
+        .order('result_date', { ascending: false })
+        .order('sort_order', { ascending: true }),
+      supabase.from('PortalPrograms').select('*').order('sort_order', { ascending: true }),
+      supabase.from('PortalSponsors').select('*').order('sort_order', { ascending: true }),
+    ]);
 
     if (
       weekPlansRes.error ||
@@ -311,7 +360,8 @@ export default function PortalAdminPage() {
       remindersRes.error ||
       fixturesRes.error ||
       resultsRes.error ||
-      programsRes.error
+      programsRes.error ||
+      sponsorsRes.error
     ) {
       setError(
         weekPlansRes.error?.message ||
@@ -320,6 +370,7 @@ export default function PortalAdminPage() {
           fixturesRes.error?.message ||
           resultsRes.error?.message ||
           programsRes.error?.message ||
+          sponsorsRes.error?.message ||
           'Failed to load portal admin data.'
       );
       setLoading(false);
@@ -332,6 +383,7 @@ export default function PortalAdminPage() {
     setFixtureRows((fixturesRes.data as GenericRow[]) || []);
     setResultRows((resultsRes.data as GenericRow[]) || []);
     setProgramRows((programsRes.data as GenericRow[]) || []);
+    setSponsorRows((sponsorsRes.data as GenericRow[]) || []);
     setLoading(false);
   }
 
@@ -386,6 +438,11 @@ export default function PortalAdminPage() {
     [programRows]
   );
 
+  const sponsors = useMemo(
+    () => sponsorRows.map(normalizeSponsor).sort((a, b) => a.sort_order - b.sort_order),
+    [sponsorRows]
+  );
+
   useEffect(() => {
     if (!selectedWeekPlanId && weekPlans.length > 0) {
       setSelectedWeekPlanId(weekPlans[0].id);
@@ -436,6 +493,23 @@ export default function PortalAdminPage() {
     setEditProgramFile(null);
   }
 
+  function resetSponsorCreateFields() {
+    setNewSponsorName('');
+    setNewSponsorLink('');
+    setNewSponsorPublished(true);
+    setNewSponsorSortOrder(String(sponsors.length + 1));
+    setNewSponsorImage(null);
+  }
+
+  function resetSponsorEditFields() {
+    setEditingSponsorId(null);
+    setEditSponsorName('');
+    setEditSponsorLink('');
+    setEditSponsorPublished(true);
+    setEditSponsorSortOrder('1');
+    setEditSponsorImage(null);
+  }
+
   function validatePdf(file: File | null) {
     if (!file) return true;
     const isPdf =
@@ -446,6 +520,16 @@ export default function PortalAdminPage() {
       return false;
     }
 
+    return true;
+  }
+
+  function validateImage(file: File | null) {
+    if (!file) return true;
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      setError('Only image files can be uploaded for sponsors.');
+      return false;
+    }
     return true;
   }
 
@@ -477,9 +561,37 @@ export default function PortalAdminPage() {
     };
   }
 
-  async function tryRemoveStoredFile(filePath?: string) {
+  async function uploadSponsorImage(file: File, sponsorName: string) {
+    const safeName = sponsorName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+    const extension = file.name.split('.').pop() || 'png';
+    const path = `sponsors/${Date.now()}-${safeName || 'sponsor'}.${extension}`;
+
+    const uploadRes = await supabase.storage.from(SPONSOR_BUCKET).upload(path, file, {
+      upsert: false,
+      contentType: file.type || 'image/png',
+    });
+
+    if (uploadRes.error) {
+      throw new Error(uploadRes.error.message || 'Failed to upload sponsor image.');
+    }
+
+    const publicRes = supabase.storage.from(SPONSOR_BUCKET).getPublicUrl(path);
+    const imageUrl = publicRes.data.publicUrl || '';
+
+    return {
+      image_name: file.name,
+      image_path: path,
+      image_url: imageUrl,
+    };
+  }
+
+  async function tryRemoveStoredFile(bucket: string, filePath?: string) {
     if (!filePath) return;
-    await supabase.storage.from(PROGRAM_BUCKET).remove([filePath]);
+    await supabase.storage.from(bucket).remove([filePath]);
   }
 
   async function handleCreateWeekPlan(e: React.FormEvent) {
@@ -689,7 +801,7 @@ export default function PortalAdminPage() {
 
       if (insertError) {
         if ('file_path' in fileData && fileData.file_path) {
-          await tryRemoveStoredFile(fileData.file_path);
+          await tryRemoveStoredFile(PROGRAM_BUCKET, fileData.file_path);
         }
         setError(insertError.message || 'Failed to create program.');
         return;
@@ -697,6 +809,47 @@ export default function PortalAdminPage() {
 
       resetProgramCreateFields();
       setSuccessMessage('Program created.');
+      await loadPortalAdminData();
+    });
+  }
+
+  async function handleCreateSponsor(e: React.FormEvent) {
+    e.preventDefault();
+
+    await runAction(async () => {
+      if (!newSponsorName.trim()) {
+        setError('Sponsor name is required.');
+        return;
+      }
+
+      if (!validateImage(newSponsorImage)) return;
+
+      let imageData: Partial<Sponsor> = {};
+
+      if (newSponsorImage) {
+        imageData = await uploadSponsorImage(newSponsorImage, newSponsorName.trim());
+      }
+
+      const { error: insertError } = await supabase.from('PortalSponsors').insert([
+        {
+          name: newSponsorName.trim(),
+          sponsor_link: newSponsorLink.trim(),
+          is_published: newSponsorPublished,
+          sort_order: Number(newSponsorSortOrder) || 0,
+          ...imageData,
+        },
+      ]);
+
+      if (insertError) {
+        if ('image_path' in imageData && imageData.image_path) {
+          await tryRemoveStoredFile(SPONSOR_BUCKET, imageData.image_path);
+        }
+        setError(insertError.message || 'Failed to create sponsor.');
+        return;
+      }
+
+      resetSponsorCreateFields();
+      setSuccessMessage('Sponsor created.');
       await loadPortalAdminData();
     });
   }
@@ -1067,14 +1220,14 @@ export default function PortalAdminPage() {
 
       if (updateError) {
         if (editProgramFile && 'file_path' in fileData && fileData.file_path && fileData.file_path !== currentProgram.file_path) {
-          await tryRemoveStoredFile(fileData.file_path);
+          await tryRemoveStoredFile(PROGRAM_BUCKET, fileData.file_path);
         }
         setError(updateError.message || 'Failed to update program.');
         return;
       }
 
       if (editProgramFile && currentProgram.file_path && currentProgram.file_path !== fileData.file_path) {
-        await tryRemoveStoredFile(currentProgram.file_path);
+        await tryRemoveStoredFile(PROGRAM_BUCKET, currentProgram.file_path);
       }
 
       setSuccessMessage('Program updated.');
@@ -1098,10 +1251,97 @@ export default function PortalAdminPage() {
       }
 
       if (currentProgram?.file_path) {
-        await tryRemoveStoredFile(currentProgram.file_path);
+        await tryRemoveStoredFile(PROGRAM_BUCKET, currentProgram.file_path);
       }
 
       setSuccessMessage('Program deleted.');
+      await loadPortalAdminData();
+    });
+  }
+
+  function startEditSponsor(sponsor: Sponsor) {
+    setEditingSponsorId(sponsor.id);
+    setEditSponsorName(sponsor.name);
+    setEditSponsorLink(sponsor.sponsor_link);
+    setEditSponsorPublished(sponsor.is_published);
+    setEditSponsorSortOrder(String(sponsor.sort_order));
+    setEditSponsorImage(null);
+  }
+
+  async function handleSaveSponsor(id: string) {
+    await runAction(async () => {
+      if (!editSponsorName.trim()) {
+        setError('Sponsor name is required.');
+        return;
+      }
+
+      if (!validateImage(editSponsorImage)) return;
+
+      const currentSponsor = sponsors.find((sponsor) => sponsor.id === id);
+      if (!currentSponsor) {
+        setError('Sponsor not found.');
+        return;
+      }
+
+      let imageData: Partial<Sponsor> = {
+        image_name: currentSponsor.image_name,
+        image_path: currentSponsor.image_path,
+        image_url: currentSponsor.image_url,
+      };
+
+      if (editSponsorImage) {
+        const uploaded = await uploadSponsorImage(editSponsorImage, editSponsorName.trim());
+        imageData = uploaded;
+      }
+
+      const { error: updateError } = await supabase
+        .from('PortalSponsors')
+        .update({
+          name: editSponsorName.trim(),
+          sponsor_link: editSponsorLink.trim(),
+          is_published: editSponsorPublished,
+          sort_order: Number(editSponsorSortOrder) || 0,
+          ...imageData,
+        })
+        .eq('id', id);
+
+      if (updateError) {
+        if (editSponsorImage && 'image_path' in imageData && imageData.image_path && imageData.image_path !== currentSponsor.image_path) {
+          await tryRemoveStoredFile(SPONSOR_BUCKET, imageData.image_path);
+        }
+        setError(updateError.message || 'Failed to update sponsor.');
+        return;
+      }
+
+      if (editSponsorImage && currentSponsor.image_path && currentSponsor.image_path !== imageData.image_path) {
+        await tryRemoveStoredFile(SPONSOR_BUCKET, currentSponsor.image_path);
+      }
+
+      setSuccessMessage('Sponsor updated.');
+      resetSponsorEditFields();
+      await loadPortalAdminData();
+    });
+  }
+
+  async function handleDeleteSponsor(id: string) {
+    const confirmed = window.confirm('Delete this sponsor?');
+    if (!confirmed) return;
+
+    await runAction(async () => {
+      const currentSponsor = sponsors.find((sponsor) => sponsor.id === id);
+
+      const { error: deleteError } = await supabase.from('PortalSponsors').delete().eq('id', id);
+
+      if (deleteError) {
+        setError(deleteError.message || 'Failed to delete sponsor.');
+        return;
+      }
+
+      if (currentSponsor?.image_path) {
+        await tryRemoveStoredFile(SPONSOR_BUCKET, currentSponsor.image_path);
+      }
+
+      setSuccessMessage('Sponsor deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1116,7 +1356,7 @@ export default function PortalAdminPage() {
             </p>
             <h1 className="text-3xl font-bold tracking-tight text-white">Portal Admin</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              Manage the public portal: week at a glance, reminders, fixtures, results, and programs.
+              Manage the public portal: sponsors, week at a glance, reminders, fixtures, results, and programs.
             </p>
           </div>
 
@@ -1154,6 +1394,220 @@ export default function PortalAdminPage() {
           </div>
         ) : (
           <div className="space-y-8">
+            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <h2 className="mb-4 text-lg font-semibold">Create Sponsor</h2>
+                <form onSubmit={handleCreateSponsor} className="space-y-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-200">Sponsor Name</label>
+                    <input
+                      value={newSponsorName}
+                      onChange={(e) => setNewSponsorName(e.target.value)}
+                      placeholder="e.g. Bioteen"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-200">Sponsor Link</label>
+                    <input
+                      value={newSponsorLink}
+                      onChange={(e) => setNewSponsorLink(e.target.value)}
+                      placeholder="https://example.com"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
+                      <input
+                        type="number"
+                        value={newSponsorSortOrder}
+                        onChange={(e) => setNewSponsorSortOrder(e.target.value)}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                      />
+                    </div>
+
+                    <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
+                      <input
+                        type="checkbox"
+                        checked={newSponsorPublished}
+                        onChange={(e) => setNewSponsorPublished(e.target.checked)}
+                        className="h-4 w-4"
+                      />
+                      Published
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-200">Sponsor Logo/Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setNewSponsorImage(e.target.files?.[0] || null)}
+                      className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={busy}
+                    className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300"
+                  >
+                    Create Sponsor
+                  </button>
+                </form>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <h2 className="mb-4 text-lg font-semibold">Sponsors</h2>
+
+                {sponsors.length === 0 ? (
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
+                    No sponsors yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {sponsors.map((sponsor) => {
+                      const isEditing = editingSponsorId === sponsor.id;
+
+                      return (
+                        <div key={sponsor.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                          {isEditing ? (
+                            <div className="space-y-4">
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-200">Sponsor Name</label>
+                                <input
+                                  value={editSponsorName}
+                                  onChange={(e) => setEditSponsorName(e.target.value)}
+                                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-200">Sponsor Link</label>
+                                <input
+                                  value={editSponsorLink}
+                                  onChange={(e) => setEditSponsorLink(e.target.value)}
+                                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                                />
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div>
+                                  <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
+                                  <input
+                                    type="number"
+                                    value={editSponsorSortOrder}
+                                    onChange={(e) => setEditSponsorSortOrder(e.target.value)}
+                                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
+                                  />
+                                </div>
+
+                                <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
+                                  <input
+                                    type="checkbox"
+                                    checked={editSponsorPublished}
+                                    onChange={(e) => setEditSponsorPublished(e.target.checked)}
+                                    className="h-4 w-4"
+                                  />
+                                  Published
+                                </label>
+                              </div>
+
+                              <div>
+                                <label className="mb-2 block text-sm font-medium text-slate-200">Replace Sponsor Image</label>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={(e) => setEditSponsorImage(e.target.files?.[0] || null)}
+                                  className="block w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-800 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+                                />
+                                {sponsor.image_url ? (
+                                  <p className="mt-2 text-xs text-slate-500">
+                                    Current image: {sponsor.image_name || 'Image attached'}
+                                  </p>
+                                ) : (
+                                  <p className="mt-2 text-xs text-slate-500">No image uploaded yet.</p>
+                                )}
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => handleSaveSponsor(sponsor.id)}
+                                  className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300"
+                                >
+                                  Save
+                                </button>
+                                <button
+                                  onClick={resetSponsorEditFields}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl border border-slate-800 bg-slate-900">
+                                  {sponsor.image_url ? (
+                                    <img
+                                      src={sponsor.image_url}
+                                      alt={sponsor.name}
+                                      className="h-full w-full object-contain"
+                                    />
+                                  ) : (
+                                    <span className="text-xs text-slate-500">No image</span>
+                                  )}
+                                </div>
+
+                                <div>
+                                  <p className="text-sm font-semibold text-white">{sponsor.name}</p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    Sort {sponsor.sort_order} • {sponsor.is_published ? 'Published' : 'Draft'}
+                                  </p>
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {sponsor.sponsor_link || 'No link added'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex flex-wrap gap-2">
+                                {sponsor.sponsor_link ? (
+                                  <a
+                                    href={sponsor.sponsor_link}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-200"
+                                  >
+                                    Open Link
+                                  </a>
+                                ) : null}
+                                <button
+                                  onClick={() => startEditSponsor(sponsor)}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteSponsor(sponsor.id)}
+                                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
+
             <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Week Plan</h2>

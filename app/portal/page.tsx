@@ -63,6 +63,9 @@ type Program = {
   details: string;
   is_published: boolean;
   sort_order: number;
+  file_name: string;
+  file_path: string;
+  file_url: string;
 };
 
 type Athlete = {
@@ -249,6 +252,9 @@ function normalizeProgram(row: GenericRow): Program {
     details: firstString(row.details),
     is_published: firstBoolean(row.is_published),
     sort_order: firstNumber(row.sort_order) ?? 0,
+    file_name: firstString(row.file_name),
+    file_path: firstString(row.file_path),
+    file_url: firstString(row.file_url),
   };
 }
 
@@ -320,8 +326,18 @@ export default function PortalPage() {
       supabase.from('PortalWeekPlan').select('*').eq('published', true).order('created_at', { ascending: false }),
       supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
       supabase.from('PortalReminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
-      supabase.from('PortalFixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }).order('sort_order', { ascending: true }),
-      supabase.from('PortalResults').select('*').eq('is_published', true).order('result_date', { ascending: false }).order('sort_order', { ascending: true }),
+      supabase
+        .from('PortalFixtures')
+        .select('*')
+        .eq('is_published', true)
+        .order('fixture_date', { ascending: true })
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('PortalResults')
+        .select('*')
+        .eq('is_published', true)
+        .order('result_date', { ascending: false })
+        .order('sort_order', { ascending: true }),
       supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
       supabase.from('athletes').select('*'),
       supabase.from('Attendance').select('*'),
@@ -776,10 +792,35 @@ export default function PortalPage() {
                           {program.day_label || '—'}
                         </span>
                       </div>
+
                       <h3 className="mt-3 text-sm font-semibold text-white">{program.title}</h3>
+
                       <p className="mt-2 text-sm text-slate-400">
                         {program.details || 'No details added yet.'}
                       </p>
+
+                      {program.file_url ? (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <a
+                            href={program.file_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
+                          >
+                            Open PDF
+                          </a>
+
+                          <a
+                            href={program.file_url}
+                            download={program.file_name || `${program.title}.pdf`}
+                            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+                          >
+                            Download
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-xs text-slate-500">No PDF attached yet.</p>
+                      )}
                     </div>
                   ))}
                 </div>
