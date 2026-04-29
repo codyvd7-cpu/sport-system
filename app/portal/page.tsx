@@ -68,6 +68,18 @@ type Program = {
   file_url: string;
 };
 
+type Sponsor = {
+  id: string;
+  created_at: string | null;
+  name: string;
+  image_name: string;
+  image_path: string;
+  image_url: string;
+  sponsor_link: string;
+  is_published: boolean;
+  sort_order: number;
+};
+
 type Athlete = {
   id: string;
   name: string;
@@ -258,6 +270,20 @@ function normalizeProgram(row: GenericRow): Program {
   };
 }
 
+function normalizeSponsor(row: GenericRow): Sponsor {
+  return {
+    id: firstValue(row.id, crypto.randomUUID()),
+    created_at: firstString(row.created_at) || null,
+    name: firstString(row.name),
+    image_name: firstString(row.image_name),
+    image_path: firstString(row.image_path),
+    image_url: firstString(row.image_url),
+    sponsor_link: firstString(row.sponsor_link),
+    is_published: firstBoolean(row.is_published),
+    sort_order: firstNumber(row.sort_order) ?? 0,
+  };
+}
+
 function normalizeAthlete(row: GenericRow): Athlete {
   return {
     id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
@@ -301,6 +327,7 @@ export default function PortalPage() {
   const [fixtureRows, setFixtureRows] = useState<GenericRow[]>([]);
   const [resultRows, setResultRows] = useState<GenericRow[]>([]);
   const [programRows, setProgramRows] = useState<GenericRow[]>([]);
+  const [sponsorRows, setSponsorRows] = useState<GenericRow[]>([]);
   const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
   const [attendanceRows, setAttendanceRows] = useState<GenericRow[]>([]);
   const [performanceRows, setPerformanceRows] = useState<GenericRow[]>([]);
@@ -319,6 +346,7 @@ export default function PortalPage() {
       fixturesRes,
       resultsRes,
       programsRes,
+      sponsorsRes,
       athletesRes,
       attendanceRes,
       performanceRes,
@@ -339,6 +367,7 @@ export default function PortalPage() {
         .order('result_date', { ascending: false })
         .order('sort_order', { ascending: true }),
       supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
+      supabase.from('PortalSponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
       supabase.from('athletes').select('*'),
       supabase.from('Attendance').select('*'),
       supabase.from('Performance').select('*'),
@@ -351,6 +380,7 @@ export default function PortalPage() {
       fixturesRes.error ||
       resultsRes.error ||
       programsRes.error ||
+      sponsorsRes.error ||
       athletesRes.error ||
       attendanceRes.error ||
       performanceRes.error
@@ -362,6 +392,7 @@ export default function PortalPage() {
           fixturesRes.error?.message ||
           resultsRes.error?.message ||
           programsRes.error?.message ||
+          sponsorsRes.error?.message ||
           athletesRes.error?.message ||
           attendanceRes.error?.message ||
           performanceRes.error?.message ||
@@ -377,6 +408,7 @@ export default function PortalPage() {
     setFixtureRows((fixturesRes.data as GenericRow[]) || []);
     setResultRows((resultsRes.data as GenericRow[]) || []);
     setProgramRows((programsRes.data as GenericRow[]) || []);
+    setSponsorRows((sponsorsRes.data as GenericRow[]) || []);
     setAthleteRows((athletesRes.data as GenericRow[]) || []);
     setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
     setPerformanceRows((performanceRes.data as GenericRow[]) || []);
@@ -393,6 +425,7 @@ export default function PortalPage() {
   const fixtures = useMemo(() => fixtureRows.map(normalizeFixture), [fixtureRows]);
   const results = useMemo(() => resultRows.map(normalizeResult), [resultRows]);
   const programs = useMemo(() => programRows.map(normalizeProgram).slice(0, 4), [programRows]);
+  const sponsors = useMemo(() => sponsorRows.map(normalizeSponsor).slice(0, 4), [sponsorRows]);
   const athletes = useMemo(() => athleteRows.map(normalizeAthlete), [athleteRows]);
   const attendance = useMemo(() => attendanceRows.map(normalizeAttendance), [attendanceRows]);
   const performance = useMemo(() => performanceRows.map(normalizePerformance), [performanceRows]);
@@ -552,27 +585,48 @@ export default function PortalPage() {
                   This space highlights the partners and sponsors supporting St Benedict&apos;s Hockey.
                 </p>
 
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
+                {sponsors.length === 0 ? (
+                  <div className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
+                    <p className="text-sm text-slate-400">No sponsors published yet.</p>
                   </div>
+                ) : (
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    {sponsors.map((sponsor) => {
+                      const content = (
+                        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-center transition hover:border-emerald-500/40 hover:bg-slate-800">
+                          <div className="flex h-16 items-center justify-center overflow-hidden rounded-xl bg-slate-950">
+                            {sponsor.image_url ? (
+                              <img
+                                src={sponsor.image_url}
+                                alt={sponsor.name}
+                                className="h-full w-full object-contain"
+                              />
+                            ) : (
+                              <span className="text-xs text-slate-500">{sponsor.name}</span>
+                            )}
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-slate-200">{sponsor.name}</p>
+                        </div>
+                      );
 
-                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
-                  </div>
+                      if (sponsor.sponsor_link) {
+                        return (
+                          <a
+                            key={sponsor.id}
+                            href={sponsor.sponsor_link}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block"
+                          >
+                            {content}
+                          </a>
+                        );
+                      }
 
-                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
+                      return <div key={sponsor.id}>{content}</div>;
+                    })}
                   </div>
-
-                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Sponsor Slot</p>
-                    <p className="mt-3 text-sm font-semibold text-slate-200">Your Brand Here</p>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
