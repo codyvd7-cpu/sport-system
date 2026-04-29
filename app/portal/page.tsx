@@ -36,6 +36,7 @@ async function safeQuery<T>(
     ]);
 
     if (!res || typeof res !== 'object') return fallback;
+
     if ('error' in res && res.error) {
       console.error(res.error);
       return fallback;
@@ -99,7 +100,7 @@ export default function PortalPage() {
           .select('*')
           .eq('is_published', true)
           .order('sort_order', { ascending: true })
-          .limit(6),
+          .limit(10),
         []
       );
       setSponsors(data);
@@ -140,7 +141,7 @@ export default function PortalPage() {
           .select('*')
           .eq('is_published', true)
           .order('fixture_date', { ascending: true })
-          .limit(10),
+          .limit(12),
         []
       );
       setFixtures(data);
@@ -154,7 +155,7 @@ export default function PortalPage() {
           .select('*')
           .eq('is_published', true)
           .order('result_date', { ascending: false })
-          .limit(10),
+          .limit(12),
         []
       );
       setResults(data);
@@ -255,60 +256,79 @@ export default function PortalPage() {
   return (
     <main className="min-h-screen bg-[#020617] text-white">
       <div className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
-        <header className="sticky top-0 z-40 mb-5 rounded-3xl border border-slate-800/80 bg-slate-950/90 px-4 py-3 shadow-2xl backdrop-blur md:px-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <header className="sticky top-0 z-40 mb-4 rounded-3xl border border-slate-800/80 bg-slate-950/90 px-4 py-3 shadow-2xl backdrop-blur md:px-6">
+          <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-400">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
                 St Benedict&apos;s College
               </p>
-              <h1 className="text-lg font-black tracking-tight text-white sm:text-xl">
-                Hockey Player &amp; Parent Portal
+              <h1 className="text-base font-black tracking-tight text-white sm:text-xl">
+                Hockey Portal
               </h1>
             </div>
 
-            <nav className="flex flex-wrap gap-2 text-xs font-bold">
-              <a href="#week" className="rounded-full bg-slate-900 px-3 py-2 text-slate-200">
-                Week
-              </a>
-              <a href="#programs" className="rounded-full bg-slate-900 px-3 py-2 text-slate-200">
-                Programs
-              </a>
-              <a href="#fixtures" className="rounded-full bg-slate-900 px-3 py-2 text-slate-200">
-                Fixtures
-              </a>
-              <a href="/login" className="rounded-full bg-emerald-500 px-3 py-2 text-slate-950">
-                Coach Login
-              </a>
-            </nav>
+            <a
+              href="/login"
+              className="rounded-full bg-emerald-500 px-4 py-2 text-xs font-black text-slate-950 transition hover:bg-emerald-400"
+            >
+              Coach Login
+            </a>
           </div>
         </header>
 
+        <nav className="mb-5 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 p-2 text-xs font-black text-slate-200">
+          <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
+            Week
+          </a>
+          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
+            Programs
+          </a>
+          <a href="#fixtures" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
+            Fixtures
+          </a>
+          <a href="#results" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
+            Results
+          </a>
+          <a href="#leaderboards" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
+            Leaderboards
+          </a>
+        </nav>
+
         <section className="mb-6 overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 shadow-2xl">
-          <div className="grid grid-cols-1 gap-6 p-5 md:p-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+          <div className="grid grid-cols-1 gap-8 p-5 md:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <div className="mb-4 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-300">
+              <div className="mb-4 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
                 Weekly Hockey Hub
               </div>
 
               <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-                Everything for the week, clearly in one place.
+                Welcome to the St Benedict&apos;s Hockey Portal.
               </h2>
 
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                Access the week at a glance, important reminders, fixtures, results, gym and mobility programs, and current leaderboards.
+                This is the central place for players and parents to view weekly plans,
+                important updates, fixtures, results, training programs, and leaderboard progress.
               </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Metric label="Week Items" value={weekItems.length} />
-                <Metric label="Fixtures" value={fixtures.length} />
-                <Metric label="Programs" value={programs.length} />
-                <Metric label="Sponsors" value={sponsors.length} />
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a
+                  href="#week"
+                  className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-emerald-400"
+                >
+                  View This Week
+                </a>
+                <a
+                  href="#programs"
+                  className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-black text-slate-200 transition hover:border-slate-500"
+                >
+                  Open Programs
+                </a>
               </div>
             </div>
 
             <section className="rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
               <div className="mb-4">
-                <p className="text-xs font-bold uppercase tracking-[0.24em] text-emerald-400">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
                   Sponsors
                 </p>
                 <h3 className="mt-2 text-2xl font-black">Supported by our partners</h3>
@@ -319,10 +339,10 @@ export default function PortalPage() {
               ) : sponsors.length === 0 ? (
                 <Empty text="Sponsor space available." />
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="flex gap-3 overflow-x-auto pb-2">
                   {sponsors.map((sponsor) => {
                     const tile = (
-                      <div className="flex h-28 items-center justify-center rounded-2xl border border-slate-200 bg-white p-3 shadow-lg transition hover:-translate-y-0.5">
+                      <div className="flex h-28 w-44 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-lg transition hover:-translate-y-0.5 sm:w-52">
                         {sponsor.image_url ? (
                           <img
                             src={sponsor.image_url}
@@ -366,7 +386,7 @@ export default function PortalPage() {
 
               <button
                 onClick={() => setSelectedWeekItem(null)}
-                className="w-fit rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200"
+                className="w-fit rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-black text-slate-200"
               >
                 Close
               </button>
@@ -419,7 +439,7 @@ export default function PortalPage() {
           </Panel>
 
           <section id="fixtures" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <Panel title="Fixtures" subtitle="Upcoming matches and venues.">
+            <Panel title="Fixtures" subtitle="Upcoming matches and venue information.">
               {loadingFixtures ? (
                 <Empty text="Loading fixtures..." />
               ) : fixtures.length === 0 ? (
@@ -427,18 +447,20 @@ export default function PortalPage() {
               ) : (
                 <div className="space-y-3">
                   {fixtures.map((fixture) => (
-                    <div key={fixture.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                      <p className="text-sm font-black">{fixture.team} vs {fixture.opponent}</p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {dateLabel(fixture.fixture_date)} • {fixture.venue || 'Venue TBC'}
-                      </p>
-                    </div>
+                    <MatchCard
+                      key={fixture.id}
+                      label="Fixture"
+                      team={fixture.team}
+                      opponent={fixture.opponent}
+                      date={fixture.fixture_date}
+                      detail={fixture.venue || 'Venue TBC'}
+                    />
                   ))}
                 </div>
               )}
             </Panel>
 
-            <Panel title="Results" subtitle="Final scores and goal scorers.">
+            <Panel id="results" title="Results" subtitle="Final scores and goal scorers.">
               {loadingResults ? (
                 <Empty text="Loading results..." />
               ) : results.length === 0 ? (
@@ -446,24 +468,7 @@ export default function PortalPage() {
               ) : (
                 <div className="space-y-3">
                   {results.map((result) => (
-                    <div key={result.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
-                        <div>
-                          <p className="text-sm font-black">{result.team} vs {result.opponent}</p>
-                          <p className="mt-1 text-sm text-slate-400">{dateLabel(result.result_date)}</p>
-                          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-                            Goal Scorers
-                          </p>
-                          <p className="mt-1 text-sm text-slate-300">
-                            {result.goal_scorers || 'Not listed'}
-                          </p>
-                        </div>
-
-                        <span className="w-fit rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-200">
-                          {result.final_score || '—'}
-                        </span>
-                      </div>
-                    </div>
+                    <ResultCard key={result.id} result={result} />
                   ))}
                 </div>
               )}
@@ -518,7 +523,7 @@ export default function PortalPage() {
             )}
           </Panel>
 
-          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <section id="leaderboards" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <Panel title="Gym Leaderboard" subtitle="Based on attendance and gym participation.">
               {loadingLeaderboards ? (
                 <Empty text="Loading gym leaderboard..." />
@@ -542,17 +547,6 @@ export default function PortalPage() {
         </div>
       </div>
     </main>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-      <p className="text-3xl font-black text-white">{value}</p>
-      <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
-        {label}
-      </p>
-    </div>
   );
 }
 
@@ -580,6 +574,69 @@ function Empty({ text }: { text: string }) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
       {text}
+    </div>
+  );
+}
+
+function MatchCard({
+  label,
+  team,
+  opponent,
+  date,
+  detail,
+}: {
+  label: string;
+  team: string;
+  opponent: string;
+  date: string;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-300">
+            {label}
+          </span>
+          <p className="mt-3 text-sm font-black text-white">
+            {team || 'Team TBC'} <span className="text-slate-500">vs</span> {opponent || 'Opponent TBC'}
+          </p>
+          <p className="mt-1 text-sm text-slate-400">{dateLabel(date)}</p>
+        </div>
+
+        <div className="rounded-2xl bg-slate-900 px-3 py-2 text-right">
+          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Venue</p>
+          <p className="text-xs font-black text-slate-200">{detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResultCard({ result }: { result: Row }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-300">
+            Result
+          </span>
+          <p className="mt-3 text-sm font-black">
+            {result.team || 'Team TBC'} <span className="text-slate-500">vs</span> {result.opponent || 'Opponent TBC'}
+          </p>
+          <p className="mt-1 text-sm text-slate-400">{dateLabel(result.result_date)}</p>
+
+          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+            Goal Scorers
+          </p>
+          <p className="mt-1 text-sm text-slate-300">{result.goal_scorers || 'Not listed'}</p>
+        </div>
+
+        <div className="w-fit rounded-2xl bg-emerald-500 px-4 py-3 text-center text-slate-950">
+          <p className="text-[11px] font-black uppercase tracking-wide">Final</p>
+          <p className="text-sm font-black">{result.final_score || '—'}</p>
+        </div>
+      </div>
     </div>
   );
 }
