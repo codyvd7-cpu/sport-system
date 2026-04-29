@@ -9,6 +9,7 @@ function dateLabel(value?: string | null) {
   if (!value) return 'TBC';
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return 'TBC';
+
   return d.toLocaleDateString('en-ZA', {
     day: '2-digit',
     month: 'short',
@@ -20,6 +21,7 @@ function daysSince(value?: string | null) {
   if (!value) return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return null;
+
   return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
@@ -51,7 +53,10 @@ async function safeQuery<T>(
 
 export default function PortalPage() {
   const [weekLabel, setWeekLabel] = useState('This Week');
+
   const [sponsors, setSponsors] = useState<Row[]>([]);
+  const [activeSponsorIndex, setActiveSponsorIndex] = useState(0);
+
   const [weekItems, setWeekItems] = useState<Row[]>([]);
   const [reminders, setReminders] = useState<Row[]>([]);
   const [fixtures, setFixtures] = useState<Row[]>([]);
@@ -103,6 +108,7 @@ export default function PortalPage() {
           .limit(10),
         []
       );
+
       setSponsors(data);
       setLoadingSponsors(false);
     }
@@ -116,6 +122,7 @@ export default function PortalPage() {
           .limit(20),
         []
       );
+
       setWeekItems(data);
       setLoadingWeek(false);
     }
@@ -130,6 +137,7 @@ export default function PortalPage() {
           .limit(10),
         []
       );
+
       setReminders(data);
       setLoadingReminders(false);
     }
@@ -144,6 +152,7 @@ export default function PortalPage() {
           .limit(12),
         []
       );
+
       setFixtures(data);
       setLoadingFixtures(false);
     }
@@ -158,6 +167,7 @@ export default function PortalPage() {
           .limit(12),
         []
       );
+
       setResults(data);
       setLoadingResults(false);
     }
@@ -172,6 +182,7 @@ export default function PortalPage() {
           .limit(4),
         []
       );
+
       setPrograms(data);
       setLoadingPrograms(false);
     }
@@ -195,6 +206,7 @@ export default function PortalPage() {
       const gym = athletes
         .map((athlete) => {
           const records = attendance.filter((r) => r.athlete_id === athlete.id);
+
           const total = records.length;
           const positive = records.filter((r) =>
             ['present', 'late'].includes(String(r.status).toLowerCase())
@@ -206,7 +218,12 @@ export default function PortalPage() {
           const attendanceRate = total ? Math.round((positive / total) * 100) : 0;
           const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
 
-          return { ...athlete, attendanceRate, gymSessions, score };
+          return {
+            ...athlete,
+            attendanceRate,
+            gymSessions,
+            score,
+          };
         })
         .filter((a) => a.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -215,6 +232,7 @@ export default function PortalPage() {
       const perf = athletes
         .map((athlete) => {
           const records = performance.filter((r) => r.athlete_id === athlete.id);
+
           const latest = [...records].sort(
             (a, b) =>
               new Date(b.test_date).getTime() - new Date(a.test_date).getTime()
@@ -253,30 +271,93 @@ export default function PortalPage() {
     loadLeaderboards();
   }, []);
 
+  useEffect(() => {
+    if (sponsors.length <= 1) return;
+
+    const interval = window.setInterval(() => {
+      setActiveSponsorIndex((current) => (current + 1) % sponsors.length);
+    }, 3500);
+
+    return () => window.clearInterval(interval);
+  }, [sponsors.length]);
+
+  const activeSponsor = sponsors[activeSponsorIndex];
+
   return (
     <main className="min-h-screen bg-[#020617] text-white">
       <div className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
-        <header className="sticky top-0 z-40 mb-4 rounded-3xl border border-slate-800/80 bg-slate-950/90 px-4 py-3 shadow-2xl backdrop-blur md:px-6">
-          <div className="flex items-center justify-between gap-4">
+        <section className="mb-5 overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 shadow-2xl">
+          <div className="grid grid-cols-1 gap-8 p-5 md:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
-                St Benedict&apos;s College
-              </p>
-              <h1 className="text-base font-black tracking-tight text-white sm:text-xl">
-                Hockey Portal
+              <div className="mb-4 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
+                Weekly Hockey Hub
+              </div>
+
+              <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
+                Welcome to the St Benedict&apos;s Hockey Portal.
               </h1>
+
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                The central place for players and parents to access weekly plans, important reminders,
+                fixtures, results, training programs, and leaderboard updates.
+              </p>
             </div>
 
-            <a
-              href="/login"
-              className="rounded-full bg-emerald-500 px-4 py-2 text-xs font-black text-slate-950 transition hover:bg-emerald-400"
-            >
-              Coach Login
-            </a>
-          </div>
-        </header>
+            <section className="rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
+              <div className="mb-4">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
+                  Sponsors
+                </p>
+                <h2 className="mt-2 text-2xl font-black">Supported by our partners</h2>
+              </div>
 
-        <nav className="mb-5 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 p-2 text-xs font-black text-slate-200">
+              {loadingSponsors ? (
+                <Empty text="Loading sponsors..." />
+              ) : sponsors.length === 0 ? (
+                <Empty text="Sponsor space available." />
+              ) : (
+                <div>
+                  <div className="flex min-h-40 items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
+                    {activeSponsor?.image_url ? (
+                      <img
+                        src={activeSponsor.image_url}
+                        alt={activeSponsor.name || 'Sponsor'}
+                        className="max-h-28 max-w-full object-contain transition-all duration-500"
+                      />
+                    ) : (
+                      <p className="text-center text-lg font-black text-slate-700">
+                        {activeSponsor?.name || 'Sponsor'}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <p className="line-clamp-1 text-sm font-black text-slate-200">
+                      {activeSponsor?.name || 'Sponsor'}
+                    </p>
+
+                    <div className="flex gap-1.5">
+                      {sponsors.map((sponsor, index) => (
+                        <button
+                          key={sponsor.id}
+                          onClick={() => setActiveSponsorIndex(index)}
+                          className={`h-2.5 rounded-full transition-all ${
+                            index === activeSponsorIndex
+                              ? 'w-7 bg-emerald-400'
+                              : 'w-2.5 bg-slate-700'
+                          }`}
+                          aria-label={`Show sponsor ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        </section>
+
+        <nav className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 p-2 text-xs font-black text-slate-200">
           <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
             Week
           </a>
@@ -293,83 +374,6 @@ export default function PortalPage() {
             Leaderboards
           </a>
         </nav>
-
-        <section className="mb-6 overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 shadow-2xl">
-          <div className="grid grid-cols-1 gap-8 p-5 md:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <div>
-              <div className="mb-4 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
-                Weekly Hockey Hub
-              </div>
-
-              <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight sm:text-5xl">
-                Welcome to the St Benedict&apos;s Hockey Portal.
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                This is the central place for players and parents to view weekly plans,
-                important updates, fixtures, results, training programs, and leaderboard progress.
-              </p>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href="#week"
-                  className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-black text-slate-950 transition hover:bg-emerald-400"
-                >
-                  View This Week
-                </a>
-                <a
-                  href="#programs"
-                  className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-black text-slate-200 transition hover:border-slate-500"
-                >
-                  Open Programs
-                </a>
-              </div>
-            </div>
-
-            <section className="rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
-              <div className="mb-4">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
-                  Sponsors
-                </p>
-                <h3 className="mt-2 text-2xl font-black">Supported by our partners</h3>
-              </div>
-
-              {loadingSponsors ? (
-                <Empty text="Loading sponsors..." />
-              ) : sponsors.length === 0 ? (
-                <Empty text="Sponsor space available." />
-              ) : (
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {sponsors.map((sponsor) => {
-                    const tile = (
-                      <div className="flex h-28 w-44 shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white p-4 shadow-lg transition hover:-translate-y-0.5 sm:w-52">
-                        {sponsor.image_url ? (
-                          <img
-                            src={sponsor.image_url}
-                            alt={sponsor.name || 'Sponsor'}
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        ) : (
-                          <span className="text-center text-xs font-black text-slate-700">
-                            {sponsor.name || 'Sponsor'}
-                          </span>
-                        )}
-                      </div>
-                    );
-
-                    return sponsor.sponsor_link ? (
-                      <a key={sponsor.id} href={sponsor.sponsor_link} target="_blank" rel="noreferrer">
-                        {tile}
-                      </a>
-                    ) : (
-                      <div key={sponsor.id}>{tile}</div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </div>
-        </section>
 
         {selectedWeekItem ? (
           <section className="mb-6 rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5">
