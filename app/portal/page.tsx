@@ -3,978 +3,449 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-type GenericRow = Record<string, any>;
+type Row = Record<string, any>;
 
-type WeekPlan = {
-  id: string;
-  created_at: string | null;
-  week_label: string;
-  published: boolean;
-};
-
-type WeekPlanItem = {
-  id: string;
-  created_at: string | null;
-  week_plan_id: string;
-  day_label: string;
-  title: string;
-  details: string;
-  sort_order: number;
-};
-
-type Reminder = {
-  id: string;
-  created_at: string | null;
-  title: string;
-  details: string;
-  is_published: boolean;
-  sort_order: number;
-};
-
-type Fixture = {
-  id: string;
-  created_at: string | null;
-  team: string;
-  opponent: string;
-  fixture_date: string;
-  venue: string;
-  is_published: boolean;
-  sort_order: number;
-};
-
-type Result = {
-  id: string;
-  created_at: string | null;
-  team: string;
-  opponent: string;
-  result_date: string;
-  final_score: string;
-  goal_scorers: string;
-  is_published: boolean;
-  sort_order: number;
-};
-
-type Program = {
-  id: string;
-  created_at: string | null;
-  title: string;
-  category: string;
-  day_label: string;
-  details: string;
-  is_published: boolean;
-  sort_order: number;
-  file_name: string;
-  file_path: string;
-  file_url: string;
-};
-
-type Sponsor = {
-  id: string;
-  created_at: string | null;
-  name: string;
-  image_name: string;
-  image_path: string;
-  image_url: string;
-  sponsor_link: string;
-  is_published: boolean;
-  sort_order: number;
-};
-
-type Athlete = {
-  id: string;
-  name: string;
-  team: string;
-  sport: string;
-};
-
-type AttendanceRecord = {
-  athlete_id: string;
-  session_date: string;
-  status: string;
-  session_type: string;
-};
-
-type PerformanceRecord = {
-  athlete_id: string;
-  test_date: string;
-  test_type: string;
-  result: number | null;
-  unit: string;
-};
-
-type GymLeaderboardRow = {
-  athleteId: string;
-  athleteName: string;
-  team: string;
-  attendanceRate: number;
-  gymSessions: number;
-  score: number;
-};
-
-type PerformanceLeaderboardRow = {
-  athleteId: string;
-  athleteName: string;
-  team: string;
-  testCount: number;
-  daysSinceTest: number | null;
-  score: number;
-};
-
-function firstString(...values: any[]) {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim() !== '') return value.trim();
-  }
-  return '';
+function text(value: any, fallback = '') {
+  return typeof value === 'string' && value.trim() ? value.trim() : fallback;
 }
 
-function firstValue(...values: any[]) {
-  for (const value of values) {
-    if (value !== null && value !== undefined && value !== '') return String(value);
-  }
-  return '';
+function dateLabel(value?: string | null) {
+  if (!value) return 'TBC';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return 'TBC';
+  return d.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function firstBoolean(...values: any[]) {
-  for (const value of values) {
-    if (typeof value === 'boolean') return value;
-  }
-  return false;
-}
-
-function firstNumber(...values: any[]) {
-  for (const value of values) {
-    if (value === null || value === undefined || value === '') continue;
-    const n = Number(value);
-    if (!Number.isNaN(n)) return n;
-  }
-  return null;
-}
-
-function formatDate(dateString?: string | null) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-
-  return date.toLocaleDateString('en-ZA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function daysSince(dateString?: string | null) {
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return null;
-  const now = new Date();
-  return Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-}
-
-function getCurrentWeekRangeLabel() {
+function weekRange() {
   const today = new Date();
   const day = today.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
-
   const monday = new Date(today);
   monday.setDate(today.getDate() + mondayOffset);
-
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
 
-  const mondayText = monday.toLocaleDateString('en-ZA', {
-    day: '2-digit',
-    month: 'short',
-  });
-
-  const sundayText = sunday.toLocaleDateString('en-ZA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-
-  return `${mondayText} – ${sundayText}`;
+  const start = monday.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' });
+  const end = sunday.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' });
+  return `${start} – ${end}`;
 }
 
-function normalizeWeekPlan(row: GenericRow): WeekPlan {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    week_label: firstString(row.week_label) || 'Week at a Glance',
-    published: firstBoolean(row.published),
-  };
-}
-
-function normalizeWeekPlanItem(row: GenericRow): WeekPlanItem {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    week_plan_id: firstValue(row.week_plan_id),
-    day_label: firstString(row.day_label),
-    title: firstString(row.title),
-    details: firstString(row.details),
-    sort_order: firstNumber(row.sort_order) ?? 0,
-  };
-}
-
-function normalizeReminder(row: GenericRow): Reminder {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    title: firstString(row.title),
-    details: firstString(row.details),
-    is_published: firstBoolean(row.is_published),
-    sort_order: firstNumber(row.sort_order) ?? 0,
-  };
-}
-
-function normalizeFixture(row: GenericRow): Fixture {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    team: firstString(row.team),
-    opponent: firstString(row.opponent),
-    fixture_date: firstString(row.fixture_date),
-    venue: firstString(row.venue),
-    is_published: firstBoolean(row.is_published),
-    sort_order: firstNumber(row.sort_order) ?? 0,
-  };
-}
-
-function normalizeResult(row: GenericRow): Result {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    team: firstString(row.team),
-    opponent: firstString(row.opponent),
-    result_date: firstString(row.result_date),
-    final_score: firstString(row.final_score, row.score),
-    goal_scorers: firstString(row.goal_scorers),
-    is_published: firstBoolean(row.is_published),
-    sort_order: firstNumber(row.sort_order) ?? 0,
-  };
-}
-
-function normalizeProgram(row: GenericRow): Program {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    title: firstString(row.title),
-    category: firstString(row.category) || 'Gym',
-    day_label: firstString(row.day_label),
-    details: firstString(row.details),
-    is_published: firstBoolean(row.is_published),
-    sort_order: firstNumber(row.sort_order) ?? 0,
-    file_name: firstString(row.file_name),
-    file_path: firstString(row.file_path),
-    file_url: firstString(row.file_url),
-  };
-}
-
-function normalizeSponsor(row: GenericRow): Sponsor {
-  return {
-    id: firstValue(row.id, crypto.randomUUID()),
-    created_at: firstString(row.created_at) || null,
-    name: firstString(row.name),
-    image_name: firstString(row.image_name),
-    image_path: firstString(row.image_path),
-    image_url: firstString(row.image_url),
-    sponsor_link: firstString(row.sponsor_link),
-    is_published: firstBoolean(row.is_published),
-    sort_order: firstNumber(row.sort_order) ?? 0,
-  };
-}
-
-function normalizeAthlete(row: GenericRow): Athlete {
-  return {
-    id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
-    name:
-      firstString(
-        row.name,
-        row.full_name,
-        row.athlete_name,
-        row.player_name,
-        row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
-        row.first_name
-      ) || 'Unknown Athlete',
-    team: firstString(row.team, row.team_name, row.squad, row.group_name) || 'Unassigned',
-    sport: firstString(row.sport, row.code, row.discipline) || '—',
-  };
-}
-
-function normalizeAttendance(row: GenericRow): AttendanceRecord {
-  return {
-    athlete_id: firstValue(row.athlete_id),
-    session_date: firstString(row.session_date),
-    status: firstString(row.status),
-    session_type: firstString(row.session_type),
-  };
-}
-
-function normalizePerformance(row: GenericRow): PerformanceRecord {
-  return {
-    athlete_id: firstValue(row.athlete_id),
-    test_date: firstString(row.test_date),
-    test_type: firstString(row.test_type),
-    result: firstNumber(row.result),
-    unit: firstString(row.unit),
-  };
+function daysSince(value?: string | null) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export default function PortalPage() {
-  const [weekPlanRows, setWeekPlanRows] = useState<GenericRow[]>([]);
-  const [weekPlanItemRows, setWeekPlanItemRows] = useState<GenericRow[]>([]);
-  const [reminderRows, setReminderRows] = useState<GenericRow[]>([]);
-  const [fixtureRows, setFixtureRows] = useState<GenericRow[]>([]);
-  const [resultRows, setResultRows] = useState<GenericRow[]>([]);
-  const [programRows, setProgramRows] = useState<GenericRow[]>([]);
-  const [sponsorRows, setSponsorRows] = useState<GenericRow[]>([]);
-  const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
-  const [attendanceRows, setAttendanceRows] = useState<GenericRow[]>([]);
-  const [performanceRows, setPerformanceRows] = useState<GenericRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [selectedWeekItem, setSelectedWeekItem] = useState<WeekPlanItem | null>(null);
+  const [portalLoading, setPortalLoading] = useState(true);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+  const [portalError, setPortalError] = useState('');
 
-  async function loadPortalData() {
-    setLoading(true);
-    setError('');
+  const [sponsors, setSponsors] = useState<Row[]>([]);
+  const [weekItems, setWeekItems] = useState<Row[]>([]);
+  const [reminders, setReminders] = useState<Row[]>([]);
+  const [fixtures, setFixtures] = useState<Row[]>([]);
+  const [results, setResults] = useState<Row[]>([]);
+  const [programs, setPrograms] = useState<Row[]>([]);
 
-    const [
-      weekPlansRes,
-      weekPlanItemsRes,
-      remindersRes,
-      fixturesRes,
-      resultsRes,
-      programsRes,
-      sponsorsRes,
-      athletesRes,
-      attendanceRes,
-      performanceRes,
-    ] = await Promise.all([
-      supabase.from('PortalWeekPlan').select('*').eq('published', true).order('created_at', { ascending: false }),
-      supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
-      supabase.from('PortalReminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
-      supabase
-        .from('PortalFixtures')
-        .select('*')
-        .eq('is_published', true)
-        .order('fixture_date', { ascending: true })
-        .order('sort_order', { ascending: true }),
-      supabase
-        .from('PortalResults')
-        .select('*')
-        .eq('is_published', true)
-        .order('result_date', { ascending: false })
-        .order('sort_order', { ascending: true }),
-      supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
-      supabase.from('PortalSponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
-      supabase.from('athletes').select('*'),
-      supabase.from('Attendance').select('*'),
-      supabase.from('Performance').select('*'),
-    ]);
+  const [gymLeaderboard, setGymLeaderboard] = useState<Row[]>([]);
+  const [performanceLeaderboard, setPerformanceLeaderboard] = useState<Row[]>([]);
+  const [selectedWeekItem, setSelectedWeekItem] = useState<Row | null>(null);
 
-    if (
-      weekPlansRes.error ||
-      weekPlanItemsRes.error ||
-      remindersRes.error ||
-      fixturesRes.error ||
-      resultsRes.error ||
-      programsRes.error ||
-      sponsorsRes.error ||
-      athletesRes.error ||
-      attendanceRes.error ||
-      performanceRes.error
-    ) {
-      setError(
-        weekPlansRes.error?.message ||
-          weekPlanItemsRes.error?.message ||
-          remindersRes.error?.message ||
-          fixturesRes.error?.message ||
-          resultsRes.error?.message ||
-          programsRes.error?.message ||
-          sponsorsRes.error?.message ||
-          athletesRes.error?.message ||
-          attendanceRes.error?.message ||
-          performanceRes.error?.message ||
-          'Failed to load portal data.'
-      );
-      setLoading(false);
-      return;
+  async function loadPortalCore() {
+    setPortalLoading(true);
+    setPortalError('');
+
+    try {
+      const [sponsorsRes, weekRes, remindersRes, fixturesRes, resultsRes, programsRes] = await Promise.allSettled([
+        supabase.from('PortalSponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }).limit(6),
+        supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }).limit(20),
+        supabase.from('PortalReminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }).limit(10),
+        supabase.from('PortalFixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }).limit(10),
+        supabase.from('PortalResults').select('*').eq('is_published', true).order('result_date', { ascending: false }).limit(10),
+        supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }).limit(4),
+      ]);
+
+      if (sponsorsRes.status === 'fulfilled') setSponsors(sponsorsRes.value.data || []);
+      if (weekRes.status === 'fulfilled') setWeekItems(weekRes.value.data || []);
+      if (remindersRes.status === 'fulfilled') setReminders(remindersRes.value.data || []);
+      if (fixturesRes.status === 'fulfilled') setFixtures(fixturesRes.value.data || []);
+      if (resultsRes.status === 'fulfilled') setResults(resultsRes.value.data || []);
+      if (programsRes.status === 'fulfilled') setPrograms(programsRes.value.data || []);
+    } catch (err) {
+      console.error(err);
+      setPortalError('Some portal content could not load. Refresh the page or check the connection.');
+    } finally {
+      setPortalLoading(false);
     }
+  }
 
-    setWeekPlanRows((weekPlansRes.data as GenericRow[]) || []);
-    setWeekPlanItemRows((weekPlanItemsRes.data as GenericRow[]) || []);
-    setReminderRows((remindersRes.data as GenericRow[]) || []);
-    setFixtureRows((fixturesRes.data as GenericRow[]) || []);
-    setResultRows((resultsRes.data as GenericRow[]) || []);
-    setProgramRows((programsRes.data as GenericRow[]) || []);
-    setSponsorRows((sponsorsRes.data as GenericRow[]) || []);
-    setAthleteRows((athletesRes.data as GenericRow[]) || []);
-    setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
-    setPerformanceRows((performanceRes.data as GenericRow[]) || []);
-    setLoading(false);
+  async function loadLeaderboards() {
+    setLeaderboardLoading(true);
+
+    try {
+      const [athletesRes, attendanceRes, performanceRes] = await Promise.allSettled([
+        supabase.from('athletes').select('id,name,team').limit(300),
+        supabase.from('Attendance').select('athlete_id,status,session_type').limit(1000),
+        supabase.from('Performance').select('athlete_id,test_date').limit(1000),
+      ]);
+
+      const athletes = athletesRes.status === 'fulfilled' ? athletesRes.value.data || [] : [];
+      const attendance = attendanceRes.status === 'fulfilled' ? attendanceRes.value.data || [] : [];
+      const performance = performanceRes.status === 'fulfilled' ? performanceRes.value.data || [] : [];
+
+      const gym = athletes
+        .map((athlete: Row) => {
+          const records = attendance.filter((r: Row) => r.athlete_id === athlete.id);
+          const total = records.length;
+          const positive = records.filter((r: Row) => ['present', 'late'].includes(String(r.status).toLowerCase())).length;
+          const gymSessions = records.filter((r: Row) => String(r.session_type).toLowerCase() === 'gym').length;
+          const attendanceRate = total ? Math.round((positive / total) * 100) : 0;
+          const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
+
+          return { ...athlete, attendanceRate, gymSessions, score };
+        })
+        .filter((a: Row) => a.score > 0)
+        .sort((a: Row, b: Row) => b.score - a.score)
+        .slice(0, 5);
+
+      const perf = athletes
+        .map((athlete: Row) => {
+          const records = performance.filter((r: Row) => r.athlete_id === athlete.id);
+          const sorted = [...records].sort(
+            (a: Row, b: Row) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime()
+          );
+          const latest = sorted[0];
+          const days = latest ? daysSince(latest.test_date) : null;
+
+          const recency =
+            days === null ? 0 :
+            days <= 7 ? 40 :
+            days <= 14 ? 30 :
+            days <= 30 ? 20 : 5;
+
+          const score = records.length * 10 + recency;
+
+          return { ...athlete, testCount: records.length, days, score };
+        })
+        .filter((a: Row) => a.score > 0)
+        .sort((a: Row, b: Row) => b.score - a.score)
+        .slice(0, 5);
+
+      setGymLeaderboard(gym);
+      setPerformanceLeaderboard(perf);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLeaderboardLoading(false);
+    }
   }
 
   useEffect(() => {
-    loadPortalData();
+    loadPortalCore();
+    loadLeaderboards();
   }, []);
 
-  const weekPlans = useMemo(() => weekPlanRows.map(normalizeWeekPlan), [weekPlanRows]);
-  const weekPlanItems = useMemo(() => weekPlanItemRows.map(normalizeWeekPlanItem), [weekPlanItemRows]);
-  const reminders = useMemo(() => reminderRows.map(normalizeReminder), [reminderRows]);
-  const fixtures = useMemo(() => fixtureRows.map(normalizeFixture), [fixtureRows]);
-  const results = useMemo(() => resultRows.map(normalizeResult), [resultRows]);
-  const programs = useMemo(() => programRows.map(normalizeProgram).slice(0, 4), [programRows]);
-  const sponsors = useMemo(() => sponsorRows.map(normalizeSponsor).slice(0, 4), [sponsorRows]);
-  const athletes = useMemo(() => athleteRows.map(normalizeAthlete), [athleteRows]);
-  const attendance = useMemo(() => attendanceRows.map(normalizeAttendance), [attendanceRows]);
-  const performance = useMemo(() => performanceRows.map(normalizePerformance), [performanceRows]);
+  const stats = useMemo(() => {
+    return [
+      { label: 'Week Items', value: weekItems.length },
+      { label: 'Fixtures', value: fixtures.length },
+      { label: 'Programs', value: programs.length },
+      { label: 'Sponsors', value: sponsors.length },
+    ];
+  }, [weekItems.length, fixtures.length, programs.length, sponsors.length]);
 
-  const latestWeekPlan = useMemo(() => {
-    return weekPlans.length > 0 ? weekPlans[0] : null;
-  }, [weekPlans]);
-
-  const currentWeekItems = useMemo(() => {
-    if (!latestWeekPlan) return [];
-    return weekPlanItems
-      .filter((item) => item.week_plan_id === latestWeekPlan.id)
-      .sort((a, b) => a.sort_order - b.sort_order);
-  }, [latestWeekPlan, weekPlanItems]);
-
-  const currentWeekRange = useMemo(() => getCurrentWeekRangeLabel(), []);
-
-  const gymLeaderboard = useMemo(() => {
-    const groupedAttendance = new Map<
-      string,
-      { total: number; positive: number; gymSessions: number }
-    >();
-
-    attendance.forEach((entry) => {
-      const current = groupedAttendance.get(entry.athlete_id) || {
-        total: 0,
-        positive: 0,
-        gymSessions: 0,
-      };
-
-      current.total += 1;
-
-      const status = entry.status.toLowerCase();
-      if (status === 'present' || status === 'late') {
-        current.positive += 1;
-      }
-
-      if (entry.session_type.toLowerCase() === 'gym') {
-        current.gymSessions += 1;
-      }
-
-      groupedAttendance.set(entry.athlete_id, current);
-    });
-
-    const rows: GymLeaderboardRow[] = athletes
-      .map((athlete) => {
-        const att = groupedAttendance.get(athlete.id);
-        const total = att?.total ?? 0;
-        const positive = att?.positive ?? 0;
-        const gymSessions = att?.gymSessions ?? 0;
-        const attendanceRate = total > 0 ? Math.round((positive / total) * 100) : 0;
-        const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
-
-        return {
-          athleteId: athlete.id,
-          athleteName: athlete.name,
-          team: athlete.team,
-          attendanceRate,
-          gymSessions,
-          score,
-        };
-      })
-      .filter((row) => row.gymSessions > 0 || row.attendanceRate > 0)
-      .sort((a, b) => b.score - a.score || b.gymSessions - a.gymSessions || b.attendanceRate - a.attendanceRate)
-      .slice(0, 5);
-
-    return rows;
-  }, [athletes, attendance]);
-
-  const performanceLeaderboard = useMemo(() => {
-    const groupedPerformance = new Map<
-      string,
-      { count: number; latestDate: string | null }
-    >();
-
-    performance.forEach((entry) => {
-      const current = groupedPerformance.get(entry.athlete_id) || {
-        count: 0,
-        latestDate: null,
-      };
-
-      current.count += 1;
-
-      const currentLast = current.latestDate ? new Date(current.latestDate).getTime() : 0;
-      const entryTime = entry.test_date ? new Date(entry.test_date).getTime() : 0;
-      if (entryTime > currentLast) current.latestDate = entry.test_date;
-
-      groupedPerformance.set(entry.athlete_id, current);
-    });
-
-    const rows: PerformanceLeaderboardRow[] = athletes
-      .map((athlete) => {
-        const perf = groupedPerformance.get(athlete.id);
-        const testCount = perf?.count ?? 0;
-        const latestDate = perf?.latestDate ?? null;
-        const staleDays = daysSince(latestDate);
-
-        let recencyScore = 0;
-        if (staleDays === null) recencyScore = 0;
-        else if (staleDays <= 7) recencyScore = 40;
-        else if (staleDays <= 14) recencyScore = 30;
-        else if (staleDays <= 30) recencyScore = 20;
-        else recencyScore = 5;
-
-        const score = Math.round(Math.min(testCount * 10, 60) + recencyScore);
-
-        return {
-          athleteId: athlete.id,
-          athleteName: athlete.name,
-          team: athlete.team,
-          testCount,
-          daysSinceTest: staleDays,
-          score,
-        };
-      })
-      .filter((row) => row.testCount > 0)
-      .sort((a, b) => b.score - a.score || b.testCount - a.testCount || (a.daysSinceTest ?? 9999) - (b.daysSinceTest ?? 9999))
-      .slice(0, 5);
-
-    return rows;
-  }, [athletes, performance]);
+  if (portalLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+        <div className="w-full max-w-sm rounded-3xl border border-slate-800 bg-slate-900 p-6 text-center shadow-2xl">
+          <div className="mx-auto mb-4 h-12 w-12 animate-pulse rounded-full bg-emerald-500/20" />
+          <p className="text-lg font-bold">Loading Bennies Portal</p>
+          <p className="mt-2 text-sm text-slate-400">Preparing the latest week info...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-6xl px-4 pb-10 pt-6 sm:px-6 lg:px-8">
-        <section className="mb-8 overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950">
-          <div className="grid grid-cols-1 gap-8 px-6 py-8 md:px-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+      <div className="mx-auto max-w-6xl px-3 pb-10 pt-4 sm:px-6 lg:px-8">
+        <section className="relative mb-6 overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 shadow-2xl">
+          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sky-500/10 blur-3xl" />
+          <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-emerald-500/10 blur-3xl" />
+
+          <div className="relative grid grid-cols-1 gap-6 p-5 sm:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">Bennies Hockey</p>
+              <h1 className="mt-3 text-4xl font-black tracking-tight text-white sm:text-5xl">
                 Player &amp; Parent Portal
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                Everything in one place for the current week: plans, reminders, fixtures,
-                results, programs, and leaderboard updates.
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                A central weekly hub for plans, reminders, fixtures, results, training programs, and performance leaderboards.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href="#week-at-a-glance"
-                  className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-4 py-2.5 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
-                >
+                <a href="#week" className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-bold text-slate-950 transition hover:bg-emerald-400">
                   View This Week
                 </a>
+                <a href="#programs" className="rounded-2xl border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-bold text-slate-200 transition hover:border-slate-500 hover:bg-slate-800">
+                  Open Programs
+                </a>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {stats.map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-3">
+                    <p className="text-2xl font-black text-white">{item.value}</p>
+                    <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">{item.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-950/50 p-6">
-              <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-sky-500/10 blur-3xl" />
-              <div className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
-
-              <div className="relative">
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">
-                  Sponsors
-                </p>
-                <h2 className="mt-3 text-2xl font-bold text-white">Supported By Our Partners</h2>
-                <p className="mt-3 text-sm text-slate-300">
-                  This space highlights the partners and sponsors supporting St Benedict&apos;s Hockey.
-                </p>
-
-                {sponsors.length === 0 ? (
-                  <div className="mt-6 rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-5 text-center">
-                    <p className="text-sm text-slate-400">No sponsors published yet.</p>
-                  </div>
-                ) : (
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    {sponsors.map((sponsor) => {
-                      const content = (
-                        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-center transition hover:border-emerald-500/40 hover:bg-slate-800">
-                          <div className="flex h-16 items-center justify-center overflow-hidden rounded-xl bg-slate-950">
-                            {sponsor.image_url ? (
-                              <img
-                                src={sponsor.image_url}
-                                alt={sponsor.name}
-                                className="h-full w-full object-contain"
-                              />
-                            ) : (
-                              <span className="text-xs text-slate-500">{sponsor.name}</span>
-                            )}
-                          </div>
-                          <p className="mt-3 text-sm font-semibold text-slate-200">{sponsor.name}</p>
-                        </div>
-                      );
-
-                      if (sponsor.sponsor_link) {
-                        return (
-                          <a
-                            key={sponsor.id}
-                            href={sponsor.sponsor_link}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="block"
-                          >
-                            {content}
-                          </a>
-                        );
-                      }
-
-                      return <div key={sponsor.id}>{content}</div>;
-                    })}
-                  </div>
-                )}
+            <div className="rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-4 sm:p-5">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-400">Sponsors</p>
+                  <h2 className="mt-2 text-xl font-black text-white sm:text-2xl">Supported By Our Partners</h2>
+                </div>
               </div>
+
+              {sponsors.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-900/80 p-6 text-center">
+                  <p className="text-sm font-semibold text-slate-300">Sponsor space available</p>
+                  <p className="mt-1 text-xs text-slate-500">Partner logos will appear here.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {sponsors.map((sponsor) => {
+                    const tile = (
+                      <div className="h-full rounded-2xl border border-slate-200 bg-white p-3 shadow-lg transition hover:-translate-y-0.5">
+                        <div className="flex h-20 items-center justify-center overflow-hidden rounded-xl bg-white sm:h-24">
+                          {sponsor.image_url ? (
+                            <img src={sponsor.image_url} alt={text(sponsor.name, 'Sponsor')} className="max-h-full max-w-full object-contain" />
+                          ) : (
+                            <span className="px-2 text-center text-xs font-bold text-slate-700">{sponsor.name}</span>
+                          )}
+                        </div>
+                        <p className="mt-3 line-clamp-1 text-center text-xs font-bold text-slate-700">{sponsor.name}</p>
+                      </div>
+                    );
+
+                    return sponsor.sponsor_link ? (
+                      <a key={sponsor.id} href={sponsor.sponsor_link} target="_blank" rel="noreferrer" className="block h-full">
+                        {tile}
+                      </a>
+                    ) : (
+                      <div key={sponsor.id} className="h-full">{tile}</div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </section>
 
-        {selectedWeekItem ? (
-          <section className="mb-8 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">
-                  {selectedWeekItem.day_label}
-                </p>
-                <h2 className="mt-2 text-xl font-bold text-white">{selectedWeekItem.title}</h2>
-                <p className="mt-3 max-w-3xl text-sm text-slate-200">
-                  {selectedWeekItem.details || 'No extra details available for this day yet.'}
-                </p>
-              </div>
+        {portalError ? (
+          <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+            {portalError}
+          </div>
+        ) : null}
 
-              <button
-                onClick={() => setSelectedWeekItem(null)}
-                className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
-              >
+        {selectedWeekItem ? (
+          <section className="mb-6 rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.22em] text-emerald-300">{selectedWeekItem.day_label}</p>
+                <h2 className="mt-2 text-2xl font-black">{selectedWeekItem.title}</h2>
+                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200">{selectedWeekItem.details || 'No extra details yet.'}</p>
+              </div>
+              <button onClick={() => setSelectedWeekItem(null)} className="w-fit rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-bold text-slate-200">
                 Close
               </button>
             </div>
           </section>
         ) : null}
 
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            {error}
-          </div>
-        ) : null}
-
-        {loading ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
-            Loading portal...
-          </div>
-        ) : (
-          <div className="space-y-8">
-            <section id="week-at-a-glance" className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">Week at a Glance</h2>
-                  <p className="mt-1 text-sm text-slate-400">{currentWeekRange}</p>
-                </div>
-                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                  Tap a card for more
-                </span>
+        <div className="space-y-6">
+          <section id="week" className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-6">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-black">Week at a Glance</h2>
+                <p className="mt-1 text-sm text-slate-400">{weekRange()}</p>
               </div>
+              <span className="w-fit rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">Tap a card for more</span>
+            </div>
 
-              {currentWeekItems.length === 0 ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                  No week plan published yet.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {currentWeekItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setSelectedWeekItem(item)}
-                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-left transition hover:border-emerald-500/60 hover:bg-slate-900"
-                    >
-                      <p className="text-xs uppercase tracking-wide text-emerald-400">
-                        {item.day_label}
-                      </p>
-                      <h3 className="mt-2 text-sm font-semibold text-white">{item.title}</h3>
-                      <p className="mt-2 line-clamp-3 text-sm text-slate-400">
-                        {item.details || 'Tap to open more details.'}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold">Important Reminders</h2>
-                <p className="mt-1 text-sm text-slate-400">
-                  Key updates for players and parents.
-                </p>
+            {weekItems.length === 0 ? (
+              <Empty text="No week plan published yet." />
+            ) : (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {weekItems.map((item) => (
+                  <button key={item.id} onClick={() => setSelectedWeekItem(item)} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-left transition hover:border-emerald-500/60 hover:bg-slate-950">
+                    <p className="text-xs font-bold uppercase tracking-wide text-emerald-400">{item.day_label}</p>
+                    <h3 className="mt-2 text-sm font-bold text-white">{item.title}</h3>
+                    <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate-400">{item.details || 'Tap to open details.'}</p>
+                  </button>
+                ))}
               </div>
+            )}
+          </section>
 
-              {reminders.length === 0 ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                  No reminders published yet.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                  {reminders.map((reminder) => (
-                    <div
-                      key={reminder.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
-                    >
-                      <p className="text-sm font-semibold text-white">{reminder.title}</p>
-                      <p className="mt-1 text-sm text-slate-400">{reminder.details || '—'}</p>
+          <section className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-6">
+            <h2 className="text-2xl font-black">Important Reminders</h2>
+            <p className="mt-1 text-sm text-slate-400">Key updates for players and parents.</p>
+
+            {reminders.length === 0 ? (
+              <div className="mt-4"><Empty text="No reminders published yet." /></div>
+            ) : (
+              <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {reminders.map((reminder) => (
+                  <div key={reminder.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                    <p className="text-sm font-bold text-white">{reminder.title}</p>
+                    <p className="mt-1 text-sm leading-5 text-slate-400">{reminder.details || '—'}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <Panel title="Fixtures" subtitle="Upcoming matches and venue information.">
+              {fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
+                <div className="space-y-3">
+                  {fixtures.map((fixture) => (
+                    <div key={fixture.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                      <p className="text-sm font-bold">{fixture.team} vs {fixture.opponent}</p>
+                      <p className="mt-1 text-sm text-slate-400">{dateLabel(fixture.fixture_date)} • {fixture.venue || 'Venue TBC'}</p>
                     </div>
                   ))}
                 </div>
               )}
-            </section>
+            </Panel>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Fixtures</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Upcoming fixtures and venue information.
-                  </p>
-                </div>
-
-                {fixtures.length === 0 ? (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No fixtures published yet.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {fixtures.map((fixture) => (
-                      <div
-                        key={fixture.id}
-                        className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:flex-row md:items-center md:justify-between"
-                      >
+            <Panel title="Results" subtitle="Final scores and goal scorers.">
+              {results.length === 0 ? <Empty text="No results published yet." /> : (
+                <div className="space-y-3">
+                  {results.map((result) => (
+                    <div key={result.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
                         <div>
-                          <p className="text-sm font-semibold text-white">
-                            {fixture.team} vs {fixture.opponent}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-400">
-                            {formatDate(fixture.fixture_date)} • {fixture.venue || 'Venue TBC'}
-                          </p>
+                          <p className="text-sm font-bold">{result.team} vs {result.opponent}</p>
+                          <p className="mt-1 text-sm text-slate-400">{dateLabel(result.result_date)}</p>
+                          <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">Goal Scorers</p>
+                          <p className="mt-1 text-sm text-slate-300">{result.goal_scorers || 'Not listed'}</p>
                         </div>
-
-                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                          Fixture
-                        </span>
+                        <span className="w-fit rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-bold text-emerald-200">{result.final_score || '—'}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Results</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Final scores and goal scorers.
-                  </p>
-                </div>
-
-                {results.length === 0 ? (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No results published yet.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {results.map((result) => (
-                      <div
-                        key={result.id}
-                        className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
-                      >
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <p className="text-sm font-semibold text-white">
-                              {result.team} vs {result.opponent}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-400">
-                              {formatDate(result.result_date)}
-                            </p>
-                            <p className="mt-2 text-xs uppercase tracking-wide text-slate-500">
-                              Goal Scorers
-                            </p>
-                            <p className="mt-1 text-sm text-slate-300">
-                              {result.goal_scorers || 'Not listed'}
-                            </p>
-                          </div>
-
-                          <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200">
-                            {result.final_score || '—'}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </section>
-
-            <section id="programs" className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold">Programs</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Current gym, mobility, and recovery work available for players.
-                  </p>
-                </div>
-                <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                  Max 4 active
-                </span>
-              </div>
-
-              {programs.length === 0 ? (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                  No programs published yet.
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                  {programs.map((program) => (
-                    <div
-                      key={program.id}
-                      className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
-                          {program.category || 'Program'}
-                        </span>
-                        <span className="text-xs text-slate-500">
-                          {program.day_label || '—'}
-                        </span>
-                      </div>
-
-                      <h3 className="mt-3 text-sm font-semibold text-white">{program.title}</h3>
-
-                      <p className="mt-2 text-sm text-slate-400">
-                        {program.details || 'No details added yet.'}
-                      </p>
-
-                      {program.file_url ? (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <a
-                            href={program.file_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20"
-                          >
-                            Open PDF
-                          </a>
-
-                          <a
-                            href={program.file_url}
-                            download={program.file_name || `${program.title}.pdf`}
-                            className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800 hover:text-white"
-                          >
-                            Download
-                          </a>
-                        </div>
-                      ) : (
-                        <p className="mt-4 text-xs text-slate-500">No PDF attached yet.</p>
-                      )}
                     </div>
                   ))}
                 </div>
               )}
-            </section>
+            </Panel>
+          </section>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Gym Leaderboard</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Based on gym attendance and overall attendance quality.
-                  </p>
-                </div>
-
-                {gymLeaderboard.length === 0 ? (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No gym leaderboard data yet.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {gymLeaderboard.map((athlete, index) => (
-                      <div
-                        key={athlete.athleteId}
-                        className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
-                      >
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <p className="text-sm font-semibold text-white">
-                              #{index + 1} {athlete.athleteName}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-400">{athlete.team}</p>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-200">
-                              Score {athlete.score}
-                            </span>
-                            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {athlete.gymSessions} gym sessions
-                            </span>
-                            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {athlete.attendanceRate}% attendance
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+          <section id="programs" className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-6">
+            <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-black">Programs</h2>
+                <p className="mt-1 text-sm text-slate-400">Current gym, mobility, and recovery work.</p>
               </div>
+              <span className="w-fit rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">Max 4 active</span>
+            </div>
 
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <div className="mb-4">
-                  <h2 className="text-lg font-semibold">Performance Leaderboard</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    Based on testing volume and testing recency.
-                  </p>
-                </div>
+            {programs.length === 0 ? <Empty text="No programs published yet." /> : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {programs.map((program) => (
+                  <div key={program.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">{program.category || 'Program'}</span>
+                      <span className="text-xs text-slate-500">{program.day_label || '—'}</span>
+                    </div>
+                    <h3 className="mt-3 text-sm font-bold">{program.title}</h3>
+                    <p className="mt-2 text-sm leading-5 text-slate-400">{program.details || 'No details added.'}</p>
 
-                {performanceLeaderboard.length === 0 ? (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No performance leaderboard data yet.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {performanceLeaderboard.map((athlete, index) => (
-                      <div
-                        key={athlete.athleteId}
-                        className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
-                      >
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <p className="text-sm font-semibold text-white">
-                              #{index + 1} {athlete.athleteName}
-                            </p>
-                            <p className="mt-1 text-sm text-slate-400">{athlete.team}</p>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-semibold text-sky-200">
-                              Score {athlete.score}
-                            </span>
-                            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {athlete.testCount} tests
-                            </span>
-                            <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                              {athlete.daysSinceTest === null ? 'No recent date' : `${athlete.daysSinceTest} days ago`}
-                            </span>
-                          </div>
-                        </div>
+                    {program.file_url ? (
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <a href={program.file_url} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-500 px-3 py-2 text-center text-xs font-bold text-slate-950">Open</a>
+                        <a href={program.file_url} download={program.file_name || `${program.title}.pdf`} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-center text-xs font-bold text-slate-200">Download</a>
                       </div>
-                    ))}
+                    ) : (
+                      <p className="mt-4 text-xs text-slate-500">No PDF attached.</p>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
-            </section>
-          </div>
-        )}
+            )}
+          </section>
+
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <Panel title="Gym Leaderboard" subtitle="Based on gym attendance and attendance quality.">
+              {leaderboardLoading ? <Empty text="Loading gym leaderboard..." /> : gymLeaderboard.length === 0 ? <Empty text="No gym leaderboard data yet." /> : (
+                <Leaderboard rows={gymLeaderboard} type="gym" />
+              )}
+            </Panel>
+
+            <Panel title="Performance Leaderboard" subtitle="Based on testing volume and testing recency.">
+              {leaderboardLoading ? <Empty text="Loading performance leaderboard..." /> : performanceLeaderboard.length === 0 ? <Empty text="No performance data yet." /> : (
+                <Leaderboard rows={performanceLeaderboard} type="performance" />
+              )}
+            </Panel>
+          </section>
+        </div>
       </div>
     </main>
+  );
+}
+
+function Panel({ title, subtitle, children }: { title: string; subtitle: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-6">
+      <h2 className="text-2xl font-black">{title}</h2>
+      <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
+      <div className="mt-4">{children}</div>
+    </section>
+  );
+}
+
+function Empty({ text }: { text: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4 text-sm text-slate-400">
+      {text}
+    </div>
+  );
+}
+
+function Leaderboard({ rows, type }: { rows: Row[]; type: 'gym' | 'performance' }) {
+  return (
+    <div className="space-y-3">
+      {rows.map((athlete, index) => (
+        <div key={athlete.id} className="rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-bold">#{index + 1} {athlete.name || 'Unknown Athlete'}</p>
+              <p className="mt-1 text-sm text-slate-400">{athlete.team || 'Unassigned'}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-bold text-sky-200">Score {athlete.score}</span>
+              {type === 'gym' ? (
+                <>
+                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">{athlete.gymSessions || 0} gym</span>
+                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">{athlete.attendanceRate || 0}%</span>
+                </>
+              ) : (
+                <>
+                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">{athlete.testCount || 0} tests</span>
+                  <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                    {athlete.days === null || athlete.days === undefined ? 'No date' : `${athlete.days}d ago`}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
