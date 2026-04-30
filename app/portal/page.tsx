@@ -38,22 +38,15 @@ async function safeQuery<T>(
     ]);
 
     if (!res || typeof res !== 'object') return fallback;
-
-    if ('error' in res && res.error) {
-      console.error(res.error);
-      return fallback;
-    }
+    if ('error' in res && res.error) return fallback;
 
     return 'data' in res && res.data ? res.data : fallback;
-  } catch (error) {
-    console.error('Query failed:', error);
+  } catch {
     return fallback;
   }
 }
 
 export default function PortalPage() {
-  const [weekLabel, setWeekLabel] = useState('This Week');
-
   const [sponsors, setSponsors] = useState<Row[]>([]);
   const [activeSponsorIndex, setActiveSponsorIndex] = useState(0);
 
@@ -64,7 +57,6 @@ export default function PortalPage() {
   const [programs, setPrograms] = useState<Row[]>([]);
   const [gymLeaderboard, setGymLeaderboard] = useState<Row[]>([]);
   const [performanceLeaderboard, setPerformanceLeaderboard] = useState<Row[]>([]);
-  const [selectedWeekItem, setSelectedWeekItem] = useState<Row | null>(null);
 
   const [loadingSponsors, setLoadingSponsors] = useState(true);
   const [loadingWeek, setLoadingWeek] = useState(true);
@@ -75,119 +67,60 @@ export default function PortalPage() {
   const [loadingLeaderboards, setLoadingLeaderboards] = useState(true);
 
   useEffect(() => {
-    const today = new Date();
-    const day = today.getDay();
-    const mondayOffset = day === 0 ? -6 : 1 - day;
-
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + mondayOffset);
-
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-
-    setWeekLabel(
-      `${monday.toLocaleDateString('en-ZA', {
-        day: '2-digit',
-        month: 'short',
-      })} – ${sunday.toLocaleDateString('en-ZA', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      })}`
-    );
-  }, []);
-
-  useEffect(() => {
-    async function loadSponsors() {
-      const data = await safeQuery<Row[]>(
+    async function loadAll() {
+      const sponsorsData = await safeQuery<Row[]>(
         supabase
           .from('PortalSponsors')
           .select('*')
           .eq('is_published', true)
-          .order('sort_order', { ascending: true })
-          .limit(10),
+          .order('sort_order', { ascending: true }),
         []
       );
 
-      setSponsors(data);
-      setLoadingSponsors(false);
-    }
-
-    async function loadWeek() {
-      const data = await safeQuery<Row[]>(
+      const weekData = await safeQuery<Row[]>(
         supabase
           .from('PortalWeekPlanItems')
           .select('*')
-          .order('sort_order', { ascending: true })
-          .limit(20),
+          .order('sort_order', { ascending: true }),
         []
       );
 
-      setWeekItems(data);
-      setLoadingWeek(false);
-    }
-
-    async function loadReminders() {
-      const data = await safeQuery<Row[]>(
+      const remindersData = await safeQuery<Row[]>(
         supabase
           .from('PortalReminders')
           .select('*')
           .eq('is_published', true)
-          .order('sort_order', { ascending: true })
-          .limit(10),
+          .order('sort_order', { ascending: true }),
         []
       );
 
-      setReminders(data);
-      setLoadingReminders(false);
-    }
-
-    async function loadFixtures() {
-      const data = await safeQuery<Row[]>(
+      const fixturesData = await safeQuery<Row[]>(
         supabase
           .from('PortalFixtures')
           .select('*')
           .eq('is_published', true)
-          .order('fixture_date', { ascending: true })
-          .limit(12),
+          .order('fixture_date', { ascending: true }),
         []
       );
 
-      setFixtures(data);
-      setLoadingFixtures(false);
-    }
-
-    async function loadResults() {
-      const data = await safeQuery<Row[]>(
+      const resultsData = await safeQuery<Row[]>(
         supabase
           .from('PortalResults')
           .select('*')
           .eq('is_published', true)
-          .order('result_date', { ascending: false })
-          .limit(12),
+          .order('result_date', { ascending: false }),
         []
       );
 
-      setResults(data);
-      setLoadingResults(false);
-    }
-
-    async function loadPrograms() {
-      const data = await safeQuery<Row[]>(
+      const programsData = await safeQuery<Row[]>(
         supabase
           .from('PortalPrograms')
           .select('*')
           .eq('is_published', true)
-          .order('sort_order', { ascending: true })
-          .limit(4),
+          .order('sort_order', { ascending: true }),
         []
       );
 
-      setPrograms(data);
-      setLoadingPrograms(false);
-    }
-
-    async function loadLeaderboards() {
       const athletes = await safeQuery<Row[]>(
         supabase.from('athletes').select('id,name,team').limit(300),
         []
@@ -206,7 +139,6 @@ export default function PortalPage() {
       const gym = athletes
         .map((athlete) => {
           const records = attendance.filter((r) => r.athlete_id === athlete.id);
-
           const total = records.length;
           const positive = records.filter((r) =>
             ['present', 'late'].includes(String(r.status).toLowerCase())
@@ -218,12 +150,7 @@ export default function PortalPage() {
           const attendanceRate = total ? Math.round((positive / total) * 100) : 0;
           const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
 
-          return {
-            ...athlete,
-            attendanceRate,
-            gymSessions,
-            score,
-          };
+          return { ...athlete, attendanceRate, gymSessions, score };
         })
         .filter((a) => a.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -232,10 +159,8 @@ export default function PortalPage() {
       const perf = athletes
         .map((athlete) => {
           const records = performance.filter((r) => r.athlete_id === athlete.id);
-
           const latest = [...records].sort(
-            (a, b) =>
-              new Date(b.test_date).getTime() - new Date(a.test_date).getTime()
+            (a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime()
           )[0];
 
           const days = latest ? daysSince(latest.test_date) : null;
@@ -257,37 +182,45 @@ export default function PortalPage() {
         .sort((a, b) => b.score - a.score)
         .slice(0, 5);
 
+      setSponsors(sponsorsData);
+      setWeekItems(weekData);
+      setReminders(remindersData);
+      setFixtures(fixturesData);
+      setResults(resultsData);
+      setPrograms(programsData.slice(0, 4));
       setGymLeaderboard(gym);
       setPerformanceLeaderboard(perf);
+
+      setLoadingSponsors(false);
+      setLoadingWeek(false);
+      setLoadingReminders(false);
+      setLoadingFixtures(false);
+      setLoadingResults(false);
+      setLoadingPrograms(false);
       setLoadingLeaderboards(false);
     }
 
-    loadSponsors();
-    loadWeek();
-    loadReminders();
-    loadFixtures();
-    loadResults();
-    loadPrograms();
-    loadLeaderboards();
+    loadAll();
   }, []);
 
   useEffect(() => {
     if (sponsors.length <= 1) return;
 
-    const interval = window.setInterval(() => {
-      setActiveSponsorIndex((current) => (current + 1) % sponsors.length);
+    const interval = setInterval(() => {
+      setActiveSponsorIndex((index) => (index + 1) % sponsors.length);
     }, 3500);
 
-    return () => window.clearInterval(interval);
-  }, [sponsors.length]);
+    return () => clearInterval(interval);
+  }, [sponsors]);
 
   const activeSponsor = sponsors[activeSponsorIndex];
 
   return (
     <main className="min-h-screen bg-[#020617] text-white">
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-4 sm:px-6 lg:px-8">
-        <section className="mb-5 overflow-hidden rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 shadow-2xl">
-          <div className="grid grid-cols-1 gap-8 p-5 md:p-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+      <div className="mx-auto max-w-6xl px-4 py-6">
+
+        <section className="mb-5 rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-5 shadow-2xl md:p-8">
+          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
             <div>
               <div className="mb-4 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
                 Weekly Hockey Hub
@@ -298,17 +231,18 @@ export default function PortalPage() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                The central place for players and parents to access weekly plans, important reminders,
-                fixtures, results, training programs, and leaderboard updates.
+                A clean central space for weekly plans, reminders, fixtures, results, programs, and leaderboard updates.
               </p>
             </div>
 
-            <section className="rounded-[1.75rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
-              <div className="mb-4">
-                <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
-                  Sponsors
-                </p>
-                <h2 className="mt-2 text-2xl font-black">Supported by our partners</h2>
+            <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
+                    Sponsors
+                  </p>
+                  <h2 className="mt-2 text-xl font-black">Supported by our partners</h2>
+                </div>
               </div>
 
               {loadingSponsors ? (
@@ -316,8 +250,8 @@ export default function PortalPage() {
               ) : sponsors.length === 0 ? (
                 <Empty text="Sponsor space available." />
               ) : (
-                <div>
-                  <div className="flex min-h-40 items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
+                <>
+                  <div className="flex h-40 items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
                     {activeSponsor?.image_url ? (
                       <img
                         src={activeSponsor.image_url}
@@ -342,64 +276,29 @@ export default function PortalPage() {
                           key={sponsor.id}
                           onClick={() => setActiveSponsorIndex(index)}
                           className={`h-2.5 rounded-full transition-all ${
-                            index === activeSponsorIndex
-                              ? 'w-7 bg-emerald-400'
-                              : 'w-2.5 bg-slate-700'
+                            index === activeSponsorIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-slate-700'
                           }`}
                           aria-label={`Show sponsor ${index + 1}`}
                         />
                       ))}
                     </div>
                   </div>
-                </div>
+                </>
               )}
-            </section>
+            </div>
           </div>
         </section>
 
         <nav className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 p-2 text-xs font-black text-slate-200">
-          <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
-            Week
-          </a>
-          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
-            Programs
-          </a>
-          <a href="#fixtures" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
-            Fixtures
-          </a>
-          <a href="#results" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
-            Results
-          </a>
-          <a href="#leaderboards" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">
-            Leaderboards
-          </a>
+          <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Week</a>
+          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Programs</a>
+          <a href="#fixtures" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Fixtures</a>
+          <a href="#results" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Results</a>
+          <a href="#leaderboards" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Leaderboards</a>
         </nav>
 
-        {selectedWeekItem ? (
-          <section className="mb-6 rounded-3xl border border-emerald-500/30 bg-emerald-500/10 p-5">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-300">
-                  {selectedWeekItem.day_label}
-                </p>
-                <h2 className="mt-2 text-2xl font-black">{selectedWeekItem.title}</h2>
-                <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-200">
-                  {selectedWeekItem.details || 'No extra details added yet.'}
-                </p>
-              </div>
-
-              <button
-                onClick={() => setSelectedWeekItem(null)}
-                className="w-fit rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-black text-slate-200"
-              >
-                Close
-              </button>
-            </div>
-          </section>
-        ) : null}
-
         <div className="space-y-6">
-          <Panel id="week" title="Week at a Glance" subtitle={weekLabel}>
+          <Panel id="week" title="Week at a Glance" subtitle="Tap a day card to view details.">
             {loadingWeek ? (
               <Empty text="Loading week plan..." />
             ) : weekItems.length === 0 ? (
@@ -407,19 +306,11 @@ export default function PortalPage() {
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {weekItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => setSelectedWeekItem(item)}
-                    className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-left transition hover:border-emerald-500/60"
-                  >
-                    <p className="text-xs font-black uppercase tracking-wide text-emerald-400">
-                      {item.day_label}
-                    </p>
+                  <div key={item.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <p className="text-xs font-black uppercase tracking-wide text-emerald-400">{item.day_label}</p>
                     <h3 className="mt-2 text-sm font-black text-white">{item.title}</h3>
-                    <p className="mt-2 line-clamp-3 text-sm leading-5 text-slate-400">
-                      {item.details || 'Tap to open more information.'}
-                    </p>
-                  </button>
+                    <p className="mt-2 text-sm leading-5 text-slate-400">{item.details || 'No extra information added.'}</p>
+                  </div>
                 ))}
               </div>
             )}
@@ -442,8 +333,8 @@ export default function PortalPage() {
             )}
           </Panel>
 
-          <section id="fixtures" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-            <Panel title="Fixtures" subtitle="Upcoming matches and venue information.">
+          <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <Panel id="fixtures" title="Fixtures" subtitle="Upcoming matches and venue information.">
               {loadingFixtures ? (
                 <Empty text="Loading fixtures..." />
               ) : fixtures.length === 0 ? (
@@ -496,9 +387,7 @@ export default function PortalPage() {
                     </div>
 
                     <h3 className="mt-3 text-sm font-black">{program.title}</h3>
-                    <p className="mt-2 text-sm leading-5 text-slate-400">
-                      {program.details || 'No details added.'}
-                    </p>
+                    <p className="mt-2 text-sm leading-5 text-slate-400">{program.details || 'No details added.'}</p>
 
                     {program.file_url ? (
                       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -597,22 +486,13 @@ function MatchCard({
 }) {
   return (
     <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-300">
-            {label}
-          </span>
-          <p className="mt-3 text-sm font-black text-white">
-            {team || 'Team TBC'} <span className="text-slate-500">vs</span> {opponent || 'Opponent TBC'}
-          </p>
-          <p className="mt-1 text-sm text-slate-400">{dateLabel(date)}</p>
-        </div>
-
-        <div className="rounded-2xl bg-slate-900 px-3 py-2 text-right">
-          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Venue</p>
-          <p className="text-xs font-black text-slate-200">{detail}</p>
-        </div>
-      </div>
+      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-black uppercase tracking-wide text-emerald-300">
+        {label}
+      </span>
+      <p className="mt-3 text-sm font-black text-white">
+        {team || 'Team TBC'} <span className="text-slate-500">vs</span> {opponent || 'Opponent TBC'}
+      </p>
+      <p className="mt-1 text-sm text-slate-400">{dateLabel(date)} • {detail}</p>
     </div>
   );
 }
@@ -629,10 +509,7 @@ function ResultCard({ result }: { result: Row }) {
             {result.team || 'Team TBC'} <span className="text-slate-500">vs</span> {result.opponent || 'Opponent TBC'}
           </p>
           <p className="mt-1 text-sm text-slate-400">{dateLabel(result.result_date)}</p>
-
-          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">
-            Goal Scorers
-          </p>
+          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Goal Scorers</p>
           <p className="mt-1 text-sm text-slate-300">{result.goal_scorers || 'Not listed'}</p>
         </div>
 
@@ -678,9 +555,7 @@ function Leaderboard({ rows, type }: { rows: Row[]; type: 'gym' | 'performance' 
                     {athlete.testCount || 0} tests
                   </span>
                   <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                    {athlete.days === null || athlete.days === undefined
-                      ? 'No date'
-                      : `${athlete.days}d ago`}
+                    {athlete.days === null || athlete.days === undefined ? 'No date' : `${athlete.days}d ago`}
                   </span>
                 </>
               )}
