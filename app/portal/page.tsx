@@ -70,55 +70,32 @@ export default function PortalPage() {
   useEffect(() => {
     async function loadAll() {
       const sponsorsData = await safeQuery<Row[]>(
-        supabase
-          .from('PortalSponsors')
-          .select('*')
-          .eq('is_published', true)
-          .order('sort_order', { ascending: true }),
+        supabase.from('PortalSponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
         []
       );
 
       const weekData = await safeQuery<Row[]>(
-        supabase
-          .from('PortalWeekPlanItems')
-          .select('*')
-          .order('sort_order', { ascending: true }),
+        supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
         []
       );
 
       const remindersData = await safeQuery<Row[]>(
-        supabase
-          .from('PortalReminders')
-          .select('*')
-          .eq('is_published', true)
-          .order('sort_order', { ascending: true }),
+        supabase.from('PortalReminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
         []
       );
 
       const fixturesData = await safeQuery<Row[]>(
-        supabase
-          .from('PortalFixtures')
-          .select('*')
-          .eq('is_published', true)
-          .order('fixture_date', { ascending: true }),
+        supabase.from('PortalFixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }),
         []
       );
 
       const resultsData = await safeQuery<Row[]>(
-        supabase
-          .from('PortalResults')
-          .select('*')
-          .eq('is_published', true)
-          .order('result_date', { ascending: false }),
+        supabase.from('PortalResults').select('*').eq('is_published', true).order('result_date', { ascending: false }),
         []
       );
 
       const programsData = await safeQuery<Row[]>(
-        supabase
-          .from('PortalPrograms')
-          .select('*')
-          .eq('is_published', true)
-          .order('sort_order', { ascending: true }),
+        supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }),
         []
       );
 
@@ -255,7 +232,7 @@ export default function PortalPage() {
                         <img
                           src={activeSponsor.image_url}
                           alt={activeSponsor.name || 'Sponsor'}
-                          className="block max-h-full max-w-full object-contain mix-blend-multiply"
+                          className="block max-h-24 w-auto max-w-[80%] object-contain sm:max-h-28 sm:max-w-[85%]"
                         />
                       ) : (
                         <p className="text-center text-lg font-black text-slate-700">
@@ -291,13 +268,13 @@ export default function PortalPage() {
           </div>
         </section>
 
-        <nav className="sticky top-3 z-30 mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90 p-2 text-xs font-black text-slate-200 shadow-xl backdrop-blur">
-          <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Week</a>
-          <a href="#fixtures" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Fixtures</a>
-          <a href="#results" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Results</a>
-          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Programs</a>
-          <a href="#reminders" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Reminders</a>
-          <a href="#leaderboards" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Leaderboards</a>
+        <nav className="sticky top-2 z-30 mb-5 flex gap-1.5 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90 p-1.5 text-[11px] font-black text-slate-200 shadow-xl backdrop-blur sm:top-3 sm:gap-2 sm:p-2 sm:text-xs">
+          <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1.5 sm:px-4 sm:py-2">Week</a>
+          <a href="#fixtures" className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1.5 sm:px-4 sm:py-2">Fixtures</a>
+          <a href="#results" className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1.5 sm:px-4 sm:py-2">Results</a>
+          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1.5 sm:px-4 sm:py-2">Programs</a>
+          <a href="#reminders" className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1.5 sm:px-4 sm:py-2">Reminders</a>
+          <a href="#leaderboards" className="whitespace-nowrap rounded-full bg-slate-950 px-3 py-1.5 sm:px-4 sm:py-2">Leaderboards</a>
         </nav>
 
         <div className="space-y-6">
@@ -457,7 +434,7 @@ export default function PortalPage() {
             )}
           </Panel>
 
-          <section id="leaderboards" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <section id="leaderboards" className="grid grid-cols-1 gap-6 xl:grid-cols-2 scroll-mt-24 sm:scroll-mt-28">
             <Panel title="Gym Leaderboard" subtitle="Based on attendance and gym participation.">
               {loadingLeaderboards ? (
                 <Empty text="Loading gym leaderboard..." />
@@ -496,7 +473,10 @@ function Panel({
   id?: string;
 }) {
   return (
-    <section id={id} className="rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:p-6">
+    <section
+      id={id}
+      className="scroll-mt-24 rounded-3xl border border-slate-800 bg-slate-900 p-5 shadow-xl sm:scroll-mt-28 sm:p-6"
+    >
       <h2 className="text-2xl font-black">{title}</h2>
       <p className="mt-1 text-sm text-slate-400">{subtitle}</p>
       <div className="mt-4">{children}</div>
