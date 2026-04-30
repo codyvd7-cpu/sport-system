@@ -57,6 +57,7 @@ export default function PortalPage() {
   const [programs, setPrograms] = useState<Row[]>([]);
   const [gymLeaderboard, setGymLeaderboard] = useState<Row[]>([]);
   const [performanceLeaderboard, setPerformanceLeaderboard] = useState<Row[]>([]);
+  const [openWeekItemId, setOpenWeekItemId] = useState<string | null>(null);
 
   const [loadingSponsors, setLoadingSponsors] = useState(true);
   const [loadingWeek, setLoadingWeek] = useState(true);
@@ -218,9 +219,8 @@ export default function PortalPage() {
   return (
     <main className="min-h-screen bg-[#020617] text-white">
       <div className="mx-auto max-w-6xl px-4 py-6">
-
         <section className="mb-5 rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-5 shadow-2xl md:p-8">
-          <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
+          <div className="grid gap-8 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
             <div>
               <div className="mb-4 inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs font-black uppercase tracking-[0.2em] text-emerald-300">
                 Weekly Hockey Hub
@@ -231,7 +231,7 @@ export default function PortalPage() {
               </h1>
 
               <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
-                A clean central space for weekly plans, reminders, fixtures, results, programs, and leaderboard updates.
+                A clean central space for weekly plans, fixtures, results, programs, reminders, and leaderboard updates.
               </p>
             </div>
 
@@ -251,18 +251,20 @@ export default function PortalPage() {
                 <Empty text="Sponsor space available." />
               ) : (
                 <>
-                  <div className="flex h-40 items-center justify-center rounded-3xl border border-slate-200 bg-white p-6 shadow-lg">
-                    {activeSponsor?.image_url ? (
-                      <img
-                        src={activeSponsor.image_url}
-                        alt={activeSponsor.name || 'Sponsor'}
-                        className="max-h-28 max-w-full object-contain transition-all duration-500"
-                      />
-                    ) : (
-                      <p className="text-center text-lg font-black text-slate-700">
-                        {activeSponsor?.name || 'Sponsor'}
-                      </p>
-                    )}
+                  <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
+                    <div className="flex h-44 items-center justify-center px-8 py-6">
+                      {activeSponsor?.image_url ? (
+                        <img
+                          src={activeSponsor.image_url}
+                          alt={activeSponsor.name || 'Sponsor'}
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <p className="text-center text-lg font-black text-slate-700">
+                          {activeSponsor?.name || 'Sponsor'}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
@@ -276,7 +278,9 @@ export default function PortalPage() {
                           key={sponsor.id}
                           onClick={() => setActiveSponsorIndex(index)}
                           className={`h-2.5 rounded-full transition-all ${
-                            index === activeSponsorIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-slate-700'
+                            index === activeSponsorIndex
+                              ? 'w-7 bg-emerald-400'
+                              : 'w-2.5 bg-slate-700'
                           }`}
                           aria-label={`Show sponsor ${index + 1}`}
                         />
@@ -289,46 +293,73 @@ export default function PortalPage() {
           </div>
         </section>
 
-        <nav className="mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70 p-2 text-xs font-black text-slate-200">
+        <nav className="sticky top-3 z-30 mb-6 flex gap-2 overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/90 p-2 text-xs font-black text-slate-200 shadow-xl backdrop-blur">
           <a href="#week" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Week</a>
-          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Programs</a>
           <a href="#fixtures" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Fixtures</a>
           <a href="#results" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Results</a>
+          <a href="#programs" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Programs</a>
+          <a href="#reminders" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Reminders</a>
           <a href="#leaderboards" className="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2">Leaderboards</a>
         </nav>
 
         <div className="space-y-6">
-          <Panel id="week" title="Week at a Glance" subtitle="Tap a day card to view details.">
+          <Panel id="week" title="Week at a Glance" subtitle="Tap a day to expand details.">
             {loadingWeek ? (
               <Empty text="Loading week plan..." />
             ) : weekItems.length === 0 ? (
               <Empty text="No week plan published yet." />
             ) : (
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {weekItems.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                    <p className="text-xs font-black uppercase tracking-wide text-emerald-400">{item.day_label}</p>
-                    <h3 className="mt-2 text-sm font-black text-white">{item.title}</h3>
-                    <p className="mt-2 text-sm leading-5 text-slate-400">{item.details || 'No extra information added.'}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Panel>
+                {weekItems.map((item) => {
+                  const itemId = String(item.id);
+                  const isOpen = openWeekItemId === itemId;
 
-          <Panel title="Important Reminders" subtitle="Key updates for players and parents.">
-            {loadingReminders ? (
-              <Empty text="Loading reminders..." />
-            ) : reminders.length === 0 ? (
-              <Empty text="No reminders published yet." />
-            ) : (
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {reminders.map((reminder) => (
-                  <div key={reminder.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                    <p className="text-sm font-black">{reminder.title}</p>
-                    <p className="mt-1 text-sm leading-5 text-slate-400">{reminder.details || '—'}</p>
-                  </div>
-                ))}
+                  return (
+                    <div
+                      key={item.id}
+                      className={`rounded-2xl border p-4 transition-all ${
+                        isOpen
+                          ? 'border-emerald-400 bg-emerald-500/10'
+                          : 'border-slate-800 bg-slate-950/60'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setOpenWeekItemId(isOpen ? null : itemId)}
+                        className="w-full text-left"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-black uppercase tracking-wide text-emerald-400">
+                              {item.day_label || 'Day'}
+                            </p>
+                            <h3 className="mt-2 text-sm font-black text-white">
+                              {item.title || 'Week Item'}
+                            </h3>
+                          </div>
+
+                          <span className="rounded-full bg-slate-900 px-2 py-1 text-[10px] font-black text-slate-400">
+                            {isOpen ? 'Close' : 'Open'}
+                          </span>
+                        </div>
+
+                        {!isOpen ? (
+                          <p className="mt-2 line-clamp-2 text-sm leading-5 text-slate-400">
+                            {item.details || 'Tap to view details.'}
+                          </p>
+                        ) : null}
+                      </button>
+
+                      {isOpen ? (
+                        <div className="mt-3 border-t border-slate-700 pt-3">
+                          <p className="text-sm leading-6 text-slate-200">
+                            {item.details || 'No extra details added.'}
+                          </p>
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </Panel>
@@ -387,7 +418,9 @@ export default function PortalPage() {
                     </div>
 
                     <h3 className="mt-3 text-sm font-black">{program.title}</h3>
-                    <p className="mt-2 text-sm leading-5 text-slate-400">{program.details || 'No details added.'}</p>
+                    <p className="mt-2 text-sm leading-5 text-slate-400">
+                      {program.details || 'No details added.'}
+                    </p>
 
                     {program.file_url ? (
                       <div className="mt-4 grid grid-cols-2 gap-2">
@@ -410,6 +443,23 @@ export default function PortalPage() {
                     ) : (
                       <p className="mt-4 text-xs text-slate-500">No PDF attached.</p>
                     )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <Panel id="reminders" title="Important Reminders" subtitle="Key updates for players and parents.">
+            {loadingReminders ? (
+              <Empty text="Loading reminders..." />
+            ) : reminders.length === 0 ? (
+              <Empty text="No reminders published yet." />
+            ) : (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {reminders.map((reminder) => (
+                  <div key={reminder.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+                    <p className="text-sm font-black">{reminder.title}</p>
+                    <p className="mt-1 text-sm leading-5 text-slate-400">{reminder.details || '—'}</p>
                   </div>
                 ))}
               </div>
@@ -490,7 +540,8 @@ function MatchCard({
         {label}
       </span>
       <p className="mt-3 text-sm font-black text-white">
-        {team || 'Team TBC'} <span className="text-slate-500">vs</span> {opponent || 'Opponent TBC'}
+        {team || 'Team TBC'} <span className="text-slate-500">vs</span>{' '}
+        {opponent || 'Opponent TBC'}
       </p>
       <p className="mt-1 text-sm text-slate-400">{dateLabel(date)} • {detail}</p>
     </div>
@@ -506,11 +557,17 @@ function ResultCard({ result }: { result: Row }) {
             Result
           </span>
           <p className="mt-3 text-sm font-black">
-            {result.team || 'Team TBC'} <span className="text-slate-500">vs</span> {result.opponent || 'Opponent TBC'}
+            {result.team || 'Team TBC'} <span className="text-slate-500">vs</span>{' '}
+            {result.opponent || 'Opponent TBC'}
           </p>
           <p className="mt-1 text-sm text-slate-400">{dateLabel(result.result_date)}</p>
-          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Goal Scorers</p>
-          <p className="mt-1 text-sm text-slate-300">{result.goal_scorers || 'Not listed'}</p>
+
+          <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+            Goal Scorers
+          </p>
+          <p className="mt-1 text-sm text-slate-300">
+            {result.goal_scorers || 'Not listed'}
+          </p>
         </div>
 
         <div className="w-fit rounded-2xl bg-emerald-500 px-4 py-3 text-center text-slate-950">
@@ -532,7 +589,9 @@ function Leaderboard({ rows, type }: { rows: Row[]; type: 'gym' | 'performance' 
               <p className="text-sm font-black">
                 #{index + 1} {athlete.name || 'Unknown Athlete'}
               </p>
-              <p className="mt-1 text-sm text-slate-400">{athlete.team || 'Unassigned'}</p>
+              <p className="mt-1 text-sm text-slate-400">
+                {athlete.team || 'Unassigned'}
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -555,7 +614,9 @@ function Leaderboard({ rows, type }: { rows: Row[]; type: 'gym' | 'performance' 
                     {athlete.testCount || 0} tests
                   </span>
                   <span className="rounded-full bg-slate-800 px-3 py-1 text-xs text-slate-300">
-                    {athlete.days === null || athlete.days === undefined ? 'No date' : `${athlete.days}d ago`}
+                    {athlete.days === null || athlete.days === undefined
+                      ? 'No date'
+                      : `${athlete.days}d ago`}
                   </span>
                 </>
               )}
