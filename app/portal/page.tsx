@@ -236,13 +236,11 @@ export default function PortalPage() {
             </div>
 
             <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
-              <div className="mb-4 flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
-                    Sponsors
-                  </p>
-                  <h2 className="mt-2 text-xl font-black">Supported by our partners</h2>
-                </div>
+              <div className="mb-4">
+                <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">
+                  Sponsors
+                </p>
+                <h2 className="mt-2 text-xl font-black">Supported by our partners</h2>
               </div>
 
               {loadingSponsors ? (
@@ -252,12 +250,12 @@ export default function PortalPage() {
               ) : (
                 <>
                   <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                    <div className="flex h-44 items-center justify-center px-8 py-6">
+                    <div className="flex h-40 items-center justify-center bg-white px-6 py-5 sm:h-44 sm:px-8 sm:py-6">
                       {activeSponsor?.image_url ? (
                         <img
                           src={activeSponsor.image_url}
                           alt={activeSponsor.name || 'Sponsor'}
-                          className="h-full w-full object-contain"
+                          className="block max-h-full max-w-full object-contain mix-blend-multiply"
                         />
                       ) : (
                         <p className="text-center text-lg font-black text-slate-700">
@@ -410,14 +408,7 @@ export default function PortalPage() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {programs.map((program) => (
                   <div key={program.id} className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
-                        {program.category || 'Program'}
-                      </span>
-                      <span className="text-xs text-slate-500">{program.day_label || '—'}</span>
-                    </div>
-
-                    <h3 className="mt-3 text-sm font-black">{program.title}</h3>
+                    <h3 className="text-sm font-black">{program.title}</h3>
                     <p className="mt-2 text-sm leading-5 text-slate-400">
                       {program.details || 'No details added.'}
                     </p>
