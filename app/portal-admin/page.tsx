@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 type GenericRow = Record<string, any>;
 
@@ -218,6 +219,12 @@ const PROGRAM_BUCKET = 'portal-programs';
 const SPONSOR_BUCKET = 'portal-sponsors';
 
 export default function PortalAdminPage() {
+const router = useRouter();
+
+async function handleLogout() {
+  await supabase.auth.signOut();
+  window.location.assign('/login');
+}  
   const [weekPlanRows, setWeekPlanRows] = useState<GenericRow[]>([]);
   const [weekPlanItemRows, setWeekPlanItemRows] = useState<GenericRow[]>([]);
   const [reminderRows, setReminderRows] = useState<GenericRow[]>([]);
@@ -1349,32 +1356,82 @@ export default function PortalAdminPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
-              Portal Management
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Portal Admin</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              Manage the public portal: sponsors, week at a glance, reminders, fixtures, results, and programs.
-            </p>
-          </div>
+        <div className="mb-10 flex flex-col gap-6 rounded-[2rem] border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 p-6 shadow-2xl md:flex-row md:items-center md:justify-between">
+  <div>
+    <p className="mb-2 text-xs font-black uppercase tracking-[0.24em] text-sky-400">
+      St Benedict&apos;s Hockey
+    </p>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/portal"
-              className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-4 py-3 text-sm font-medium text-emerald-300 transition hover:bg-emerald-500/20"
-            >
-              Open Public Portal
-            </Link>
-            <Link
-              href="/"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Back to Coach Dashboard
-            </Link>
-          </div>
-        </div>
+    <h1 className="text-3xl font-black tracking-tight text-white">
+      Portal Admin
+    </h1>
+
+    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+      Manage sponsors, weekly plans, fixtures, results, programs, and player communication.
+    </p>
+  </div>
+
+  <div className="flex flex-wrap gap-3">
+    <Link
+      href="/portal"
+      className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-4 py-3 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/25"
+    >
+      Public Portal
+    </Link>
+
+    <button
+      type="button"
+      onClick={handleLogout}
+      className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-500/20"
+    >
+      Logout
+    </button>
+  </div>
+</div>
+
+<div className="mb-8 flex flex-wrap gap-3">
+  <button
+    onClick={() => document.getElementById('sponsors-section')?.scrollIntoView({ behavior: 'smooth' })}
+    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
+  >
+    Sponsors
+  </button>
+
+  <button
+    onClick={() => document.getElementById('week-section')?.scrollIntoView({ behavior: 'smooth' })}
+    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
+  >
+    Week Plan
+  </button>
+
+  <button
+    onClick={() => document.getElementById('programs-section')?.scrollIntoView({ behavior: 'smooth' })}
+    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
+  >
+    Programs
+  </button>
+
+  <button
+    onClick={() => document.getElementById('fixtures-section')?.scrollIntoView({ behavior: 'smooth' })}
+    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
+  >
+    Fixtures
+  </button>
+
+  <button
+    onClick={() => document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' })}
+    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
+  >
+    Results
+  </button>
+
+  <button
+    onClick={() => document.getElementById('reminders-section')?.scrollIntoView({ behavior: 'smooth' })}
+    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
+  >
+    Reminders
+  </button>
+</div>
 
         {error ? (
           <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
