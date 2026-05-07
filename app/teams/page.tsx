@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
+import { safeUUID } from '@/lib/uuid';
 
 type GenericRow = Record<string, any>;
 
@@ -30,7 +31,7 @@ function firstValue(...values: any[]) {
 
 function normalizeTeam(row: GenericRow): Team {
   return {
-    id: firstValue(row.id, row.team_id, crypto.randomUUID()),
+    id: firstValue(row.id, row.team_id, safeUUID()),
     name: firstString(row.name, row.team, row.team_name) || 'Unnamed Team',
     sport: firstString(row.sport, row.code, row.discipline) || '—',
     season: firstString(row.season, row.year, row.phase) || '—',
@@ -211,213 +212,155 @@ export default function TeamsPage() {
     await loadTeams();
   }
 
+
+  // Load athletes and attendance for per-team stats
+  const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
+  const [attendanceRows, setAttendanceRows] = useState<GenericRow[]>([]);
+
+  useEffect(() => {
+    loadTeams();
+    // Load athletes and attendance for stats
+    supabase.from('athletes').select('id,name,team').then(({ data }) => { if (data) setAthleteRows(data); });
+    supabase.from('Attendance').select('athlete_id,status').then(({ data }) => { if (data) setAttendanceRows(data); });
+  }, []);
+
+  // Auto-clear success
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => setSuccessMessage(''), 3000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  function teamLabel(name: string) {
+    return name.replace(/\s+/g, '').slice(0, 3).toUpperCase();
+  }
+
+  function getTeamStats(teamName: string) {
+    const squad = athleteRows.filter((a) => (a.team || a.team_name) === teamName);
+    const teamAttendance = attendanceRows.filter((r) => {
+      const athlete = athleteRows.find((a) => String(a.id) === String(r.athlete_id));
+      return (athlete?.team || athlete?.team_name) === teamName;
+    });
+    const present = teamAttendance.filter((r) => ['present', 'late'].includes(String(r.status).toLowerCase())).length;
+    const rate = teamAttendance.length > 0 ? Math.round((present / teamAttendance.length) * 100) : null;
+    return { count: squad.length, rate };
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
-              Team Management
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Teams</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              Manage team environments, create new squads, and jump directly into team pages for roster,
-              attendance, and performance oversight.
-            </p>
-          </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/athletes"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Open Athletes
-            </Link>
-            <Link
-              href="/attendance"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Open Attendance
-            </Link>
-            <Link
-              href="/performance"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Open Performance
-            </Link>
-          </div>
+        {/* Header */}
+        <div className="mb-8">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Squad Management</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Teams</h1>
+          <p className="mt-1 text-sm text-slate-500">{teams.length} teams in the system</p>
         </div>
 
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            {error}
-          </div>
-        ) : null}
-
-        {successMessage ? (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
-            {successMessage}
-          </div>
-        ) : null}
-
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Total Teams</p>
-            <p className="mt-3 text-3xl font-bold">{summary.totalTeams}</p>
-            <p className="mt-2 text-sm text-slate-300">All team groups currently in the system.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Sports Represented</p>
-            <p className="mt-3 text-3xl font-bold">{summary.sportsRepresented}</p>
-            <p className="mt-2 text-sm text-slate-300">Unique sports currently represented.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Filtered Teams</p>
-            <p className="mt-3 text-3xl font-bold">{summary.filteredCount}</p>
-            <p className="mt-2 text-sm text-slate-300">Teams matching the current filter.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Top Seasons</p>
-            <div className="mt-3 space-y-2">
-              {summary.topSeasons.length === 0 ? (
-                <p className="text-sm text-slate-300">No season data yet.</p>
-              ) : (
-                summary.topSeasons.map(([seasonName, count]) => (
-                  <div key={String(seasonName)} className="flex items-center justify-between text-sm">
-                    <span className="text-slate-200">{String(seasonName)}</span>
-                    <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-300">
-                      {count}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </section>
+        {error && <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
+        {successMessage && <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Add Team</h2>
-              <p className="mt-1 text-sm text-slate-400">Create a new team environment in the system.</p>
-            </div>
 
+          {/* Add Team */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">New Team</p>
+              <h2 className="mt-0.5 text-lg font-black text-white">Add Team</h2>
+            </div>
             <form onSubmit={handleAddTeam} className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Team Name</label>
-                <input
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  placeholder="e.g. 1st XI Hockey"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
-                />
+                <label className="mb-1.5 block text-xs font-semibold text-slate-400">Team Name</label>
+                <input value={teamName} onChange={(e) => setTeamName(e.target.value)}
+                  placeholder="e.g. 1st XI"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-sky-500" />
               </div>
-
               <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
-                <input
-                  value={sport}
-                  onChange={(e) => setSport(e.target.value)}
-                  placeholder="e.g. Hockey"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Season</label>
-                <input
-                  value={season}
-                  onChange={(e) => setSeason(e.target.value)}
+                <label className="mb-1.5 block text-xs font-semibold text-slate-400">Season</label>
+                <input value={season} onChange={(e) => setSeason(e.target.value)}
                   placeholder="e.g. 2026"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
-                />
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-sky-500" />
               </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitting ? 'Adding Team...' : 'Add Team'}
+              <button type="submit" disabled={submitting}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-3 text-sm font-black text-sky-300 transition hover:bg-sky-500/20 disabled:opacity-50">
+                {submitting ? 'Adding...' : 'Add Team'}
               </button>
             </form>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
-            <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">Team Directory</h2>
-                <p className="mt-1 text-sm text-slate-400">Filter teams by sport and open the full team page.</p>
-              </div>
-
-              <div className="w-full md:w-72">
-                <label className="mb-2 block text-sm font-medium text-slate-200">Filter by Sport</label>
-                <select
-                  value={sportFilter}
-                  onChange={(e) => setSportFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="All">All Sports</option>
-                  {uniqueSports.map((sportName) => (
-                    <option key={sportName} value={sportName}>
-                      {sportName}
-                    </option>
-                  ))}
-                </select>
-              </div>
+          {/* Team Directory */}
+          <div className="xl:col-span-2">
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm text-slate-500">
+                {loading ? 'Loading...' : `${teams.length} teams`}
+              </p>
             </div>
 
             {loading ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                Loading teams...
+              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+                <p className="text-sm text-slate-400">Loading teams...</p>
               </div>
-            ) : filteredTeams.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-sm text-slate-300">
-                No teams found for the selected filter.
+            ) : teams.length === 0 ? (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
+                <p className="text-sm text-slate-400">No teams yet — add one to get started.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredTeams.map((team) => (
-                  <div
-                    key={team.id}
-                    className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
-                  >
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                      <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Team</p>
-                          <p className="mt-1 text-sm font-semibold text-white">{team.name}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {teams.map((team) => {
+                  const stats = getTeamStats(team.name);
+                  return (
+                    <div key={team.id} className="group rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-slate-700">
+                      <div className="flex items-start gap-4">
+                        {/* Avatar */}
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-xs font-black text-sky-400">
+                          {teamLabel(team.name)}
                         </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
-                          <p className="mt-1 text-sm text-slate-300">{team.sport}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500">Season</p>
-                          <p className="mt-1 text-sm text-slate-300">{team.season}</p>
+
+                        {/* Info */}
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-black text-white">{team.name}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {team.season !== '—' ? team.season : 'No season set'}
+                          </p>
+                          <div className="mt-3 flex items-center gap-3">
+                            <div className="flex items-center gap-1.5">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3 text-slate-500">
+                                <circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/>
+                                <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6"/>
+                              </svg>
+                              <span className="text-xs font-semibold text-slate-300">{stats.count} players</span>
+                            </div>
+                            {stats.rate !== null && (
+                              <div className="flex items-center gap-1.5">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3 text-slate-500">
+                                  <path d="M9 11l3 3L22 4"/>
+                                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                                </svg>
+                                <span className={`text-xs font-bold ${
+                                  stats.rate >= 80 ? 'text-emerald-400' :
+                                  stats.rate >= 60 ? 'text-amber-400' : 'text-red-400'
+                                }`}>{stats.rate}% att</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        <Link
-                          href={`/teams/${encodeURIComponent(team.name)}`}
-                          className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800 hover:text-white"
-                        >
-                          Open
+                      {/* Actions */}
+                      <div className="mt-4 flex gap-2">
+                        <Link href={`/teams/${encodeURIComponent(team.name)}`}
+                          className="flex-1 rounded-xl border border-sky-500/30 bg-sky-500/10 py-2 text-center text-xs font-black text-sky-300 transition hover:bg-sky-500/20">
+                          Open Team →
                         </Link>
-                        <button
-                          onClick={() => handleDeleteTeam(team)}
-                          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
-                        >
-                          Delete
+                        <button onClick={() => handleDeleteTeam(team)}
+                          className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20">
+                          ✕
                         </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

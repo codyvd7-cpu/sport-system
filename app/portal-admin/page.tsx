@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
+import { safeUUID } from '@/lib/uuid';
 import { useRouter } from 'next/navigation';
 
 type GenericRow = Record<string, any>;
@@ -39,6 +40,7 @@ type Fixture = {
   team: string;
   opponent: string;
   fixture_date: string;
+  fixture_time: string;
   venue: string;
   is_published: boolean;
   sort_order: number;
@@ -126,7 +128,7 @@ function formatDate(dateString?: string | null) {
 
 function normalizeWeekPlan(row: GenericRow): WeekPlan {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     week_label: firstString(row.week_label) || 'Week at a Glance',
     published: firstBoolean(row.published),
@@ -135,7 +137,7 @@ function normalizeWeekPlan(row: GenericRow): WeekPlan {
 
 function normalizeWeekPlanItem(row: GenericRow): WeekPlanItem {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     week_plan_id: firstValue(row.week_plan_id),
     day_label: firstString(row.day_label),
@@ -147,7 +149,7 @@ function normalizeWeekPlanItem(row: GenericRow): WeekPlanItem {
 
 function normalizeReminder(row: GenericRow): Reminder {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     title: firstString(row.title),
     details: firstString(row.details),
@@ -158,11 +160,12 @@ function normalizeReminder(row: GenericRow): Reminder {
 
 function normalizeFixture(row: GenericRow): Fixture {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     team: firstString(row.team),
     opponent: firstString(row.opponent),
     fixture_date: firstString(row.fixture_date),
+    fixture_time: firstString(row.fixture_time),
     venue: firstString(row.venue),
     is_published: firstBoolean(row.is_published),
     sort_order: firstNumber(row.sort_order),
@@ -171,7 +174,7 @@ function normalizeFixture(row: GenericRow): Fixture {
 
 function normalizeResult(row: GenericRow): Result {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     team: firstString(row.team),
     opponent: firstString(row.opponent),
@@ -185,7 +188,7 @@ function normalizeResult(row: GenericRow): Result {
 
 function normalizeProgram(row: GenericRow): Program {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     title: firstString(row.title),
     category: firstString(row.category) || 'Gym',
@@ -201,7 +204,7 @@ function normalizeProgram(row: GenericRow): Program {
 
 function normalizeSponsor(row: GenericRow): Sponsor {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     created_at: firstString(row.created_at) || null,
     name: firstString(row.name),
     image_name: firstString(row.image_name),
@@ -256,6 +259,7 @@ async function handleLogout() {
   const [newFixtureTeam, setNewFixtureTeam] = useState('');
   const [newFixtureOpponent, setNewFixtureOpponent] = useState('');
   const [newFixtureDate, setNewFixtureDate] = useState('');
+  const [newFixtureTime, setNewFixtureTime] = useState('');
   const [newFixtureVenue, setNewFixtureVenue] = useState('');
   const [newFixturePublished, setNewFixturePublished] = useState(true);
   const [newFixtureSortOrder, setNewFixtureSortOrder] = useState('1');
@@ -302,6 +306,7 @@ async function handleLogout() {
   const [editFixtureTeam, setEditFixtureTeam] = useState('');
   const [editFixtureOpponent, setEditFixtureOpponent] = useState('');
   const [editFixtureDate, setEditFixtureDate] = useState('');
+  const [editFixtureTime, setEditFixtureTime] = useState('');
   const [editFixtureVenue, setEditFixtureVenue] = useState('');
   const [editFixturePublished, setEditFixturePublished] = useState(true);
   const [editFixtureSortOrder, setEditFixtureSortOrder] = useState('1');
@@ -456,6 +461,12 @@ async function handleLogout() {
     }
   }, [selectedWeekPlanId, weekPlans]);
 
+  useEffect(() => {
+    if (!successMessage) return;
+    const timer = setTimeout(() => setSuccessMessage(''), 3000);
+    return () => clearTimeout(timer);
+  }, [successMessage]);
+
   const selectedWeekPlan = useMemo(() => {
     if (!selectedWeekPlanId && weekPlans.length > 0) return weekPlans[0];
     return weekPlans.find((plan) => plan.id === selectedWeekPlanId) || null;
@@ -477,6 +488,29 @@ async function handleLogout() {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function moveItem(
+    table: string,
+    items: { id: string; sort_order: number }[],
+    index: number,
+    direction: 'up' | 'down'
+  ) {
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= items.length) return;
+    const a = items[index];
+    const b = items[swapIndex];
+    await runAction(async () => {
+      const [res1, res2] = await Promise.all([
+        supabase.from(table).update({ sort_order: b.sort_order }).eq('id', a.id),
+        supabase.from(table).update({ sort_order: a.sort_order }).eq('id', b.id),
+      ]);
+      if (res1.error || res2.error) {
+        setError('Failed to reorder.');
+        return;
+      }
+      await loadPortalAdminData();
+    });
   }
 
   function resetProgramCreateFields() {
@@ -712,6 +746,7 @@ async function handleLogout() {
           team: newFixtureTeam.trim(),
           opponent: newFixtureOpponent.trim(),
           fixture_date: newFixtureDate,
+          fixture_time: newFixtureTime.trim(),
           venue: newFixtureVenue.trim(),
           is_published: newFixturePublished,
           sort_order: Number(newFixtureSortOrder) || 0,
@@ -726,6 +761,7 @@ async function handleLogout() {
       setNewFixtureTeam('');
       setNewFixtureOpponent('');
       setNewFixtureDate('');
+      setNewFixtureTime('');
       setNewFixtureVenue('');
       setNewFixturePublished(true);
       setNewFixtureSortOrder('1');
@@ -1043,6 +1079,7 @@ async function handleLogout() {
     setEditFixtureTeam(fixture.team);
     setEditFixtureOpponent(fixture.opponent);
     setEditFixtureDate(fixture.fixture_date);
+    setEditFixtureTime(fixture.fixture_time);
     setEditFixtureVenue(fixture.venue);
     setEditFixturePublished(fixture.is_published);
     setEditFixtureSortOrder(String(fixture.sort_order));
@@ -1053,6 +1090,7 @@ async function handleLogout() {
     setEditFixtureTeam('');
     setEditFixtureOpponent('');
     setEditFixtureDate('');
+    setEditFixtureTime('');
     setEditFixtureVenue('');
     setEditFixturePublished(true);
     setEditFixtureSortOrder('1');
@@ -1071,6 +1109,7 @@ async function handleLogout() {
           team: editFixtureTeam.trim(),
           opponent: editFixtureOpponent.trim(),
           fixture_date: editFixtureDate,
+          fixture_time: editFixtureTime.trim(),
           venue: editFixtureVenue.trim(),
           is_published: editFixturePublished,
           sort_order: Number(editFixtureSortOrder) || 0,
@@ -1451,7 +1490,7 @@ async function handleLogout() {
           </div>
         ) : (
           <div className="space-y-8">
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="sponsors-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Sponsor</h2>
                 <form onSubmit={handleCreateSponsor} className="space-y-4">
@@ -1476,15 +1515,6 @@ async function handleLogout() {
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                      <input
-                        type="number"
-                        value={newSponsorSortOrder}
-                        onChange={(e) => setNewSponsorSortOrder(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                      />
-                    </div>
 
                     <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
                       <input
@@ -1526,7 +1556,7 @@ async function handleLogout() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {sponsors.map((sponsor) => {
+                    {sponsors.map((sponsor, index) => {
                       const isEditing = editingSponsorId === sponsor.id;
 
                       return (
@@ -1552,15 +1582,6 @@ async function handleLogout() {
                               </div>
 
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                  <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                                  <input
-                                    type="number"
-                                    value={editSponsorSortOrder}
-                                    onChange={(e) => setEditSponsorSortOrder(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                                  />
-                                </div>
 
                                 <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
                                   <input
@@ -1643,6 +1664,22 @@ async function handleLogout() {
                                   </a>
                                 ) : null}
                                 <button
+                                  onClick={() => moveItem('PortalSponsors', sponsors, index, 'up')}
+                                  disabled={index === 0}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  onClick={() => moveItem('PortalSponsors', sponsors, index, 'down')}
+                                  disabled={index === sponsors.length - 1}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move down"
+                                >
+                                  ↓
+                                </button>
+                                <button
                                   onClick={() => startEditSponsor(sponsor)}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
                                 >
@@ -1665,7 +1702,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="week-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Week Plan</h2>
                 <form onSubmit={handleCreateWeekPlan} className="space-y-4">
@@ -1732,16 +1769,6 @@ async function handleLogout() {
                         ))}
                       </select>
                     </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                      <input
-                        type="number"
-                        value={newWeekItemSortOrder}
-                        onChange={(e) => setNewWeekItemSortOrder(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                      />
-                    </div>
                   </div>
 
                   <div>
@@ -1789,7 +1816,7 @@ async function handleLogout() {
                     const isEditing = editingWeekPlanId === plan.id;
 
                     return (
-                      <div key={plan.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+                      <div key={plan.id} className={`rounded-xl border p-4 ${plan.published ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-slate-800 bg-slate-950/40'}`}>
                         {isEditing ? (
                           <div className="space-y-4">
                             <div>
@@ -1829,9 +1856,16 @@ async function handleLogout() {
                         ) : (
                           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                             <div>
-                              <p className="text-sm font-semibold text-white">{plan.week_label}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-white">{plan.week_label}</p>
+                                {plan.published && (
+                                  <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                                    ● Live
+                                  </span>
+                                )}
+                              </div>
                               <p className="mt-1 text-sm text-slate-400">
-                                Created {formatDate(plan.created_at)} • {plan.published ? 'Published' : 'Draft'}
+                                Created {formatDate(plan.created_at)} • {plan.published ? 'Showing publicly' : 'Draft — not visible'}
                               </p>
                             </div>
 
@@ -1867,7 +1901,7 @@ async function handleLogout() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {selectedWeekItems.map((item) => {
+                  {selectedWeekItems.map((item, index) => {
                     const isEditing = editingWeekItemId === item.id;
 
                     return (
@@ -1888,16 +1922,6 @@ async function handleLogout() {
                                     </option>
                                   ))}
                                 </select>
-                              </div>
-
-                              <div>
-                                <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                                <input
-                                  type="number"
-                                  value={editWeekItemSortOrder}
-                                  onChange={(e) => setEditWeekItemSortOrder(e.target.value)}
-                                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                                />
                               </div>
                             </div>
 
@@ -1946,6 +1970,22 @@ async function handleLogout() {
 
                             <div className="flex flex-wrap gap-2">
                               <button
+                                onClick={() => moveItem('PortalWeekPlanItems', selectedWeekItems, index, 'up')}
+                                disabled={index === 0}
+                                className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                title="Move up"
+                              >
+                                ↑
+                              </button>
+                              <button
+                                onClick={() => moveItem('PortalWeekPlanItems', selectedWeekItems, index, 'down')}
+                                disabled={index === selectedWeekItems.length - 1}
+                                className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                title="Move down"
+                              >
+                                ↓
+                              </button>
+                              <button
                                 onClick={() => startEditWeekItem(item)}
                                 className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
                               >
@@ -1967,7 +2007,7 @@ async function handleLogout() {
               )}
             </section>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="reminders-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Reminder</h2>
                 <form onSubmit={handleCreateReminder} className="space-y-4">
@@ -1993,15 +2033,6 @@ async function handleLogout() {
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                      <input
-                        type="number"
-                        value={newReminderSortOrder}
-                        onChange={(e) => setNewReminderSortOrder(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                      />
-                    </div>
 
                     <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
                       <input
@@ -2033,7 +2064,7 @@ async function handleLogout() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {reminders.map((reminder) => {
+                    {reminders.map((reminder, index) => {
                       const isEditing = editingReminderId === reminder.id;
 
                       return (
@@ -2060,15 +2091,6 @@ async function handleLogout() {
                               </div>
 
                               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div>
-                                  <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                                  <input
-                                    type="number"
-                                    value={editReminderSortOrder}
-                                    onChange={(e) => setEditReminderSortOrder(e.target.value)}
-                                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                                  />
-                                </div>
 
                                 <label className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-200">
                                   <input
@@ -2108,6 +2130,22 @@ async function handleLogout() {
 
                               <div className="flex flex-wrap gap-2">
                                 <button
+                                  onClick={() => moveItem('PortalReminders', reminders, index, 'up')}
+                                  disabled={index === 0}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  onClick={() => moveItem('PortalReminders', reminders, index, 'down')}
+                                  disabled={index === reminders.length - 1}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move down"
+                                >
+                                  ↓
+                                </button>
+                                <button
                                   onClick={() => startEditReminder(reminder)}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
                                 >
@@ -2130,7 +2168,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="fixtures-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Fixture</h2>
                 <form onSubmit={handleCreateFixture} className="space-y-4">
@@ -2154,7 +2192,7 @@ async function handleLogout() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
                       <input
@@ -2166,20 +2204,20 @@ async function handleLogout() {
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Venue</label>
+                      <label className="mb-2 block text-sm font-medium text-slate-200">Time</label>
                       <input
-                        value={newFixtureVenue}
-                        onChange={(e) => setNewFixtureVenue(e.target.value)}
+                        type="time"
+                        value={newFixtureTime}
+                        onChange={(e) => setNewFixtureTime(e.target.value)}
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                       />
                     </div>
 
                     <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
+                      <label className="mb-2 block text-sm font-medium text-slate-200">Venue</label>
                       <input
-                        type="number"
-                        value={newFixtureSortOrder}
-                        onChange={(e) => setNewFixtureSortOrder(e.target.value)}
+                        value={newFixtureVenue}
+                        onChange={(e) => setNewFixtureVenue(e.target.value)}
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                       />
                     </div>
@@ -2214,7 +2252,7 @@ async function handleLogout() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {fixtures.map((fixture) => {
+                    {fixtures.map((fixture, index) => {
                       const isEditing = editingFixtureId === fixture.id;
 
                       return (
@@ -2236,7 +2274,7 @@ async function handleLogout() {
                                 />
                               </div>
 
-                              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
                                 <input
                                   type="date"
                                   value={editFixtureDate}
@@ -2244,16 +2282,15 @@ async function handleLogout() {
                                   className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                                 />
                                 <input
-                                  value={editFixtureVenue}
-                                  onChange={(e) => setEditFixtureVenue(e.target.value)}
-                                  placeholder="Venue"
+                                  type="time"
+                                  value={editFixtureTime}
+                                  onChange={(e) => setEditFixtureTime(e.target.value)}
                                   className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                                 />
                                 <input
-                                  type="number"
-                                  value={editFixtureSortOrder}
-                                  onChange={(e) => setEditFixtureSortOrder(e.target.value)}
-                                  placeholder="Sort"
+                                  value={editFixtureVenue}
+                                  onChange={(e) => setEditFixtureVenue(e.target.value)}
+                                  placeholder="Venue"
                                   className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                                 />
                               </div>
@@ -2290,7 +2327,7 @@ async function handleLogout() {
                                   {fixture.team} vs {fixture.opponent}
                                 </p>
                                 <p className="mt-1 text-sm text-slate-400">
-                                  {formatDate(fixture.fixture_date)} • {fixture.venue || 'Venue TBC'}
+                                  {formatDate(fixture.fixture_date)}{fixture.fixture_time ? ` • ${fixture.fixture_time}` : ''} • {fixture.venue || 'Venue TBC'}
                                 </p>
                                 <p className="mt-1 text-xs text-slate-500">
                                   Sort {fixture.sort_order} • {fixture.is_published ? 'Published' : 'Draft'}
@@ -2298,6 +2335,22 @@ async function handleLogout() {
                               </div>
 
                               <div className="flex flex-wrap gap-2">
+                                <button
+                                  onClick={() => moveItem('PortalFixtures', fixtures, index, 'up')}
+                                  disabled={index === 0}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  onClick={() => moveItem('PortalFixtures', fixtures, index, 'down')}
+                                  disabled={index === fixtures.length - 1}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move down"
+                                >
+                                  ↓
+                                </button>
                                 <button
                                   onClick={() => startEditFixture(fixture)}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
@@ -2321,7 +2374,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="results-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Result</h2>
                 <form onSubmit={handleCreateResult} className="space-y-4">
@@ -2362,16 +2415,6 @@ async function handleLogout() {
                         value={newResultFinalScore}
                         onChange={(e) => setNewResultFinalScore(e.target.value)}
                         placeholder="e.g. 3 - 1 W"
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                      <input
-                        type="number"
-                        value={newResultSortOrder}
-                        onChange={(e) => setNewResultSortOrder(e.target.value)}
                         className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                       />
                     </div>
@@ -2417,7 +2460,7 @@ async function handleLogout() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {results.map((result) => {
+                    {results.map((result, index) => {
                       const isEditing = editingResultId === result.id;
 
                       return (
@@ -2450,13 +2493,6 @@ async function handleLogout() {
                                   value={editResultFinalScore}
                                   onChange={(e) => setEditResultFinalScore(e.target.value)}
                                   placeholder="Final score"
-                                  className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                                />
-                                <input
-                                  type="number"
-                                  value={editResultSortOrder}
-                                  onChange={(e) => setEditResultSortOrder(e.target.value)}
-                                  placeholder="Sort"
                                   className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
                                 />
                               </div>
@@ -2513,6 +2549,22 @@ async function handleLogout() {
 
                               <div className="flex flex-wrap gap-2">
                                 <button
+                                  onClick={() => moveItem('PortalResults', results, index, 'up')}
+                                  disabled={index === 0}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  onClick={() => moveItem('PortalResults', results, index, 'down')}
+                                  disabled={index === results.length - 1}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move down"
+                                >
+                                  ↓
+                                </button>
+                                <button
                                   onClick={() => startEditResult(result)}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"
                                 >
@@ -2535,7 +2587,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="programs-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Program</h2>
                 <form onSubmit={handleCreateProgram} className="space-y-4">
@@ -2578,16 +2630,6 @@ async function handleLogout() {
                           </option>
                         ))}
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-sm font-medium text-slate-200">Sort Order</label>
-                      <input
-                        type="number"
-                        value={newProgramSortOrder}
-                        onChange={(e) => setNewProgramSortOrder(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                      />
                     </div>
                   </div>
 
@@ -2645,7 +2687,7 @@ async function handleLogout() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {programs.map((program) => {
+                    {programs.map((program, index) => {
                       const isEditing = editingProgramId === program.id;
 
                       return (
@@ -2685,14 +2727,6 @@ async function handleLogout() {
                                     </option>
                                   ))}
                                 </select>
-
-                                <input
-                                  type="number"
-                                  value={editProgramSortOrder}
-                                  onChange={(e) => setEditProgramSortOrder(e.target.value)}
-                                  placeholder="Sort"
-                                  className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                                />
                               </div>
 
                               <textarea
@@ -2772,6 +2806,22 @@ async function handleLogout() {
                                     Open PDF
                                   </a>
                                 ) : null}
+                                <button
+                                  onClick={() => moveItem('PortalPrograms', programs, index, 'up')}
+                                  disabled={index === 0}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move up"
+                                >
+                                  ↑
+                                </button>
+                                <button
+                                  onClick={() => moveItem('PortalPrograms', programs, index, 'down')}
+                                  disabled={index === programs.length - 1}
+                                  className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-200 disabled:opacity-30"
+                                  title="Move down"
+                                >
+                                  ↓
+                                </button>
                                 <button
                                   onClick={() => startEditProgram(program)}
                                   className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-200"

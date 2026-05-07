@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
+import { safeUUID } from '@/lib/uuid';
 
 type GenericRow = Record<string, any>;
 
@@ -50,7 +51,7 @@ function firstValue(...values: any[]) {
 
 function normalizeAthlete(row: GenericRow): Athlete {
   return {
-    id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
+    id: firstValue(row.id, row.athlete_id, safeUUID()),
     name:
       firstString(
         row.name,
@@ -67,7 +68,7 @@ function normalizeAthlete(row: GenericRow): Athlete {
 
 function normalizeAttendance(row: GenericRow): AttendanceRecord {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     athlete_id: firstValue(row.athlete_id),
     session_date: firstString(row.session_date),
     session_type: firstString(row.session_type) || '—',
@@ -142,6 +143,13 @@ export default function AttendancePage() {
   const [editSessionType, setEditSessionType] = useState('Training');
   const [editStatus, setEditStatus] = useState('Present');
   const [editDate, setEditDate] = useState('');
+
+  // Team bulk attendance state
+  const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+  const [bulkSessionType, setBulkSessionType] = useState('Training');
+  const [bulkDate, setBulkDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [bulkStatuses, setBulkStatuses] = useState<Record<string, string>>({});
+  const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
   async function loadPageData() {
     setLoading(true);
@@ -369,377 +377,333 @@ export default function AttendancePage() {
     await loadPageData();
   }
 
+
+  // Auto-clear success
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => setSuccessMessage(''), 3000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  function initials(name: string) {
+    return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  // All unique teams from athletes
+  const allTeams = useMemo(() =>
+    Array.from(new Set(athletes.map((a) => a.team).filter((t) => t && t !== 'Unassigned'))).sort(),
+    [athletes]
+  );
+
+  // Athletes in selected team
+  const teamSquad = useMemo(() => {
+    if (!selectedTeam) return [];
+    return athletes.filter((a) => a.team === selectedTeam);
+  }, [athletes, selectedTeam]);
+
+  function selectTeam(team: string) {
+    setSelectedTeam(team);
+    const defaults: Record<string, string> = {};
+    athletes.filter((a) => a.team === team).forEach((a) => { defaults[a.id] = 'Present'; });
+    setBulkStatuses(defaults);
+  }
+
+  function toggleBulkStatus(athleteId: string) {
+    setBulkStatuses((prev) => {
+      const cycle: Record<string, string> = { Present: 'Absent', Absent: 'Late', Late: 'Excused', Excused: 'Present' };
+      return { ...prev, [athleteId]: cycle[prev[athleteId]] || 'Present' };
+    });
+  }
+
+  async function handleBulkSubmit() {
+    if (!selectedTeam || teamSquad.length === 0) return;
+    setBulkSubmitting(true);
+    setError('');
+    try {
+      const rows = teamSquad.map((athlete) => ({
+        athlete_id: athlete.id,
+        session_date: bulkDate,
+        session_type: bulkSessionType,
+        status: bulkStatuses[athlete.id] || 'Present',
+      }));
+      const { error: insertError } = await supabase.from('Attendance').insert(rows);
+      if (insertError) { setError(insertError.message); return; }
+      setSuccessMessage(`Attendance saved for ${teamSquad.length} players — ${selectedTeam}`);
+      setSelectedTeam(null);
+      setBulkStatuses({});
+      await loadPageData();
+    } finally {
+      setBulkSubmitting(false);
+    }
+  }
+
+  const STATUS_STYLES: Record<string, string> = {
+    Present: 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300',
+    Absent: 'border-red-500/50 bg-red-500/15 text-red-300',
+    Late: 'border-amber-500/50 bg-amber-500/15 text-amber-300',
+    Excused: 'border-sky-500/50 bg-sky-500/15 text-sky-300',
+  };
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
-              Session Attendance
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Attendance</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-300">
-              Log daily attendance, filter session records quickly, and update errors without leaving the page.
-            </p>
-          </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/athletes"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Open Athletes
-            </Link>
-            <Link
-              href="/teams"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Open Teams
-            </Link>
-          </div>
+        {/* Header */}
+        <div className="mb-8">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Session Tracking</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Attendance</h1>
+          <p className="mt-1 text-sm text-slate-500">{attendance.length} records logged</p>
         </div>
 
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            {error}
-          </div>
-        ) : null}
+        {error && <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
+        {successMessage && <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
-        {successMessage ? (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
-            {successMessage}
-          </div>
-        ) : null}
-
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Filtered Records</p>
-            <p className="mt-3 text-3xl font-bold">{summary.total}</p>
-            <p className="mt-2 text-sm text-slate-300">Attendance rows matching current filters.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Present</p>
-            <p className="mt-3 text-3xl font-bold text-emerald-300">{summary.present}</p>
-            <p className="mt-2 text-sm text-slate-300">Athletes marked present.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Late</p>
-            <p className="mt-3 text-3xl font-bold text-amber-300">{summary.late}</p>
-            <p className="mt-2 text-sm text-slate-300">Athletes marked late.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Absent</p>
-            <p className="mt-3 text-3xl font-bold text-red-300">{summary.absent}</p>
-            <p className="mt-2 text-sm text-slate-300">Athletes marked absent.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Excused</p>
-            <p className="mt-3 text-3xl font-bold text-sky-300">{summary.excused}</p>
-            <p className="mt-2 text-sm text-slate-300">Athletes marked excused.</p>
-          </div>
+        {/* Summary stats */}
+        <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {[
+            { label: 'Total', value: summary.total, color: 'slate' },
+            { label: 'Present', value: summary.present, color: 'emerald' },
+            { label: 'Late', value: summary.late, color: 'amber' },
+            { label: 'Absent', value: summary.absent, color: 'red' },
+            { label: 'Excused', value: summary.excused, color: 'sky' },
+          ].map((s) => (
+            <div key={s.label} className={`rounded-2xl border bg-slate-900 p-4 ${
+              s.color === 'slate' ? 'border-slate-700/60' :
+              s.color === 'emerald' ? 'border-emerald-500/20' :
+              s.color === 'amber' ? 'border-amber-500/20' :
+              s.color === 'red' ? 'border-red-500/20' :
+              'border-sky-500/20'
+            }`}>
+              <p className={`text-3xl font-black ${
+                s.color === 'slate' ? 'text-white' :
+                s.color === 'emerald' ? 'text-emerald-400' :
+                s.color === 'amber' ? 'text-amber-400' :
+                s.color === 'red' ? 'text-red-400' :
+                'text-sky-400'
+              }`}>{s.value}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{s.label}</p>
+            </div>
+          ))}
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-1">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Add Attendance</h2>
-              <p className="mt-1 text-sm text-slate-400">Record a session result for an athlete.</p>
+        {/* ── TEAM ATTENDANCE SECTION ─────────────────── */}
+        <section className="mb-8">
+          {!selectedTeam ? (
+            // Team selection grid
+            <div>
+              <div className="mb-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Mark Attendance</p>
+                <h2 className="mt-0.5 text-xl font-black text-white">Select a Team</h2>
+                <p className="mt-1 text-sm text-slate-500">Tap your team to mark today's session.</p>
+              </div>
+              {loading ? (
+                <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+                  <p className="text-sm text-slate-400">Loading teams...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+                  {allTeams.map((team) => {
+                    const count = athletes.filter((a) => a.team === team).length;
+                    return (
+                      <button key={team} onClick={() => selectTeam(team)}
+                        className="group rounded-2xl border border-slate-800 bg-slate-900 p-4 text-left transition hover:border-sky-500/40 hover:bg-sky-500/5">
+                        <p className="text-sm font-black text-white leading-snug">{team}</p>
+                        <p className="mt-1 text-xs text-slate-500">{count} players</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-
-            <form onSubmit={handleAddAttendance} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Select Athlete</label>
-                <select
-                  value={selectedAthleteId}
-                  onChange={(e) => setSelectedAthleteId(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="">Select athlete</option>
-                  {athleteOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+          ) : (
+            // Squad marking view
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="mb-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Marking Attendance</p>
+                  <h2 className="mt-0.5 text-xl font-black text-white">{selectedTeam}</h2>
+                  <p className="mt-1 text-sm text-slate-500">{teamSquad.length} players — tap name to cycle status</p>
+                </div>
+                <button onClick={() => { setSelectedTeam(null); setBulkStatuses({}); }}
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-400 hover:text-white">
+                  ← Back
+                </button>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Session Type</label>
-                <select
-                  value={sessionType}
-                  onChange={(e) => setSessionType(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="Training">Training</option>
-                  <option value="Match">Match</option>
-                  <option value="Gym">Gym</option>
-                  <option value="Recovery">Recovery</option>
-                  <option value="Testing">Testing</option>
-                </select>
+              {/* Session options */}
+              <div className="mb-5 grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-400">Session Type</label>
+                  <select value={bulkSessionType} onChange={(e) => setBulkSessionType(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                    {['Training', 'Match', 'Gym', 'Recovery', 'Testing'].map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-400">Date</label>
+                  <input type="date" value={bulkDate} onChange={(e) => setBulkDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+                </div>
               </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="Present">Present</option>
-                  <option value="Late">Late</option>
-                  <option value="Absent">Absent</option>
-                  <option value="Excused">Excused</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
-                <input
-                  type="date"
-                  value={date}
-                  onChange={(e) => setDate(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {submitting ? 'Adding Attendance...' : 'Add Attendance'}
-              </button>
-            </form>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Attendance Records</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Filter records by team, date, session type, and attendance status.
-              </p>
-            </div>
-
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Team</label>
-                <select
-                  value={teamFilter}
-                  onChange={(e) => setTeamFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="All">All Teams</option>
-                  {uniqueTeams.map((teamName) => (
-                    <option key={teamName} value={teamName}>
-                      {teamName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Status</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="All">All Statuses</option>
-                  {uniqueStatuses.map((statusName) => (
-                    <option key={statusName} value={statusName}>
-                      {statusName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Session Type</label>
-                <select
-                  value={sessionFilter}
-                  onChange={(e) => setSessionFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                >
-                  <option value="All">All Session Types</option>
-                  {uniqueSessionTypes.map((sessionName) => (
-                    <option key={sessionName} value={sessionName}>
-                      {sessionName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
-                <input
-                  type="date"
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            {loading ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                Loading attendance...
-              </div>
-            ) : filteredAttendance.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-6 text-sm text-slate-300">
-                No attendance records found for the selected filters.
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredAttendance.map((record) => {
-                  const isEditing = editingId === record.id;
-
+              {/* Player list */}
+              <div className="mb-5 space-y-2">
+                {teamSquad.map((athlete) => {
+                  const status = bulkStatuses[athlete.id] || 'Present';
                   return (
-                    <div
-                      key={record.id}
-                      className="rounded-2xl border border-slate-800 bg-slate-950/40 p-4"
-                    >
-                      {isEditing ? (
-                        <div className="space-y-4">
-                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-200">
-                                Select Athlete
-                              </label>
-                              <select
-                                value={editSelectedAthleteId}
-                                onChange={(e) => setEditSelectedAthleteId(e.target.value)}
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                              >
-                                <option value="">Select athlete</option>
-                                {athleteOptions.map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-200">
-                                Session Type
-                              </label>
-                              <select
-                                value={editSessionType}
-                                onChange={(e) => setEditSessionType(e.target.value)}
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                              >
-                                <option value="Training">Training</option>
-                                <option value="Match">Match</option>
-                                <option value="Gym">Gym</option>
-                                <option value="Recovery">Recovery</option>
-                                <option value="Testing">Testing</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-200">Status</label>
-                              <select
-                                value={editStatus}
-                                onChange={(e) => setEditStatus(e.target.value)}
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                              >
-                                <option value="Present">Present</option>
-                                <option value="Late">Late</option>
-                                <option value="Absent">Absent</option>
-                                <option value="Excused">Excused</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
-                              <input
-                                type="date"
-                                value={editDate}
-                                onChange={(e) => setEditDate(e.target.value)}
-                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => handleSaveEdit(record.id)}
-                              disabled={savingEdit}
-                              className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              {savingEdit ? 'Saving...' : 'Save'}
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                          <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-5">
-                            <div>
-                              <p className="text-xs uppercase tracking-wide text-slate-500">Athlete</p>
-                              <p className="mt-1 text-sm font-semibold text-white">{record.athlete_name}</p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs uppercase tracking-wide text-slate-500">Team</p>
-                              <p className="mt-1 text-sm text-slate-300">{record.team}</p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs uppercase tracking-wide text-slate-500">Session</p>
-                              <p className="mt-1 text-sm text-slate-300">{record.session_type}</p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs uppercase tracking-wide text-slate-500">Date</p>
-                              <p className="mt-1 text-sm text-slate-300">{formatDate(record.date)}</p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs uppercase tracking-wide text-slate-500">Status</p>
-                              <div className="mt-1">
-                                <span
-                                  className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${getStatusClasses(
-                                    record.status
-                                  )}`}
-                                >
-                                  {formatStatus(record.status)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-2">
-                            <button
-                              onClick={() => startEdit(record)}
-                              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800 hover:text-white"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteAttendance(record.id, record.athlete_name)}
-                              className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                      )}
+                    <div key={athlete.id} className={`flex items-center gap-3 rounded-xl border p-3 transition ${STATUS_STYLES[status]}`}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-xs font-black">
+                        {initials(athlete.name)}
+                      </div>
+                      <p className="flex-1 text-sm font-semibold text-white">{athlete.name}</p>
+                      <div className="flex gap-1.5">
+                        {['Present', 'Absent', 'Late', 'Excused'].map((s) => (
+                          <button key={s} onClick={() => setBulkStatuses((prev) => ({ ...prev, [athlete.id]: s }))}
+                            className={`rounded-lg px-2.5 py-1.5 text-[10px] font-black transition ${
+                              status === s
+                                ? s === 'Present' ? 'bg-emerald-500 text-slate-950'
+                                  : s === 'Absent' ? 'bg-red-500 text-white'
+                                  : s === 'Late' ? 'bg-amber-500 text-slate-950'
+                                  : 'bg-sky-500 text-white'
+                                : 'bg-white/10 text-slate-400 hover:bg-white/20'
+                            }`}>
+                            {s}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   );
                 })}
               </div>
-            )}
+
+              <button onClick={handleBulkSubmit} disabled={bulkSubmitting}
+                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-3 text-sm font-black text-sky-300 transition hover:bg-sky-500/25 disabled:opacity-50">
+                {bulkSubmitting ? 'Saving...' : `Save Attendance — ${teamSquad.length} Players`}
+              </button>
+            </div>
+          )}
+        </section>
+
+        {/* ── RECORDS LOG ─────────────────────────────── */}
+        <section>
+          <div className="mb-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">History</p>
+            <h2 className="mt-0.5 text-xl font-black text-white">Attendance Log</h2>
           </div>
+
+          {/* Filters */}
+          <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {[
+              { label: 'Team', value: teamFilter, onChange: setTeamFilter, options: ['All', ...uniqueTeams], allLabel: 'All Teams' },
+              { label: 'Status', value: statusFilter, onChange: setStatusFilter, options: ['All', ...uniqueStatuses], allLabel: 'All Statuses' },
+              { label: 'Session', value: sessionFilter, onChange: setSessionFilter, options: ['All', ...uniqueSessionTypes], allLabel: 'All Sessions' },
+            ].map((f) => (
+              <div key={f.label}>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-500">{f.label}</label>
+                <select value={f.value} onChange={(e) => f.onChange(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none transition focus:border-sky-500">
+                  <option value="All">{f.allLabel}</option>
+                  {f.options.filter((o) => o !== 'All').map((o) => <option key={o} value={o}>{o}</option>)}
+                </select>
+              </div>
+            ))}
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Date</label>
+              <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none transition focus:border-sky-500" />
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+              <p className="text-sm text-slate-400">Loading records...</p>
+            </div>
+          ) : filteredAttendance.length === 0 ? (
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
+              <p className="text-sm text-slate-400">No records match your filters.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {filteredAttendance.map((record) => {
+                const isEditing = editingId === record.id;
+                return (
+                  <div key={record.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                          <select value={editSelectedAthleteId} onChange={(e) => setEditSelectedAthleteId(e.target.value)}
+                            className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                            <option value="">Select athlete...</option>
+                            {athleteOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                          <select value={editSessionType} onChange={(e) => setEditSessionType(e.target.value)}
+                            className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                            {['Training', 'Match', 'Gym', 'Recovery', 'Testing'].map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)}
+                            className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                            {['Present', 'Late', 'Absent', 'Excused'].map((s) => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          <input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)}
+                            className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 sm:col-span-2" />
+                        </div>
+                        <div className="flex gap-2">
+                          <button onClick={() => handleSaveEdit(record.id)} disabled={savingEdit}
+                            className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">
+                            {savingEdit ? 'Saving...' : 'Save'}
+                          </button>
+                          <button onClick={cancelEdit}
+                            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-300">
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-black text-slate-300">
+                          {initials(record.athlete_name)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link href={`/athletes/${record.athlete_id}`}
+                              className="text-sm font-bold text-white hover:text-sky-400">
+                              {record.athlete_name}
+                            </Link>
+                            <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-black ${getStatusClasses(record.status)}`}>
+                              {formatStatus(record.status)}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {record.team} • {record.session_type} • {formatDate(record.date)}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button onClick={() => startEdit(record)}
+                            className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteAttendance(record.id, record.athlete_name)}
+                            className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20">
+                            ✕
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {!loading && filteredAttendance.length > 0 && (
+            <p className="mt-3 text-center text-xs text-slate-600">
+              Showing {filteredAttendance.length} of {attendance.length} records
+            </p>
+          )}
         </section>
       </div>
     </main>

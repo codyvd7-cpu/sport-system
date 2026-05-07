@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'
+import { safeUUID } from '@/lib/uuid';
 
 type GenericRow = Record<string, any>;
 
@@ -77,7 +78,7 @@ function firstNumber(...values: any[]) {
 
 function normalizeTeam(row: GenericRow): Team {
   return {
-    id: firstValue(row.id, row.team_id, crypto.randomUUID()),
+    id: firstValue(row.id, row.team_id, safeUUID()),
     name: firstString(row.name, row.team, row.team_name) || 'Unnamed Team',
     sport: firstString(row.sport, row.code, row.discipline) || '—',
     season: firstString(row.season, row.year, row.phase) || '—',
@@ -87,7 +88,7 @@ function normalizeTeam(row: GenericRow): Team {
 
 function normalizeAthlete(row: GenericRow): Athlete {
   return {
-    id: firstValue(row.id, row.athlete_id, crypto.randomUUID()),
+    id: firstValue(row.id, row.athlete_id, safeUUID()),
     name:
       firstString(
         row.name,
@@ -106,7 +107,7 @@ function normalizeAthlete(row: GenericRow): Athlete {
 
 function normalizeAttendance(row: GenericRow): AttendanceRecord {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     athlete_id: firstValue(row.athlete_id),
     session_date: firstString(row.session_date),
     session_type: firstString(row.session_type) || '—',
@@ -118,7 +119,7 @@ function normalizeAttendance(row: GenericRow): AttendanceRecord {
 
 function normalizePerformance(row: GenericRow): PerformanceRecord {
   return {
-    id: firstValue(row.id, crypto.randomUUID()),
+    id: firstValue(row.id, safeUUID()),
     athlete_id: firstValue(row.athlete_id),
     test_date: firstString(row.test_date),
     test_type: firstString(row.test_type) || '—',
@@ -659,562 +660,238 @@ export default function TeamProfilePage({ params }: PageProps) {
     );
   }
 
+
+  // Auto-clear success
+  useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => setSuccessMessage(''), 3000);
+    return () => clearTimeout(t);
+  }, [successMessage]);
+
+  function initials(name: string) {
+    return name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
+  }
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+            <p className="text-sm text-slate-400">Loading team...</p>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (teamNotFound) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
+            <p className="text-lg font-black text-white">Team not found</p>
+            <Link href="/teams" className="mt-4 inline-block text-sm text-sky-400 hover:text-sky-300">← Back to Teams</Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-sky-400">
-              Team Profile
-            </p>
-            <h1 className="text-3xl font-bold tracking-tight text-white">{team.name}</h1>
-            <p className="mt-2 text-sm text-slate-300">
-              {team.sport} • {team.season} • {roster.length} athlete{roster.length === 1 ? '' : 's'}
-            </p>
-          </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/teams"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Back to Teams
-            </Link>
-            <Link
-              href="/attendance"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Attendance Page
-            </Link>
-            <Link
-              href="/performance"
-              className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Performance Page
-            </Link>
+        {/* Header */}
+        <div className="mb-8">
+          <Link href="/teams" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-300">
+            ← Teams
+          </Link>
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/15 text-lg font-black text-sky-400">
+              {initials(teamName)}
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Team Overview</p>
+              <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white sm:text-4xl">{teamName}</h1>
+              {team && <p className="mt-1 text-sm text-slate-500">{team.sport !== '—' ? team.sport : 'Hockey'} • {team.season !== '—' ? team.season : ''}</p>}
+            </div>
           </div>
         </div>
 
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-            {error}
-          </div>
-        ) : null}
+        {error && <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
+        {successMessage && <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
-        {successMessage ? (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
-            {successMessage}
-          </div>
-        ) : null}
-
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Roster Size</p>
-            <p className="mt-3 text-3xl font-bold">{roster.length}</p>
-            <p className="mt-2 text-sm text-slate-300">Athletes currently assigned to this team.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Rate</p>
-            <p className="mt-3 text-3xl font-bold">{attendanceSummary.rate}%</p>
-            <p className="mt-2 text-sm text-slate-300">Present + late across all logged sessions.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Attendance Entries</p>
-            <p className="mt-3 text-3xl font-bold">{attendanceSummary.total}</p>
-            <p className="mt-2 text-sm text-slate-300">Attendance records linked to this team roster.</p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="text-xs uppercase tracking-wide text-slate-400">Performance Entries</p>
-            <p className="mt-3 text-3xl font-bold">{performance.length}</p>
-            <p className="mt-2 text-sm text-slate-300">Performance records linked to this team roster.</p>
-          </div>
+        {/* Stats */}
+        <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { label: 'Players', value: athletes.length, color: 'sky' },
+            { label: 'Sessions Logged', value: attendanceSummary.totalSessions, color: 'emerald' },
+            { label: 'Attendance Rate', value: `${attendanceSummary.overallRate}%`, color: attendanceSummary.overallRate >= 80 ? 'emerald' : attendanceSummary.overallRate >= 60 ? 'amber' : 'red' },
+            { label: 'Perf. Records', value: performanceSummary.totalRecords, color: 'violet' },
+          ].map((s) => (
+            <div key={s.label} className={`rounded-2xl border bg-slate-900 p-4 ${
+              s.color === 'sky' ? 'border-sky-500/20' :
+              s.color === 'emerald' ? 'border-emerald-500/20' :
+              s.color === 'amber' ? 'border-amber-500/20' :
+              s.color === 'red' ? 'border-red-500/20' :
+              'border-violet-500/20'
+            }`}>
+              <p className={`text-3xl font-black ${
+                s.color === 'sky' ? 'text-sky-400' :
+                s.color === 'emerald' ? 'text-emerald-400' :
+                s.color === 'amber' ? 'text-amber-400' :
+                s.color === 'red' ? 'text-red-400' :
+                'text-violet-400'
+              }`}>{s.value}</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{s.label}</p>
+            </div>
+          ))}
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+
+          {/* Squad */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">Team Info</h2>
-                <p className="mt-1 text-sm text-slate-400">Edit team details and sync team data to athletes.</p>
-              </div>
-              {!isEditingTeam ? (
-                <button
-                  onClick={() => setIsEditingTeam(true)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
-                >
-                  Edit
-                </button>
-              ) : null}
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Squad</p>
+              <h2 className="mt-0.5 text-lg font-black text-white">Players ({athletes.length})</h2>
             </div>
-
-            {!isEditingTeam ? (
-              <div className="space-y-4">
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Name</p>
-                  <p className="mt-1 text-sm font-semibold text-white">{team.name}</p>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
-                  <p className="mt-1 text-sm text-slate-300">{team.sport}</p>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Season</p>
-                  <p className="mt-1 text-sm text-slate-300">{team.season}</p>
-                </div>
-                <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Quick View</p>
-                  <p className="mt-1 text-sm text-slate-300">
-                    {attendanceSummary.present} present • {attendanceSummary.late} late • {attendanceSummary.absent} absent
-                  </p>
-                </div>
-              </div>
+            {athletes.length === 0 ? (
+              <p className="text-sm text-slate-500">No players assigned to this team yet.</p>
             ) : (
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Team Name</label>
-                  <input
-                    value={teamNameInput}
-                    onChange={(e) => setTeamNameInput(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
-                  <input
-                    value={teamSportInput}
-                    onChange={(e) => setTeamSportInput(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Season</label>
-                  <input
-                    value={teamSeasonInput}
-                    onChange={(e) => setTeamSeasonInput(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={handleSaveTeam}
-                    disabled={savingTeam}
-                    className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {savingTeam ? 'Saving...' : 'Save Team'}
-                  </button>
-                  <button
-                    onClick={() => setIsEditingTeam(false)}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                  >
-                    Cancel
-                  </button>
-                </div>
+              <div className="space-y-2">
+                {athletes.map((athlete) => {
+                  const recs = attendanceByAthlete[athlete.id] || [];
+                  const present = recs.filter((r) => ['present','late'].includes(r.status.toLowerCase())).length;
+                  const rate = recs.length > 0 ? Math.round((present / recs.length) * 100) : null;
+                  return (
+                    <div key={athlete.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-xs font-black text-sky-400">
+                        {initials(athlete.name)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <Link href={`/athletes/${athlete.id}`} className="block truncate text-sm font-bold text-white hover:text-sky-400">
+                          {athlete.name}
+                        </Link>
+                        {athlete.ageGroup && athlete.ageGroup !== '—' && (
+                          <p className="text-xs text-slate-500">{athlete.ageGroup}</p>
+                        )}
+                      </div>
+                      {rate !== null && (
+                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
+                          rate >= 80 ? 'bg-emerald-500/15 text-emerald-400' :
+                          rate >= 60 ? 'bg-amber-500/15 text-amber-400' :
+                          'bg-red-500/15 text-red-400'
+                        }`}>{rate}%</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
 
+          {/* Attendance summary */}
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Quick Add Athlete</h2>
-              <p className="mt-1 text-sm text-slate-400">Add an athlete directly into this team roster.</p>
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Attendance</p>
+              <h2 className="mt-0.5 text-lg font-black text-white">Session Breakdown</h2>
             </div>
-
-            <form onSubmit={handleQuickAddAthlete} className="space-y-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Athlete Name</label>
-                <input
-                  value={quickAthleteName}
-                  onChange={(e) => setQuickAthleteName(e.target.value)}
-                  placeholder="e.g. John Smith"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
-                <input
-                  value={quickAthleteSport}
-                  onChange={(e) => setQuickAthleteSport(e.target.value)}
-                  placeholder={team.sport !== '—' ? team.sport : 'e.g. Hockey'}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-slate-200">Age Group</label>
-                <input
-                  value={quickAthleteAgeGroup}
-                  onChange={(e) => setQuickAthleteAgeGroup(e.target.value)}
-                  placeholder="e.g. U16"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-500"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingQuickAthlete}
-                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingQuickAthlete ? 'Adding...' : 'Add Athlete'}
-              </button>
-            </form>
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Bulk Team Attendance</h2>
-              <p className="mt-1 text-sm text-slate-400">Log one session for the whole team in a single action.</p>
-            </div>
-
-            <form onSubmit={handleBulkAttendanceSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Date</label>
-                  <input
-                    type="date"
-                    value={bulkAttendanceDate}
-                    onChange={(e) => setBulkAttendanceDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-slate-200">Session Type</label>
-                  <select
-                    value={bulkAttendanceSessionType}
-                    onChange={(e) => setBulkAttendanceSessionType(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                  >
-                    <option value="Training">Training</option>
-                    <option value="Match">Match</option>
-                    <option value="Gym">Gym</option>
-                    <option value="Recovery">Recovery</option>
-                    <option value="Testing">Testing</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
-                {roster.length === 0 ? (
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                    No athletes in roster yet.
-                  </div>
-                ) : (
-                  roster.map((athlete) => (
-                    <div
-                      key={athlete.id}
-                      className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div>
-                        <p className="text-sm font-semibold text-white">{athlete.name}</p>
-                        <p className="text-xs text-slate-400">{athlete.ageGroup}</p>
-                      </div>
-
-                      <select
-                        value={bulkAttendanceStatusMap[athlete.id] || 'Present'}
-                        onChange={(e) =>
-                          setBulkAttendanceStatusMap((prev) => ({
-                            ...prev,
-                            [athlete.id]: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white outline-none transition md:w-40 focus:border-sky-500"
-                      >
-                        <option value="Present">Present</option>
-                        <option value="Late">Late</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Excused">Excused</option>
-                      </select>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingBulkAttendance}
-                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingBulkAttendance ? 'Logging...' : 'Log Team Attendance'}
-              </button>
-            </form>
-          </div>
-        </section>
-
-        <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Roster</h2>
-            <p className="mt-1 text-sm text-slate-400">Edit athletes inside the roster or remove them from the team.</p>
-          </div>
-
-          {roster.length === 0 ? (
-            <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-              No athletes assigned to this team yet.
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {roster.map((athlete) => {
-                const isEditing = editingRosterAthleteId === athlete.id;
-
-                return (
-                  <div key={athlete.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                    {isEditing ? (
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                          <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-200">Name</label>
-                            <input
-                              value={editRosterName}
-                              onChange={(e) => setEditRosterName(e.target.value)}
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-200">Sport</label>
-                            <input
-                              value={editRosterSport}
-                              onChange={(e) => setEditRosterSport(e.target.value)}
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="mb-2 block text-sm font-medium text-slate-200">Age Group</label>
-                            <input
-                              value={editRosterAgeGroup}
-                              onChange={(e) => setEditRosterAgeGroup(e.target.value)}
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-sky-500"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => handleSaveRosterAthlete(athlete)}
-                            disabled={savingRosterEdit}
-                            className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            {savingRosterEdit ? 'Saving...' : 'Save'}
-                          </button>
-                          <button
-                            onClick={cancelRosterEdit}
-                            className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:bg-slate-800"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div className="grid flex-1 grid-cols-1 gap-3 md:grid-cols-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Athlete</p>
-                            <p className="mt-1 text-sm font-semibold text-white">{athlete.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Sport</p>
-                            <p className="mt-1 text-sm text-slate-300">{athlete.sport}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Age Group</p>
-                            <p className="mt-1 text-sm text-slate-300">{athlete.ageGroup}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-slate-500">Profile</p>
-                            <Link
-                              href={`/athletes/${athlete.id}`}
-                              className="mt-1 inline-block text-sm font-medium text-sky-400 hover:text-sky-300"
-                            >
-                              Open Athlete
-                            </Link>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => startRosterEdit(athlete)}
-                            className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleRemoveAthleteFromTeam(athlete)}
-                            className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-200 transition hover:bg-red-500/20"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Player Attendance Snapshot</h2>
-              <p className="mt-1 text-sm text-slate-400">Fast attendance view across the roster.</p>
-            </div>
-
-            {playerAttendanceSnapshot.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                No attendance data yet.
-              </div>
+            {attendanceSummary.totalSessions === 0 ? (
+              <p className="text-sm text-slate-500">No attendance records yet.</p>
             ) : (
               <div className="space-y-3">
-                {playerAttendanceSnapshot.map((row) => (
-                  <div
-                    key={row.athleteId}
-                    className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-white">{row.athleteName}</p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {row.total} entries • Latest: {row.latest ? formatDate(row.latest) : '—'}
-                      </p>
+                {[
+                  { label: 'Present', value: attendanceSummary.present, color: 'emerald' },
+                  { label: 'Late', value: attendanceSummary.late, color: 'amber' },
+                  { label: 'Absent', value: attendanceSummary.absent, color: 'red' },
+                  { label: 'Excused', value: attendanceSummary.excused, color: 'sky' },
+                ].map((s) => {
+                  const pct = attendanceSummary.totalSessions > 0 ? Math.round((s.value / attendanceSummary.totalSessions) * 100) : 0;
+                  return (
+                    <div key={s.label}>
+                      <div className="mb-1.5 flex items-center justify-between">
+                        <p className="text-sm font-semibold text-slate-300">{s.label}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500">{s.value} records</span>
+                          <span className={`text-sm font-black ${
+                            s.color === 'emerald' ? 'text-emerald-400' :
+                            s.color === 'amber' ? 'text-amber-400' :
+                            s.color === 'red' ? 'text-red-400' : 'text-sky-400'
+                          }`}>{pct}%</span>
+                        </div>
+                      </div>
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+                        <div className={`h-full rounded-full ${
+                          s.color === 'emerald' ? 'bg-emerald-500' :
+                          s.color === 'amber' ? 'bg-amber-500' :
+                          s.color === 'red' ? 'bg-red-500' : 'bg-sky-500'
+                        }`} style={{ width: `${pct}%` }} />
+                      </div>
                     </div>
+                  );
+                })}
 
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                        row.rate >= 80
-                          ? 'bg-emerald-500/15 text-emerald-200'
-                          : row.rate >= 60
-                          ? 'bg-amber-500/15 text-amber-200'
-                          : 'bg-red-500/15 text-red-200'
-                      }`}
-                    >
-                      {row.rate}% attendance
-                    </span>
-                  </div>
-                ))}
+                <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-center">
+                  <p className="text-2xl font-black text-white">{attendanceSummary.overallRate}%</p>
+                  <p className="text-xs text-slate-500">Overall attendance rate</p>
+                </div>
               </div>
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Team Performance Leaderboard</h2>
-              <p className="mt-1 text-sm text-slate-400">Top performers across recent tests in this team.</p>
+          {/* Performance summary */}
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
+            <div className="mb-5">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Testing</p>
+              <h2 className="mt-0.5 text-lg font-black text-white">Performance Overview</h2>
             </div>
-
-            {teamPerformanceLeaderboard.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                No performance data yet.
-              </div>
+            {performanceSummary.totalRecords === 0 ? (
+              <p className="text-sm text-slate-500">No performance records yet. Run a testing session to see data here.</p>
             ) : (
-              <div className="space-y-4">
-                {teamPerformanceLeaderboard.map((group) => (
-                  <div key={group.testType} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                    <h3 className="text-sm font-semibold text-white">{group.testType}</h3>
-                    <div className="mt-3 space-y-2">
-                      {group.entries.map((entry, index) => (
-                        <div
-                          key={`${group.testType}-${entry.athleteName}-${index}`}
-                          className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 px-3 py-2"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-white">
-                              #{index + 1} {entry.athleteName}
-                            </p>
-                            <p className="text-xs text-slate-400">{formatDate(entry.date)}</p>
-                          </div>
-                          <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
-                            {entry.result}
-                            {entry.unit ? ` ${entry.unit}` : ''}
-                          </span>
-                        </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      <th className="py-3 pr-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Athlete</th>
+                      {performanceSummary.testTypes.map((t) => (
+                        <th key={t} className="px-2 py-3 text-center text-[10px] font-black uppercase tracking-wide text-slate-500 whitespace-nowrap">{t}</th>
                       ))}
-                    </div>
-                  </div>
-                ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-900">
+                    {athletes.map((athlete) => (
+                      <tr key={athlete.id} className="hover:bg-slate-800/30 transition">
+                        <td className="py-3 pr-4">
+                          <Link href={`/athletes/${athlete.id}`} className="text-sm font-bold text-white hover:text-sky-400">
+                            {athlete.name}
+                          </Link>
+                        </td>
+                        {performanceSummary.testTypes.map((testType) => {
+                          const recs = (performanceByAthlete[athlete.id] || []).filter((r) => r.test_type === testType);
+                          const latest = [...recs].sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
+                          if (!latest) return (
+                            <td key={testType} className="px-2 py-3 text-center">
+                              <span className="text-xs text-slate-700">—</span>
+                            </td>
+                          );
+                          const isQual = latest.unit && !['s','m','cm','reps','kg','%'].includes(latest.unit);
+                          const display = isQual ? latest.unit : `${latest.result}${latest.unit ? ` ${latest.unit}` : ''}`;
+                          return (
+                            <td key={testType} className="px-2 py-3 text-center">
+                              <span className="text-xs font-bold text-white">{display}</span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Quick Attendance View</h2>
-              <p className="mt-1 text-sm text-slate-400">Recent team attendance records.</p>
-            </div>
-
-            {recentAttendance.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                No recent attendance entries.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentAttendance.map((record) => (
-                  <div
-                    key={record.id}
-                    className="flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4 md:flex-row md:items-center md:justify-between"
-                  >
-                    <div>
-                      <p className="text-sm font-semibold text-white">
-                        {athleteMap.get(record.athlete_id)?.name || 'Unknown Athlete'}
-                      </p>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {record.session_type} • {formatDate(record.session_date)}
-                      </p>
-                    </div>
-
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${getStatusClasses(record.status)}`}>
-                      {formatStatus(record.status)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold">Recent Performance Entries</h2>
-              <p className="mt-1 text-sm text-slate-400">Most recent testing results across the roster.</p>
-            </div>
-
-            {recentPerformance.length === 0 ? (
-              <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-300">
-                No recent performance entries.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentPerformance.map((record) => (
-                  <div
-                    key={record.id}
-                    className="rounded-xl border border-slate-800 bg-slate-950/40 p-4"
-                  >
-                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-white">{record.athlete_name}</p>
-                        <p className="mt-1 text-sm text-slate-400">
-                          {record.test_type} • {formatDate(record.test_date)}
-                        </p>
-                        <p className="mt-1 text-xs text-slate-500">{record.notes || 'No notes'}</p>
-                      </div>
-
-                      <span className="rounded-full bg-slate-800 px-2.5 py-1 text-xs text-slate-200">
-                        {formatResult(record.result, record.unit)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+        </div>
       </div>
     </main>
   );

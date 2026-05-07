@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Nav from '@/components/Nav';
+import RootLayoutClient from '@/components/RootLayoutClient';
 
 export const metadata: Metadata = {
-  title: 'High-Performance Operations',
-  description: 'School sport high-performance operations system',
+  title: 'St Benedict\'s Hockey',
+  description: 'High-performance hockey operations platform',
 };
 
 export default function RootLayout({
@@ -15,12 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-950 text-white antialiased">
-        <div className="min-h-screen bg-slate-950 text-white">
-          <Nav />
-          <div className="min-h-[calc(100vh-88px)]">
-            {children}
-          </div>
-        </div>
+        <RootLayoutClient>{children}</RootLayoutClient>
       </body>
     </html>
   );
