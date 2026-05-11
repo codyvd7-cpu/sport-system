@@ -146,7 +146,14 @@ export default function CoachNav() {
               target="_blank"
               className="rounded-xl border border-slate-700/60 bg-slate-900/60 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-slate-600 hover:text-white"
             >
-              View Portal ↗
+              Portal ↗
+            </Link>
+            <Link
+              href="/player"
+              target="_blank"
+              className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-300 transition hover:bg-sky-500/20"
+            >
+              Player Portal ↗
             </Link>
             <button
               onClick={handleLogout}

@@ -495,6 +495,10 @@ export default function PortalPage() {
           <div className="flex flex-col items-center gap-3 text-center">
             <span className="text-2xl">🏑</span>
             <p className="text-sm font-black text-white">St Benedict's College Hockey</p>
+            <a href="/player"
+              className="rounded-full border border-sky-500/30 bg-sky-500/10 px-5 py-2.5 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">
+              Player &amp; Parent Login →
+            </a>
             <p className="text-xs text-slate-600">© {new Date().getFullYear()} — Built for excellence</p>
           </div>
         </div>

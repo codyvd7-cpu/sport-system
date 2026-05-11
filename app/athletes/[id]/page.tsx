@@ -91,7 +91,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
   const [newNote, setNewNote] = React.useState('');
   const [savingNote, setSavingNote] = React.useState(false);
 
-  React.useEffect(() => { if (!successMessage) return; const t = setTimeout(() => setSuccessMessage(''), 3000); return () => clearTimeout(t); }, [successMessage]);
+  React.useEffect(() => { if (!successMessage) return; const t = setTimeout(() => setSuccessMessage(''), 8000); return () => clearTimeout(t); }, [successMessage]);
 
   async function loadPageData() {
     setLoading(true);
@@ -234,7 +234,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <div className="flex items-center gap-3">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
@@ -245,7 +245,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
   );
 
   if (!athlete) return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
           <p className="text-lg font-black text-white">Athlete not found</p>
@@ -285,7 +285,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
 
       {/* ── HERO HEADER ──────────────────────────────── */}
       <div className="relative overflow-hidden border-b border-white/5 bg-gradient-to-b from-slate-900/80 to-slate-950">
@@ -397,7 +397,11 @@ export default function AthleteProfilePage({ params }: PageProps) {
               {playerCode ? (
                 <div className="mt-2 flex items-center gap-3 flex-wrap">
                   <p className="text-2xl font-black tracking-[0.3em] text-white">{playerCode}</p>
-                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/player`); setSuccessMessage('Portal link copied!'); }}
+                  <button onClick={() => { navigator.clipboard.writeText(playerCode); setSuccessMessage('Code copied!'); }}
+                    className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">
+                    Copy Code
+                  </button>
+                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/player`); setSuccessMessage('Link copied!'); }}
                     className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">
                     Copy Link
                   </button>

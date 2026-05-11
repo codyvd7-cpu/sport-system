@@ -631,7 +631,7 @@ export default function TeamProfilePage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white">
+      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
             Loading team page...
@@ -643,7 +643,7 @@ export default function TeamProfilePage({ params }: PageProps) {
 
   if (!team) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white">
+      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
             <h1 className="text-2xl font-bold text-white">Team not found</h1>
@@ -674,7 +674,7 @@ export default function TeamProfilePage({ params }: PageProps) {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white">
+      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
@@ -687,7 +687,7 @@ export default function TeamProfilePage({ params }: PageProps) {
 
   if (teamNotFound) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white">
+      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
             <p className="text-lg font-black text-white">Team not found</p>
@@ -699,7 +699,7 @@ export default function TeamProfilePage({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Header */}

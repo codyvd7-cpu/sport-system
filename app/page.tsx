@@ -770,7 +770,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-950 text-white">
+      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
@@ -784,7 +784,7 @@ export default function DashboardPage() {
   const uniqueTeamNames = Array.from(new Set(athletes.map((a) => a.team).filter(Boolean))).sort();
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {/* ── HEADER ──────────────────────────────────── */}

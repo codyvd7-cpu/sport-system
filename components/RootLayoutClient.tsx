@@ -5,7 +5,7 @@ import Nav from '@/components/Nav';
 import CoachNav from '@/components/CoachNav';
 
 const COACH_ROUTES = ['/', '/athletes', '/teams', '/attendance', '/performance', '/portal-admin'];
-const PUBLIC_ROUTES = ['/portal', '/login'];
+const PUBLIC_ROUTES = ['/portal', '/login', '/player'];
 
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
