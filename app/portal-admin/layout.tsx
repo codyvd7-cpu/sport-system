@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-
-const ALLOWED_ADMIN_EMAILS = [
-  'codyvd7@gmail.com',
-];
+import { checkStaffAccess } from '@/lib/staffAccess';
 
 export default function PortalAdminLayout({
   children,
@@ -14,23 +11,19 @@ export default function PortalAdminLayout({
 }) {
   const [checking, setChecking] = useState(true);
   const [blocked, setBlocked] = useState(false);
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     async function checkAccess() {
-      const { data } = await supabase.auth.getSession();
+      const result = await checkStaffAccess(['owner', 'head_of_hockey']);
 
-      const email = data.session?.user?.email?.toLowerCase();
-
-      if (!data.session || !email) {
+      if (!result.email) {
         window.location.assign('/login?redirect=/portal-admin');
         return;
       }
 
-      const allowed = ALLOWED_ADMIN_EMAILS.map((item) =>
-        item.toLowerCase()
-      ).includes(email);
-
-      if (!allowed) {
+      if (!result.allowed) {
+        setReason(result.reason || 'You do not have permission to access this area.');
         setBlocked(true);
         setChecking(false);
         return;
@@ -51,7 +44,7 @@ export default function PortalAdminLayout({
           </p>
           <h1 className="mt-3 text-2xl font-black">Checking access...</h1>
           <p className="mt-2 text-sm text-slate-400">
-            Confirming your coach login.
+            Confirming your staff permissions.
           </p>
         </section>
       </main>
@@ -71,7 +64,7 @@ export default function PortalAdminLayout({
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-red-100/80">
-            This page is restricted to approved hockey staff only.
+            {reason || 'This page is restricted to approved hockey leadership only.'}
           </p>
 
           <div className="mt-6 flex justify-center gap-3">
