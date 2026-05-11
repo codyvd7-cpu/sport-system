@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { safeUUID } from '@/lib/uuid';
+import { PerformanceTrendChart, AttendanceChart, BenchmarkBars } from '@/components/AthleteCharts';
 
 type GenericRow = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -193,6 +194,21 @@ export default function AthleteProfilePage({ params }: PageProps) {
   }
   async function handleDeletePerformance(id: string) { if (!confirm('Delete this record?')) return; await supabase.from('Performance').delete().eq('id', id); setSuccessMessage('Deleted.'); await loadPageData(); }
 
+  // Player code
+  const [generatingCode, setGeneratingCode] = React.useState(false);
+  const playerCode = athlete ? firstString(athlete.raw?.player_code) : '';
+
+  async function handleGenerateCode() {
+    if (!athlete) return;
+    setGeneratingCode(true);
+    const code = `SBC${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    const { error: err } = await supabase.from('athletes').update({ player_code: code }).eq('id', athlete.id);
+    if (err) { setError(err.message); setGeneratingCode(false); return; }
+    setSuccessMessage(`Code generated: ${code}`);
+    await loadPageData();
+    setGeneratingCode(false);
+  }
+
   async function handleAddNote(e: React.FormEvent) {
     e.preventDefault();
     if (!athlete || !newNote.trim()) return;
@@ -239,234 +255,410 @@ export default function AthleteProfilePage({ params }: PageProps) {
     </main>
   );
 
+
+  const LOWER_IS_BETTER = ['Bronco', '10m Sprint', '30m Sprint', '505', 'RSA'];
+  const BENCHMARKS: Record<string, { u1415: number[]; u1618: number[] }> = {
+    'SBJ': { u1415: [195, 175, 155, 135], u1618: [215, 195, 175, 155] },
+    '10m Sprint': { u1415: [1.72, 1.82, 1.92, 2.02], u1618: [1.65, 1.75, 1.85, 1.95] },
+    '30m Sprint': { u1415: [4.25, 4.45, 4.65, 4.85], u1618: [4.05, 4.25, 4.45, 4.65] },
+    '505 Left': { u1415: [2.35, 2.50, 2.65, 2.80], u1618: [2.25, 2.40, 2.55, 2.70] },
+    '505 Right': { u1415: [2.35, 2.50, 2.65, 2.80], u1618: [2.25, 2.40, 2.55, 2.70] },
+    'Push-Ups': { u1415: [40, 30, 20, 10], u1618: [50, 38, 26, 14] },
+    'Pull-Ups': { u1415: [10, 7, 4, 1], u1618: [10, 7, 4, 1] },
+    'Yo-Yo IR1': { u1415: [1200, 900, 700, 500], u1618: [1600, 1200, 900, 600] },
+    'RSA Sdec%': { u1415: [3.0, 5.0, 7.0, 10.0], u1618: [2.5, 4.0, 6.0, 9.0] },
+  };
+  const TIERS = [
+    { label: 'Elite', color: 'text-emerald-300', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30', bar: 'bg-emerald-500' },
+    { label: 'Good', color: 'text-sky-300', bg: 'bg-sky-500/20', border: 'border-sky-500/30', bar: 'bg-sky-500' },
+    { label: 'Average', color: 'text-amber-300', bg: 'bg-amber-500/20', border: 'border-amber-500/30', bar: 'bg-amber-500' },
+    { label: 'Developing', color: 'text-orange-300', bg: 'bg-orange-500/20', border: 'border-orange-500/30', bar: 'bg-orange-500' },
+    { label: 'Poor', color: 'text-red-300', bg: 'bg-red-500/20', border: 'border-red-500/30', bar: 'bg-red-500' },
+  ];
+
+  function getBenchmarkTier(testKey: string, value: number, ag: string) {
+    const b = BENCHMARKS[testKey]; if (!b) return null;
+    const lower = LOWER_IS_BETTER.some((t) => testKey.toLowerCase().includes(t.toLowerCase()));
+    const t = ag.includes('14') || ag.includes('15') ? b.u1415 : b.u1618;
+    if (lower) { if (value < t[0]) return TIERS[0]; if (value < t[1]) return TIERS[1]; if (value < t[2]) return TIERS[2]; if (value < t[3]) return TIERS[3]; return TIERS[4]; }
+    else { if (value > t[0]) return TIERS[0]; if (value > t[1]) return TIERS[1]; if (value > t[2]) return TIERS[2]; if (value > t[3]) return TIERS[3]; return TIERS[4]; }
+  }
+
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <Link href="/athletes" className="mb-5 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-300">← Athletes</Link>
 
-        {/* Profile header */}
-        <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-sky-500/15 text-2xl font-black text-sky-400">{initials(athlete.name)}</div>
-            <div className="flex-1">
-              {isEditingAthlete ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <input value={athleteNameInput} onChange={(e) => setAthleteNameInput(e.target.value)} placeholder="Full name" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-                    <input value={athleteTeamInput} onChange={(e) => setAthleteTeamInput(e.target.value)} placeholder="Team" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-                    <input value={athleteAgeGroupInput} onChange={(e) => setAthleteAgeGroupInput(e.target.value)} placeholder="Age group" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveAthleteProfile} disabled={savingAthlete} className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingAthlete ? 'Saving...' : 'Save'}</button>
-                    <button onClick={() => setIsEditingAthlete(false)} className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-300">Cancel</button>
-                    <button onClick={handleDeleteAthlete} className="ml-auto rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300">Delete</button>
-                  </div>
+      {/* ── HERO HEADER ──────────────────────────────── */}
+      <div className="relative overflow-hidden border-b border-white/5 bg-gradient-to-b from-slate-900/80 to-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_50%,rgba(14,165,233,0.05),transparent)]" />
+        <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6">
+
+          <Link href="/athletes" className="mb-6 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-300">
+            ← Athletes
+          </Link>
+
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex items-center gap-5">
+              {/* Big avatar */}
+              <div className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-2xl font-black text-sky-300 shadow-lg shadow-sky-500/10">
+                {initials(athlete.name)}
+                <div className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-950 bg-emerald-500">
+                  <span className="text-[8px] font-black text-white">✓</span>
                 </div>
-              ) : (
-                <div>
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <h1 className="text-2xl font-black text-white sm:text-3xl">{athlete.name}</h1>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-300">{athlete.team}</span>
-                        {athlete.ageGroup !== '—' && <span className="rounded-full bg-slate-800/60 px-3 py-1 text-xs text-slate-400">{athlete.ageGroup}</span>}
-                      </div>
+              </div>
+
+              <div>
+                {isEditingAthlete ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input value={athleteNameInput} onChange={(e) => setAthleteNameInput(e.target.value)} placeholder="Full name" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
+                      <input value={athleteTeamInput} onChange={(e) => setAthleteTeamInput(e.target.value)} placeholder="Team" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
+                      <input value={athleteAgeGroupInput} onChange={(e) => setAthleteAgeGroupInput(e.target.value)} placeholder="Age group" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
                     </div>
-                    <button onClick={() => setIsEditingAthlete(true)} className="shrink-0 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white">Edit</button>
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-5 border-t border-slate-800 pt-4">
-                    <div><p className={`text-2xl font-black ${attendanceSummary.rate === null ? 'text-slate-500' : attendanceSummary.rate >= 80 ? 'text-emerald-400' : attendanceSummary.rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{attendanceSummary.rate !== null ? `${attendanceSummary.rate}%` : '—'}</p><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Attendance</p></div>
-                    <div className="w-px bg-slate-800" />
-                    <div><p className="text-2xl font-black text-white">{attendanceSummary.total}</p><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Sessions</p></div>
-                    <div className="w-px bg-slate-800" />
-                    <div><p className="text-2xl font-black text-red-400">{attendanceSummary.absent}</p><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Absences</p></div>
-                    <div className="w-px bg-slate-800" />
-                    <div><p className="text-2xl font-black text-violet-400">{performanceRecords.length}</p><p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Test Records</p></div>
-                  </div>
-                  {(previousAthlete || nextAthlete) && (
-                    <div className="mt-3 flex gap-2">
-                      {previousAthlete && <Link href={`/athletes/${previousAthlete.id}`} className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white">← {previousAthlete.name}</Link>}
-                      {nextAthlete && <Link href={`/athletes/${nextAthlete.id}`} className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white">{nextAthlete.name} →</Link>}
+                    <div className="flex gap-2">
+                      <button onClick={handleSaveAthleteProfile} disabled={savingAthlete} className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingAthlete ? 'Saving...' : 'Save'}</button>
+                      <button onClick={() => setIsEditingAthlete(false)} className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-300">Cancel</button>
+                      <button onClick={handleDeleteAthlete} className="ml-auto rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300">Delete</button>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Athlete Profile</p>
+                    <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white sm:text-4xl">{athlete.name}</h1>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-black text-sky-300">{athlete.team}</span>
+                      {athlete.ageGroup !== '—' && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-400">{athlete.ageGroup}</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
+
+            {/* Edit + nav */}
+            {!isEditingAthlete && (
+              <div className="flex flex-col items-end gap-2">
+                <button onClick={() => setIsEditingAthlete(true)} className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white">Edit Profile</button>
+                {(previousAthlete || nextAthlete) && (
+                  <div className="flex gap-2">
+                    {previousAthlete && <Link href={`/athletes/${previousAthlete.id}`} className="rounded-xl border border-slate-700 bg-slate-800/40 px-3 py-1.5 text-xs text-slate-500 hover:text-white">← {previousAthlete.name}</Link>}
+                    {nextAthlete && <Link href={`/athletes/${nextAthlete.id}`} className="rounded-xl border border-slate-700 bg-slate-800/40 px-3 py-1.5 text-xs text-slate-500 hover:text-white">{nextAthlete.name} →</Link>}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* KPI strip */}
+          {!isEditingAthlete && (
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                {
+                  label: 'Attendance',
+                  value: attendanceSummary.rate !== null ? `${attendanceSummary.rate}%` : '—',
+                  sub: `${attendanceSummary.total} sessions`,
+                  color: attendanceSummary.rate === null ? 'slate' : attendanceSummary.rate >= 80 ? 'emerald' : attendanceSummary.rate >= 60 ? 'amber' : 'red',
+                },
+                { label: 'Present', value: attendanceSummary.present, sub: `${attendanceSummary.late} late`, color: 'emerald' },
+                { label: 'Absences', value: attendanceSummary.absent, sub: `${attendanceSummary.excused} excused`, color: attendanceSummary.absent > 3 ? 'red' : 'slate' },
+                { label: 'Test Records', value: performanceRecords.length, sub: `${performanceTrends.length} test types`, color: 'violet' },
+              ].map((kpi) => (
+                <div key={kpi.label} className={`rounded-2xl border bg-slate-900/80 p-4 ${
+                  kpi.color === 'emerald' ? 'border-emerald-500/20' :
+                  kpi.color === 'amber' ? 'border-amber-500/20' :
+                  kpi.color === 'red' ? 'border-red-500/20' :
+                  kpi.color === 'violet' ? 'border-violet-500/20' :
+                  'border-slate-800'
+                }`}>
+                  <p className={`text-3xl font-black ${
+                    kpi.color === 'emerald' ? 'text-emerald-400' :
+                    kpi.color === 'amber' ? 'text-amber-400' :
+                    kpi.color === 'red' ? 'text-red-400' :
+                    kpi.color === 'violet' ? 'text-violet-400' :
+                    'text-white'
+                  }`}>{kpi.value}</p>
+                  <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
+                  <p className="mt-0.5 text-[10px] text-slate-600">{kpi.sub}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      </div>
+
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
 
         {error && <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
         {successMessage && <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
-        <div className="space-y-6">
+        {/* Player Access Code */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Player Portal</p>
+              {playerCode ? (
+                <div className="mt-2 flex items-center gap-3 flex-wrap">
+                  <p className="text-2xl font-black tracking-[0.3em] text-white">{playerCode}</p>
+                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/player`); setSuccessMessage('Portal link copied!'); }}
+                    className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">
+                    Copy Link
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-1 text-sm text-slate-500">No access code generated yet.</p>
+              )}
+              <p className="mt-1 text-xs text-slate-500">Player visits <span className="text-sky-400">/player</span> and enters this code.</p>
+            </div>
+            <button onClick={handleGenerateCode} disabled={generatingCode}
+              className={`shrink-0 rounded-xl border px-4 py-2.5 text-xs font-black transition disabled:opacity-50 ${playerCode ? 'border-slate-700 bg-slate-800 text-slate-300 hover:text-white' : 'border-sky-500 bg-sky-500/15 text-sky-300 hover:bg-sky-500/20'}`}>
+              {generatingCode ? 'Generating...' : playerCode ? 'Regenerate' : 'Generate Code'}
+            </button>
+          </div>
+        </div>
 
-          {/* Performance Trends */}
-          {performanceTrends.length > 0 && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Progress</p><h2 className="mt-0.5 text-lg font-black text-white">Performance Trends</h2></div>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {performanceTrends.map((trend) => (
-                  <div key={trend.testType} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{trend.testType}</p>
-                    <div className="mt-2 flex items-end justify-between gap-2">
-                      <p className="text-2xl font-black text-white">{formatResult(trend.latest, trend.unit)}</p>
-                      {trend.delta !== null && <span className={`mb-0.5 rounded-full px-2.5 py-1 text-xs font-black ${trend.delta > 0 ? 'bg-emerald-500/15 text-emerald-300' : trend.delta < 0 ? 'bg-red-500/15 text-red-300' : 'bg-slate-800 text-slate-400'}`}>{trend.delta > 0 ? `↑ +${trend.delta}` : trend.delta < 0 ? `↓ ${trend.delta}` : '→ 0'}{trend.unit ? ` ${trend.unit}` : ''}</span>}
-                    </div>
-                    {trend.previous !== null && <p className="mt-1 text-[11px] text-slate-600">Prev: {formatResult(trend.previous, trend.unit)}</p>}
-                    <p className="mt-1 text-[10px] text-slate-600">{formatDate(trend.latestDate)}</p>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+          {/* LEFT — Performance + Notes */}
+          <div className="space-y-6 xl:col-span-2">
+
+            {/* Benchmark position bars */}
+            {performanceTrends.length > 0 && (
+              <BenchmarkBars trends={performanceTrends} ageGroup={athlete.ageGroup} />
+            )}
+
+            {/* Performance trend line chart */}
+            {performanceRecords.length >= 2 && (
+              <PerformanceTrendChart records={performanceRecords} />
+            )}
+
+            {/* Attendance chart */}
+            {attendanceRecords.length >= 4 && (
+              <AttendanceChart records={attendanceRecords} />
+            )}
+
+            {/* Performance Results with Benchmarks */}
+            {performanceTrends.length > 0 && (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                <div className="mb-5">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Testing Results</p>
+                  <h2 className="mt-0.5 text-lg font-black text-white">Performance vs Benchmarks</h2>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {TIERS.map((t) => (
+                      <span key={t.label} className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${t.bg} ${t.border} ${t.color}`}>{t.label}</span>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Attendance */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5 flex items-center justify-between">
-              <div><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Sessions</p><h2 className="mt-0.5 text-lg font-black text-white">Attendance History</h2></div>
-              <div className="flex gap-2 text-xs">
-                <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 font-bold text-emerald-400">{attendanceSummary.present} Present</span>
-                <span className="rounded-full bg-red-500/15 px-2.5 py-1 font-bold text-red-400">{attendanceSummary.absent} Absent</span>
-              </div>
-            </div>
-            <form onSubmit={handleQuickAddAttendance} className="mb-5 flex flex-wrap gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-              <select value={quickAttendanceStatus} onChange={(e) => setQuickAttendanceStatus(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500">{['Present','Absent','Late','Excused'].map((s) => <option key={s}>{s}</option>)}</select>
-              <select value={quickAttendanceSessionType} onChange={(e) => setQuickAttendanceSessionType(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500">{['Training','Match','Gym','Recovery','Testing'].map((s) => <option key={s}>{s}</option>)}</select>
-              <input type="date" value={quickAttendanceDate} onChange={(e) => setQuickAttendanceDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-              <button type="submit" disabled={savingQuickAttendance} className="rounded-xl border border-emerald-500 bg-emerald-500/15 px-4 py-2 text-sm font-black text-emerald-300 disabled:opacity-50">{savingQuickAttendance ? '...' : 'Add'}</button>
-            </form>
-            {attendanceRecords.length === 0 ? <p className="text-sm text-slate-500">No attendance records yet.</p> : (
-              <div className="space-y-2">
-                {attendanceRecords.slice(0, 30).map((record) => {
-                  const isEditing = editingAttendanceId === record.id;
-                  return (
-                    <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                      {isEditing ? (
-                        <div className="flex flex-wrap gap-2">
-                          <select value={editAttendanceStatus} onChange={(e) => setEditAttendanceStatus(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500">{['Present','Absent','Late','Excused'].map((s) => <option key={s}>{s}</option>)}</select>
-                          <select value={editAttendanceSessionType} onChange={(e) => setEditAttendanceSessionType(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500">{['Training','Match','Gym','Recovery','Testing'].map((s) => <option key={s}>{s}</option>)}</select>
-                          <input type="date" value={editAttendanceDate} onChange={(e) => setEditAttendanceDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                          <button onClick={() => handleSaveAttendanceEdit(record.id)} disabled={savingAttendanceEdit} className="rounded-xl border border-sky-500 bg-sky-500/15 px-3 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingAttendanceEdit ? '...' : 'Save'}</button>
-                          <button onClick={cancelAttendanceEdit} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-300">Cancel</button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {performanceTrends.map((trend) => {
+                    const tier = typeof trend.latest === 'number' ? getBenchmarkTier(trend.testType, trend.latest, athlete.ageGroup) : null;
+                    const lowerIsBetter = LOWER_IS_BETTER.some((t) => trend.testType.toLowerCase().includes(t.toLowerCase()));
+                    const improved = trend.delta !== null && (lowerIsBetter ? trend.delta < 0 : trend.delta > 0);
+                    const regressed = trend.delta !== null && (lowerIsBetter ? trend.delta > 0 : trend.delta < 0);
+                    return (
+                      <div key={trend.testType} className={`rounded-xl border p-4 ${tier ? `${tier.bg} ${tier.border}` : 'border-slate-800 bg-slate-950/50'}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{trend.testType}</p>
+                          {tier && <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>}
                         </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${getStatusClasses(record.status)}`}>{formatStatus(record.status)}</span>
-                          <div className="min-w-0 flex-1"><p className="text-sm text-slate-300">{record.session_type}</p><p className="text-xs text-slate-500">{formatDate(record.session_date)}</p></div>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => startAttendanceEdit(record)} className="rounded-lg border border-slate-700 bg-slate-800/60 px-2 py-1 text-[10px] font-semibold text-slate-400 hover:text-white">Edit</button>
-                            <button onClick={() => handleDeleteAttendance(record.id)} className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">✕</button>
-                          </div>
+                        <div className="mt-2 flex items-end justify-between gap-2">
+                          <p className="text-2xl font-black text-white">{formatResult(trend.latest, trend.unit)}</p>
+                          {trend.delta !== null && (
+                            <span className={`mb-0.5 rounded-full px-2.5 py-1 text-xs font-black ${improved ? 'bg-emerald-500/20 text-emerald-300' : regressed ? 'bg-red-500/20 text-red-300' : 'bg-slate-800 text-slate-400'}`}>
+                              {improved ? '↑' : regressed ? '↓' : '→'} {Math.abs(trend.delta)}{trend.unit ? ` ${trend.unit}` : ''}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-                {attendanceRecords.length > 30 && <p className="text-center text-xs text-slate-600">Showing 30 of {attendanceRecords.length}</p>}
+                        {trend.previous !== null && <p className="mt-1 text-[11px] text-slate-600">Prev: {formatResult(trend.previous, trend.unit)}</p>}
+                        <p className="mt-1 text-[10px] text-slate-600">{formatDate(trend.latestDate)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
-          </div>
 
-          {/* Performance */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Testing</p><h2 className="mt-0.5 text-lg font-black text-white">Performance Records</h2></div>
-            <form onSubmit={handleQuickAddPerformance} className="mb-5 flex flex-wrap gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-              <input value={quickPerformanceTestType} onChange={(e) => setQuickPerformanceTestType(e.target.value)} list="perf-tests" placeholder="Test type" className="flex-1 min-w-28 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500" />
-              <datalist id="perf-tests">{['SBJ','10m Sprint','30m Sprint','505 Left','505 Right','Push-Ups','Pull-Ups','Yo-Yo IR1','RSA Sdec%'].map((t) => <option key={t} value={t} />)}</datalist>
-              <input type="number" step="any" value={quickPerformanceResult} onChange={(e) => setQuickPerformanceResult(e.target.value)} placeholder="Result" className="w-24 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-              <input value={quickPerformanceUnit} onChange={(e) => setQuickPerformanceUnit(e.target.value)} placeholder="Unit" className="w-20 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-              <input type="date" value={quickPerformanceDate} onChange={(e) => setQuickPerformanceDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-              <button type="submit" disabled={savingQuickPerformance} className="rounded-xl border border-violet-500 bg-violet-500/15 px-4 py-2 text-sm font-black text-violet-300 disabled:opacity-50">{savingQuickPerformance ? '...' : 'Add'}</button>
-            </form>
-            {performanceRecords.length === 0 ? <p className="text-sm text-slate-500">No performance records yet.</p> : (
-              <div className="space-y-2">
-                {performanceRecords.map((record) => {
-                  const isEditing = editingPerformanceId === record.id;
-                  return (
-                    <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                      {isEditing ? (
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
-                            <input value={editPerformanceTestType} onChange={(e) => setEditPerformanceTestType(e.target.value)} placeholder="Test type" className="flex-1 min-w-28 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                            <input type="number" step="any" value={editPerformanceResult} onChange={(e) => setEditPerformanceResult(e.target.value)} placeholder="Result" className="w-24 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                            <input value={editPerformanceUnit} onChange={(e) => setEditPerformanceUnit(e.target.value)} placeholder="Unit" className="w-20 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                            <input type="date" value={editPerformanceDate} onChange={(e) => setEditPerformanceDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                          </div>
-                          <div className="flex gap-2">
-                            <button onClick={() => handleSavePerformanceEdit(record.id)} disabled={savingPerformanceEdit} className="rounded-xl border border-sky-500 bg-sky-500/15 px-3 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingPerformanceEdit ? '...' : 'Save'}</button>
-                            <button onClick={cancelPerformanceEdit} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-300">Cancel</button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3">
-                          <span className="shrink-0 rounded-full bg-violet-500/15 px-2.5 py-1 text-[11px] font-black text-violet-300">{record.test_type}</span>
-                          <p className="flex-1 text-sm font-bold text-white">{formatResult(record.result, record.unit)}</p>
-                          <p className="shrink-0 text-xs text-slate-500">{formatDate(record.test_date)}</p>
-                          <div className="flex gap-1.5">
-                            <button onClick={() => startPerformanceEdit(record)} className="rounded-lg border border-slate-700 bg-slate-800/60 px-2 py-1 text-[10px] font-semibold text-slate-400 hover:text-white">Edit</button>
-                            <button onClick={() => handleDeletePerformance(record.id)} className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300">✕</button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+            {/* Coach Notes */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="mb-5">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Coaching</p>
+                <h2 className="mt-0.5 text-lg font-black text-white">Coach Notes</h2>
               </div>
-            )}
-          </div>
-          {/* Coach Notes */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Coaching</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Coach Notes</h2>
-            </div>
-
-            {/* Add note */}
-            <form onSubmit={handleAddNote} className="mb-5">
-              <textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Add a note about this player — selection thoughts, injury concerns, training observations..."
-                rows={3}
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-amber-500"
-              />
-              <button
-                type="submit"
-                disabled={savingNote || !newNote.trim()}
-                className="mt-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-sm font-black text-amber-300 transition hover:bg-amber-500/20 disabled:opacity-50"
-              >
-                {savingNote ? 'Saving...' : 'Save Note'}
-              </button>
-            </form>
-
-            {/* Notes list */}
-            {notes.length === 0 ? (
-              <p className="text-sm text-slate-500">No notes yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {notes.map((note) => (
-                  <div key={note.id} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p className="text-sm leading-relaxed text-slate-200">{note.note}</p>
-                    <div className="mt-3 flex items-center justify-between gap-3">
-                      <div>
+              <form onSubmit={handleAddNote} className="mb-5">
+                <textarea value={newNote} onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Selection thoughts, injury concerns, training observations..."
+                  rows={3}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-amber-500" />
+                <button type="submit" disabled={savingNote || !newNote.trim()}
+                  className="mt-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-sm font-black text-amber-300 transition hover:bg-amber-500/20 disabled:opacity-50">
+                  {savingNote ? 'Saving...' : 'Save Note'}
+                </button>
+              </form>
+              {notes.length === 0 ? (
+                <p className="text-sm text-slate-500">No notes yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {notes.map((note) => (
+                    <div key={note.id} className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-4">
+                      <p className="text-sm leading-relaxed text-slate-200">{note.note}</p>
+                      <div className="mt-3 flex items-center justify-between gap-3">
                         <p className="text-[10px] text-slate-600">
                           {note.created_by && <span className="text-slate-500">{note.created_by} · </span>}
-                          {note.created_at ? new Date(note.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : ''}
+                          {note.created_at ? new Date(note.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}
                         </p>
+                        <button onClick={() => handleDeleteNote(note.id)}
+                          className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300 hover:bg-red-500/20">✕</button>
                       </div>
-                      <button
-                        onClick={() => handleDeleteNote(note.id)}
-                        className="shrink-0 rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300 hover:bg-red-500/20"
-                      >
-                        ✕
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* RIGHT — Attendance + Performance records */}
+          <div className="space-y-6">
+
+            {/* Attendance summary */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="mb-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Attendance</p>
+                <h2 className="mt-0.5 text-lg font-black text-white">Session History</h2>
+              </div>
+
+              {/* Rate bar */}
+              {attendanceSummary.rate !== null && (
+                <div className="mb-4">
+                  <div className="mb-1.5 flex justify-between text-xs">
+                    <span className="text-slate-500">Rate</span>
+                    <span className={`font-black ${attendanceSummary.rate >= 80 ? 'text-emerald-400' : attendanceSummary.rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{attendanceSummary.rate}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                    <div className={`h-full rounded-full ${attendanceSummary.rate >= 80 ? 'bg-emerald-500' : attendanceSummary.rate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
+                      style={{ width: `${attendanceSummary.rate}%` }} />
+                  </div>
+                </div>
+              )}
+
+              {/* Quick add */}
+              <form onSubmit={handleQuickAddAttendance} className="mb-4 space-y-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <select value={quickAttendanceStatus} onChange={(e) => setQuickAttendanceStatus(e.target.value)}
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500">
+                    {['Present','Absent','Late','Excused'].map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                  <select value={quickAttendanceSessionType} onChange={(e) => setQuickAttendanceSessionType(e.target.value)}
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500">
+                    {['Training','Match','Gym','Recovery','Testing'].map((s) => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <input type="date" value={quickAttendanceDate} onChange={(e) => setQuickAttendanceDate(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                <button type="submit" disabled={savingQuickAttendance}
+                  className="w-full rounded-xl border border-emerald-500 bg-emerald-500/15 py-2 text-xs font-black text-emerald-300 disabled:opacity-50">
+                  {savingQuickAttendance ? '...' : 'Add Record'}
+                </button>
+              </form>
+
+              {attendanceRecords.length === 0 ? <p className="text-sm text-slate-500">No records yet.</p> : (
+                <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                  {attendanceRecords.slice(0, 30).map((record) => {
+                    const isEditing = editingAttendanceId === record.id;
+                    return (
+                      <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-2.5">
+                        {isEditing ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <select value={editAttendanceStatus} onChange={(e) => setEditAttendanceStatus(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500">{['Present','Absent','Late','Excused'].map((s) => <option key={s}>{s}</option>)}</select>
+                              <select value={editAttendanceSessionType} onChange={(e) => setEditAttendanceSessionType(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500">{['Training','Match','Gym','Recovery','Testing'].map((s) => <option key={s}>{s}</option>)}</select>
+                              <input type="date" value={editAttendanceDate} onChange={(e) => setEditAttendanceDate(e.target.value)} className="col-span-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleSaveAttendanceEdit(record.id)} disabled={savingAttendanceEdit} className="rounded-lg border border-sky-500 bg-sky-500/15 px-3 py-1.5 text-xs font-black text-sky-300 disabled:opacity-50">{savingAttendanceEdit ? '...' : 'Save'}</button>
+                              <button onClick={cancelAttendanceEdit} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${getStatusClasses(record.status)}`}>{formatStatus(record.status)}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs text-slate-300 truncate">{record.session_type}</p>
+                              <p className="text-[10px] text-slate-600">{formatDate(record.session_date)}</p>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => startAttendanceEdit(record)} className="rounded-md border border-slate-700 bg-slate-800/60 px-1.5 py-1 text-[9px] text-slate-400 hover:text-white">Edit</button>
+                              <button onClick={() => handleDeleteAttendance(record.id)} className="rounded-md border border-red-500/20 bg-red-500/10 px-1.5 py-1 text-[9px] text-red-300">✕</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {attendanceRecords.length > 30 && <p className="text-center text-[10px] text-slate-600 pt-1">+{attendanceRecords.length - 30} more</p>}
+                </div>
+              )}
+            </div>
+
+            {/* Performance records */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="mb-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Raw Data</p>
+                <h2 className="mt-0.5 text-lg font-black text-white">All Test Records</h2>
+              </div>
+
+              {/* Quick add */}
+              <form onSubmit={handleQuickAddPerformance} className="mb-4 space-y-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
+                <input value={quickPerformanceTestType} onChange={(e) => setQuickPerformanceTestType(e.target.value)} list="perf-tests" placeholder="Test type"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-sky-500" />
+                <datalist id="perf-tests">{['SBJ','10m Sprint','30m Sprint','505 Left','505 Right','Push-Ups','Pull-Ups','Yo-Yo IR1','RSA Sdec%'].map((t) => <option key={t} value={t} />)}</datalist>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="number" step="any" value={quickPerformanceResult} onChange={(e) => setQuickPerformanceResult(e.target.value)} placeholder="Result"
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <input value={quickPerformanceUnit} onChange={(e) => setQuickPerformanceUnit(e.target.value)} placeholder="Unit"
+                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                </div>
+                <input type="date" value={quickPerformanceDate} onChange={(e) => setQuickPerformanceDate(e.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                <button type="submit" disabled={savingQuickPerformance}
+                  className="w-full rounded-xl border border-violet-500 bg-violet-500/15 py-2 text-xs font-black text-violet-300 disabled:opacity-50">
+                  {savingQuickPerformance ? '...' : 'Add Result'}
+                </button>
+              </form>
+
+              {performanceRecords.length === 0 ? <p className="text-sm text-slate-500">No records yet.</p> : (
+                <div className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+                  {performanceRecords.map((record) => {
+                    const isEditing = editingPerformanceId === record.id;
+                    return (
+                      <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-2.5">
+                        {isEditing ? (
+                          <div className="space-y-2">
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <input value={editPerformanceTestType} onChange={(e) => setEditPerformanceTestType(e.target.value)} placeholder="Test type" className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
+                              <input type="number" step="any" value={editPerformanceResult} onChange={(e) => setEditPerformanceResult(e.target.value)} placeholder="Result" className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
+                              <input value={editPerformanceUnit} onChange={(e) => setEditPerformanceUnit(e.target.value)} placeholder="Unit" className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
+                              <input type="date" value={editPerformanceDate} onChange={(e) => setEditPerformanceDate(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button onClick={() => handleSavePerformanceEdit(record.id)} disabled={savingPerformanceEdit} className="rounded-lg border border-sky-500 bg-sky-500/15 px-3 py-1.5 text-xs font-black text-sky-300 disabled:opacity-50">{savingPerformanceEdit ? '...' : 'Save'}</button>
+                              <button onClick={cancelPerformanceEdit} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300">Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span className="shrink-0 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-black text-violet-300">{record.test_type}</span>
+                            <p className="flex-1 text-xs font-bold text-white">{formatResult(record.result, record.unit)}</p>
+                            <p className="shrink-0 text-[10px] text-slate-600">{formatDate(record.test_date)}</p>
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => startPerformanceEdit(record)} className="rounded-md border border-slate-700 bg-slate-800/60 px-1.5 py-1 text-[9px] text-slate-400 hover:text-white">Edit</button>
+                              <button onClick={() => handleDeletePerformance(record.id)} className="rounded-md border border-red-500/20 bg-red-500/10 px-1.5 py-1 text-[9px] text-red-300">✕</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </main>
