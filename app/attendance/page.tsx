@@ -156,7 +156,7 @@ export default function AttendancePage() {
     setError('');
 
     const [attendanceRes, athletesRes] = await Promise.all([
-      supabase.from('Attendance').select('*').order('session_date', { ascending: false }),
+      supabase.from('attendance').select('*').order('session_date', { ascending: false }),
       supabase.from('athletes').select('*'),
     ]);
 
@@ -288,7 +288,7 @@ export default function AttendancePage() {
       status: status.trim(),
     };
 
-    const result = await supabase.from('Attendance').insert([payload]).select('*').single();
+    const result = await supabase.from('attendance').insert([payload]).select('*').single();
 
     if (result.error) {
       setError(result.error.message || 'Failed to add attendance record.');
@@ -345,7 +345,7 @@ export default function AttendancePage() {
       status: editStatus.trim(),
     };
 
-    const result = await supabase.from('Attendance').update(payload).eq('id', id).select('*').single();
+    const result = await supabase.from('attendance').update(payload).eq('id', id).select('*').single();
 
     if (result.error) {
       setError(result.error.message || 'Failed to update attendance record.');
@@ -366,7 +366,7 @@ export default function AttendancePage() {
     setError('');
     setSuccessMessage('');
 
-    const { error } = await supabase.from('Attendance').delete().eq('id', id);
+    const { error } = await supabase.from('attendance').delete().eq('id', id);
 
     if (error) {
       setError(error.message || 'Failed to delete attendance record.');
@@ -426,7 +426,7 @@ export default function AttendancePage() {
         session_type: bulkSessionType,
         status: bulkStatuses[athlete.id] || 'Present',
       }));
-      const { error: insertError } = await supabase.from('Attendance').insert(rows);
+      const { error: insertError } = await supabase.from('attendance').insert(rows);
       if (insertError) { setError(insertError.message); return; }
       setSuccessMessage(`Attendance saved for ${teamSquad.length} players — ${selectedTeam}`);
       setSelectedTeam(null);

@@ -174,7 +174,7 @@ function normalizePerformance(row: GenericRow): PerformanceRecord {
     athlete_id: firstValue(row.athlete_id),
     test_date: firstString(row.test_date),
     test_type: firstString(row.test_type) || '—',
-    result: firstNumber(row.result),
+    result: firstNumber(row.value),
     unit: firstString(row.unit) || '',
     notes: firstString(row.notes) || '',
     created_at: firstString(row.created_at) || null,
@@ -231,9 +231,9 @@ export default function DashboardPage() {
 
     const [athletesRes, teamsRes, attendanceRes, performanceRes] = await Promise.all([
       supabase.from('athletes').select('*'),
-      supabase.from('Teams').select('*'),
-      supabase.from('Attendance').select('*').order('session_date', { ascending: false }),
-      supabase.from('Performance').select('*').order('test_date', { ascending: false }),
+      supabase.from('teams').select('*'),
+      supabase.from('attendance').select('*').order('session_date', { ascending: false }),
+      supabase.from('performance_tests').select('*').order('test_date', { ascending: false }),
     ]);
 
     if (athletesRes.error || teamsRes.error || attendanceRes.error || performanceRes.error) {
@@ -589,7 +589,7 @@ export default function DashboardPage() {
         type: 'Performance',
         title: `${athlete?.name || 'Unknown Athlete'} • ${entry.test_type}`,
         subtitle: `${athlete?.team || 'Unassigned'} • ${
-          entry.result === null ? '—' : `${entry.result}${entry.unit ? ` ${entry.unit}` : ''}`
+          entry.value === null ? '—' : `${entry.value}${entry.unit ? ` ${entry.unit}` : ''}`
         }`,
         date: entry.test_date,
         href: '/performance',
@@ -708,7 +708,7 @@ export default function DashboardPage() {
         session_type: bulkSessionType,
         status: bulkStatuses[athlete.id] || 'Present',
       }));
-      const { error: insertError } = await supabase.from('Attendance').insert(rows);
+      const { error: insertError } = await supabase.from('attendance').insert(rows);
       if (insertError) { setError('Failed to save attendance.'); return; }
       setBulkSuccess(true);
       setTimeout(() => {
@@ -718,7 +718,7 @@ export default function DashboardPage() {
         setBulkStatuses({});
       }, 1800);
       // Reload attendance data
-      const { data } = await supabase.from('Attendance').select('*').order('session_date', { ascending: false });
+      const { data } = await supabase.from('attendance').select('*').order('session_date', { ascending: false });
       if (data) setAttendanceRows(data);
     } finally {
       setBulkSubmitting(false);

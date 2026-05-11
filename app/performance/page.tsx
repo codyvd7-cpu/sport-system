@@ -131,7 +131,7 @@ export default function PerformancePage() {
     setLoading(true);
     const [ath, rec] = await Promise.all([
       supabase.from('athletes').select('*').order('name'),
-      supabase.from('Performance').select('*').order('test_date', { ascending: false }),
+      supabase.from('performance_tests').select('*').order('test_date', { ascending: false }),
     ]);
     if (ath.data) setAthletes(ath.data);
     if (rec.data) setRecords(rec.data);
@@ -199,24 +199,24 @@ export default function PerformancePage() {
         const times = rsaInputs[athlete.id] || [];
         const calc = calculateSdec(times);
         if (calc) {
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: 'RSA Sdec%', result: calc.sdec, unit: '%', notes: `Times:${times.join(',')} | Best:${calc.best} | Worst:${calc.worst} | Mean:${calc.mean} | Point:${sessionPoint}` });
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: 'RSA Best Sprint', result: calc.best, unit: 's', notes: sessionPoint });
+          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: 'RSA Sdec%', value: calc.sdec, unit: '%', notes: `Times:${times.join(',')} | Best:${calc.best} | Worst:${calc.worst} | Mean:${calc.mean} | Point:${sessionPoint}` });
+          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: 'RSA Best Sprint', value: calc.best, unit: 's', notes: sessionPoint });
         }
       } else if (activeTest.type === 'qualitative3') {
         const qual = qualInputs[`${athlete.id}_${activeTest.key}`];
         if (qual) {
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: activeTest.key, result: 0, unit: qual, notes: sessionPoint });
+          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: activeTest.key, value: 0, unit: qual, notes: sessionPoint });
         }
       } else {
         const val = testInputs[athlete.id]?.[activeTest.key];
         if (val?.trim()) {
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: activeTest.key, result: Number(val), unit: activeTest.unit, notes: sessionPoint });
+          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: activeTest.key, value: Number(val), unit: activeTest.unit, notes: sessionPoint });
         }
       }
     }
 
     if (rows.length > 0) {
-      const { error: err } = await supabase.from('Performance').insert(rows);
+      const { error: err } = await supabase.from('performance_tests').insert(rows);
       if (err) { setError(err.message); setSessionSaving(false); return; }
     }
 
@@ -254,7 +254,7 @@ export default function PerformancePage() {
       .filter((rec) => String(rec.athlete_id) === athleteId && rec.test_type === testKey)
       .sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
     if (!r) return null;
-    return { value: Number(r.result), text: r.unit, notes: r.notes };
+    return { value: Number(r.value), text: r.unit, notes: r.notes };
   }
 
   // Unique teams and tests for filter
@@ -471,7 +471,7 @@ export default function PerformancePage() {
                 {filteredRecords.map((record, i) => {
                   const athlete = athleteList.find((a) => a.id === String(record.athlete_id));
                   const isQual = ['Movement Screen', 'Nordic Screen'].includes(record.test_type);
-                  const displayValue = isQual ? record.unit : `${record.result}${record.unit ? ` ${record.unit}` : ''}`;
+                  const displayValue = isQual ? record.unit : `${record.value}${record.unit ? ` ${record.unit}` : ''}`;
                   return (
                     <div key={`${record.id}-${i}`} className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-black text-violet-400">
@@ -494,7 +494,7 @@ export default function PerformancePage() {
                       </div>
                       <button onClick={async () => {
                         if (!confirm('Delete this record?')) return;
-                        await supabase.from('Performance').delete().eq('id', record.id);
+                        await supabase.from('performance_tests').delete().eq('id', record.id);
                         setRecords((prev) => prev.filter((r) => r.id !== record.id));
                       }} className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20">
                         ✕

@@ -21,9 +21,9 @@ export function PerformanceTrendChart({ records }: { records: Row[] }) {
 
   const data = useMemo(() =>
     records
-      .filter((r) => r.test_type === selectedTest && r.result !== null)
+      .filter((r) => r.test_type === selectedTest && r.value !== null)
       .sort((a, b) => new Date(a.test_date).getTime() - new Date(b.test_date).getTime())
-      .map((r) => ({ date: formatDate(r.test_date), value: Number(r.result), unit: r.unit || '' })),
+      .map((r) => ({ date: formatDate(r.test_date), value: Number(r.value), unit: r.unit || '' })),
     [records, selectedTest]);
 
   const lowerIsBetter = LOWER_IS_BETTER.some((t) => selectedTest.toLowerCase().includes(t.toLowerCase()));

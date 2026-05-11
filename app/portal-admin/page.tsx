@@ -349,21 +349,21 @@ async function handleLogout() {
       programsRes,
       sponsorsRes,
     ] = await Promise.all([
-      supabase.from('PortalWeekPlan').select('*').order('created_at', { ascending: false }),
-      supabase.from('PortalWeekPlanItems').select('*').order('sort_order', { ascending: true }),
-      supabase.from('PortalReminders').select('*').order('sort_order', { ascending: true }),
+      supabase.from('portal_week_plans').select('*').order('created_at', { ascending: false }),
+      supabase.from('portal_week_plan_items').select('*').order('sort_order', { ascending: true }),
+      supabase.from('portal_reminders').select('*').order('sort_order', { ascending: true }),
       supabase
-        .from('PortalFixtures')
+        .from('portal_fixtures')
         .select('*')
         .order('fixture_date', { ascending: true })
         .order('sort_order', { ascending: true }),
       supabase
-        .from('PortalResults')
+        .from('portal_results')
         .select('*')
         .order('result_date', { ascending: false })
         .order('sort_order', { ascending: true }),
-      supabase.from('PortalPrograms').select('*').order('sort_order', { ascending: true }),
-      supabase.from('PortalSponsors').select('*').order('sort_order', { ascending: true }),
+      supabase.from('portal_programs').select('*').order('sort_order', { ascending: true }),
+      supabase.from('portal_sponsors').select('*').order('sort_order', { ascending: true }),
     ]);
 
     if (
@@ -644,7 +644,7 @@ async function handleLogout() {
         return;
       }
 
-      const { error: insertError } = await supabase.from('PortalWeekPlan').insert([
+      const { error: insertError } = await supabase.from('portal_week_plans').insert([
         {
           week_label: newWeekLabel.trim(),
           published: newWeekPublished,
@@ -676,7 +676,7 @@ async function handleLogout() {
         return;
       }
 
-      const { error: insertError } = await supabase.from('PortalWeekPlanItems').insert([
+      const { error: insertError } = await supabase.from('portal_week_plan_items').insert([
         {
           week_plan_id: selectedWeekPlan.id,
           day_label: newDayLabel,
@@ -709,7 +709,7 @@ async function handleLogout() {
         return;
       }
 
-      const { error: insertError } = await supabase.from('PortalReminders').insert([
+      const { error: insertError } = await supabase.from('portal_reminders').insert([
         {
           title: newReminderTitle.trim(),
           details: newReminderDetails.trim(),
@@ -741,7 +741,7 @@ async function handleLogout() {
         return;
       }
 
-      const { error: insertError } = await supabase.from('PortalFixtures').insert([
+      const { error: insertError } = await supabase.from('portal_fixtures').insert([
         {
           team: newFixtureTeam.trim(),
           opponent: newFixtureOpponent.trim(),
@@ -779,7 +779,7 @@ async function handleLogout() {
         return;
       }
 
-      const { error: insertError } = await supabase.from('PortalResults').insert([
+      const { error: insertError } = await supabase.from('portal_results').insert([
         {
           team: newResultTeam.trim(),
           opponent: newResultOpponent.trim(),
@@ -830,7 +830,7 @@ async function handleLogout() {
         fileData = await uploadProgramPdf(newProgramFile, newProgramTitle.trim());
       }
 
-      const { error: insertError } = await supabase.from('PortalPrograms').insert([
+      const { error: insertError } = await supabase.from('portal_programs').insert([
         {
           title: newProgramTitle.trim(),
           category: newProgramCategory,
@@ -873,7 +873,7 @@ async function handleLogout() {
         imageData = await uploadSponsorImage(newSponsorImage, newSponsorName.trim());
       }
 
-      const { error: insertError } = await supabase.from('PortalSponsors').insert([
+      const { error: insertError } = await supabase.from('portal_sponsors').insert([
         {
           name: newSponsorName.trim(),
           sponsor_link: newSponsorLink.trim(),
@@ -917,7 +917,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalWeekPlan')
+        .from('portal_week_plans')
         .update({
           week_label: editWeekLabel.trim(),
           published: editWeekPublished,
@@ -940,7 +940,7 @@ async function handleLogout() {
     if (!confirmed) return;
 
     await runAction(async () => {
-      const { error: deleteError } = await supabase.from('PortalWeekPlan').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_week_plans').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete week plan.');
@@ -976,7 +976,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalWeekPlanItems')
+        .from('portal_week_plan_items')
         .update({
           day_label: editDayLabel,
           title: editWeekItemTitle.trim(),
@@ -1001,7 +1001,7 @@ async function handleLogout() {
     if (!confirmed) return;
 
     await runAction(async () => {
-      const { error: deleteError } = await supabase.from('PortalWeekPlanItems').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_week_plan_items').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete week item.');
@@ -1037,7 +1037,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalReminders')
+        .from('portal_reminders')
         .update({
           title: editReminderTitle.trim(),
           details: editReminderDetails.trim(),
@@ -1062,7 +1062,7 @@ async function handleLogout() {
     if (!confirmed) return;
 
     await runAction(async () => {
-      const { error: deleteError } = await supabase.from('PortalReminders').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_reminders').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete reminder.');
@@ -1104,7 +1104,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalFixtures')
+        .from('portal_fixtures')
         .update({
           team: editFixtureTeam.trim(),
           opponent: editFixtureOpponent.trim(),
@@ -1132,7 +1132,7 @@ async function handleLogout() {
     if (!confirmed) return;
 
     await runAction(async () => {
-      const { error: deleteError } = await supabase.from('PortalFixtures').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_fixtures').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete fixture.');
@@ -1174,7 +1174,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalResults')
+        .from('portal_results')
         .update({
           team: editResultTeam.trim(),
           opponent: editResultOpponent.trim(),
@@ -1202,7 +1202,7 @@ async function handleLogout() {
     if (!confirmed) return;
 
     await runAction(async () => {
-      const { error: deleteError } = await supabase.from('PortalResults').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_results').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete result.');
@@ -1252,7 +1252,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalPrograms')
+        .from('portal_programs')
         .update({
           title: editProgramTitle.trim(),
           category: editProgramCategory,
@@ -1289,7 +1289,7 @@ async function handleLogout() {
     await runAction(async () => {
       const currentProgram = programs.find((program) => program.id === id);
 
-      const { error: deleteError } = await supabase.from('PortalPrograms').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_programs').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete program.');
@@ -1341,7 +1341,7 @@ async function handleLogout() {
       }
 
       const { error: updateError } = await supabase
-        .from('PortalSponsors')
+        .from('portal_sponsors')
         .update({
           name: editSponsorName.trim(),
           sponsor_link: editSponsorLink.trim(),
@@ -1376,7 +1376,7 @@ async function handleLogout() {
     await runAction(async () => {
       const currentSponsor = sponsors.find((sponsor) => sponsor.id === id);
 
-      const { error: deleteError } = await supabase.from('PortalSponsors').delete().eq('id', id);
+      const { error: deleteError } = await supabase.from('portal_sponsors').delete().eq('id', id);
 
       if (deleteError) {
         setError(deleteError.message || 'Failed to delete sponsor.');

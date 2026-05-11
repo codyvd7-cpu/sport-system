@@ -82,7 +82,7 @@ async function tryInsertTeam(input: { name: string; sport: string; season: strin
   let lastError: any = null;
 
   for (const payload of attempts) {
-    const result = await supabase.from('Teams').insert([payload]).select('*').single();
+    const result = await supabase.from('teams').insert([payload]).select('*').single();
     if (!result.error) return result;
     lastError = result.error;
   }
@@ -107,7 +107,7 @@ export default function TeamsPage() {
     setLoading(true);
     setError('');
 
-    const { data, error } = await supabase.from('Teams').select('*').order('id', { ascending: true });
+    const { data, error } = await supabase.from('teams').select('*').order('id', { ascending: true });
 
     if (error) {
       setError(error.message || 'Failed to load teams.');
@@ -201,7 +201,7 @@ export default function TeamsPage() {
     setError('');
     setSuccessMessage('');
 
-    const result = await supabase.from('Teams').delete().eq('id', team.id);
+    const result = await supabase.from('teams').delete().eq('id', team.id);
 
     if (result.error) {
       setError(result.error.message || 'Failed to delete team.');
@@ -221,7 +221,7 @@ export default function TeamsPage() {
     loadTeams();
     // Load athletes and attendance for stats
     supabase.from('athletes').select('id,name,team').then(({ data }) => { if (data) setAthleteRows(data); });
-    supabase.from('Attendance').select('athlete_id,status').then(({ data }) => { if (data) setAttendanceRows(data); });
+    supabase.from('attendance').select('athlete_id,status').then(({ data }) => { if (data) setAttendanceRows(data); });
   }, []);
 
   // Auto-clear success

@@ -63,8 +63,8 @@ export default function PlayerProfilePage({ params }: PageProps) {
       setAthlete(ath);
 
       const [attRes, perfRes, allAthRes] = await Promise.all([
-        supabase.from('Attendance').select('*').eq('athlete_id', ath.id).order('session_date', { ascending: false }),
-        supabase.from('Performance').select('*').eq('athlete_id', ath.id).order('test_date', { ascending: false }),
+        supabase.from('attendance').select('*').eq('athlete_id', ath.id).order('session_date', { ascending: false }),
+        supabase.from('performance_tests').select('*').eq('athlete_id', ath.id).order('test_date', { ascending: false }),
         supabase.from('athletes').select('id, name, team').eq('team', ath.team || ath.team_name || ''),
       ]);
 
@@ -94,15 +94,15 @@ export default function PlayerProfilePage({ params }: PageProps) {
     performance.forEach((r) => { if (!grouped.has(r.test_type)) grouped.set(r.test_type, []); grouped.get(r.test_type)!.push(r); });
     const rows: any[] = [];
     grouped.forEach((entries, testType) => {
-      const sorted = [...entries].filter((e) => e.result !== null).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
+      const sorted = [...entries].filter((e) => e.value !== null).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
       if (!sorted.length) return;
       const latest = sorted[0]; const prev = sorted[1];
       const lowerIsBetter = LOWER_IS_BETTER.some((t) => testType.toLowerCase().includes(t.toLowerCase()));
-      const delta = latest.result !== null && prev?.result !== null && prev ? latest.result - prev.result : null;
+      const delta = latest.value !== null && prev?.result !== null && prev ? latest.value - prev.value : null;
       const improved = delta !== null && (lowerIsBetter ? delta < 0 : delta > 0);
       const regressed = delta !== null && (lowerIsBetter ? delta > 0 : delta < 0);
-      const tier = typeof latest.result === 'number' ? getBenchmarkTier(testType, latest.result, ageGroup, lowerIsBetter) : null;
-      rows.push({ testType, latest: latest.result, previous: prev ? prev.result : null, delta, unit: latest.unit, latestDate: latest.test_date, improved, regressed, tier, lowerIsBetter });
+      const tier = typeof latest.value === 'number' ? getBenchmarkTier(testType, latest.value, ageGroup, lowerIsBetter) : null;
+      rows.push({ testType, latest: latest.value, previous: prev ? prev.value : null, delta, unit: latest.unit, latestDate: latest.test_date, improved, regressed, tier, lowerIsBetter });
     });
     return rows;
   }, [performance, ageGroup]);

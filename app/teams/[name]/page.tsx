@@ -275,10 +275,10 @@ export default function TeamProfilePage({ params }: PageProps) {
     setError('');
 
     const [teamsRes, athletesRes, attendanceRes, performanceRes] = await Promise.all([
-      supabase.from('Teams').select('*'),
+      supabase.from('teams').select('*'),
       supabase.from('athletes').select('*'),
-      supabase.from('Attendance').select('*').order('session_date', { ascending: false }),
-      supabase.from('Performance').select('*').order('test_date', { ascending: false }),
+      supabase.from('attendance').select('*').order('session_date', { ascending: false }),
+      supabase.from('performance_tests').select('*').order('test_date', { ascending: false }),
     ]);
 
     if (teamsRes.error || athletesRes.error || attendanceRes.error || performanceRes.error) {
@@ -451,7 +451,7 @@ export default function TeamProfilePage({ params }: PageProps) {
       season: teamSeasonInput.trim(),
     });
 
-    const teamResult = await supabase.from('Teams').update(teamPayload).eq('id', team.id).select('*').single();
+    const teamResult = await supabase.from('teams').update(teamPayload).eq('id', team.id).select('*').single();
 
     if (teamResult.error) {
       setError(teamResult.error.message || 'Failed to update team.');
@@ -616,7 +616,7 @@ export default function TeamProfilePage({ params }: PageProps) {
       status: (bulkAttendanceStatusMap[athlete.id] || 'Present').trim(),
     }));
 
-    const result = await supabase.from('Attendance').insert(payloads).select('*');
+    const result = await supabase.from('attendance').insert(payloads).select('*');
 
     if (result.error) {
       setError(result.error.message || 'Failed to log bulk team attendance.');

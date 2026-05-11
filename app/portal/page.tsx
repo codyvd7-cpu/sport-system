@@ -58,30 +58,30 @@ export default function PortalPage() {
   useEffect(() => {
     async function loadAll() {
       const sponsorsData = await safeQuery<Row[]>(
-        supabase.from('PortalSponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_sponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
       );
       const activePlanData = await safeQuery<Row[]>(
-        supabase.from('PortalWeekPlan').select('id').eq('published', true).order('created_at', { ascending: false }).limit(1), []
+        supabase.from('portal_week_plans').select('id').eq('published', true).order('created_at', { ascending: false }).limit(1), []
       );
       const activePlanId = activePlanData[0]?.id ?? null;
       const weekData = activePlanId
-        ? await safeQuery<Row[]>(supabase.from('PortalWeekPlanItems').select('*').eq('week_plan_id', activePlanId).order('sort_order', { ascending: true }), [])
+        ? await safeQuery<Row[]>(supabase.from('portal_week_plan_items').select('*').eq('week_plan_id', activePlanId).order('sort_order', { ascending: true }), [])
         : [];
       const remindersData = await safeQuery<Row[]>(
-        supabase.from('PortalReminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_reminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
       );
       const fixturesData = await safeQuery<Row[]>(
-        supabase.from('PortalFixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }), []
+        supabase.from('portal_fixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }), []
       );
       const resultsData = await safeQuery<Row[]>(
-        supabase.from('PortalResults').select('*').eq('is_published', true).order('result_date', { ascending: false }), []
+        supabase.from('portal_results').select('*').eq('is_published', true).order('result_date', { ascending: false }), []
       );
       const programsData = await safeQuery<Row[]>(
-        supabase.from('PortalPrograms').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_programs').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
       );
       const athletes = await safeQuery<Row[]>(supabase.from('athletes').select('id,name,team').limit(300), []);
-      const attendance = await safeQuery<Row[]>(supabase.from('Attendance').select('athlete_id,status,session_type').limit(1000), []);
-      const performance = await safeQuery<Row[]>(supabase.from('Performance').select('athlete_id,test_date').limit(1000), []);
+      const attendance = await safeQuery<Row[]>(supabase.from('attendance').select('athlete_id,status,session_type').limit(1000), []);
+      const performance = await safeQuery<Row[]>(supabase.from('performance_tests').select('athlete_id,test_date').limit(1000), []);
 
       const gym = athletes.map((athlete) => {
         const records = attendance.filter((r) => r.athlete_id === athlete.id);
