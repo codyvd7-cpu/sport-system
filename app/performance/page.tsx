@@ -1,734 +1,426 @@
 'use client';
 
-import Link from 'next/link';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import * as React from 'react';
 import { supabase } from '@/lib/supabase';
-import { safeUUID } from '@/lib/uuid';
 
 type Row = Record<string, any>;
 
-// ── BATTERY DEFINITIONS ──────────────────────────────────────────────────────
+const TEAM_GROUPS = [
+  { group: 'Senior', color: 'violet', teams: ['1sts', '2nds', '3rds', '4ths', '5ths'] },
+  { group: 'U16', color: 'sky', teams: ['U16A', 'U16B', 'U16C', 'U16D', 'U16E'] },
+  { group: 'U15', color: 'emerald', teams: ['U15A', 'U15B', 'U15C', 'U15D', 'U15E'] },
+  { group: 'U14', color: 'amber', teams: ['U14A', 'U14B', 'U14C', 'U14D', 'U14E'] },
+];
+const ALL_TEAMS = TEAM_GROUPS.flatMap((g) => g.teams);
 
-const U1415_BATTERY = [
-  { key: 'SBJ', name: 'Standing Broad Jump', unit: 'cm', type: 'numeric', lower: false, priority: 3 },
-  { key: '10m Sprint', name: '10m Sprint', unit: 's', type: 'numeric', lower: true, priority: 3 },
-  { key: '30m Sprint', name: '30m Sprint', unit: 's', type: 'numeric', lower: true, priority: 2 },
-  { key: '505 Left', name: '505 Agility (Left)', unit: 's', type: 'numeric', lower: true, priority: 3 },
-  { key: '505 Right', name: '505 Agility (Right)', unit: 's', type: 'numeric', lower: true, priority: 3 },
-  { key: 'Push-Ups', name: 'Push-Up Test (60s)', unit: 'reps', type: 'numeric', lower: false, priority: 2 },
-  { key: 'Yo-Yo IR1', name: 'Yo-Yo IR1', unit: 'm', type: 'numeric', lower: false, priority: 3 },
-  { key: 'RSA Sdec%', name: 'RSA (6×30m / 30s rest)', unit: '%', type: 'rsa', lower: true, priority: 3 },
-  { key: 'Movement Screen', name: 'Movement Quality Screen', unit: '', type: 'qualitative3', lower: false, priority: 3, options: ['PASS', 'FLAG', 'FAIL'] },
+const TEST_LIBRARY = [
+  { name: '10m Sprint', unit: 's', lower: true, desc: 'Acceleration' },
+  { name: '30m Sprint', unit: 's', lower: true, desc: 'Max speed' },
+  { name: 'SBJ', unit: 'cm', lower: false, desc: 'Explosive power' },
+  { name: '505 Left', unit: 's', lower: true, desc: 'Agility left' },
+  { name: '505 Right', unit: 's', lower: true, desc: 'Agility right' },
+  { name: 'Push-Ups', unit: 'reps', lower: false, desc: 'Upper endurance' },
+  { name: 'Pull-Ups', unit: 'reps', lower: false, desc: 'Pulling strength' },
+  { name: 'Yo-Yo IR1', unit: 'm', lower: false, desc: 'Aerobic fitness' },
+  { name: 'RSA Sdec%', unit: '%', lower: true, desc: 'Sprint fatigue' },
+  { name: 'Bronco', unit: 's', lower: true, desc: 'Fitness run' },
 ];
 
-const U1618_BATTERY = [
-  { key: 'SBJ', name: 'Standing Broad Jump', unit: 'cm', type: 'numeric', lower: false, priority: 3 },
-  { key: '10m Sprint', name: '10m Sprint', unit: 's', type: 'numeric', lower: true, priority: 3 },
-  { key: '30m Sprint', name: '30m Sprint', unit: 's', type: 'numeric', lower: true, priority: 2 },
-  { key: '505 Left', name: '505 Agility (Left)', unit: 's', type: 'numeric', lower: true, priority: 3 },
-  { key: '505 Right', name: '505 Agility (Right)', unit: 's', type: 'numeric', lower: true, priority: 3 },
-  { key: 'Push-Ups', name: 'Push-Up Test (60s)', unit: 'reps', type: 'numeric', lower: false, priority: 2 },
-  { key: 'Pull-Ups', name: 'Pull-Up Max', unit: 'reps', type: 'numeric', lower: false, priority: 2 },
-  { key: 'Yo-Yo IR1', name: 'Yo-Yo IR1', unit: 'm', type: 'numeric', lower: false, priority: 3 },
-  { key: 'RSA Sdec%', name: 'RSA (6×30m / 20s rest)', unit: '%', type: 'rsa', lower: true, priority: 3 },
-  { key: 'Movement Screen', name: 'Movement Screen + Nordic', unit: '', type: 'qualitative3', lower: false, priority: 3, options: ['PASS', 'FLAG', 'FAIL'] },
-  { key: 'Nordic Screen', name: 'Nordic Hamstring Screen', unit: '', type: 'qualitative3', lower: false, priority: 3, options: ['GOOD', 'MODERATE', 'AT RISK'] },
-];
-
-// ── BENCHMARKS ───────────────────────────────────────────────────────────────
-
-type BenchmarkTier = { label: string; color: string; bg: string; border: string };
-
-const TIERS: BenchmarkTier[] = [
-  { label: 'Elite', color: 'text-emerald-300', bg: 'bg-emerald-500/20', border: 'border-emerald-500/30' },
-  { label: 'Good', color: 'text-sky-300', bg: 'bg-sky-500/20', border: 'border-sky-500/30' },
-  { label: 'Average', color: 'text-amber-300', bg: 'bg-amber-500/20', border: 'border-amber-500/30' },
-  { label: 'Developing', color: 'text-orange-300', bg: 'bg-orange-500/20', border: 'border-orange-500/30' },
-  { label: 'Poor', color: 'text-red-300', bg: 'bg-red-500/20', border: 'border-red-500/30' },
-];
-
-// [Elite threshold, Good threshold, Average threshold, Developing threshold] — above/below depends on lower
 const BENCHMARKS: Record<string, { u1415: number[]; u1618: number[] }> = {
-  'SBJ': { u1415: [195, 175, 155, 135], u1618: [215, 195, 175, 155] },
-  '10m Sprint': { u1415: [1.72, 1.82, 1.92, 2.02], u1618: [1.65, 1.75, 1.85, 1.95] },
-  '30m Sprint': { u1415: [4.25, 4.45, 4.65, 4.85], u1618: [4.05, 4.25, 4.45, 4.65] },
-  '505 Left': { u1415: [2.35, 2.50, 2.65, 2.80], u1618: [2.25, 2.40, 2.55, 2.70] },
-  '505 Right': { u1415: [2.35, 2.50, 2.65, 2.80], u1618: [2.25, 2.40, 2.55, 2.70] },
-  'Push-Ups': { u1415: [40, 30, 20, 10], u1618: [50, 38, 26, 14] },
-  'Pull-Ups': { u1415: [10, 7, 4, 1], u1618: [10, 7, 4, 1] },
-  'Yo-Yo IR1': { u1415: [1200, 900, 700, 500], u1618: [1600, 1200, 900, 600] },
-  'RSA Sdec%': { u1415: [3.0, 5.0, 7.0, 10.0], u1618: [2.5, 4.0, 6.0, 9.0] },
+  'SBJ':        { u1415: [195,175,155,135], u1618: [215,195,175,155] },
+  '10m Sprint': { u1415: [1.72,1.82,1.92,2.02], u1618: [1.65,1.75,1.85,1.95] },
+  '30m Sprint': { u1415: [4.25,4.45,4.65,4.85], u1618: [4.05,4.25,4.45,4.65] },
+  '505 Left':   { u1415: [2.35,2.50,2.65,2.80], u1618: [2.25,2.40,2.55,2.70] },
+  '505 Right':  { u1415: [2.35,2.50,2.65,2.80], u1618: [2.25,2.40,2.55,2.70] },
+  'Push-Ups':   { u1415: [40,30,20,10], u1618: [50,38,26,14] },
+  'Pull-Ups':   { u1415: [10,7,4,1], u1618: [10,7,4,1] },
+  'Yo-Yo IR1':  { u1415: [1200,900,700,500], u1618: [1600,1200,900,600] },
+  'RSA Sdec%':  { u1415: [3.0,5.0,7.0,10.0], u1618: [2.5,4.0,6.0,9.0] },
 };
 
-function getBenchmarkTier(testKey: string, value: number, ageGroup: string, lowerIsBetter: boolean): BenchmarkTier | null {
-  const b = BENCHMARKS[testKey];
-  if (!b) return null;
-  const thresholds = ageGroup === 'U14-U15' ? b.u1415 : b.u1618;
-  if (lowerIsBetter) {
-    if (value < thresholds[0]) return TIERS[0];
-    if (value < thresholds[1]) return TIERS[1];
-    if (value < thresholds[2]) return TIERS[2];
-    if (value < thresholds[3]) return TIERS[3];
-    return TIERS[4];
-  } else {
-    if (value > thresholds[0]) return TIERS[0];
-    if (value > thresholds[1]) return TIERS[1];
-    if (value > thresholds[2]) return TIERS[2];
-    if (value > thresholds[3]) return TIERS[3];
-    return TIERS[4];
-  }
+function getTierColor(testName: string, value: number, ageGroup: string) {
+  const b = BENCHMARKS[testName]; if (!b) return 'border-slate-700 bg-slate-800/40';
+  const lower = TEST_LIBRARY.find((t) => t.name === testName)?.lower ?? false;
+  const t = ageGroup.includes('14') || ageGroup.includes('15') ? b.u1415 : b.u1618;
+  let tier: number;
+  if (lower) { tier = value < t[0] ? 0 : value < t[1] ? 1 : value < t[2] ? 2 : value < t[3] ? 3 : 4; }
+  else { tier = value > t[0] ? 0 : value > t[1] ? 1 : value > t[2] ? 2 : value > t[3] ? 3 : 4; }
+  return tier === 0 ? 'border-emerald-500/50 bg-emerald-500/10' : tier === 1 ? 'border-sky-500/50 bg-sky-500/10' : tier === 2 ? 'border-amber-500/50 bg-amber-500/10' : tier === 3 ? 'border-orange-500/50 bg-orange-500/10' : 'border-red-500/50 bg-red-500/10';
 }
 
-function calculateSdec(times: string[]): { sdec: number; best: number; worst: number; mean: number } | null {
-  const nums = times.map(Number).filter((n) => !isNaN(n) && n > 0);
-  if (nums.length < 2) return null;
-  const best = Math.min(...nums);
-  const worst = Math.max(...nums);
-  const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
-  const sdec = ((mean / best) - 1) * 100;
-  return { sdec: Math.round(sdec * 100) / 100, best: Math.round(best * 100) / 100, worst: Math.round(worst * 100) / 100, mean: Math.round(mean * 100) / 100 };
+function getTierTextColor(testName: string, value: number, ageGroup: string) {
+  const b = BENCHMARKS[testName]; if (!b) return 'text-white';
+  const lower = TEST_LIBRARY.find((t) => t.name === testName)?.lower ?? false;
+  const t = ageGroup.includes('14') || ageGroup.includes('15') ? b.u1415 : b.u1618;
+  let tier: number;
+  if (lower) { tier = value < t[0] ? 0 : value < t[1] ? 1 : value < t[2] ? 2 : value < t[3] ? 3 : 4; }
+  else { tier = value > t[0] ? 0 : value > t[1] ? 1 : value > t[2] ? 2 : value > t[3] ? 3 : 4; }
+  return tier === 0 ? 'text-emerald-300' : tier === 1 ? 'text-sky-300' : tier === 2 ? 'text-amber-300' : tier === 3 ? 'text-orange-300' : 'text-red-300';
 }
-
-function initials(name: string) {
-  return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
-}
-
-// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 
 export default function PerformancePage() {
-  const [athletes, setAthletes] = useState<Row[]>([]);
-  const [records, setRecords] = useState<Row[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [view, setView] = useState<'overview' | 'session' | 'records'>('overview');
+  // Step state
+  const [step, setStep] = React.useState<'setup' | 'capture' | 'done'>('setup');
 
-  // Session state
-  const [sessionOpen, setSessionOpen] = useState(false);
-  const [sessionTeam, setSessionTeam] = useState('');
-  const [sessionAgeGroup, setSessionAgeGroup] = useState<'U14-U15' | 'U16-1st'>('U14-U15');
-  const [sessionPoint, setSessionPoint] = useState<'Pre-Season' | 'Mid-Season' | 'Post-Season'>('Pre-Season');
-  const [sessionDate, setSessionDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [sessionStep, setSessionStep] = useState<'setup' | 'testing'>('setup');
-  const [activeTestIndex, setActiveTestIndex] = useState(0);
-  const [testInputs, setTestInputs] = useState<Record<string, Record<string, string>>>({});
-  const [rsaInputs, setRsaInputs] = useState<Record<string, string[]>>({});
-  const [qualInputs, setQualInputs] = useState<Record<string, string>>({});
-  const [sessionSaving, setSessionSaving] = useState(false);
+  // Setup
+  const [selectedTeam, setSelectedTeam] = React.useState('');
+  const [selectedTests, setSelectedTests] = React.useState<string[]>([]);
+  const [sessionDate, setSessionDate] = React.useState(() => new Date().toISOString().split('T')[0]);
+  const [customTest, setCustomTest] = React.useState('');
+  const [customUnit, setCustomUnit] = React.useState('');
 
-  // Records filters
-  const [filterTeam, setFilterTeam] = useState('All');
-  const [filterTest, setFilterTest] = useState('All');
+  // Athletes + results
+  const [athletes, setAthletes] = React.useState<Row[]>([]);
+  const [results, setResults] = React.useState<Record<string, Record<string, string>>>({});
+  const [saved, setSaved] = React.useState<Record<string, Record<string, boolean>>>({});
+  const [saving, setSaving] = React.useState<Record<string, Record<string, boolean>>>({});
+  const [loadingAthletes, setLoadingAthletes] = React.useState(false);
+  const [activeAthlete, setActiveAthlete] = React.useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = React.useState('');
 
-  // Auto-clear success
-  useEffect(() => {
-    if (!success) return;
-    const t = setTimeout(() => setSuccess(''), 4000);
+  React.useEffect(() => {
+    if (!successMessage) return;
+    const t = setTimeout(() => setSuccessMessage(''), 3000);
     return () => clearTimeout(t);
-  }, [success]);
+  }, [successMessage]);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const [ath, rec] = await Promise.all([
-      supabase.from('athletes').select('*').order('name'),
-      supabase.from('performance_tests').select('*').order('test_date', { ascending: false }),
-    ]);
-    if (ath.data) setAthletes(ath.data);
-    if (rec.data) setRecords(rec.data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { loadData(); }, [loadData]);
-
-  const normalizeAthlete = (row: Row) => ({
-    id: String(row.id || row.athlete_id || ''),
-    name: String(row.name || row.full_name || row.athlete_name || 'Unknown'),
-    team: String(row.team || row.team_name || 'Unassigned'),
-    ageGroup: String(row.age_group || row.agegroup || ''),
-  });
-
-  const athleteList = useMemo(() => athletes.map(normalizeAthlete), [athletes]);
-
-  const allTeams = useMemo(() =>
-    Array.from(new Set(athleteList.map((a) => a.team).filter((t) => t && t !== 'Unassigned'))).sort(),
-    [athleteList]
-  );
-
-  const battery = sessionAgeGroup === 'U14-U15' ? U1415_BATTERY : U1618_BATTERY;
-
-  const sessionSquad = useMemo(() =>
-    sessionTeam ? athleteList.filter((a) => a.team === sessionTeam) : [],
-    [athleteList, sessionTeam]
-  );
-
-  const activeTest = battery[activeTestIndex];
-
-  function startSession() {
-    if (!sessionTeam) { setError('Please select a team.'); return; }
-    setError('');
-    setSessionStep('testing');
-    setActiveTestIndex(0);
-    setTestInputs({});
-    setRsaInputs({});
-    setQualInputs({});
+  function toggleTest(name: string) {
+    setSelectedTests((prev) => prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]);
   }
 
-  function setTestInput(athleteId: string, value: string) {
-    setTestInputs((prev) => ({ ...prev, [athleteId]: { ...(prev[athleteId] || {}), [activeTest.key]: value } }));
+  function addCustomTest() {
+    if (!customTest.trim()) return;
+    const name = customTest.trim();
+    if (!selectedTests.includes(name)) setSelectedTests((prev) => [...prev, name]);
+    setCustomTest(''); setCustomUnit('');
   }
 
-  function setRsaInput(athleteId: string, index: number, value: string) {
-    setRsaInputs((prev) => {
-      const current = prev[athleteId] || ['', '', '', '', '', ''];
-      const updated = [...current];
-      updated[index] = value;
-      return { ...prev, [athleteId]: updated };
-    });
+  async function startSession() {
+    if (!selectedTeam || selectedTests.length === 0) return;
+    setLoadingAthletes(true);
+    const { data } = await supabase.from('athletes').select('id, full_name, name, age_group, position').eq('team', selectedTeam).order('full_name');
+    setAthletes(data || []);
+    // Pre-load existing results for today
+    if (data && data.length > 0) {
+      const ids = data.map((a) => a.id);
+      const { data: existing } = await supabase.from('performance_tests')
+        .select('*').in('athlete_id', ids).eq('test_date', sessionDate).in('test_type', selectedTests);
+      const preloaded: typeof results = {};
+      const preSaved: typeof saved = {};
+      (existing || []).forEach((r) => {
+        if (!preloaded[r.athlete_id]) preloaded[r.athlete_id] = {};
+        if (!preSaved[r.athlete_id]) preSaved[r.athlete_id] = {};
+        preloaded[r.athlete_id][r.test_type] = String(r.value);
+        preSaved[r.athlete_id][r.test_type] = true;
+      });
+      setResults(preloaded);
+      setSaved(preSaved);
+    }
+    setLoadingAthletes(false);
+    setStep('capture');
   }
 
-  function setQualInput(athleteId: string, value: string) {
-    setQualInputs((prev) => ({ ...prev, [`${athleteId}_${activeTest.key}`]: value }));
+  async function saveResult(athleteId: string, testName: string, value: string) {
+    const num = Number(value);
+    if (!value.trim() || Number.isNaN(num)) return;
+    setSaving((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: true } }));
+    const unit = TEST_LIBRARY.find((t) => t.name === testName)?.unit || '';
+    // Upsert — delete existing then insert
+    await supabase.from('performance_tests').delete()
+      .eq('athlete_id', athleteId).eq('test_date', sessionDate).eq('test_type', testName);
+    await supabase.from('performance_tests').insert([{
+      athlete_id: athleteId, test_date: sessionDate, test_type: testName, value: num, unit,
+    }]);
+    setSaved((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: true } }));
+    setSaving((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: false } }));
   }
 
-  async function saveTestAndNext() {
-    setSessionSaving(true);
-    const rows: Row[] = [];
+  function handleInputChange(athleteId: string, testName: string, value: string) {
+    setResults((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: value } }));
+    setSaved((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: false } }));
+  }
 
-    for (const athlete of sessionSquad) {
-      if (activeTest.type === 'rsa') {
-        const times = rsaInputs[athlete.id] || [];
-        const calc = calculateSdec(times);
-        if (calc) {
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: 'RSA Sdec%', value: calc.sdec, unit: '%', notes: `Times:${times.join(',')} | Best:${calc.best} | Worst:${calc.worst} | Mean:${calc.mean} | Point:${sessionPoint}` });
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: 'RSA Best Sprint', value: calc.best, unit: 's', notes: sessionPoint });
-        }
-      } else if (activeTest.type === 'qualitative3') {
-        const qual = qualInputs[`${athlete.id}_${activeTest.key}`];
-        if (qual) {
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: activeTest.key, value: 0, unit: qual, notes: sessionPoint });
-        }
-      } else {
-        const val = testInputs[athlete.id]?.[activeTest.key];
-        if (val?.trim()) {
-          rows.push({ athlete_id: athlete.id, test_date: sessionDate, test_type: activeTest.key, value: Number(val), unit: activeTest.unit, notes: sessionPoint });
-        }
+  function handleInputBlur(athleteId: string, testName: string, value: string) {
+    saveResult(athleteId, testName, value);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>, athleteId: string, testName: string, value: string) {
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      saveResult(athleteId, testName, value);
+      // Move to next athlete's same test
+      const currentIdx = athletes.findIndex((a) => a.id === athleteId);
+      const nextAthlete = athletes[currentIdx + 1];
+      if (nextAthlete) {
+        e.preventDefault();
+        const nextInput = document.getElementById(`input-${nextAthlete.id}-${testName}`);
+        nextInput?.focus();
       }
     }
-
-    if (rows.length > 0) {
-      const { error: err } = await supabase.from('performance_tests').insert(rows);
-      if (err) { setError(err.message); setSessionSaving(false); return; }
-    }
-
-    if (activeTestIndex < battery.length - 1) {
-      setActiveTestIndex((i) => i + 1);
-    } else {
-      setSuccess(`Testing session saved — ${sessionPoint} complete for ${sessionTeam}!`);
-      setSessionOpen(false);
-      setSessionStep('setup');
-      await loadData();
-    }
-    setSessionSaving(false);
   }
 
-  // Squad heatmap data
-  const heatmapTeams = useMemo(() => allTeams, [allTeams]);
-  const [heatmapTeam, setHeatmapTeam] = useState('');
+  const completedCount = React.useMemo(() => {
+    return athletes.filter((a) => selectedTests.every((t) => saved[a.id]?.[t])).length;
+  }, [athletes, selectedTests, saved]);
 
-  const heatmapSquad = useMemo(() =>
-    heatmapTeam ? athleteList.filter((a) => a.team === heatmapTeam) : [],
-    [athleteList, heatmapTeam]
-  );
+  const partialCount = React.useMemo(() => {
+    return athletes.filter((a) => selectedTests.some((t) => saved[a.id]?.[t]) && !selectedTests.every((t) => saved[a.id]?.[t])).length;
+  }, [athletes, selectedTests, saved]);
 
-  const heatmapAgeGroup = useMemo(() => {
-    const squad = heatmapSquad;
-    if (squad.length === 0) return 'U16-1st';
-    const ag = squad[0].ageGroup || '';
-    return ag.includes('14') || ag.includes('15') ? 'U14-U15' : 'U16-1st';
-  }, [heatmapSquad]);
-
-  const heatmapBattery = heatmapAgeGroup === 'U14-U15' ? U1415_BATTERY : U1618_BATTERY;
-
-  function getLatestResult(athleteId: string, testKey: string): { value: number; text?: string; notes?: string } | null {
-    const r = records
-      .filter((rec) => String(rec.athlete_id) === athleteId && rec.test_type === testKey)
-      .sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
-    if (!r) return null;
-    return { value: Number(r.value), text: r.unit, notes: r.notes };
-  }
-
-  // Unique teams and tests for filter
-  const uniqueFilterTeams = useMemo(() =>
-    Array.from(new Set(records.map((r) => {
-      const a = athleteList.find((at) => at.id === String(r.athlete_id));
-      return a?.team || '';
-    }).filter(Boolean))).sort(),
-    [records, athleteList]
-  );
-  const uniqueFilterTests = useMemo(() =>
-    Array.from(new Set(records.map((r) => r.test_type))).sort(),
-    [records]
-  );
-
-  const filteredRecords = useMemo(() => {
-    return records.filter((r) => {
-      const a = athleteList.find((at) => at.id === String(r.athlete_id));
-      const matchTeam = filterTeam === 'All' || a?.team === filterTeam;
-      const matchTest = filterTest === 'All' || r.test_type === filterTest;
-      return matchTeam && matchTest;
-    }).slice(0, 100);
-  }, [records, athleteList, filterTeam, filterTest]);
-
-  const stats = useMemo(() => ({
-    total: records.length,
-    athletes: new Set(records.map((r) => r.athlete_id)).size,
-    tests: new Set(records.map((r) => r.test_type)).size,
-    latest: records[0]?.test_date || null,
-  }), [records]);
-
+  // ── RENDER ────────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Testing & Performance</h1>
-            <p className="mt-1 text-sm text-slate-500">{stats.total} records across {stats.athletes} athletes</p>
-          </div>
-          <button onClick={() => setSessionOpen(true)}
-            className="flex items-center gap-2 rounded-2xl border border-violet-500/40 bg-violet-500/10 px-5 py-3 text-sm font-black text-violet-300 transition hover:bg-violet-500/20 sm:self-start">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Start Testing Session
-          </button>
+        <div className="mb-8">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-400">Testing</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Performance Testing</h1>
+          {step === 'capture' && (
+            <div className="mt-2 flex items-center gap-3">
+              <button onClick={() => setStep('setup')} className="text-xs text-slate-500 hover:text-slate-300">← Back to setup</button>
+            </div>
+          )}
         </div>
 
-        {error && <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
-        {success && <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{success}</div>}
+        {successMessage && <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
-        {/* Stats */}
-        <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: 'Records', value: stats.total, color: 'sky' },
-            { label: 'Athletes Tested', value: stats.athletes, color: 'violet' },
-            { label: 'Test Types', value: stats.tests, color: 'emerald' },
-            { label: 'Last Tested', value: stats.latest ? new Date(stats.latest).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' }) : '—', color: 'amber', small: true },
-          ].map((s) => (
-            <div key={s.label} className={`rounded-2xl border bg-slate-900 p-4 ${
-              s.color === 'sky' ? 'border-sky-500/20' : s.color === 'violet' ? 'border-violet-500/20' :
-              s.color === 'emerald' ? 'border-emerald-500/20' : 'border-amber-500/20'
-            }`}>
-              <p className={`font-black ${(s as any).small ? 'text-xl' : 'text-3xl'} ${
-                s.color === 'sky' ? 'text-sky-400' : s.color === 'violet' ? 'text-violet-400' :
-                s.color === 'emerald' ? 'text-emerald-400' : 'text-amber-400'
-              }`}>{s.value}</p>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{s.label}</p>
-            </div>
-          ))}
-        </section>
+        {/* ── SETUP STEP ─────────────────────────────────── */}
+        {step === 'setup' && (
+          <div className="space-y-6">
 
-        {/* View Tabs */}
-        <div className="mb-6 flex gap-2">
-          {(['overview', 'records'] as const).map((v) => (
-            <button key={v} onClick={() => setView(v)}
-              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${
-                view === v ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
-              }`}>
-              {v === 'overview' ? 'Squad Heatmap' : 'All Records'}
-            </button>
-          ))}
-        </div>
-
-        {/* ── SQUAD HEATMAP ──────────────────────────────── */}
-        {view === 'overview' && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Squad Overview</p>
-                <h2 className="mt-0.5 text-lg font-black text-white">Performance Heatmap</h2>
-                <p className="mt-1 text-xs text-slate-500">Colour-coded by benchmark: Elite / Good / Average / Developing / Poor</p>
-              </div>
-              <select value={heatmapTeam} onChange={(e) => setHeatmapTeam(e.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-500 sm:w-44">
-                <option value="">Select team...</option>
-                {heatmapTeams.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-
-            {/* Benchmark legend */}
-            <div className="mb-5 flex flex-wrap gap-2">
-              {TIERS.map((t) => (
-                <div key={t.label} className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black ${t.bg} ${t.border} ${t.color}`}>
-                  {t.label}
-                </div>
-              ))}
-              <div className="flex items-center gap-1.5 rounded-full border border-slate-700 bg-slate-800 px-2.5 py-1 text-[10px] font-black text-slate-400">Not Tested</div>
-            </div>
-
-            {!heatmapTeam ? (
-              <p className="py-8 text-center text-sm text-slate-500">Select a team to view their heatmap.</p>
-            ) : heatmapSquad.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-500">No athletes found in this team.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-800">
-                      <th className="py-3 pr-4 text-left text-xs font-black uppercase tracking-wide text-slate-500 sticky left-0 bg-slate-900">Player</th>
-                      {heatmapBattery.filter((t) => t.type !== 'qualitative3').map((test) => (
-                        <th key={test.key} className="px-2 py-3 text-center text-[10px] font-black uppercase tracking-wide text-slate-500 whitespace-nowrap">
-                          {test.key}
-                        </th>
-                      ))}
-                      <th className="px-2 py-3 text-center text-[10px] font-black uppercase tracking-wide text-slate-500">Screen</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-900">
-                    {heatmapSquad.map((athlete) => (
-                      <tr key={athlete.id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-3 pr-4 sticky left-0 bg-slate-900">
-                          <Link href={`/athletes/${athlete.id}`} className="flex items-center gap-2 hover:text-sky-400">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
-                              {initials(athlete.name)}
-                            </div>
-                            <span className="text-sm font-bold text-white whitespace-nowrap">{athlete.name}</span>
-                          </Link>
-                        </td>
-                        {heatmapBattery.filter((t) => t.type !== 'qualitative3').map((test) => {
-                          const result = getLatestResult(athlete.id, test.key);
-                          if (!result) return (
-                            <td key={test.key} className="px-2 py-3 text-center">
-                              <span className="rounded-lg bg-slate-800/60 px-2 py-1 text-[10px] text-slate-600">—</span>
-                            </td>
-                          );
-                          const tier = getBenchmarkTier(test.key, result.value, heatmapAgeGroup, test.lower);
-                          return (
-                            <td key={test.key} className="px-2 py-3 text-center">
-                              <span className={`rounded-lg border px-2 py-1 text-[11px] font-black ${tier ? `${tier.bg} ${tier.border} ${tier.color}` : 'bg-slate-800 text-slate-300'}`}>
-                                {result.value}{test.unit}
-                              </span>
-                            </td>
-                          );
-                        })}
-                        {/* Movement screen */}
-                        <td className="px-2 py-3 text-center">
-                          {(() => {
-                            const r = getLatestResult(athlete.id, 'Movement Screen');
-                            if (!r) return <span className="rounded-lg bg-slate-800/60 px-2 py-1 text-[10px] text-slate-600">—</span>;
-                            const val = r.text || '';
-                            const col = val === 'PASS' || val === 'GOOD' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
-                              val === 'FLAG' || val === 'MODERATE' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' :
-                              'bg-red-500/20 text-red-300 border-red-500/30';
-                            return <span className={`rounded-lg border px-2 py-1 text-[10px] font-black ${col}`}>{val || '—'}</span>;
-                          })()}
-                        </td>
-                      </tr>
+            {/* Team + Date */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-sky-400">Step 1 — Session Details</p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-xs font-black text-slate-400">Team</label>
+                  <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-sky-500">
+                    <option value="">Select team...</option>
+                    {TEAM_GROUPS.map((g) => (
+                      <optgroup key={g.group} label={g.group}>
+                        {g.teams.map((t) => <option key={t} value={t}>{t}</option>)}
+                      </optgroup>
                     ))}
-                  </tbody>
-                </table>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-black text-slate-400">Date</label>
+                  <input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-sky-500" />
+                </div>
               </div>
-            )}
+            </div>
+
+            {/* Test selection */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-violet-400">Step 2 — Select Tests</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {TEST_LIBRARY.map((test) => {
+                  const isSelected = selectedTests.includes(test.name);
+                  return (
+                    <button key={test.name} onClick={() => toggleTest(test.name)}
+                      className={`rounded-xl border p-3 text-left transition ${isSelected ? 'border-violet-500/50 bg-violet-500/15' : 'border-slate-700 bg-slate-800/60 hover:border-slate-600'}`}>
+                      <p className={`text-sm font-black ${isSelected ? 'text-violet-300' : 'text-white'}`}>{test.name}</p>
+                      <p className="text-[10px] text-slate-500">{test.desc} · {test.unit}</p>
+                      {isSelected && <p className="mt-1 text-[9px] font-black text-violet-400">✓ Selected</p>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Custom test */}
+              <div className="mt-4 flex gap-2">
+                <input value={customTest} onChange={(e) => setCustomTest(e.target.value)} placeholder="Custom test name..."
+                  onKeyDown={(e) => e.key === 'Enter' && addCustomTest()}
+                  className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500" />
+                <input value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} placeholder="Unit"
+                  className="w-20 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
+                <button onClick={addCustomTest} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm font-black text-slate-300 hover:text-white">Add</button>
+              </div>
+
+              {selectedTests.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {selectedTests.map((t) => (
+                    <span key={t} className="flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-xs font-black text-violet-300">
+                      {t}
+                      <button onClick={() => setSelectedTests((prev) => prev.filter((x) => x !== t))} className="text-violet-500 hover:text-white">✕</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Start button */}
+            <button onClick={startSession} disabled={!selectedTeam || selectedTests.length === 0 || loadingAthletes}
+              className="w-full rounded-2xl border border-violet-500 bg-violet-500/15 py-4 text-lg font-black text-violet-300 transition hover:bg-violet-500/25 disabled:opacity-40">
+              {loadingAthletes ? 'Loading squad...' : `Start Testing Session →`}
+            </button>
           </div>
         )}
 
-        {/* ── ALL RECORDS ───────────────────────────────── */}
-        {view === 'records' && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">History</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">All Records</h2>
-            </div>
-            <div className="mb-4 grid grid-cols-2 gap-3">
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-400">Team</label>
-                <select value={filterTeam} onChange={(e) => setFilterTeam(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
-                  <option value="All">All Teams</option>
-                  {uniqueFilterTeams.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+        {/* ── CAPTURE STEP ───────────────────────────────── */}
+        {step === 'capture' && (
+          <div>
+            {/* Session info + progress */}
+            <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Live Session</p>
+                  <h2 className="mt-0.5 text-2xl font-black text-white">{selectedTeam}</h2>
+                  <p className="text-sm text-slate-500">{new Date(sessionDate).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })} · {selectedTests.join(', ')}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-3xl font-black text-white">{completedCount}<span className="text-lg text-slate-500">/{athletes.length}</span></p>
+                  <p className="text-xs text-slate-500">completed</p>
+                  {partialCount > 0 && <p className="text-[10px] text-amber-400">{partialCount} partial</p>}
+                </div>
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold text-slate-400">Test</label>
-                <select value={filterTest} onChange={(e) => setFilterTest(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
-                  <option value="All">All Tests</option>
-                  {uniqueFilterTests.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+              {/* Progress bar */}
+              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${athletes.length > 0 ? (completedCount / athletes.length) * 100 : 0}%` }} />
               </div>
             </div>
-            {loading ? (
-              <div className="flex items-center gap-3 p-5">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-                <p className="text-sm text-slate-400">Loading...</p>
-              </div>
-            ) : filteredRecords.length === 0 ? (
-              <p className="py-8 text-center text-sm text-slate-500">No records found.</p>
-            ) : (
-              <div className="space-y-2">
-                {filteredRecords.map((record, i) => {
-                  const athlete = athleteList.find((a) => a.id === String(record.athlete_id));
-                  const isQual = ['Movement Screen', 'Nordic Screen'].includes(record.test_type);
-                  const displayValue = isQual ? record.unit : `${record.value}${record.unit ? ` ${record.unit}` : ''}`;
-                  return (
-                    <div key={`${record.id}-${i}`} className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-950/50 p-4">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-xs font-black text-violet-400">
-                        {initials(athlete?.name || '?')}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {athlete && (
-                            <Link href={`/athletes/${athlete.id}`} className="text-sm font-bold text-white hover:text-sky-400">
-                              {athlete.name}
-                            </Link>
-                          )}
-                          <span className="rounded-full bg-violet-500/15 px-2.5 py-0.5 text-[11px] font-black text-violet-300">{record.test_type}</span>
-                          <span className="text-sm font-black text-white">{displayValue}</span>
+
+            {/* If single test — compact list */}
+            {selectedTests.length === 1 ? (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+                <div className="border-b border-slate-800 bg-slate-900/80 px-5 py-3 flex items-center justify-between">
+                  <p className="text-sm font-black text-white">{selectedTests[0]}</p>
+                  <p className="text-xs text-slate-500">{TEST_LIBRARY.find((t) => t.name === selectedTests[0])?.unit}</p>
+                </div>
+                <div className="divide-y divide-slate-800/50">
+                  {athletes.map((athlete, idx) => {
+                    const testName = selectedTests[0];
+                    const val = results[athlete.id]?.[testName] || '';
+                    const isSaved = saved[athlete.id]?.[testName];
+                    const isSaving = saving[athlete.id]?.[testName];
+                    const num = Number(val);
+                    const showColor = isSaved && !Number.isNaN(num) && val !== '';
+                    const name = athlete.full_name || athlete.name || 'Unknown';
+                    const ageGroup = athlete.age_group || '';
+                    return (
+                      <div key={athlete.id} className={`flex items-center gap-3 px-4 py-3 transition ${activeAthlete === athlete.id ? 'bg-slate-800/40' : ''}`}>
+                        <span className="w-5 shrink-0 text-center text-[10px] font-black text-slate-600">{idx + 1}</span>
+                        <p className="flex-1 text-sm font-semibold text-white truncate">{name}</p>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            id={`input-${athlete.id}-${testName}`}
+                            type="number"
+                            step="any"
+                            inputMode="decimal"
+                            value={val}
+                            onChange={(e) => handleInputChange(athlete.id, testName, e.target.value)}
+                            onBlur={(e) => handleInputBlur(athlete.id, testName, e.target.value)}
+                            onFocus={() => setActiveAthlete(athlete.id)}
+                            onKeyDown={(e) => handleKeyDown(e, athlete.id, testName, val)}
+                            placeholder="—"
+                            className={`w-24 rounded-xl border px-3 py-2 text-right text-sm font-black outline-none transition ${showColor ? getTierColor(testName, num, ageGroup) + ' ' + getTierTextColor(testName, num, ageGroup) : 'border-slate-700 bg-slate-800 text-white focus:border-violet-500'}`}
+                          />
+                          <div className="w-4">
+                            {isSaving ? <div className="h-3 w-3 animate-spin rounded-full border border-violet-400 border-t-transparent" /> : isSaved ? <span className="text-emerald-400 text-sm">✓</span> : null}
+                          </div>
                         </div>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          {athlete?.team} • {record.test_date ? new Date(record.test_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                          {record.notes && ` • ${record.notes.split('|')[0].replace('Times:', 'Splits: ')}`}
-                        </p>
                       </div>
-                      <button onClick={async () => {
-                        if (!confirm('Delete this record?')) return;
-                        await supabase.from('performance_tests').delete().eq('id', record.id);
-                        setRecords((prev) => prev.filter((r) => r.id !== record.id));
-                      }} className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20">
-                        ✕
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              /* Multi-test — athlete cards */
+              <div className="space-y-3">
+                {athletes.map((athlete) => {
+                  const name = athlete.full_name || athlete.name || 'Unknown';
+                  const ageGroup = athlete.age_group || '';
+                  const allDone = selectedTests.every((t) => saved[athlete.id]?.[t]);
+                  const isOpen = activeAthlete === athlete.id;
+                  return (
+                    <div key={athlete.id} className={`rounded-2xl border transition ${allDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800 bg-slate-900'}`}>
+                      <button onClick={() => setActiveAthlete(isOpen ? null : athlete.id)}
+                        className="flex w-full items-center gap-3 px-5 py-4">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                          {name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-bold text-white">{name}</p>
+                          <p className="text-[10px] text-slate-500">
+                            {selectedTests.filter((t) => saved[athlete.id]?.[t]).length}/{selectedTests.length} tests done
+                          </p>
+                        </div>
+                        {allDone
+                          ? <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black text-emerald-300">Complete ✓</span>
+                          : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-4 w-4 text-slate-500 transition ${isOpen ? 'rotate-90' : ''}`}><path d="M9 18l6-6-6-6"/></svg>
+                        }
                       </button>
+
+                      {isOpen && (
+                        <div className="border-t border-slate-800 px-5 pb-4 pt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                          {selectedTests.map((testName) => {
+                            const val = results[athlete.id]?.[testName] || '';
+                            const isSaved = saved[athlete.id]?.[testName];
+                            const isSaving = saving[athlete.id]?.[testName];
+                            const num = Number(val);
+                            const showColor = isSaved && !Number.isNaN(num) && val !== '';
+                            const unit = TEST_LIBRARY.find((t) => t.name === testName)?.unit || '';
+                            return (
+                              <div key={testName}>
+                                <div className="mb-1 flex items-center justify-between">
+                                  <label className="text-[10px] font-black uppercase tracking-wide text-slate-500">{testName}</label>
+                                  {isSaving ? <div className="h-2.5 w-2.5 animate-spin rounded-full border border-violet-400 border-t-transparent" /> : isSaved ? <span className="text-[10px] text-emerald-400">✓</span> : null}
+                                </div>
+                                <div className="relative">
+                                  <input
+                                    id={`input-${athlete.id}-${testName}`}
+                                    type="number"
+                                    step="any"
+                                    inputMode="decimal"
+                                    value={val}
+                                    onChange={(e) => handleInputChange(athlete.id, testName, e.target.value)}
+                                    onBlur={(e) => handleInputBlur(athlete.id, testName, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(e, athlete.id, testName, val)}
+                                    placeholder="—"
+                                    className={`w-full rounded-xl border px-3 py-2.5 text-sm font-black outline-none transition ${showColor ? getTierColor(testName, num, ageGroup) + ' ' + getTierTextColor(testName, num, ageGroup) : 'border-slate-700 bg-slate-800 text-white focus:border-violet-500'}`}
+                                  />
+                                  {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none">{unit}</span>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
-                <p className="mt-2 text-center text-xs text-slate-600">Showing {filteredRecords.length} of {records.length} records</p>
               </div>
             )}
+
+            {/* Done button */}
+            <button onClick={() => { setStep('done'); setSuccessMessage('Session saved!'); }}
+              className="mt-6 w-full rounded-2xl border border-emerald-500 bg-emerald-500/15 py-4 text-lg font-black text-emerald-300 hover:bg-emerald-500/25 transition">
+              Finish Session — {completedCount}/{athletes.length} complete
+            </button>
+          </div>
+        )}
+
+        {/* ── DONE STEP ──────────────────────────────────── */}
+        {step === 'done' && (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
+            <p className="text-5xl mb-4">✅</p>
+            <h2 className="text-2xl font-black text-white">Session Complete</h2>
+            <p className="mt-2 text-slate-400">{completedCount} of {athletes.length} players tested · {selectedTests.join(', ')}</p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <button onClick={() => { setStep('setup'); setSelectedTeam(''); setSelectedTests([]); setAthletes([]); setResults({}); setSaved({}); }}
+                className="rounded-xl border border-violet-500 bg-violet-500/15 px-6 py-3 font-black text-violet-300 hover:bg-violet-500/25">
+                New Session
+              </button>
+              <button onClick={() => { setStep('capture'); }}
+                className="rounded-xl border border-slate-700 bg-slate-800 px-6 py-3 font-black text-slate-300 hover:text-white">
+                Back to Session
+              </button>
+            </div>
           </div>
         )}
       </div>
-
-      {/* ── TESTING SESSION MODAL ─────────────────────── */}
-      {sessionOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm sm:items-center">
-          <div className="w-full max-w-2xl rounded-t-3xl border border-slate-700 bg-slate-900 sm:rounded-3xl">
-
-            {/* Modal header */}
-            <div className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">
-                  {sessionStep === 'setup' ? 'New Session' : `${sessionPoint} — ${sessionTeam}`}
-                </p>
-                <h2 className="text-lg font-black text-white">
-                  {sessionStep === 'setup' ? 'Testing Session Setup' : activeTest?.name}
-                </h2>
-                {sessionStep === 'testing' && (
-                  <p className="mt-0.5 text-xs text-slate-500">Test {activeTestIndex + 1} of {battery.length}</p>
-                )}
-              </div>
-              <button onClick={() => { setSessionOpen(false); setSessionStep('setup'); }}
-                className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 text-slate-400 hover:text-white">
-                ✕
-              </button>
-            </div>
-
-            <div className="max-h-[75vh] overflow-y-auto px-6 py-5">
-
-              {/* Step 1 — Setup */}
-              {sessionStep === 'setup' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-slate-400">Team</label>
-                      <select value={sessionTeam} onChange={(e) => setSessionTeam(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
-                        <option value="">Select team...</option>
-                        {allTeams.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-slate-400">Date</label>
-                      <input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)}
-                        className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold text-slate-400">Age Group — determines battery</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {(['U14-U15', 'U16-1st'] as const).map((ag) => (
-                        <button key={ag} onClick={() => setSessionAgeGroup(ag)}
-                          className={`rounded-xl border py-3 text-sm font-black transition ${
-                            sessionAgeGroup === ag ? 'border-violet-500 bg-violet-500/20 text-violet-300' : 'border-slate-700 bg-slate-950 text-slate-400 hover:text-white'
-                          }`}>
-                          {ag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-xs font-semibold text-slate-400">Testing Point</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['Pre-Season', 'Mid-Season', 'Post-Season'] as const).map((pt) => (
-                        <button key={pt} onClick={() => setSessionPoint(pt)}
-                          className={`rounded-xl border py-2.5 text-xs font-black transition ${
-                            sessionPoint === pt ? 'border-sky-500 bg-sky-500/20 text-sky-300' : 'border-slate-700 bg-slate-950 text-slate-400 hover:text-white'
-                          }`}>
-                          {pt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Battery preview */}
-                  <div className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                    <p className="mb-3 text-xs font-black uppercase tracking-wide text-slate-400">{sessionAgeGroup} Battery — {battery.length} tests</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {battery.map((t) => (
-                        <span key={t.key} className="rounded-full bg-slate-800 px-2.5 py-1 text-[10px] font-semibold text-slate-300">{t.name}</span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <button onClick={startSession}
-                    className="w-full rounded-xl border border-violet-500 bg-violet-500/15 py-3 text-sm font-black text-violet-300 transition hover:bg-violet-500/25">
-                    Start Session — {sessionTeam ? `${sessionTeam} (${sessionSquad.length} players)` : 'Select team first'}
-                  </button>
-                </div>
-              )}
-
-              {/* Step 2 — Testing */}
-              {sessionStep === 'testing' && activeTest && (
-                <div>
-                  {/* Progress bar */}
-                  <div className="mb-5">
-                    <div className="mb-1.5 flex items-center justify-between text-xs text-slate-500">
-                      <span>{activeTestIndex + 1} / {battery.length}</span>
-                      <span>{Math.round(((activeTestIndex) / battery.length) * 100)}% complete</span>
-                    </div>
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                      <div className="h-full rounded-full bg-violet-500 transition-all"
-                        style={{ width: `${((activeTestIndex) / battery.length) * 100}%` }} />
-                    </div>
-                  </div>
-
-                  {/* Test instructions */}
-                  {activeTest.type === 'rsa' && (
-                    <div className="mb-4 rounded-xl border border-amber-500/20 bg-amber-500/8 p-3 text-xs text-amber-300">
-                      Enter all 6 sprint times — Sdec% calculated automatically. Leave blank to skip a player.
-                    </div>
-                  )}
-                  {activeTest.type === 'qualitative3' && (
-                    <div className="mb-4 rounded-xl border border-sky-500/20 bg-sky-500/8 p-3 text-xs text-sky-300">
-                      Tap the rating for each player. Leave unselected to skip.
-                    </div>
-                  )}
-                  {activeTest.key.includes('505') && (
-                    <div className="mb-4 rounded-xl border border-violet-500/20 bg-violet-500/8 p-3 text-xs text-violet-300">
-                      Record best of 2 attempts. Flag if left/right difference &gt; 0.08s.
-                    </div>
-                  )}
-
-                  {/* Player inputs */}
-                  <div className="space-y-3">
-                    {sessionSquad.map((athlete) => (
-                      <div key={athlete.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-black text-slate-300">
-                            {initials(athlete.name)}
-                          </div>
-                          <p className="text-sm font-bold text-white">{athlete.name}</p>
-                        </div>
-
-                        {/* RSA — 6 sprint times */}
-                        {activeTest.type === 'rsa' && (
-                          <div className="space-y-2">
-                            <div className="grid grid-cols-6 gap-1.5">
-                              {[0, 1, 2, 3, 4, 5].map((i) => (
-                                <div key={i}>
-                                  <label className="mb-1 block text-center text-[9px] text-slate-600">T{i + 1}</label>
-                                  <input type="number" step="0.01" placeholder="0.00"
-                                    value={(rsaInputs[athlete.id] || [])[i] || ''}
-                                    onChange={(e) => setRsaInput(athlete.id, i, e.target.value)}
-                                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-2 py-2 text-center text-sm text-white outline-none focus:border-violet-500" />
-                                </div>
-                              ))}
-                            </div>
-                            {(() => {
-                              const calc = calculateSdec(rsaInputs[athlete.id] || []);
-                              if (!calc) return null;
-                              const tier = getBenchmarkTier('RSA Sdec%', calc.sdec, sessionAgeGroup, true);
-                              return (
-                                <div className="flex items-center gap-3 rounded-lg bg-slate-900 p-2 text-xs">
-                                  <span className="text-slate-500">Sdec: <span className={`font-black ${tier?.color}`}>{calc.sdec}%</span></span>
-                                  <span className="text-slate-500">Best: <span className="text-white font-bold">{calc.best}s</span></span>
-                                  <span className="text-slate-500">Mean: <span className="text-white font-bold">{calc.mean}s</span></span>
-                                  {tier && <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        )}
-
-                        {/* Qualitative — Pass/Flag/Fail or Good/Moderate/At Risk */}
-                        {activeTest.type === 'qualitative3' && (
-                          <div className="flex gap-2">
-                            {(activeTest.options || []).map((opt) => {
-                              const selected = qualInputs[`${athlete.id}_${activeTest.key}`] === opt;
-                              const col = opt === 'PASS' || opt === 'GOOD' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300' :
-                                opt === 'FLAG' || opt === 'MODERATE' ? 'border-amber-500 bg-amber-500/20 text-amber-300' :
-                                'border-red-500 bg-red-500/20 text-red-300';
-                              return (
-                                <button key={opt} onClick={() => setQualInput(athlete.id, opt)}
-                                  className={`flex-1 rounded-xl border py-2 text-xs font-black transition ${selected ? col : 'border-slate-700 bg-slate-900 text-slate-500 hover:text-white'}`}>
-                                  {opt}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Numeric */}
-                        {activeTest.type === 'numeric' && (
-                          <div className="flex items-center gap-2">
-                            <input type="number" step="0.01" placeholder={`Enter ${activeTest.unit}...`}
-                              value={testInputs[athlete.id]?.[activeTest.key] || ''}
-                              onChange={(e) => setTestInput(athlete.id, e.target.value)}
-                              className="flex-1 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
-                            <span className="text-sm text-slate-500 shrink-0">{activeTest.unit}</span>
-                            {(() => {
-                              const val = Number(testInputs[athlete.id]?.[activeTest.key]);
-                              if (!val) return null;
-                              const tier = getBenchmarkTier(activeTest.key, val, sessionAgeGroup, activeTest.lower);
-                              if (!tier) return null;
-                              return <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>;
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 flex gap-3">
-                    {activeTestIndex > 0 && (
-                      <button onClick={() => setActiveTestIndex((i) => i - 1)}
-                        className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm font-semibold text-slate-300 hover:text-white">
-                        ← Back
-                      </button>
-                    )}
-                    <button onClick={saveTestAndNext} disabled={sessionSaving}
-                      className="flex-1 rounded-xl border border-violet-500 bg-violet-500/15 py-3 text-sm font-black text-violet-300 transition hover:bg-violet-500/25 disabled:opacity-50">
-                      {sessionSaving ? 'Saving...' : activeTestIndex === battery.length - 1 ? 'Save & Finish Session ✓' : `Save & Next — ${battery[activeTestIndex + 1]?.name} →`}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
