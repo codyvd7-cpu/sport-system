@@ -1448,7 +1448,7 @@ async function handleLogout() {
           </div>
         ) : (
           <div>
-            <section id="sponsors-section" className={activeTab === 'sponsors' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
+            <section id="sponsors-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2" style={{display: activeTab === 'sponsors' ? 'grid' : 'none'}}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Sponsor</h2>
                 <form onSubmit={handleCreateSponsor} className="space-y-4">
@@ -1660,7 +1660,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="week-section" className={activeTab === 'week' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
+            <section id="week-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2" style={{display: activeTab === 'week' ? 'grid' : 'none'}}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Week Plan</h2>
                 <form onSubmit={handleCreateWeekPlan} className="space-y-4">
@@ -1965,7 +1965,7 @@ async function handleLogout() {
               )}
             </section>
 
-            <section id="reminders-section" className={activeTab === 'reminders' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
+            <section id="reminders-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2" style={{display: activeTab === 'reminders' ? 'grid' : 'none'}}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Reminder</h2>
                 <form onSubmit={handleCreateReminder} className="space-y-4">
@@ -2126,7 +2126,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="fixtures-section" className={activeTab === 'fixtures' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
+            <section id="fixtures-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2" style={{display: activeTab === 'fixtures' ? 'grid' : 'none'}}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Fixture</h2>
                 <form onSubmit={handleCreateFixture} className="space-y-4">
@@ -2332,7 +2332,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="results-section" className={activeTab === 'results' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
+            <section id="results-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2" style={{display: activeTab === 'results' ? 'grid' : 'none'}}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Result</h2>
                 <form onSubmit={handleCreateResult} className="space-y-4">
@@ -2545,7 +2545,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="programs-section" className={activeTab === 'programs' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
+            <section id="programs-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2" style={{display: activeTab === 'programs' ? 'grid' : 'none'}}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Program</h2>
                 <form onSubmit={handleCreateProgram} className="space-y-4">
