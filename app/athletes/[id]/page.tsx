@@ -206,8 +206,8 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setLoading(true);
     const [athRes, attRes, perfRes, notesRes] = await Promise.all([
       supabase.from('athletes').select('*'),
-      supabase.from('attendance').select('*').eq('athlete_id', athleteId).order('session_date', { ascending: false }),
-      supabase.from('performance_tests').select('*').eq('athlete_id', athleteId).order('test_date', { ascending: false }),
+      supabase.from('attendance').select('*').eq('athlete_id', athleteId).order('session_date', { ascending: false }).limit(100),
+      supabase.from('performance_tests').select('*').eq('athlete_id', athleteId).order('test_date', { ascending: false }).limit(100),
       supabase.from('coach_notes').select('*').eq('athlete_id', athleteId).order('created_at', { ascending: false }),
     ]);
     if (athRes.error) { setError(athRes.error.message); setLoading(false); return; }

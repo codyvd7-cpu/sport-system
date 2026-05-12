@@ -38,7 +38,7 @@ export default function DashboardPage() {
     async function load() {
       const [athRes, attRes, perfRes, notesRes] = await Promise.all([
         supabase.from('athletes').select('id, full_name, team, availability, age_group'),
-        supabase.from('attendance').select('id, athlete_id, status, session_date, session_type').gte('session_date', weekAgo()).order('session_date', { ascending: false }),
+        supabase.from('attendance').select('id, athlete_id, status, session_date, session_type').gte('session_date', weekAgo()).order('session_date', { ascending: false }).limit(500),
         supabase.from('performance_tests').select('id, athlete_id, test_type, value, unit, test_date').order('test_date', { ascending: false }).limit(10),
         supabase.from('coach_notes').select('id, athlete_id, note, created_at').eq('is_feedback', false).order('created_at', { ascending: false }).limit(5),
       ]);

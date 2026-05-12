@@ -30,7 +30,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
       if (squad.length === 0) { setLoading(false); return; }
       const ids = squad.map((a) => a.id);
       const [attRes, perfRes] = await Promise.all([
-        supabase.from('attendance').select('*').in('athlete_id', ids).order('session_date', { ascending: false }),
+        supabase.from('attendance').select('*').in('athlete_id', ids).order('session_date', { ascending: false }).limit(500),
         supabase.from('performance_tests').select('*').in('athlete_id', ids).order('test_date', { ascending: false }),
       ]);
       setAttendance(attRes.data || []);

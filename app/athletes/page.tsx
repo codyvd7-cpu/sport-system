@@ -75,7 +75,7 @@ export default function AthletesPage() {
 
   async function loadAthletes() {
     setLoading(true);
-    const { data, error: err } = await supabase.from('athletes').select('*');
+    const { data, error: err } = await supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability, position, player_code, is_active').order('full_name');
     if (err) { setError(err.message); setLoading(false); return; }
     setAthleteRows((data as GenericRow[]) || []);
     setLoading(false);
@@ -226,9 +226,10 @@ export default function AthletesPage() {
             </div>
 
             {loading ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-                <p className="text-sm text-slate-400">Loading athletes...</p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="h-20 animate-pulse rounded-2xl bg-slate-800/60" />
+                ))}
               </div>
             ) : filteredAthletes.length === 0 ? (
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
