@@ -95,7 +95,7 @@ export default function PerformancePage() {
   async function startSession() {
     if (!selectedTeam || selectedTests.length === 0) return;
     setLoadingAthletes(true);
-    const { data } = await supabase.from('athletes').select('id, full_name, name, age_group, position').eq('team', selectedTeam).order('full_name');
+    const { data } = await supabase.from('athletes').select('id, full_name, age_group, position').eq('team', selectedTeam).order('full_name');
     setAthletes(data || []);
     // Pre-load existing results for today
     if (data && data.length > 0) {
@@ -226,13 +226,15 @@ export default function PerformancePage() {
               </div>
 
               {/* Custom test */}
-              <div className="mt-4 flex gap-2">
-                <input value={customTest} onChange={(e) => setCustomTest(e.target.value)} placeholder="Custom test name..."
-                  onKeyDown={(e) => e.key === 'Enter' && addCustomTest()}
-                  className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500" />
-                <input value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} placeholder="Unit"
-                  className="w-20 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
-                <button onClick={addCustomTest} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm font-black text-slate-300 hover:text-white">Add</button>
+              <div className="mt-4 space-y-2">
+                <div className="flex gap-2">
+                  <input value={customTest} onChange={(e) => setCustomTest(e.target.value)} placeholder="Custom test name..."
+                    onKeyDown={(e) => e.key === 'Enter' && addCustomTest()}
+                    className="flex-1 min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500" />
+                  <input value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} placeholder="Unit"
+                    className="w-16 shrink-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
+                  <button onClick={addCustomTest} className="shrink-0 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm font-black text-slate-300 hover:text-white">Add</button>
+                </div>
               </div>
 
               {selectedTests.length > 0 && (
@@ -293,7 +295,7 @@ export default function PerformancePage() {
                     const isSaving = saving[athlete.id]?.[testName];
                     const num = Number(val);
                     const showColor = isSaved && !Number.isNaN(num) && val !== '';
-                    const name = athlete.full_name || athlete.name || 'Unknown';
+                    const name = athlete.full_name || 'Unknown';
                     const ageGroup = athlete.age_group || '';
                     return (
                       <div key={athlete.id} className={`flex items-center gap-3 px-4 py-3 transition ${activeAthlete === athlete.id ? 'bg-slate-800/40' : ''}`}>
@@ -326,7 +328,7 @@ export default function PerformancePage() {
               /* Multi-test — athlete cards */
               <div className="space-y-3">
                 {athletes.map((athlete) => {
-                  const name = athlete.full_name || athlete.name || 'Unknown';
+                  const name = athlete.full_name || 'Unknown';
                   const ageGroup = athlete.age_group || '';
                   const allDone = selectedTests.every((t) => saved[athlete.id]?.[t]);
                   const isOpen = activeAthlete === athlete.id;
@@ -335,7 +337,7 @@ export default function PerformancePage() {
                       <button onClick={() => setActiveAthlete(isOpen ? null : athlete.id)}
                         className="flex w-full items-center gap-3 px-5 py-4">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
-                          {name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
+                          {(athlete.full_name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="flex-1 text-left">
                           <p className="text-sm font-bold text-white">{name}</p>

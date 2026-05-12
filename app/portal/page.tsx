@@ -42,6 +42,8 @@ export default function PortalPage() {
   const [weekItems, setWeekItems] = useState<Row[]>([]);
   const [reminders, setReminders] = useState<Row[]>([]);
   const [fixtures, setFixtures] = useState<Row[]>([]);
+  const [expandedFixtureDate, setExpandedFixtureDate] = useState<string | null>(null);
+  const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [results, setResults] = useState<Row[]>([]);
   const [programs, setPrograms] = useState<Row[]>([]);
   const [gymLeaderboard, setGymLeaderboard] = useState<Row[]>([]);
@@ -153,8 +155,12 @@ export default function PortalPage() {
             </div>
             <div className="flex items-center gap-3">
               <a href="/player"
-                className="rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">
-                Player Login →
+                className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">
+                Player →
+              </a>
+              <a href="/login"
+                className="rounded-full border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-black text-slate-300 transition hover:text-white">
+                Coach →
               </a>
               <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
@@ -282,44 +288,45 @@ export default function PortalPage() {
           <div className="mt-6">
             {loadingFixtures ? <Skeleton /> : fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
               <div className="space-y-3">
-                {fixtures.map((fixture: Row) => (
-                  <div key={fixture.id} className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/3 p-5 transition hover:border-sky-500/20 hover:bg-sky-500/5">
-                    <div className="flex items-center gap-5">
-                      <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
-                        <p className="text-xl font-black leading-none text-white">
-                          {fixture.fixture_date ? new Date(fixture.fixture_date).toLocaleDateString('en-ZA', { day: 'numeric' }) : '—'}
-                        </p>
-                        <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">
-                          {fixture.fixture_date ? new Date(fixture.fixture_date).toLocaleDateString('en-ZA', { month: 'short' }) : ''}
-                        </p>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-sky-300">
-                            {fixture.team || 'TBC'}
-                          </span>
-                          {fixture.fixture_time && (
-                            <span className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-400">
-                              {fixture.fixture_time}
-                            </span>
-                          )}
+                {Array.from(new Set(fixtures.map((f: Row) => f.fixture_date))).sort().map((date) => {
+                  const dayFixtures = fixtures.filter((f: Row) => f.fixture_date === date);
+                  const isExpanded = expandedFixtureDate === date;
+                  const d = new Date(date as string);
+                  return (
+                    <div key={date as string} className="overflow-hidden rounded-2xl border border-white/8 bg-white/3 transition hover:border-sky-500/20">
+                      <button onClick={() => setExpandedFixtureDate(isExpanded ? null : date as string)}
+                        className="flex w-full items-center gap-5 p-5 text-left">
+                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
+                          <p className="text-xl font-black leading-none text-white">{d.getDate()}</p>
+                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{d.toLocaleDateString('en-ZA', { month: 'short' })}</p>
                         </div>
-                        <p className="text-base font-black text-white">vs <span className="text-slate-300">{fixture.opponent || 'Opponent TBC'}</span></p>
-                        {fixture.venue && (
-                          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-500">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3 shrink-0">
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                            </svg>
-                            {fixture.venue}
-                          </p>
-                        )}
-                      </div>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0 text-slate-700 transition group-hover:text-sky-500">
-                        <path d="M9 18l6-6-6-6"/>
-                      </svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-black uppercase tracking-wide text-slate-500 mb-1">{d.toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
+                          <p className="text-base font-black text-white">{dayFixtures.length} {dayFixtures.length === 1 ? 'match' : 'matches'}</p>
+                          <p className="mt-0.5 text-xs text-slate-500">{dayFixtures.map((f: Row) => f.team).join(' · ')}</p>
+                        </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+                          className={`h-4 w-4 shrink-0 text-slate-500 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="border-t border-white/5 px-5 pb-4 pt-3 space-y-2">
+                          {dayFixtures.map((fixture: Row) => (
+                            <div key={fixture.id} className="rounded-xl border border-white/5 bg-white/3 p-3">
+                              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                                <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-[10px] font-black text-sky-300">{fixture.team}</span>
+                                {fixture.fixture_time && <span className="text-[10px] text-slate-500">{fixture.fixture_time}</span>}
+                              </div>
+                              <p className="text-sm font-black text-white">vs {fixture.opponent}</p>
+                              {fixture.venue && <p className="mt-0.5 text-xs text-slate-500">📍 {fixture.venue}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -333,44 +340,57 @@ export default function PortalPage() {
           <div className="mt-6">
             {loadingResults ? <Skeleton /> : results.length === 0 ? <Empty text="No results published yet." /> : (
               <div className="space-y-3">
-                {results.map((result: Row) => {
-                  const score = result.final_score || '';
-                  const parts = score.split(/[-–]/);
-                  const our = parseInt(parts[0]) || 0;
-                  const their = parseInt(parts[1]) || 0;
-                  const won = parts.length === 2 && our > their;
-                  const drew = parts.length === 2 && our === their;
-                  const outcome = won ? 'WIN' : drew ? 'DRAW' : score ? 'LOSS' : '—';
+                {Array.from(new Set(results.map((r: Row) => r.result_date))).sort().reverse().map((date) => {
+                  const dayResults = results.filter((r: Row) => r.result_date === date);
+                  const isExpanded = expandedResultId === date;
+                  const wins = dayResults.filter((r: Row) => { const p = (r.final_score||'').split(/[-–]/); return p.length===2 && parseInt(p[0])>parseInt(p[1]); }).length;
+                  const losses = dayResults.filter((r: Row) => { const p = (r.final_score||'').split(/[-–]/); return p.length===2 && parseInt(p[0])<parseInt(p[1]); }).length;
+                  const draws = dayResults.filter((r: Row) => { const p = (r.final_score||'').split(/[-–]/); return p.length===2 && parseInt(p[0])===parseInt(p[1]); }).length;
                   return (
-                    <div key={result.id} className={`overflow-hidden rounded-2xl border ${
-                      won ? 'border-emerald-500/25 bg-gradient-to-r from-emerald-500/8 to-transparent'
-                        : drew ? 'border-white/8 bg-white/3'
-                        : 'border-red-500/20 bg-gradient-to-r from-red-500/6 to-transparent'
-                    }`}>
-                      <div className="flex items-stretch">
-                        <div className={`flex w-16 shrink-0 flex-col items-center justify-center py-5 text-center ${
-                          won ? 'bg-emerald-500/15' : drew ? 'bg-white/5' : 'bg-red-500/12'
-                        }`}>
-                          <p className={`text-[9px] font-black uppercase tracking-widest ${
-                            won ? 'text-emerald-400' : drew ? 'text-slate-400' : 'text-red-400'
-                          }`}>{outcome}</p>
-                          <p className={`mt-1 text-xl font-black leading-none ${
-                            won ? 'text-emerald-300' : drew ? 'text-slate-300' : 'text-red-300'
-                          }`}>{score || '—'}</p>
+                    <div key={date as string} className="overflow-hidden rounded-2xl border border-white/8 bg-white/3">
+                      <button onClick={() => setExpandedResultId(isExpanded ? null : date as string)}
+                        className="flex w-full items-center gap-5 p-5 text-left">
+                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
+                          <p className="text-xl font-black leading-none text-white">{new Date(date as string).getDate()}</p>
+                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{new Date(date as string).toLocaleDateString('en-ZA', { month: 'short' })}</p>
                         </div>
-                        <div className="flex-1 p-5">
-                          <span className="rounded-full bg-white/8 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-400">
-                            {result.team || 'Team'}
-                          </span>
-                          <p className="mt-2 text-base font-black text-white">vs {result.opponent || 'TBC'}</p>
-                          <p className="mt-1 text-xs text-slate-500">{dateLabel(result.result_date)}</p>
-                          {result.goal_scorers && (
-                            <p className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                              <span>🏑</span><span>{result.goal_scorers}</span>
-                            </p>
-                          )}
+                        <div className="flex-1">
+                          <p className="text-xs text-slate-500 mb-1">{new Date(date as string).toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
+                          <p className="text-base font-black text-white">{dayResults.length} {dayResults.length === 1 ? 'match' : 'matches'}</p>
+                          <div className="flex gap-3 mt-1">
+                            {wins > 0 && <span className="text-[10px] font-black text-emerald-400">{wins}W</span>}
+                            {draws > 0 && <span className="text-[10px] font-black text-slate-400">{draws}D</span>}
+                            {losses > 0 && <span className="text-[10px] font-black text-red-400">{losses}L</span>}
+                          </div>
                         </div>
-                      </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+                          className={`h-4 w-4 shrink-0 text-slate-500 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      </button>
+                      {isExpanded && (
+                        <div className="border-t border-white/5 px-5 pb-4 pt-3 space-y-2">
+                          {dayResults.map((result: Row) => {
+                            const score = result.final_score || '';
+                            const parts = score.split(/[-–]/);
+                            const our = parseInt(parts[0]) || 0;
+                            const their = parseInt(parts[1]) || 0;
+                            const won = parts.length === 2 && our > their;
+                            const drew = parts.length === 2 && our === their;
+                            const outcome = won ? 'WIN' : drew ? 'DRAW' : score ? 'LOSS' : '—';
+                            return (
+                              <div key={result.id} className={`flex items-center gap-3 rounded-xl border p-3 ${won ? 'border-emerald-500/20 bg-emerald-500/5' : drew ? 'border-white/5 bg-white/3' : 'border-red-500/15 bg-red-500/5'}`}>
+                                <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-black ${won ? 'bg-emerald-500/20 text-emerald-300' : drew ? 'bg-white/10 text-slate-400' : 'bg-red-500/20 text-red-300'}`}>{outcome}</span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-black text-white">{result.team} vs {result.opponent}</p>
+                                  <p className="text-xs text-slate-500">{score}</p>
+                                  {result.goal_scorers && <p className="text-[10px] text-slate-500 mt-0.5">🏑 {result.goal_scorers}</p>}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

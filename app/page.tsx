@@ -33,9 +33,15 @@ export default function DashboardPage() {
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [recentNotes, setRecentNotes] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [coachName, setCoachName] = React.useState('');
 
   React.useEffect(() => {
     async function load() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        const name = session.user.email.split('@')[0].split('.')[0];
+        setCoachName(name.charAt(0).toUpperCase() + name.slice(1));
+      }
       const [athRes, attRes, perfRes, notesRes] = await Promise.all([
         supabase.from('athletes').select('id, full_name, team, availability, age_group'),
         supabase.from('attendance').select('id, athlete_id, status, session_date, session_type').gte('session_date', weekAgo()).order('session_date', { ascending: false }).limit(500),

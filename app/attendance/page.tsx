@@ -559,18 +559,17 @@ export default function AttendancePage() {
                         {initials(athlete.name)}
                       </div>
                       <p className="flex-1 text-sm font-semibold text-white">{athlete.name}</p>
-                      <div className="flex gap-1.5">
-                        {['Present', 'Absent', 'Late', 'Excused'].map((s) => (
+                      <div className="flex gap-1 shrink-0">
+                        {[
+                          { s: 'Present', short: 'P', active: 'bg-emerald-500 text-slate-950' },
+                          { s: 'Absent', short: 'A', active: 'bg-red-500 text-white' },
+                          { s: 'Late', short: 'L', active: 'bg-amber-500 text-slate-950' },
+                          { s: 'Excused', short: 'E', active: 'bg-sky-500 text-white' },
+                        ].map(({ s, short, active }) => (
                           <button key={s} onClick={() => setBulkStatuses((prev) => ({ ...prev, [athlete.id]: s }))}
-                            className={`rounded-lg px-2.5 py-1.5 text-[10px] font-black transition ${
-                              status === s
-                                ? s === 'Present' ? 'bg-emerald-500 text-slate-950'
-                                  : s === 'Absent' ? 'bg-red-500 text-white'
-                                  : s === 'Late' ? 'bg-amber-500 text-slate-950'
-                                  : 'bg-sky-500 text-white'
-                                : 'bg-white/10 text-slate-400 hover:bg-white/20'
-                            }`}>
-                            {s}
+                            title={s}
+                            className={`h-8 w-8 rounded-lg text-xs font-black transition ${status === s ? active : 'bg-white/10 text-slate-400 hover:bg-white/20'}`}>
+                            {short}
                           </button>
                         ))}
                       </div>
