@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useToast } from '@/components/Toast';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase'
 import { safeUUID } from '@/lib/uuid';
@@ -223,6 +224,7 @@ const SPONSOR_BUCKET = 'portal-sponsors';
 
 export default function PortalAdminPage() {
 const router = useRouter();
+  const { showToast } = useToast();
 
 async function handleLogout() {
   await supabase.auth.signOut();
@@ -239,8 +241,8 @@ async function handleLogout() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
+  const [activeTab, setActiveTab] = useState('fixtures');
   const [selectedWeekPlanId, setSelectedWeekPlanId] = useState('');
 
   const [newWeekLabel, setNewWeekLabel] = useState('Week at a Glance');
@@ -461,11 +463,7 @@ async function handleLogout() {
     }
   }, [selectedWeekPlanId, weekPlans]);
 
-  useEffect(() => {
-    if (!successMessage) return;
-    const timer = setTimeout(() => setSuccessMessage(''), 3000);
-    return () => clearTimeout(timer);
-  }, [successMessage]);
+
 
   const selectedWeekPlan = useMemo(() => {
     if (!selectedWeekPlanId && weekPlans.length > 0) return weekPlans[0];
@@ -658,7 +656,7 @@ async function handleLogout() {
 
       setNewWeekLabel('Week at a Glance');
       setNewWeekPublished(true);
-      setSuccessMessage('Week plan created.');
+      showToast('Week plan created.');
       await loadPortalAdminData();
     });
   }
@@ -695,7 +693,7 @@ async function handleLogout() {
       setNewWeekItemTitle('');
       setNewWeekItemDetails('');
       setNewWeekItemSortOrder(String(selectedWeekItems.length + 1));
-      setSuccessMessage('Week item created.');
+      showToast('Week item created.');
       await loadPortalAdminData();
     });
   }
@@ -727,7 +725,7 @@ async function handleLogout() {
       setNewReminderDetails('');
       setNewReminderPublished(true);
       setNewReminderSortOrder(String(reminders.length + 1));
-      setSuccessMessage('Reminder created.');
+      showToast('Reminder created.');
       await loadPortalAdminData();
     });
   }
@@ -765,7 +763,7 @@ async function handleLogout() {
       setNewFixtureVenue('');
       setNewFixturePublished(true);
       setNewFixtureSortOrder('1');
-      setSuccessMessage('Fixture created.');
+      showToast('Fixture created.');
       await loadPortalAdminData();
     });
   }
@@ -803,7 +801,7 @@ async function handleLogout() {
       setNewResultGoalScorers('');
       setNewResultPublished(true);
       setNewResultSortOrder('1');
-      setSuccessMessage('Result created.');
+      showToast('Result created.');
       await loadPortalAdminData();
     });
   }
@@ -851,7 +849,7 @@ async function handleLogout() {
       }
 
       resetProgramCreateFields();
-      setSuccessMessage('Program created.');
+      showToast('Program created.');
       await loadPortalAdminData();
     });
   }
@@ -892,7 +890,7 @@ async function handleLogout() {
       }
 
       resetSponsorCreateFields();
-      setSuccessMessage('Sponsor created.');
+      showToast('Sponsor created.');
       await loadPortalAdminData();
     });
   }
@@ -929,7 +927,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Week plan updated.');
+      showToast('Week plan updated.');
       cancelEditWeekPlan();
       await loadPortalAdminData();
     });
@@ -947,7 +945,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Week plan deleted.');
+      showToast('Week plan deleted.');
       await loadPortalAdminData();
     });
   }
@@ -990,7 +988,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Week item updated.');
+      showToast('Week item updated.');
       cancelEditWeekItem();
       await loadPortalAdminData();
     });
@@ -1008,7 +1006,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Week item deleted.');
+      showToast('Week item deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1051,7 +1049,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Reminder updated.');
+      showToast('Reminder updated.');
       cancelEditReminder();
       await loadPortalAdminData();
     });
@@ -1069,7 +1067,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Reminder deleted.');
+      showToast('Reminder deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1121,7 +1119,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Fixture updated.');
+      showToast('Fixture updated.');
       cancelEditFixture();
       await loadPortalAdminData();
     });
@@ -1139,7 +1137,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Fixture deleted.');
+      showToast('Fixture deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1191,7 +1189,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Result updated.');
+      showToast('Result updated.');
       cancelEditResult();
       await loadPortalAdminData();
     });
@@ -1209,7 +1207,7 @@ async function handleLogout() {
         return;
       }
 
-      setSuccessMessage('Result deleted.');
+      showToast('Result deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1276,7 +1274,7 @@ async function handleLogout() {
         await tryRemoveStoredFile(PROGRAM_BUCKET, currentProgram.file_path);
       }
 
-      setSuccessMessage('Program updated.');
+      showToast('Program updated.');
       resetProgramEditFields();
       await loadPortalAdminData();
     });
@@ -1300,7 +1298,7 @@ async function handleLogout() {
         await tryRemoveStoredFile(PROGRAM_BUCKET, currentProgram.file_path);
       }
 
-      setSuccessMessage('Program deleted.');
+      showToast('Program deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1363,7 +1361,7 @@ async function handleLogout() {
         await tryRemoveStoredFile(SPONSOR_BUCKET, currentSponsor.image_path);
       }
 
-      setSuccessMessage('Sponsor updated.');
+      showToast('Sponsor updated.');
       resetSponsorEditFields();
       await loadPortalAdminData();
     });
@@ -1387,7 +1385,7 @@ async function handleLogout() {
         await tryRemoveStoredFile(SPONSOR_BUCKET, currentSponsor.image_path);
       }
 
-      setSuccessMessage('Sponsor deleted.');
+      showToast('Sponsor deleted.');
       await loadPortalAdminData();
     });
   }
@@ -1428,48 +1426,13 @@ async function handleLogout() {
   </div>
 </div>
 
-<div className="mb-8 flex flex-wrap gap-3">
-  <button
-    onClick={() => document.getElementById('sponsors-section')?.scrollIntoView({ behavior: 'smooth' })}
-    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
-  >
-    Sponsors
-  </button>
-
-  <button
-    onClick={() => document.getElementById('week-section')?.scrollIntoView({ behavior: 'smooth' })}
-    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
-  >
-    Week Plan
-  </button>
-
-  <button
-    onClick={() => document.getElementById('programs-section')?.scrollIntoView({ behavior: 'smooth' })}
-    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
-  >
-    Programs
-  </button>
-
-  <button
-    onClick={() => document.getElementById('fixtures-section')?.scrollIntoView({ behavior: 'smooth' })}
-    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
-  >
-    Fixtures
-  </button>
-
-  <button
-    onClick={() => document.getElementById('results-section')?.scrollIntoView({ behavior: 'smooth' })}
-    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
-  >
-    Results
-  </button>
-
-  <button
-    onClick={() => document.getElementById('reminders-section')?.scrollIntoView({ behavior: 'smooth' })}
-    className="rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-white hover:border-sky-500"
-  >
-    Reminders
-  </button>
+<div className="mb-6 flex flex-wrap gap-2 border-b border-slate-800 pb-4">
+  {['fixtures','results','week','programs','reminders','sponsors'].map((tab) => (
+    <button key={tab} onClick={() => setActiveTab(tab)}
+      className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
+      {tab === 'week' ? 'Week Plan' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+    </button>
+  ))}
 </div>
 
         {error ? (
@@ -1478,11 +1441,7 @@ async function handleLogout() {
           </div>
         ) : null}
 
-        {successMessage ? (
-          <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">
-            {successMessage}
-          </div>
-        ) : null}
+
 
         {loading ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
@@ -1490,7 +1449,7 @@ async function handleLogout() {
           </div>
         ) : (
           <div className="space-y-8">
-            <section id="sponsors-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="sponsors-section" style={{display: activeTab === 'sponsors' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Sponsor</h2>
                 <form onSubmit={handleCreateSponsor} className="space-y-4">
@@ -1702,7 +1661,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="week-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="week-section" style={{display: activeTab === 'week' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Week Plan</h2>
                 <form onSubmit={handleCreateWeekPlan} className="space-y-4">
@@ -2007,7 +1966,7 @@ async function handleLogout() {
               )}
             </section>
 
-            <section id="reminders-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="reminders-section" style={{display: activeTab === 'reminders' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Reminder</h2>
                 <form onSubmit={handleCreateReminder} className="space-y-4">
@@ -2168,7 +2127,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="fixtures-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="fixtures-section" style={{display: activeTab === 'fixtures' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Fixture</h2>
                 <form onSubmit={handleCreateFixture} className="space-y-4">
@@ -2374,7 +2333,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="results-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="results-section" style={{display: activeTab === 'results' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Result</h2>
                 <form onSubmit={handleCreateResult} className="space-y-4">
@@ -2587,7 +2546,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="programs-section" className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="programs-section" style={{display: activeTab === 'programs' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Program</h2>
                 <form onSubmit={handleCreateProgram} className="space-y-4">
