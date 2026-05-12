@@ -109,7 +109,7 @@ export default function DashboardPage() {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">St Benedict's College Hockey</p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">
-              {new Date().toLocaleDateString('en-ZA', { weekday: 'long' })}
+              {coachName ? `Welcome, ${coachName}` : new Date().toLocaleDateString('en-ZA', { weekday: 'long' })}
             </h1>
             <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
           </div>
