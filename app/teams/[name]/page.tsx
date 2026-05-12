@@ -2,701 +2,106 @@
 
 import Link from 'next/link';
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase'
-import { safeUUID } from '@/lib/uuid';
+import { supabase } from '@/lib/supabase';
 
-type GenericRow = Record<string, any>;
+type Row = Record<string, any>;
+type PageProps = { params: Promise<{ name: string }> };
 
-type PageProps = {
-  params: Promise<{
-    name: string;
-  }>;
-};
+function initials(name: string) { return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(); }
+function formatDate(d?: string | null) { if (!d) return '—'; const date = new Date(d); if (Number.isNaN(date.getTime())) return '—'; return date.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' }); }
 
-type Team = {
-  id: string;
-  name: string;
-  sport: string;
-  season: string;
-  raw: GenericRow;
-};
+const LOWER_IS_BETTER = ['Bronco', '10m Sprint', '30m Sprint', '505', 'RSA'];
 
-type Athlete = {
-  id: string;
-  name: string;
-  team: string;
-  sport: string;
-  ageGroup: string;
-  raw: GenericRow;
-};
-
-type AttendanceRecord = {
-  id: string;
-  athlete_id: string;
-  session_date: string;
-  session_type: string;
-  status: string;
-  created_at: string | null;
-  raw: GenericRow;
-};
-
-type PerformanceRecord = {
-  id: string;
-  athlete_id: string;
-  test_date: string;
-  test_type: string;
-  result: number | null;
-  unit: string;
-  notes: string;
-  created_at: string | null;
-  raw: GenericRow;
-};
-
-function firstString(...values: any[]) {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim() !== '') return value.trim();
-  }
-  return '';
-}
-
-function firstValue(...values: any[]) {
-  for (const value of values) {
-    if (value !== null && value !== undefined && value !== '') return String(value);
-  }
-  return '';
-}
-
-function firstNumber(...values: any[]) {
-  for (const value of values) {
-    if (value === null || value === undefined || value === '') continue;
-    const num = Number(value);
-    if (!Number.isNaN(num)) return num;
-  }
-  return null;
-}
-
-function normalizeTeam(row: GenericRow): Team {
-  return {
-    id: firstValue(row.id, row.team_id, safeUUID()),
-    name: firstString(row.name, row.team, row.team_name) || 'Unnamed Team',
-    sport: firstString(row.sport, row.code, row.discipline) || '—',
-    season: firstString(row.season, row.year, row.phase) || '—',
-    raw: row,
-  };
-}
-
-function normalizeAthlete(row: GenericRow): Athlete {
-  return {
-    id: firstValue(row.id, row.athlete_id, safeUUID()),
-    name:
-      firstString(
-        row.name,
-        row.full_name,
-        row.athlete_name,
-        row.player_name,
-        row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '',
-        row.first_name
-      ) || 'Unknown Athlete',
-    team: firstString(row.team, row.team_name, row.squad, row.group_name) || 'Unassigned',
-    sport: firstString(row.sport, row.code, row.discipline) || '—',
-    ageGroup: firstString(row.age_group, row.agegroup, row.grade_group, row.group) || '—',
-    raw: row,
-  };
-}
-
-function normalizeAttendance(row: GenericRow): AttendanceRecord {
-  return {
-    id: firstValue(row.id, safeUUID()),
-    athlete_id: firstValue(row.athlete_id),
-    session_date: firstString(row.session_date),
-    session_type: firstString(row.session_type) || '—',
-    status: firstString(row.status) || '—',
-    created_at: firstString(row.created_at) || null,
-    raw: row,
-  };
-}
-
-function normalizePerformance(row: GenericRow): PerformanceRecord {
-  return {
-    id: firstValue(row.id, safeUUID()),
-    athlete_id: firstValue(row.athlete_id),
-    test_date: firstString(row.test_date),
-    test_type: firstString(row.test_type) || '—',
-    result: firstNumber(row.result),
-    unit: firstString(row.unit) || '',
-    notes: firstString(row.notes) || '',
-    created_at: firstString(row.created_at) || null,
-    raw: row,
-  };
-}
-
-function buildTeamUpdatePayload(raw: GenericRow, input: { name: string; sport: string; season: string }) {
-  const payload: GenericRow = {};
-
-  if ('name' in raw) payload.name = input.name;
-  else if ('team' in raw) payload.team = input.name;
-  else if ('team_name' in raw) payload.team_name = input.name;
-
-  if ('sport' in raw) payload.sport = input.sport;
-  else if ('code' in raw) payload.code = input.sport;
-  else if ('discipline' in raw) payload.discipline = input.sport;
-
-  if ('season' in raw) payload.season = input.season;
-  else if ('year' in raw) payload.year = input.season;
-  else if ('phase' in raw) payload.phase = input.season;
-
-  return payload;
-}
-
-function buildAthleteUpdatePayload(raw: GenericRow, input: { name?: string; team?: string; sport?: string; ageGroup?: string }) {
-  const payload: GenericRow = {};
-
-  if (input.name !== undefined) {
-    if ('name' in raw) payload.name = input.name;
-    else if ('full_name' in raw) payload.full_name = input.name;
-    else if ('athlete_name' in raw) payload.athlete_name = input.name;
-    else if ('player_name' in raw) payload.player_name = input.name;
-    else if ('first_name' in raw && 'last_name' in raw) {
-      const parts = input.name.trim().split(' ');
-      payload.first_name = parts.shift() || input.name;
-      payload.last_name = parts.join(' ');
-    }
-  }
-
-  if (input.team !== undefined) {
-    if ('team' in raw) payload.team = input.team;
-    else if ('team_name' in raw) payload.team_name = input.team;
-    else if ('squad' in raw) payload.squad = input.team;
-    else if ('group_name' in raw) payload.group_name = input.team;
-  }
-
-  if (input.sport !== undefined) {
-    if ('sport' in raw) payload.sport = input.sport;
-    else if ('code' in raw) payload.code = input.sport;
-    else if ('discipline' in raw) payload.discipline = input.sport;
-  }
-
-  if (input.ageGroup !== undefined) {
-    if ('age_group' in raw) payload.age_group = input.ageGroup;
-    else if ('agegroup' in raw) payload.agegroup = input.ageGroup;
-    else if ('grade_group' in raw) payload.grade_group = input.ageGroup;
-    else if ('group' in raw) payload.group = input.ageGroup;
-  }
-
-  return payload;
-}
-
-function formatDate(dateString?: string | null) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-
-  return date.toLocaleDateString('en-ZA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function formatDateTime(dateString?: string | null) {
-  if (!dateString) return '—';
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return '—';
-
-  return date.toLocaleString('en-ZA', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function formatStatus(status: string) {
-  const cleaned = (status || '').toLowerCase();
-  if (!cleaned) return '—';
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-}
-
-function getStatusClasses(status: string) {
-  const cleaned = (status || '').toLowerCase();
-
-  if (cleaned === 'present') return 'bg-emerald-500/15 text-emerald-200 border border-emerald-500/20';
-  if (cleaned === 'late') return 'bg-amber-500/15 text-amber-200 border border-amber-500/20';
-  if (cleaned === 'absent') return 'bg-red-500/15 text-red-200 border border-red-500/20';
-  if (cleaned === 'excused') return 'bg-sky-500/15 text-sky-200 border border-sky-500/20';
-
-  return 'bg-slate-800 text-slate-300 border border-slate-700';
-}
-
-function formatResult(result: number | null, unit: string) {
-  if (result === null || Number.isNaN(result)) return '—';
-  return `${result}${unit ? ` ${unit}` : ''}`;
-}
-
-export default function TeamProfilePage({ params }: PageProps) {
+export default function TeamDashboardPage({ params }: PageProps) {
   const resolvedParams = React.use(params);
-  const routeTeamName = decodeURIComponent(resolvedParams.name);
-  const router = useRouter();
+  const teamName = decodeURIComponent(resolvedParams.name);
 
-  const [teamRows, setTeamRows] = React.useState<GenericRow[]>([]);
-  const [athleteRows, setAthleteRows] = React.useState<GenericRow[]>([]);
-  const [attendanceRows, setAttendanceRows] = React.useState<GenericRow[]>([]);
-  const [performanceRows, setPerformanceRows] = React.useState<GenericRow[]>([]);
+  const [athletes, setAthletes] = React.useState<Row[]>([]);
+  const [attendance, setAttendance] = React.useState<Row[]>([]);
+  const [performance, setPerformance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
-  const [successMessage, setSuccessMessage] = React.useState('');
 
-  const [isEditingTeam, setIsEditingTeam] = React.useState(false);
-  const [teamNameInput, setTeamNameInput] = React.useState('');
-  const [teamSportInput, setTeamSportInput] = React.useState('');
-  const [teamSeasonInput, setTeamSeasonInput] = React.useState('');
-  const [savingTeam, setSavingTeam] = React.useState(false);
-
-  const [quickAthleteName, setQuickAthleteName] = React.useState('');
-  const [quickAthleteSport, setQuickAthleteSport] = React.useState('');
-  const [quickAthleteAgeGroup, setQuickAthleteAgeGroup] = React.useState('');
-  const [savingQuickAthlete, setSavingQuickAthlete] = React.useState(false);
-
-  const [editingRosterAthleteId, setEditingRosterAthleteId] = React.useState<string | null>(null);
-  const [editRosterName, setEditRosterName] = React.useState('');
-  const [editRosterSport, setEditRosterSport] = React.useState('');
-  const [editRosterAgeGroup, setEditRosterAgeGroup] = React.useState('');
-  const [savingRosterEdit, setSavingRosterEdit] = React.useState(false);
-
-  const [bulkAttendanceDate, setBulkAttendanceDate] = React.useState(() => new Date().toISOString().split('T')[0]);
-  const [bulkAttendanceSessionType, setBulkAttendanceSessionType] = React.useState('Training');
-  const [bulkAttendanceStatusMap, setBulkAttendanceStatusMap] = React.useState<Record<string, string>>({});
-  const [savingBulkAttendance, setSavingBulkAttendance] = React.useState(false);
-
-  async function loadPageData() {
-    setLoading(true);
-    setError('');
-
-    const [teamsRes, athletesRes, attendanceRes, performanceRes] = await Promise.all([
-      supabase.from('teams').select('*'),
-      supabase.from('athletes').select('*'),
-      supabase.from('attendance').select('*').order('session_date', { ascending: false }),
-      supabase.from('performance_tests').select('*').order('test_date', { ascending: false }),
-    ]);
-
-    if (teamsRes.error || athletesRes.error || attendanceRes.error || performanceRes.error) {
-      setError(
-        teamsRes.error?.message ||
-          athletesRes.error?.message ||
-          attendanceRes.error?.message ||
-          performanceRes.error?.message ||
-          'Failed to load team page.'
-      );
-      setTeamRows([]);
-      setAthleteRows([]);
-      setAttendanceRows([]);
-      setPerformanceRows([]);
+  React.useEffect(() => {
+    async function load() {
+      const athRes = await supabase.from('athletes').select('*').eq('team', teamName).order('full_name');
+      const squad = athRes.data || [];
+      setAthletes(squad);
+      if (squad.length === 0) { setLoading(false); return; }
+      const ids = squad.map((a) => a.id);
+      const [attRes, perfRes] = await Promise.all([
+        supabase.from('attendance').select('*').in('athlete_id', ids).order('session_date', { ascending: false }),
+        supabase.from('performance_tests').select('*').in('athlete_id', ids).order('test_date', { ascending: false }),
+      ]);
+      setAttendance(attRes.data || []);
+      setPerformance(perfRes.data || []);
       setLoading(false);
-      return;
     }
+    load();
+  }, [teamName]);
 
-    setTeamRows((teamsRes.data as GenericRow[]) || []);
-    setAthleteRows((athletesRes.data as GenericRow[]) || []);
-    setAttendanceRows((attendanceRes.data as GenericRow[]) || []);
-    setPerformanceRows((performanceRes.data as GenericRow[]) || []);
-    setLoading(false);
-  }
+  // ── COMPUTED ──────────────────────────────────────────────
+  const available = athletes.filter((a) => !a.availability || a.availability === 'Available');
+  const injured = athletes.filter((a) => a.availability === 'Injured');
+  const modified = athletes.filter((a) => a.availability === 'Modified');
+  const resting = athletes.filter((a) => a.availability === 'Resting');
 
-  React.useEffect(() => {
-    loadPageData();
-  }, []);
+  const athleteAttendance = React.useMemo(() => {
+    return athletes.map((a) => {
+      const att = attendance.filter((r) => r.athlete_id === a.id);
+      const total = att.length;
+      const present = att.filter((r) => ['present', 'late'].includes(r.status?.toLowerCase() || '')).length;
+      const absent = att.filter((r) => r.status?.toLowerCase() === 'absent').length;
+      const rate = total > 0 ? Math.round((present / total) * 100) : null;
+      const lastSession = att[0]?.session_date || null;
+      return { ...a, total, present, absent, rate, lastSession };
+    });
+  }, [athletes, attendance]);
 
-  const teams = React.useMemo(() => {
-    return teamRows.map(normalizeTeam).sort((a, b) => a.name.localeCompare(b.name));
-  }, [teamRows]);
+  const teamAttRate = React.useMemo(() => {
+    const rates = athleteAttendance.filter((a) => a.rate !== null).map((a) => a.rate as number);
+    return rates.length > 0 ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : null;
+  }, [athleteAttendance]);
 
-  const team = React.useMemo(() => {
-    return teams.find((item) => item.name === routeTeamName) || null;
-  }, [teams, routeTeamName]);
+  const lowAttendance = athleteAttendance.filter((a) => a.rate !== null && a.rate < 70);
+  const noData = athletes.filter((a) => !attendance.find((r) => r.athlete_id === a.id));
 
-  const athletes = React.useMemo(() => {
-    return athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name));
-  }, [athleteRows]);
-
-  const roster = React.useMemo(() => {
-    return athletes.filter((athlete) => athlete.team === routeTeamName);
-  }, [athletes, routeTeamName]);
-
-  const athleteMap = React.useMemo(() => {
-    const map = new Map<string, Athlete>();
-    athletes.forEach((athlete) => map.set(athlete.id, athlete));
-    return map;
-  }, [athletes]);
-
-  const rosterAthleteIds = React.useMemo(() => new Set(roster.map((athlete) => athlete.id)), [roster]);
-
-  const attendance = React.useMemo(() => {
-    return attendanceRows
-      .map(normalizeAttendance)
-      .filter((record) => rosterAthleteIds.has(record.athlete_id))
-      .sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime());
-  }, [attendanceRows, rosterAthleteIds]);
-
-  const performance = React.useMemo(() => {
-    return performanceRows
-      .map(normalizePerformance)
-      .filter((record) => rosterAthleteIds.has(record.athlete_id))
-      .sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
-  }, [performanceRows, rosterAthleteIds]);
-
-  const recentAttendance = React.useMemo(() => attendance.slice(0, 10), [attendance]);
-
-  const recentPerformance = React.useMemo(() => {
-    return performance.slice(0, 10).map((record) => ({
-      ...record,
-      athlete_name: athleteMap.get(record.athlete_id)?.name || 'Unknown Athlete',
-      team: athleteMap.get(record.athlete_id)?.team || 'Unassigned',
-    }));
-  }, [performance, athleteMap]);
-
-  const attendanceSummary = React.useMemo(() => {
-    const total = attendance.length;
-    const present = attendance.filter((item) => item.status.toLowerCase() === 'present').length;
-    const late = attendance.filter((item) => item.status.toLowerCase() === 'late').length;
-    const absent = attendance.filter((item) => item.status.toLowerCase() === 'absent').length;
-    const excused = attendance.filter((item) => item.status.toLowerCase() === 'excused').length;
-    const positive = present + late;
-    const rate = total > 0 ? Math.round((positive / total) * 100) : 0;
-
-    return { total, present, late, absent, excused, rate };
-  }, [attendance]);
-
-  const playerAttendanceSnapshot = React.useMemo(() => {
-    return roster
-      .map((athlete) => {
-        const athleteAttendance = attendance.filter((entry) => entry.athlete_id === athlete.id);
-        const total = athleteAttendance.length;
-        const positive = athleteAttendance.filter((entry) => {
-          const status = entry.status.toLowerCase();
-          return status === 'present' || status === 'late';
-        }).length;
-
-        return {
-          athleteId: athlete.id,
-          athleteName: athlete.name,
-          total,
-          rate: total > 0 ? Math.round((positive / total) * 100) : 0,
-          latest: athleteAttendance.length > 0 ? athleteAttendance[0].session_date : '',
-        };
-      })
-      .sort((a, b) => a.athleteName.localeCompare(b.athleteName));
-  }, [roster, attendance]);
-
-  const teamPerformanceLeaderboard = React.useMemo(() => {
-    const grouped = new Map<string, { athleteName: string; testType: string; result: number; unit: string; date: string }[]>();
-
-    performance.forEach((record) => {
-      if (record.result === null) return;
-      const athleteName = athleteMap.get(record.athlete_id)?.name || 'Unknown Athlete';
-      if (!grouped.has(record.test_type)) grouped.set(record.test_type, []);
-      grouped.get(record.test_type)!.push({
-        athleteName,
-        testType: record.test_type,
-        result: record.result,
-        unit: record.unit,
-        date: record.test_date,
+  const athletePBs = React.useMemo(() => {
+    return athletes.map((a) => {
+      const perf = performance.filter((r) => r.athlete_id === a.id && r.value !== null);
+      const testTypes = Array.from(new Set(perf.map((r) => r.test_type)));
+      const pbs: Record<string, { value: number; unit: string }> = {};
+      testTypes.forEach((t) => {
+        const vals = perf.filter((r) => r.test_type === t);
+        const lower = LOWER_IS_BETTER.some((lt) => t.toLowerCase().includes(lt.toLowerCase()));
+        const best = lower ? vals.reduce((a, b) => a.value < b.value ? a : b) : vals.reduce((a, b) => a.value > b.value ? a : b);
+        pbs[t] = { value: best.value, unit: best.unit || '' };
       });
+      return { ...a, pbs, testCount: perf.length };
     });
+  }, [athletes, performance]);
 
-    return Array.from(grouped.entries())
-      .map(([testType, rows]) => ({
-        testType,
-        entries: rows.sort((a, b) => b.result - a.result).slice(0, 5),
-      }))
-      .slice(0, 4);
-  }, [performance, athleteMap]);
+  const topAttendance = [...athleteAttendance].filter((a) => a.rate !== null).sort((a, b) => (b.rate || 0) - (a.rate || 0)).slice(0, 5);
 
-  React.useEffect(() => {
-    if (!team) return;
-    setTeamNameInput(team.name);
-    setTeamSportInput(team.sport === '—' ? '' : team.sport);
-    setTeamSeasonInput(team.season === '—' ? '' : team.season);
-  }, [team]);
+  const testTypes = React.useMemo(() => Array.from(new Set(performance.map((r) => r.test_type))).sort(), [performance]);
 
-  React.useEffect(() => {
-    const initial: Record<string, string> = {};
-    roster.forEach((athlete) => {
-      initial[athlete.id] = 'Present';
+  const teamAvgByTest = React.useMemo(() => {
+    const avgs: Record<string, { avg: number; unit: string }> = {};
+    testTypes.forEach((t) => {
+      const vals = performance.filter((r) => r.test_type === t && r.value !== null);
+      if (!vals.length) return;
+      avgs[t] = { avg: Math.round((vals.reduce((s, r) => s + r.value, 0) / vals.length) * 100) / 100, unit: vals[0].unit || '' };
     });
-    setBulkAttendanceStatusMap(initial);
-  }, [roster]);
+    return avgs;
+  }, [performance, testTypes]);
 
-  async function handleSaveTeam() {
-    if (!team) return;
-
-    setSavingTeam(true);
-    setError('');
-    setSuccessMessage('');
-
-    if (!teamNameInput.trim()) {
-      setError('Team name is required.');
-      setSavingTeam(false);
-      return;
-    }
-
-    const oldTeamName = team.name;
-    const newTeamName = teamNameInput.trim();
-    const newSport = teamSportInput.trim();
-
-    const teamPayload = buildTeamUpdatePayload(team.raw, {
-      name: newTeamName,
-      sport: newSport,
-      season: teamSeasonInput.trim(),
-    });
-
-    const teamResult = await supabase.from('teams').update(teamPayload).eq('id', team.id).select('*').single();
-
-    if (teamResult.error) {
-      setError(teamResult.error.message || 'Failed to update team.');
-      setSavingTeam(false);
-      return;
-    }
-
-    for (const athlete of roster) {
-      const athletePayload = buildAthleteUpdatePayload(athlete.raw, {
-        team: newTeamName,
-        sport: newSport || athlete.sport,
-      });
-
-      const athleteResult = await supabase.from('athletes').update(athletePayload).eq('id', athlete.id);
-      if (athleteResult.error) {
-        setError(athleteResult.error.message || 'Team updated, but athlete sync failed.');
-        setSavingTeam(false);
-        await loadPageData();
-        return;
-      }
-    }
-
-    setSuccessMessage('Team updated and athlete records synced successfully.');
-    setIsEditingTeam(false);
-    await loadPageData();
-    setSavingTeam(false);
-
-    if (oldTeamName !== newTeamName) {
-      router.replace(`/teams/${encodeURIComponent(newTeamName)}`);
-    }
-  }
-
-  async function handleQuickAddAthlete(e: React.FormEvent) {
-    e.preventDefault();
-    if (!team) return;
-
-    setSavingQuickAthlete(true);
-    setError('');
-    setSuccessMessage('');
-
-    if (!quickAthleteName.trim()) {
-      setError('Athlete name is required.');
-      setSavingQuickAthlete(false);
-      return;
-    }
-
-    const payload = {
-      name: quickAthleteName.trim(),
-      team: team.name,
-      sport: team.sport === '—' ? quickAthleteSport.trim() : team.sport,
-      age_group: quickAthleteAgeGroup.trim(),
-    };
-
-    const result = await supabase.from('athletes').insert([payload]).select('*').single();
-
-    if (result.error) {
-      setError(result.error.message || 'Failed to add athlete to team.');
-      setSavingQuickAthlete(false);
-      return;
-    }
-
-    setQuickAthleteName('');
-    setQuickAthleteSport('');
-    setQuickAthleteAgeGroup('');
-    setSuccessMessage('Athlete added to team.');
-    await loadPageData();
-    setSavingQuickAthlete(false);
-  }
-
-  function startRosterEdit(athlete: Athlete) {
-    setEditingRosterAthleteId(athlete.id);
-    setEditRosterName(athlete.name);
-    setEditRosterSport(athlete.sport === '—' ? '' : athlete.sport);
-    setEditRosterAgeGroup(athlete.ageGroup === '—' ? '' : athlete.ageGroup);
-  }
-
-  function cancelRosterEdit() {
-    setEditingRosterAthleteId(null);
-    setEditRosterName('');
-    setEditRosterSport('');
-    setEditRosterAgeGroup('');
-  }
-
-  async function handleSaveRosterAthlete(athlete: Athlete) {
-    setSavingRosterEdit(true);
-    setError('');
-    setSuccessMessage('');
-
-    if (!editRosterName.trim()) {
-      setError('Athlete name is required.');
-      setSavingRosterEdit(false);
-      return;
-    }
-
-    const payload = buildAthleteUpdatePayload(athlete.raw, {
-      name: editRosterName.trim(),
-      team: team?.name || athlete.team,
-      sport: editRosterSport.trim(),
-      ageGroup: editRosterAgeGroup.trim(),
-    });
-
-    const result = await supabase.from('athletes').update(payload).eq('id', athlete.id).select('*').single();
-
-    if (result.error) {
-      setError(result.error.message || 'Failed to update athlete.');
-      setSavingRosterEdit(false);
-      return;
-    }
-
-    setSuccessMessage('Athlete updated.');
-    cancelRosterEdit();
-    await loadPageData();
-    setSavingRosterEdit(false);
-  }
-
-  async function handleRemoveAthleteFromTeam(athlete: Athlete) {
-    const confirmed = window.confirm(`Remove ${athlete.name} from ${team?.name}?`);
-    if (!confirmed) return;
-
-    setError('');
-    setSuccessMessage('');
-
-    const payload = buildAthleteUpdatePayload(athlete.raw, {
-      team: '',
-    });
-
-    const result = await supabase.from('athletes').update(payload).eq('id', athlete.id);
-
-    if (result.error) {
-      setError(result.error.message || 'Failed to remove athlete from team.');
-      return;
-    }
-
-    setSuccessMessage('Athlete removed from team.');
-    await loadPageData();
-  }
-
-  async function handleBulkAttendanceSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!team) return;
-
-    setSavingBulkAttendance(true);
-    setError('');
-    setSuccessMessage('');
-
-    if (!bulkAttendanceDate) {
-      setError('Date is required.');
-      setSavingBulkAttendance(false);
-      return;
-    }
-
-    if (roster.length === 0) {
-      setError('There are no athletes in this team.');
-      setSavingBulkAttendance(false);
-      return;
-    }
-
-    const payloads = roster.map((athlete) => ({
-      athlete_id: athlete.id,
-      session_date: bulkAttendanceDate,
-      session_type: bulkAttendanceSessionType.trim(),
-      status: (bulkAttendanceStatusMap[athlete.id] || 'Present').trim(),
-    }));
-
-    const result = await supabase.from('attendance').insert(payloads).select('*');
-
-    if (result.error) {
-      setError(result.error.message || 'Failed to log bulk team attendance.');
-      setSavingBulkAttendance(false);
-      return;
-    }
-
-    setSuccessMessage('Bulk team attendance logged successfully.');
-    await loadPageData();
-    setSavingBulkAttendance(false);
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-sm text-slate-300">
-            Loading team page...
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (!team) {
-    return (
-      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <h1 className="text-2xl font-bold text-white">Team not found</h1>
-            <p className="mt-2 text-sm text-slate-300">This team does not exist in the current dataset.</p>
-            <Link
-              href="/teams"
-              className="mt-4 inline-flex rounded-xl border border-slate-700 bg-slate-950 px-4 py-2 text-sm font-medium text-slate-200 transition hover:border-sky-500 hover:bg-slate-800"
-            >
-              Back to Teams
-            </Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-
-  // Auto-clear success
-  useEffect(() => {
-    if (!successMessage) return;
-    const t = setTimeout(() => setSuccessMessage(''), 3000);
-    return () => clearTimeout(t);
-  }, [successMessage]);
-
-  function initials(name: string) {
-    return name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-            <p className="text-sm text-slate-400">Loading team...</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (teamNotFound) {
-    return (
-      <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-lg font-black text-white">Team not found</p>
-            <Link href="/teams" className="mt-4 inline-block text-sm text-sky-400 hover:text-sky-300">← Back to Teams</Link>
-          </div>
-        </div>
-      </main>
-    );
-  }
+  if (loading) return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="flex items-center gap-3">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+        <p className="text-sm text-slate-400">Loading team dashboard...</p>
+      </div>
+    </main>
+  );
 
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
@@ -704,194 +109,213 @@ export default function TeamProfilePage({ params }: PageProps) {
 
         {/* Header */}
         <div className="mb-8">
-          <Link href="/teams" className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-300">
-            ← Teams
-          </Link>
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-500/15 text-lg font-black text-sky-400">
-              {initials(teamName)}
-            </div>
+          <Link href="/teams" className="mb-4 inline-block text-xs font-semibold text-slate-500 hover:text-slate-300">← Teams</Link>
+          <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Team Overview</p>
-              <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white sm:text-4xl">{teamName}</h1>
-              {team && <p className="mt-1 text-sm text-slate-500">{team.sport !== '—' ? team.sport : 'Hockey'} • {team.season !== '—' ? team.season : ''}</p>}
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Team Dashboard</p>
+              <h1 className="mt-1 text-4xl font-black tracking-tight text-white">{teamName}</h1>
+              <p className="mt-1 text-sm text-slate-500">{athletes.length} players · 2026 Season</p>
             </div>
+            <Link href={`/attendance`} className="shrink-0 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-black text-sky-300 hover:bg-sky-500/20 transition">
+              Mark Attendance →
+            </Link>
           </div>
         </div>
 
-        {error && <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
-        {successMessage && <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
-
-        {/* Stats */}
-        <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[
-            { label: 'Players', value: athletes.length, color: 'sky' },
-            { label: 'Sessions Logged', value: attendanceSummary.totalSessions, color: 'emerald' },
-            { label: 'Attendance Rate', value: `${attendanceSummary.overallRate}%`, color: attendanceSummary.overallRate >= 80 ? 'emerald' : attendanceSummary.overallRate >= 60 ? 'amber' : 'red' },
-            { label: 'Perf. Records', value: performanceSummary.totalRecords, color: 'violet' },
-          ].map((s) => (
-            <div key={s.label} className={`rounded-2xl border bg-slate-900 p-4 ${
-              s.color === 'sky' ? 'border-sky-500/20' :
-              s.color === 'emerald' ? 'border-emerald-500/20' :
-              s.color === 'amber' ? 'border-amber-500/20' :
-              s.color === 'red' ? 'border-red-500/20' :
-              'border-violet-500/20'
-            }`}>
-              <p className={`text-3xl font-black ${
-                s.color === 'sky' ? 'text-sky-400' :
-                s.color === 'emerald' ? 'text-emerald-400' :
-                s.color === 'amber' ? 'text-amber-400' :
-                s.color === 'red' ? 'text-red-400' :
-                'text-violet-400'
-              }`}>{s.value}</p>
-              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{s.label}</p>
-            </div>
-          ))}
-        </section>
-
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-
-          {/* Squad */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Squad</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Players ({athletes.length})</h2>
-            </div>
-            {athletes.length === 0 ? (
-              <p className="text-sm text-slate-500">No players assigned to this team yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {athletes.map((athlete) => {
-                  const recs = attendanceByAthlete[athlete.id] || [];
-                  const present = recs.filter((r) => ['present','late'].includes(r.status.toLowerCase())).length;
-                  const rate = recs.length > 0 ? Math.round((present / recs.length) * 100) : null;
-                  return (
-                    <div key={athlete.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500/15 text-xs font-black text-sky-400">
-                        {initials(athlete.name)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <Link href={`/athletes/${athlete.id}`} className="block truncate text-sm font-bold text-white hover:text-sky-400">
-                          {athlete.name}
-                        </Link>
-                        {athlete.ageGroup && athlete.ageGroup !== '—' && (
-                          <p className="text-xs text-slate-500">{athlete.ageGroup}</p>
-                        )}
-                      </div>
-                      {rate !== null && (
-                        <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-black ${
-                          rate >= 80 ? 'bg-emerald-500/15 text-emerald-400' :
-                          rate >= 60 ? 'bg-amber-500/15 text-amber-400' :
-                          'bg-red-500/15 text-red-400'
-                        }`}>{rate}%</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+        {athletes.length === 0 ? (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
+            <p className="text-4xl mb-3">🏑</p>
+            <p className="text-lg font-black text-white">No players assigned</p>
+            <p className="mt-2 text-sm text-slate-500">Go to the Squad Board to assign players to this team.</p>
+            <Link href="/squad" className="mt-4 inline-block rounded-xl border border-sky-500 bg-sky-500/15 px-5 py-2.5 text-sm font-black text-sky-300">Open Squad Board →</Link>
           </div>
-
-          {/* Attendance summary */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Attendance</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Session Breakdown</h2>
+        ) : (
+          <>
+            {/* KPI row */}
+            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+              {[
+                { label: 'Squad Size', value: athletes.length, color: 'sky' },
+                { label: 'Available', value: available.length, color: 'emerald' },
+                { label: 'Injured', value: injured.length, color: 'red' },
+                { label: 'Modified', value: modified.length, color: 'amber' },
+                { label: 'Att Rate', value: teamAttRate !== null ? `${teamAttRate}%` : '—', color: teamAttRate === null ? 'slate' : teamAttRate >= 80 ? 'emerald' : teamAttRate >= 60 ? 'amber' : 'red' },
+                { label: 'Test Records', value: performance.length, color: 'violet' },
+              ].map((kpi) => (
+                <div key={kpi.label} className={`rounded-2xl border bg-slate-900 p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : kpi.color === 'amber' ? 'border-amber-500/20' : kpi.color === 'violet' ? 'border-violet-500/20' : 'border-slate-800'}`}>
+                  <p className={`text-2xl font-black sm:text-3xl ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : kpi.color === 'amber' ? 'text-amber-400' : kpi.color === 'violet' ? 'text-violet-400' : 'text-white'}`}>{kpi.value}</p>
+                  <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
+                </div>
+              ))}
             </div>
-            {attendanceSummary.totalSessions === 0 ? (
-              <p className="text-sm text-slate-500">No attendance records yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {[
-                  { label: 'Present', value: attendanceSummary.present, color: 'emerald' },
-                  { label: 'Late', value: attendanceSummary.late, color: 'amber' },
-                  { label: 'Absent', value: attendanceSummary.absent, color: 'red' },
-                  { label: 'Excused', value: attendanceSummary.excused, color: 'sky' },
-                ].map((s) => {
-                  const pct = attendanceSummary.totalSessions > 0 ? Math.round((s.value / attendanceSummary.totalSessions) * 100) : 0;
-                  return (
-                    <div key={s.label}>
-                      <div className="mb-1.5 flex items-center justify-between">
-                        <p className="text-sm font-semibold text-slate-300">{s.label}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-slate-500">{s.value} records</span>
-                          <span className={`text-sm font-black ${
-                            s.color === 'emerald' ? 'text-emerald-400' :
-                            s.color === 'amber' ? 'text-amber-400' :
-                            s.color === 'red' ? 'text-red-400' : 'text-sky-400'
-                          }`}>{pct}%</span>
+
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+
+              {/* LEFT — Main content */}
+              <div className="space-y-6 xl:col-span-2">
+
+                {/* Availability Board */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                  <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Readiness</p><h2 className="mt-0.5 text-lg font-black text-white">Availability Board</h2></div>
+                  <div className="space-y-3">
+                    {[
+                      { label: 'Available', athletes: available, color: 'emerald', icon: '🟢' },
+                      { label: 'Modified', athletes: modified, color: 'amber', icon: '🟡' },
+                      { label: 'Injured', athletes: injured, color: 'red', icon: '🔴' },
+                      { label: 'Resting', athletes: resting, color: 'sky', icon: '⚪' },
+                    ].filter((g) => g.athletes.length > 0).map((group) => (
+                      <div key={group.label}>
+                        <p className={`mb-2 text-xs font-black uppercase tracking-wide ${group.color === 'emerald' ? 'text-emerald-400' : group.color === 'amber' ? 'text-amber-400' : group.color === 'red' ? 'text-red-400' : 'text-sky-400'}`}>
+                          {group.icon} {group.label} ({group.athletes.length})
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {group.athletes.map((a) => (
+                            <Link key={a.id} href={`/athletes/${a.id}`}
+                              className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition hover:scale-[1.02] ${group.color === 'emerald' ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-300' : group.color === 'amber' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300' : group.color === 'red' ? 'border-red-500/20 bg-red-500/5 text-red-300' : 'border-sky-500/20 bg-sky-500/5 text-sky-300'}`}>
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || a.name || '?')}</span>
+                              {a.full_name || a.name}
+                            </Link>
+                          ))}
                         </div>
                       </div>
-                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
-                        <div className={`h-full rounded-full ${
-                          s.color === 'emerald' ? 'bg-emerald-500' :
-                          s.color === 'amber' ? 'bg-amber-500' :
-                          s.color === 'red' ? 'bg-red-500' : 'bg-sky-500'
-                        }`} style={{ width: `${pct}%` }} />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Attendance Intelligence */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                  <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Commitment</p><h2 className="mt-0.5 text-lg font-black text-white">Attendance Intelligence</h2></div>
+
+                  {/* Team rate bar */}
+                  {teamAttRate !== null && (
+                    <div className="mb-5 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                      <div className="mb-1.5 flex justify-between text-sm">
+                        <span className="font-semibold text-slate-300">Team Attendance Rate</span>
+                        <span className={`font-black ${teamAttRate >= 80 ? 'text-emerald-400' : teamAttRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{teamAttRate}%</span>
+                      </div>
+                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
+                        <div className={`h-full rounded-full ${teamAttRate >= 80 ? 'bg-emerald-500' : teamAttRate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${teamAttRate}%` }} />
                       </div>
                     </div>
-                  );
-                })}
+                  )}
 
-                <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/50 p-3 text-center">
-                  <p className="text-2xl font-black text-white">{attendanceSummary.overallRate}%</p>
-                  <p className="text-xs text-slate-500">Overall attendance rate</p>
-                </div>
-              </div>
-            )}
-          </div>
+                  {/* Alerts */}
+                  {lowAttendance.length > 0 && (
+                    <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
+                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-red-400">⚠️ Attention Required</p>
+                      <div className="space-y-1.5">
+                        {lowAttendance.map((a) => (
+                          <div key={a.id} className="flex items-center justify-between">
+                            <Link href={`/athletes/${a.id}`} className="text-sm text-red-200 hover:text-white">{a.full_name || a.name}</Link>
+                            <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-300">{a.rate}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
-          {/* Performance summary */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 xl:col-span-2">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Testing</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Performance Overview</h2>
-            </div>
-            {performanceSummary.totalRecords === 0 ? (
-              <p className="text-sm text-slate-500">No performance records yet. Run a testing session to see data here.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-slate-800">
-                      <th className="py-3 pr-4 text-left text-xs font-black uppercase tracking-wide text-slate-500">Athlete</th>
-                      {performanceSummary.testTypes.map((t) => (
-                        <th key={t} className="px-2 py-3 text-center text-[10px] font-black uppercase tracking-wide text-slate-500 whitespace-nowrap">{t}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-900">
-                    {athletes.map((athlete) => (
-                      <tr key={athlete.id} className="hover:bg-slate-800/30 transition">
-                        <td className="py-3 pr-4">
-                          <Link href={`/athletes/${athlete.id}`} className="text-sm font-bold text-white hover:text-sky-400">
-                            {athlete.name}
-                          </Link>
-                        </td>
-                        {performanceSummary.testTypes.map((testType) => {
-                          const recs = (performanceByAthlete[athlete.id] || []).filter((r) => r.test_type === testType);
-                          const latest = [...recs].sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
-                          if (!latest) return (
-                            <td key={testType} className="px-2 py-3 text-center">
-                              <span className="text-xs text-slate-700">—</span>
-                            </td>
-                          );
-                          const isQual = latest.unit && !['s','m','cm','reps','kg','%'].includes(latest.unit);
-                          const display = isQual ? latest.unit : `${latest.result}${latest.unit ? ` ${latest.unit}` : ''}`;
-                          return (
-                            <td key={testType} className="px-2 py-3 text-center">
-                              <span className="text-xs font-bold text-white">{display}</span>
-                            </td>
-                          );
-                        })}
-                      </tr>
+                  {/* Individual attendance */}
+                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+                    {athleteAttendance.sort((a, b) => (b.rate || 0) - (a.rate || 0)).map((a) => (
+                      <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || a.name || '?')}</div>
+                        <div className="min-w-0 flex-1">
+                          <Link href={`/athletes/${a.id}`} className="text-sm font-semibold text-white hover:text-sky-300 truncate block">{a.full_name || a.name}</Link>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {a.rate !== null ? (
+                              <div className="flex items-center gap-1.5 flex-1">
+                                <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-800 max-w-20">
+                                  <div className={`h-full rounded-full ${a.rate >= 80 ? 'bg-emerald-500' : a.rate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${a.rate}%` }} />
+                                </div>
+                                <span className={`text-[10px] font-black ${a.rate >= 80 ? 'text-emerald-400' : a.rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{a.rate}%</span>
+                              </div>
+                            ) : <span className="text-[10px] text-slate-600">No data</span>}
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-[10px] text-slate-600">{a.total} sessions</span>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                </div>
+
+                {/* Team Performance Averages */}
+                {Object.keys(teamAvgByTest).length > 0 && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                    <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Team Performance</p><h2 className="mt-0.5 text-lg font-black text-white">Average Test Results</h2></div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {Object.entries(teamAvgByTest).map(([test, data]) => (
+                        <div key={test} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                          <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{test}</p>
+                          <p className="mt-1 text-2xl font-black text-white">{data.avg}{data.unit}</p>
+                          <p className="mt-0.5 text-[10px] text-slate-600">Team average</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>
+
+              {/* RIGHT — Squad list + leaderboard */}
+              <div className="space-y-6">
+
+                {/* Full squad */}
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                  <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Squad</p><h2 className="mt-0.5 text-lg font-black text-white">{athletes.length} Players</h2></div>
+                  <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
+                    {athletes.map((a) => {
+                      const avStatus = a.availability || 'Available';
+                      const dot = avStatus === 'Available' ? 'bg-emerald-500' : avStatus === 'Injured' ? 'bg-red-500' : avStatus === 'Modified' ? 'bg-amber-500' : 'bg-sky-500';
+                      return (
+                        <Link key={a.id} href={`/athletes/${a.id}`}
+                          className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 hover:border-slate-600 transition">
+                          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                            {initials(a.full_name || a.name || '?')}
+                            <div className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-slate-950 ${dot}`} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-white">{a.full_name || a.name}</p>
+                            <p className="text-[10px] text-slate-500">{a.position || a.age_group || '—'}</p>
+                          </div>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0 text-slate-600"><path d="M9 18l6-6-6-6"/></svg>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Attendance leaderboard */}
+                {topAttendance.length > 0 && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                    <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Leaderboard</p><h2 className="mt-0.5 text-lg font-black text-white">Top Attendance</h2></div>
+                    <div className="space-y-2">
+                      {topAttendance.map((a, i) => (
+                        <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${i === 0 ? 'bg-amber-500/20 text-amber-300' : i === 1 ? 'bg-slate-700 text-slate-300' : i === 2 ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-500'}`}>{i + 1}</span>
+                          <Link href={`/athletes/${a.id}`} className="flex-1 text-sm font-semibold text-white hover:text-sky-300 truncate">{a.full_name || a.name}</Link>
+                          <span className={`text-sm font-black ${a.rate >= 90 ? 'text-emerald-400' : a.rate >= 80 ? 'text-sky-400' : 'text-amber-400'}`}>{a.rate}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No data alert */}
+                {noData.length > 0 && (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+                    <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Missing Data</p><h2 className="mt-0.5 text-lg font-black text-white">No Records Yet</h2></div>
+                    <div className="space-y-1.5">
+                      {noData.map((a) => (
+                        <Link key={a.id} href={`/athletes/${a.id}`} className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 hover:border-slate-600 transition">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-500">{initials(a.full_name || a.name || '?')}</div>
+                          <p className="text-sm text-slate-400">{a.full_name || a.name}</p>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </main>
   );
