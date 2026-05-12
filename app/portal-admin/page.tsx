@@ -480,7 +480,6 @@ async function handleLogout() {
   async function runAction(action: () => Promise<void>) {
     setBusy(true);
     setError('');
-    setSuccessMessage('');
     try {
       await action();
     } finally {
@@ -1448,8 +1447,8 @@ async function handleLogout() {
             Loading portal admin...
           </div>
         ) : (
-          <div className="space-y-8">
-            <section id="sponsors-section" style={{display: activeTab === 'sponsors' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <div>
+            <section id="sponsors-section" className={activeTab === 'sponsors' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Sponsor</h2>
                 <form onSubmit={handleCreateSponsor} className="space-y-4">
@@ -1661,7 +1660,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="week-section" style={{display: activeTab === 'week' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="week-section" className={activeTab === 'week' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Week Plan</h2>
                 <form onSubmit={handleCreateWeekPlan} className="space-y-4">
@@ -1966,7 +1965,7 @@ async function handleLogout() {
               )}
             </section>
 
-            <section id="reminders-section" style={{display: activeTab === 'reminders' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="reminders-section" className={activeTab === 'reminders' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Reminder</h2>
                 <form onSubmit={handleCreateReminder} className="space-y-4">
@@ -2127,7 +2126,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="fixtures-section" style={{display: activeTab === 'fixtures' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="fixtures-section" className={activeTab === 'fixtures' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Fixture</h2>
                 <form onSubmit={handleCreateFixture} className="space-y-4">
@@ -2333,7 +2332,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="results-section" style={{display: activeTab === 'results' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="results-section" className={activeTab === 'results' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Result</h2>
                 <form onSubmit={handleCreateResult} className="space-y-4">
@@ -2546,7 +2545,7 @@ async function handleLogout() {
               </div>
             </section>
 
-            <section id="programs-section" style={{display: activeTab === 'programs' ? 'grid' : 'none'}} className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+            <section id="programs-section" className={activeTab === 'programs' ? 'grid grid-cols-1 gap-6 xl:grid-cols-2' : 'hidden'}>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
                 <h2 className="mb-4 text-lg font-semibold">Create Program</h2>
                 <form onSubmit={handleCreateProgram} className="space-y-4">
