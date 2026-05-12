@@ -135,14 +135,14 @@ export default function CoachNav() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                  className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all duration-150 ${
                     active
                       ? 'bg-sky-500/15 text-sky-300'
                       : 'text-slate-400 hover:bg-white/5 hover:text-white'
                   }`}
                 >
                   <span className={active ? 'text-sky-400' : ''}>{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span>{item.label === "Portal Admin" ? "Admin" : item.label}</span>
                 </Link>
               );
             })}
