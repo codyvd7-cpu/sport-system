@@ -197,13 +197,12 @@ export default function PortalPage() {
                 ) : (
                   <>
                     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                      <div className="relative h-44 w-full overflow-hidden rounded-2xl bg-white sm:h-48">
+                      <div className="flex h-44 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#d4d0cb] sm:h-48">
                         {activeSponsor?.image_url ? (
                           <img
                             src={activeSponsor.image_url}
                             alt={activeSponsor.name || 'Sponsor'}
-                            className="absolute inset-0 h-full w-full object-cover"
-                            style={{ mixBlendMode: 'multiply' }}
+                            className="h-full w-full object-cover"
                           />
                         ) : (
                           <p className="text-center text-lg font-black text-slate-700">{activeSponsor?.name || 'Sponsor'}</p>
