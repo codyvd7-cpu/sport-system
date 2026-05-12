@@ -207,7 +207,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
                         {lowAttendance.map((a) => (
                           <div key={a.id} className="flex items-center justify-between">
                             <Link href={`/athletes/${a.id}`} className="text-sm text-red-200 hover:text-white">{a.full_name}</Link>
-                            <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-300">{a.rate}%</span>
+                            <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-300">{a.rate ?? 0}%</span>
                           </div>
                         ))}
                       </div>
@@ -225,9 +225,9 @@ export default function TeamDashboardPage({ params }: PageProps) {
                             {a.rate !== null ? (
                               <div className="flex items-center gap-1.5 flex-1">
                                 <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-800 max-w-20">
-                                  <div className={`h-full rounded-full ${a.rate >= 80 ? 'bg-emerald-500' : a.rate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${a.rate}%` }} />
+                                  <div className={`h-full rounded-full ${(a.rate ?? 0) >= 80 ? 'bg-emerald-500' : (a.rate ?? 0) >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${a.rate ?? 0}%` }} />
                                 </div>
-                                <span className={`text-[10px] font-black ${a.rate >= 80 ? 'text-emerald-400' : a.rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{a.rate}%</span>
+                                <span className={`text-[10px] font-black ${(a.rate ?? 0) >= 80 ? 'text-emerald-400' : (a.rate ?? 0) >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{a.rate ?? 0}%</span>
                               </div>
                             ) : <span className="text-[10px] text-slate-600">No data</span>}
                           </div>
@@ -292,7 +292,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
                         <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
                           <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${i === 0 ? 'bg-amber-500/20 text-amber-300' : i === 1 ? 'bg-slate-700 text-slate-300' : i === 2 ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-500'}`}>{i + 1}</span>
                           <Link href={`/athletes/${a.id}`} className="flex-1 text-sm font-semibold text-white hover:text-sky-300 truncate">{a.full_name}</Link>
-                          <span className={`text-sm font-black ${a.rate >= 90 ? 'text-emerald-400' : a.rate >= 80 ? 'text-sky-400' : 'text-amber-400'}`}>{a.rate}%</span>
+                          <span className={`text-sm font-black ${(a.rate ?? 0) >= 90 ? 'text-emerald-400' : (a.rate ?? 0) >= 80 ? 'text-sky-400' : 'text-amber-400'}`}>{a.rate ?? 0}%</span>
                         </div>
                       ))}
                     </div>
