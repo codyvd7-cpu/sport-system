@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 
 type Athlete = {
@@ -36,13 +37,13 @@ function initials(name: string) {
 }
 
 export default function SquadBoardPage() {
+  const { showToast } = useToast();
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [ageFilter, setAgeFilter] = useState('All');
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
-  const [success, setSuccess] = useState('');
   const [view, setView] = useState<'assign' | 'overview'>('assign');
 
   useEffect(() => {
@@ -50,11 +51,7 @@ export default function SquadBoardPage() {
       .then(({ data }) => { if (data) setAthletes(data as Athlete[]); setLoading(false); });
   }, []);
 
-  useEffect(() => {
-    if (!success) return;
-    const t = setTimeout(() => setSuccess(''), 3000);
-    return () => clearTimeout(t);
-  }, [success]);
+
 
   async function assignTeam(athleteId: string, team: string | null) {
     setSaving(athleteId);
