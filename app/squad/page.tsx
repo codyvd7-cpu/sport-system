@@ -61,7 +61,7 @@ export default function SquadBoardPage() {
     await supabase.from('athletes').update({ team }).eq('id', athleteId);
     setAthletes((prev) => prev.map((a) => (a.id === athleteId ? { ...a, team } : a)));
     setSaving(null);
-    if (team) setSuccess(`Assigned to ${team}`);
+    if (team) showToast(`Assigned to ${team}`);
   }
 
   async function bulkAssign(team: string) {
@@ -72,7 +72,7 @@ export default function SquadBoardPage() {
     await supabase.from('athletes').update({ team }).in('id', ids);
     setAthletes((prev) => prev.map((a) => (ids.includes(a.id) ? { ...a, team } : a)));
     setSaving(null);
-    setSuccess(`${ids.length} players assigned to ${team}`);
+    showToast(`${ids.length} players assigned to ${team}`);
   }
 
   const unassigned = useMemo(() => athletes.filter((a) => !a.team || !ALL_TEAMS.includes(a.team)), [athletes]);
@@ -113,7 +113,6 @@ export default function SquadBoardPage() {
           <p className="mt-1 text-sm text-slate-500">Assign players to their teams for the season.</p>
         </div>
 
-        {success && <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{success}</div>}
 
         {/* Progress */}
         <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">

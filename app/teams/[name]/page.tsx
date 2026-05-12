@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import * as React from 'react';
+import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;

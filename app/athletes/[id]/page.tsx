@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import * as React from 'react';
+import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { safeUUID } from '@/lib/uuid';
@@ -131,6 +132,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
   const resolvedParams = React.use(params);
   const athleteId = resolvedParams.id;
   const router = useRouter();
+  const { showToast } = useToast();
 
   // ── STATE ────────────────────────────────────────────────────
   const [athleteRows, setAthleteRows] = React.useState<GenericRow[]>([]);
@@ -139,7 +141,6 @@ export default function AthleteProfilePage({ params }: PageProps) {
   const [notes, setNotes] = React.useState<GenericRow[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
-  const [successMessage, setSuccessMessage] = React.useState('');
 
   // Edit athlete
   const [isEditingAthlete, setIsEditingAthlete] = React.useState(false);
@@ -200,7 +201,6 @@ export default function AthleteProfilePage({ params }: PageProps) {
   const [savingFeedback, setSavingFeedback] = React.useState(false);
 
   // ── EFFECTS ──────────────────────────────────────────────────
-  React.useEffect(() => { if (!successMessage) return; const t = setTimeout(() => setSuccessMessage(''), 8000); return () => clearTimeout(t); }, [successMessage]);
 
   async function loadPageData() {
     setLoading(true);
@@ -293,7 +293,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
     const payload = buildAthleteUpdatePayload(athlete.raw, { name: athleteNameInput.trim(), team: athleteTeamInput.trim(), sport: athleteSportInput.trim(), ageGroup: athleteAgeGroupInput.trim() });
     const { error: err } = await supabase.from('athletes').update(payload).eq('id', athlete.id);
     if (err) { setError(err.message); setSavingAthlete(false); return; }
-    setSuccessMessage('Profile updated.'); setIsEditingAthlete(false); await loadPageData(); setSavingAthlete(false);
+    showToast('Profile updated'); setIsEditingAthlete(false); await loadPageData(); setSavingAthlete(false);
   }
   async function handleDeleteAthlete() {
     if (!athlete || !confirm(`Delete ${athlete.name}?`)) return;
@@ -305,14 +305,14 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setSavingAvailability(true);
     await supabase.from('athletes').update({ availability: status }).eq('id', athlete.id);
     setAvailability(status);
-    setSuccessMessage(`Status: ${status}`);
+    showToast(`Status: ${status}`);
     setSavingAvailability(false);
   }
   async function handleSavePosition() {
     if (!athlete) return;
     await supabase.from('athletes').update({ position: positionInput.trim() }).eq('id', athlete.id);
     setEditingPosition(false);
-    setSuccessMessage('Position saved.');
+    showToast('Position saved');
     await loadPageData();
   }
   async function handleGenerateCode() {
@@ -320,7 +320,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setGeneratingCode(true);
     const code = `SBC${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
     await supabase.from('athletes').update({ player_code: code }).eq('id', athlete.id);
-    setSuccessMessage(`Code: ${code}`);
+    showToast(`Access code: ${code}`);
     await loadPageData();
     setGeneratingCode(false);
   }
@@ -329,7 +329,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setSavingQuickAttendance(true);
     const { error: err } = await supabase.from('attendance').insert([{ athlete_id: athlete.id, session_date: quickAttendanceDate, session_type: quickAttendanceSessionType, status: quickAttendanceStatus }]);
     if (err) { setError(err.message); setSavingQuickAttendance(false); return; }
-    setSuccessMessage('Added.'); await loadPageData(); setSavingQuickAttendance(false);
+    showToast('Session added'); await loadPageData(); setSavingQuickAttendance(false);
   }
   async function handleQuickAddPerformance(e: React.FormEvent) {
     e.preventDefault(); if (!athlete || !quickPerformanceTestType.trim()) { setError('Test type required.'); return; }
@@ -337,14 +337,14 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setSavingQuickPerformance(true);
     const { error: err } = await supabase.from('performance_tests').insert([{ athlete_id: athlete.id, test_date: quickPerformanceDate, test_type: quickPerformanceTestType.trim(), value: num, unit: quickPerformanceUnit.trim(), notes: quickPerformanceNotes.trim() }]);
     if (err) { setError(err.message); setSavingQuickPerformance(false); return; }
-    setSuccessMessage('Added.'); setQuickPerformanceTestType(''); setQuickPerformanceResult(''); setQuickPerformanceUnit(''); await loadPageData(); setSavingQuickPerformance(false);
+    showToast('Session added'); setQuickPerformanceTestType(''); setQuickPerformanceResult(''); setQuickPerformanceUnit(''); await loadPageData(); setSavingQuickPerformance(false);
   }
   function startAttendanceEdit(r: AttendanceRecord) { setEditingAttendanceId(r.id); setEditAttendanceDate(r.session_date); setEditAttendanceSessionType(r.session_type || 'Training'); setEditAttendanceStatus(formatStatus(r.status) || 'Present'); }
   function cancelAttendanceEdit() { setEditingAttendanceId(null); }
   async function handleSaveAttendanceEdit(id: string) {
     setSavingAttendanceEdit(true);
     await supabase.from('attendance').update({ session_date: editAttendanceDate, session_type: editAttendanceSessionType, status: editAttendanceStatus }).eq('id', id);
-    setSuccessMessage('Updated.'); cancelAttendanceEdit(); await loadPageData(); setSavingAttendanceEdit(false);
+    showToast('Updated'); cancelAttendanceEdit(); await loadPageData(); setSavingAttendanceEdit(false);
   }
   async function handleDeleteAttendance(id: string) { if (!confirm('Delete?')) return; await supabase.from('attendance').delete().eq('id', id); await loadPageData(); }
   function startPerformanceEdit(r: PerformanceRecord) { setEditingPerformanceId(r.id); setEditPerformanceDate(r.test_date); setEditPerformanceTestType(r.test_type); setEditPerformanceResult(r.value !== null ? String(r.value) : ''); setEditPerformanceUnit(r.unit); setEditPerformanceNotes(r.notes); }
@@ -353,7 +353,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
     const num = Number(editPerformanceResult); if (Number.isNaN(num)) { setError('Result must be a number.'); return; }
     setSavingPerformanceEdit(true);
     await supabase.from('performance_tests').update({ test_date: editPerformanceDate, test_type: editPerformanceTestType.trim(), value: num, unit: editPerformanceUnit.trim(), notes: editPerformanceNotes.trim() }).eq('id', id);
-    setSuccessMessage('Updated.'); cancelPerformanceEdit(); await loadPageData(); setSavingPerformanceEdit(false);
+    showToast('Updated'); cancelPerformanceEdit(); await loadPageData(); setSavingPerformanceEdit(false);
   }
   async function handleDeletePerformance(id: string) { if (!confirm('Delete?')) return; await supabase.from('performance_tests').delete().eq('id', id); await loadPageData(); }
   async function handleAddNote(e: React.FormEvent) {
@@ -361,7 +361,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setSavingNote(true);
     const { data: { session } } = await supabase.auth.getSession();
     await supabase.from('coach_notes').insert([{ athlete_id: athlete.id, note: newNote.trim(), author_email: session?.user?.email || 'Coach', is_feedback: false }]);
-    setNewNote(''); setSuccessMessage('Note saved.'); await loadPageData(); setSavingNote(false);
+    setNewNote(''); showToast('Note saved'); await loadPageData(); setSavingNote(false);
   }
   async function handleDeleteNote(id: string) { if (!confirm('Delete?')) return; await supabase.from('coach_notes').delete().eq('id', id); await loadPageData(); }
   async function handleSaveFeedback() {
@@ -369,7 +369,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setSavingFeedback(true);
     if (latestFeedback) await supabase.from('coach_notes').delete().eq('id', latestFeedback.id);
     await supabase.from('coach_notes').insert([{ athlete_id: athlete.id, note: fbComment, strengths: fbStrengths, current_focus: fbFocus, coach_comment: fbComment, is_feedback: true, author_email: '' }]);
-    setEditingFeedback(false); setSavingFeedback(false); setSuccessMessage('Feedback saved.'); await loadPageData();
+    setEditingFeedback(false); setSavingFeedback(false); showToast('Feedback saved'); await loadPageData();
   }
 
   // ── EARLY RETURNS ────────────────────────────────────────────
@@ -497,7 +497,6 @@ export default function AthleteProfilePage({ params }: PageProps) {
       {/* CONTENT */}
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {error && <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
-        {successMessage && <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
         {/* Player Code */}
         <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -507,8 +506,8 @@ export default function AthleteProfilePage({ params }: PageProps) {
               {playerCode ? (
                 <div className="mt-2 flex flex-wrap items-center gap-3">
                   <p className="text-2xl font-black tracking-[0.3em] text-white">{playerCode}</p>
-                  <button onClick={() => { navigator.clipboard.writeText(playerCode); setSuccessMessage('Code copied!'); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">Copy Code</button>
-                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/player`); setSuccessMessage('Link copied!'); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">Copy Link</button>
+                  <button onClick={() => { navigator.clipboard.writeText(playerCode); showToast('Code copied!'); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">Copy Code</button>
+                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/player`); showToast('Link copied!'); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">Copy Link</button>
                 </div>
               ) : <p className="mt-1 text-sm text-slate-500">No code yet — player can't access portal.</p>}
             </div>

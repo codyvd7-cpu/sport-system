@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
@@ -60,6 +61,7 @@ function getTierTextColor(testName: string, value: number, ageGroup: string) {
 
 export default function PerformancePage() {
   // Step state
+  const { showToast } = useToast();
   const [step, setStep] = React.useState<'setup' | 'capture' | 'done'>('setup');
 
   // Setup
@@ -76,13 +78,8 @@ export default function PerformancePage() {
   const [saving, setSaving] = React.useState<Record<string, Record<string, boolean>>>({});
   const [loadingAthletes, setLoadingAthletes] = React.useState(false);
   const [activeAthlete, setActiveAthlete] = React.useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = React.useState('');
 
-  React.useEffect(() => {
-    if (!successMessage) return;
-    const t = setTimeout(() => setSuccessMessage(''), 3000);
-    return () => clearTimeout(t);
-  }, [successMessage]);
+
 
   function toggleTest(name: string) {
     setSelectedTests((prev) => prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]);
@@ -182,7 +179,6 @@ export default function PerformancePage() {
           )}
         </div>
 
-        {successMessage && <div className="mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
         {/* ── SETUP STEP ─────────────────────────────────── */}
         {step === 'setup' && (
