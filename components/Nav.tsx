@@ -36,12 +36,20 @@ export default function Nav() {
             </div>
           </Link>
 
-          <Link
-            href="/login"
-            className="rounded-2xl border border-sky-500/80 bg-sky-500/10 px-3 py-2 text-xs font-black text-slate-100 shadow-lg shadow-sky-500/10 transition hover:bg-sky-500 hover:text-slate-950 sm:px-5 sm:py-3 sm:text-sm"
-          >
-            Coach Login
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/player"
+              className="rounded-2xl border border-sky-500/80 bg-sky-500/10 px-3 py-2 text-xs font-black text-sky-300 shadow-lg shadow-sky-500/10 transition hover:bg-sky-500 hover:text-slate-950 sm:px-5 sm:py-3 sm:text-sm"
+            >
+              Player Login
+            </Link>
+            <Link
+              href="/login"
+              className="rounded-2xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-black text-slate-300 transition hover:text-white sm:px-5 sm:py-3 sm:text-sm"
+            >
+              Coach Login
+            </Link>
+          </div>
         </div>
 
         <div className="mt-4 hidden gap-2 sm:flex">
