@@ -145,15 +145,21 @@ export default function PortalPage() {
           {/* Top bar */}
           <div className="flex items-center justify-between border-b border-white/5 py-4">
             <div className="flex items-center gap-2.5">
-              <span className="text-xl">🏑</span>
+              <span className="text-2xl">🏑</span>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-400">St Benedict's College</p>
-                <p className="text-[9px] uppercase tracking-widest text-slate-600">Hockey Department</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">St Benedict's College</p>
+                <p className="text-[10px] uppercase tracking-widest text-slate-400">Hockey Department</p>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300">Live</span>
+            <div className="flex items-center gap-3">
+              <a href="/player"
+                className="rounded-full border border-sky-500/30 bg-sky-500/10 px-4 py-2 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">
+                Player Login →
+              </a>
+              <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-300">Live</span>
+              </div>
             </div>
           </div>
 
@@ -191,12 +197,12 @@ export default function PortalPage() {
                 ) : (
                   <>
                     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                      <div className="flex h-40 items-center justify-center bg-white px-6 py-5 sm:h-44 sm:px-8 sm:py-6">
+                      <div className="flex h-44 items-center justify-center bg-white p-4 sm:h-48">
                         {activeSponsor?.image_url ? (
                           <img
                             src={activeSponsor.image_url}
                             alt={activeSponsor.name || 'Sponsor'}
-                            className="block max-h-24 w-auto max-w-[80%] object-contain sm:max-h-28 sm:max-w-[85%]"
+                            className="block h-full w-full object-contain"
                             style={{ mixBlendMode: 'multiply' }}
                           />
                         ) : (
@@ -361,7 +367,7 @@ export default function PortalPage() {
                           <p className="mt-1 text-xs text-slate-500">{dateLabel(result.result_date)}</p>
                           {result.goal_scorers && (
                             <p className="mt-2 flex items-center gap-2 text-xs text-slate-400">
-                              <span>⚽</span><span>{result.goal_scorers}</span>
+                              <span>🏑</span><span>{result.goal_scorers}</span>
                             </p>
                           )}
                         </div>
