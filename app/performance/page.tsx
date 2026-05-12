@@ -391,7 +391,7 @@ export default function PerformancePage() {
             )}
 
             {/* Done button */}
-            <button onClick={() => { setStep('done'); setSuccessMessage('Session saved!'); }}
+            <button onClick={() => { setStep('done'); showToast('Session saved!'); }}
               className="mt-6 w-full rounded-2xl border border-emerald-500 bg-emerald-500/15 py-4 text-lg font-black text-emerald-300 hover:bg-emerald-500/25 transition">
               Finish Session — {completedCount}/{athletes.length} complete
             </button>
