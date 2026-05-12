@@ -47,14 +47,14 @@ export default function TeamDashboardPage({ params }: PageProps) {
   const resting = athletes.filter((a) => a.availability === 'Resting');
 
   const athleteAttendance = React.useMemo(() => {
-    return athletes.map((a) => {
+    return athletes.map((a: Row) => {
       const att = attendance.filter((r) => r.athlete_id === a.id);
       const total = att.length;
       const present = att.filter((r) => ['present', 'late'].includes(r.status?.toLowerCase() || '')).length;
       const absent = att.filter((r) => r.status?.toLowerCase() === 'absent').length;
       const rate = total > 0 ? Math.round((present / total) * 100) : null;
       const lastSession = att[0]?.session_date || null;
-      return { ...a, total, present, absent, rate, lastSession };
+      return { id: a.id as string, full_name: (a.full_name || a.name || '') as string, availability: (a.availability || 'Available') as string, position: (a.position || '') as string, total, present, absent, rate, lastSession };
     });
   }, [athletes, attendance]);
 
