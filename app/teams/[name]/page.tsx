@@ -54,7 +54,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
       const absent = att.filter((r) => r.status?.toLowerCase() === 'absent').length;
       const rate = total > 0 ? Math.round((present / total) * 100) : null;
       const lastSession = att[0]?.session_date || null;
-      return { id: a.id as string, full_name: (a.full_name || a.name || '') as string, availability: (a.availability || 'Available') as string, position: (a.position || '') as string, total, present, absent, rate, lastSession };
+      return { id: a.id as string, full_name: (a.full_name || '') as string, availability: (a.availability || 'Available') as string, position: (a.position || '') as string, total, present, absent, rate, lastSession };
     });
   }, [athletes, attendance]);
 
@@ -172,8 +172,8 @@ export default function TeamDashboardPage({ params }: PageProps) {
                           {group.athletes.map((a) => (
                             <Link key={a.id} href={`/athletes/${a.id}`}
                               className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition hover:scale-[1.02] ${group.color === 'emerald' ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-300' : group.color === 'amber' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300' : group.color === 'red' ? 'border-red-500/20 bg-red-500/5 text-red-300' : 'border-sky-500/20 bg-sky-500/5 text-sky-300'}`}>
-                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || a.name || '?')}</span>
-                              {a.full_name || a.name}
+                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || '?')}</span>
+                              {a.full_name}
                             </Link>
                           ))}
                         </div>
@@ -206,7 +206,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
                       <div className="space-y-1.5">
                         {lowAttendance.map((a) => (
                           <div key={a.id} className="flex items-center justify-between">
-                            <Link href={`/athletes/${a.id}`} className="text-sm text-red-200 hover:text-white">{a.full_name || a.name}</Link>
+                            <Link href={`/athletes/${a.id}`} className="text-sm text-red-200 hover:text-white">{a.full_name}</Link>
                             <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-300">{a.rate}%</span>
                           </div>
                         ))}
@@ -218,9 +218,9 @@ export default function TeamDashboardPage({ params }: PageProps) {
                   <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                     {athleteAttendance.sort((a, b) => (b.rate || 0) - (a.rate || 0)).map((a) => (
                       <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || a.name || '?')}</div>
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || '?')}</div>
                         <div className="min-w-0 flex-1">
-                          <Link href={`/athletes/${a.id}`} className="text-sm font-semibold text-white hover:text-sky-300 truncate block">{a.full_name || a.name}</Link>
+                          <Link href={`/athletes/${a.id}`} className="text-sm font-semibold text-white hover:text-sky-300 truncate block">{a.full_name}</Link>
                           <div className="flex items-center gap-2 mt-0.5">
                             {a.rate !== null ? (
                               <div className="flex items-center gap-1.5 flex-1">
@@ -269,11 +269,11 @@ export default function TeamDashboardPage({ params }: PageProps) {
                         <Link key={a.id} href={`/athletes/${a.id}`}
                           className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 hover:border-slate-600 transition">
                           <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
-                            {initials(a.full_name || a.name || '?')}
+                            {initials(a.full_name || '?')}
                             <div className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-slate-950 ${dot}`} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-white">{a.full_name || a.name}</p>
+                            <p className="truncate text-sm font-semibold text-white">{a.full_name}</p>
                             <p className="text-[10px] text-slate-500">{a.position || a.age_group || '—'}</p>
                           </div>
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0 text-slate-600"><path d="M9 18l6-6-6-6"/></svg>
@@ -291,7 +291,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
                       {topAttendance.map((a, i) => (
                         <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
                           <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${i === 0 ? 'bg-amber-500/20 text-amber-300' : i === 1 ? 'bg-slate-700 text-slate-300' : i === 2 ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-500'}`}>{i + 1}</span>
-                          <Link href={`/athletes/${a.id}`} className="flex-1 text-sm font-semibold text-white hover:text-sky-300 truncate">{a.full_name || a.name}</Link>
+                          <Link href={`/athletes/${a.id}`} className="flex-1 text-sm font-semibold text-white hover:text-sky-300 truncate">{a.full_name}</Link>
                           <span className={`text-sm font-black ${a.rate >= 90 ? 'text-emerald-400' : a.rate >= 80 ? 'text-sky-400' : 'text-amber-400'}`}>{a.rate}%</span>
                         </div>
                       ))}
@@ -306,8 +306,8 @@ export default function TeamDashboardPage({ params }: PageProps) {
                     <div className="space-y-1.5">
                       {noData.map((a) => (
                         <Link key={a.id} href={`/athletes/${a.id}`} className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 hover:border-slate-600 transition">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-500">{initials(a.full_name || a.name || '?')}</div>
-                          <p className="text-sm text-slate-400">{a.full_name || a.name}</p>
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-500">{initials(a.full_name || '?')}</div>
+                          <p className="text-sm text-slate-400">{a.full_name}</p>
                         </Link>
                       ))}
                     </div>
