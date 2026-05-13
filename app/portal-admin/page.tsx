@@ -12,10 +12,15 @@ import { WeekSection } from './sections/WeekSection';
 import { ProgramsSection } from './sections/ProgramsSection';
 import { RemindersSection } from './sections/RemindersSection';
 import { SponsorsSection } from './sections/SponsorsSection';
-import type { WeekPlan, WeekPlanItem, Reminder, Fixture, Result, Program, Sponsor } from './types';
 
 type GenericRow = Record<string, any>;
-
+type WeekPlan = { id: string; created_at: string | null; week_label: string; published: boolean; };
+type WeekPlanItem = { id: string; created_at: string | null; week_plan_id: string; day_label: string; title: string; details: string; sort_order: number; };
+type Reminder = { id: string; created_at: string | null; title: string; details: string; is_published: boolean; sort_order: number; };
+type Fixture = { id: string; created_at: string | null; team: string; opponent: string; fixture_date: string; fixture_time: string; venue: string; is_published: boolean; sort_order: number; };
+type Result = { id: string; created_at: string | null; team: string; opponent: string; result_date: string; final_score: string; goal_scorers: string; is_published: boolean; sort_order: number; };
+type Program = { id: string; created_at: string | null; title: string; category: string; day_label: string; details: string; is_published: boolean; sort_order: number; file_name: string; file_path: string; file_url: string; };
+type Sponsor = { id: string; created_at: string | null; name: string; image_name: string; image_path: string; image_url: string; sponsor_link: string; is_published: boolean; sort_order: number; };
 
 function firstString(...values: any[]) {
   for (const value of values) {
