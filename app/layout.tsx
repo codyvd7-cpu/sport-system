@@ -20,18 +20,10 @@ export const metadata: Metadata = {
   },
 };
 
-function ServiceWorkerRegistration() {
-  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'));
-  }
-  return null;
-}
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-950 text-white antialiased">
-        <ServiceWorkerRegistration />
 
         <ToastProvider>
           <RootLayoutClient>{children}</RootLayoutClient>
