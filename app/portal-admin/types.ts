@@ -1,0 +1,11 @@
+export type WeekPlan = { id: string; created_at: string | null; week_label: string; published: boolean; };
+export type WeekPlanItem = { id: string; created_at: string | null; week_plan_id: string; day_label: string; title: string; details: string; sort_order: number; };
+export type Reminder = { id: string; created_at: string | null; title: string; details: string; is_published: boolean; sort_order: number; };
+export type Fixture = { id: string; created_at: string | null; team: string; opponent: string; fixture_date: string; fixture_time: string; venue: string; is_published: boolean; sort_order: number; };
+export type Result = { id: string; created_at: string | null; team: string; opponent: string; result_date: string; final_score: string; goal_scorers: string; is_published: boolean; sort_order: number; };
+export type Program = { id: string; created_at: string | null; title: string; category: string; day_label: string; details: string; is_published: boolean; sort_order: number; file_name: string; file_path: string; file_url: string; };
+export type Sponsor = { id: string; created_at: string | null; name: string; image_name: string; image_path: string; image_url: string; sponsor_link: string; is_published: boolean; sort_order: number; };
+export const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+export const PROGRAM_CATEGORIES = ['Gym', 'Mobility', 'Recovery'];
+export const PROGRAM_BUCKET = 'portal-programs';
+export const SPONSOR_BUCKET = 'portal-sponsors';
