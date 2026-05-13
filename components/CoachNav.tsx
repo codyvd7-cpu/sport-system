@@ -247,12 +247,19 @@ export default function CoachNav() {
             </nav>
             <div className="mt-3 flex gap-2 border-t border-white/5 pt-3">
               <Link
+                href="/assistant"
+                onClick={() => setMenuOpen(false)}
+                className="flex-1 rounded-xl border border-sky-500/20 bg-sky-500/10 py-2.5 text-center text-xs font-semibold text-sky-300"
+              >
+                🤖 AI Assistant
+              </Link>
+              <Link
                 href="/portal"
                 target="_blank"
                 onClick={() => setMenuOpen(false)}
                 className="flex-1 rounded-xl border border-slate-700 bg-slate-900 py-2.5 text-center text-xs font-semibold text-slate-300"
               >
-                View Portal ↗
+                Portal ↗
               </Link>
               <button
                 onClick={handleLogout}
@@ -268,7 +275,13 @@ export default function CoachNav() {
       {/* ── MOBILE BOTTOM TAB BAR ───────────────────────────── */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#020617]/95 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-around px-2 py-2">
-          {NAV_ITEMS.filter((item) => !['Portal Admin'].includes(item.label)).map((item) => {
+          {[
+            { href: '/', label: 'Dashboard', icon: NAV_ITEMS[0].icon },
+            { href: '/athletes', label: 'Athletes', icon: NAV_ITEMS[2].icon },
+            { href: '/attendance', label: 'Attendance', icon: NAV_ITEMS[4].icon },
+            { href: '/performance', label: 'Testing', icon: NAV_ITEMS[5].icon },
+            { href: '/teams', label: 'Teams', icon: NAV_ITEMS[3].icon },
+          ].map((item) => {
             const active = isActive(item.href);
             return (
               <Link
@@ -279,9 +292,7 @@ export default function CoachNav() {
                 }`}
               >
                 {item.icon}
-                <span className="text-[9px] font-semibold tracking-wide">
-                  {item.label}
-                </span>
+                <span className="text-[9px] font-semibold tracking-wide">{item.label}</span>
               </Link>
             );
           })}
