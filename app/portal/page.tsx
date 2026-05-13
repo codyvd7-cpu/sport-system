@@ -81,7 +81,7 @@ export default function PortalPage() {
       const programsData = await safeQuery<Row[]>(
         supabase.from('portal_programs').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
       );
-      const athletes = await safeQuery<Row[]>(supabase.from('athletes').select('id,name,team').limit(300), []);
+      const athletes = await safeQuery<Row[]>(supabase.from('athletes').select('id,full_name,team').limit(300), []);
       const attendance = await safeQuery<Row[]>(supabase.from('attendance').select('athlete_id,status,session_type').limit(1000), []);
       const performance = await safeQuery<Row[]>(supabase.from('performance_tests').select('athlete_id,test_date').limit(1000), []);
 
@@ -92,7 +92,7 @@ export default function PortalPage() {
         const gymSessions = records.filter((r) => String(r.session_type).toLowerCase() === 'gym').length;
         const attendanceRate = total ? Math.round((positive / total) * 100) : 0;
         const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
-        return { ...athlete, attendanceRate, gymSessions, score };
+        return { ...athlete, name: athlete.full_name || 'Unknown', attendanceRate, gymSessions, score };
       }).filter((a) => a.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
 
       const perf = athletes.map((athlete) => {
@@ -195,12 +195,12 @@ export default function PortalPage() {
                 ) : (
                   <>
                     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                      <div className="flex h-44 w-full items-center justify-center overflow-hidden rounded-2xl bg-[#d4d0cb] sm:h-48">
+                      <div className="flex h-44 w-full items-center justify-center overflow-hidden rounded-2xl bg-white p-4 sm:h-48">
                         {activeSponsor?.image_url ? (
                           <img
                             src={activeSponsor.image_url}
                             alt={activeSponsor.name || 'Sponsor'}
-                            className="h-full w-full object-cover"
+                            className="max-h-full max-w-full object-contain"
                           />
                         ) : (
                           <p className="text-center text-lg font-black text-slate-700">{activeSponsor?.name || 'Sponsor'}</p>

@@ -125,10 +125,11 @@ export default function PerformancePage() {
     // Upsert — delete existing then insert
     await supabase.from('performance_tests').delete()
       .eq('athlete_id', athleteId).eq('test_date', sessionDate).eq('test_type', testName);
-    await supabase.from('performance_tests').insert([{
+    const { error: insertErr } = await supabase.from('performance_tests').insert([{
       athlete_id: athleteId, test_date: sessionDate, test_type: testName, value: num, unit,
     }]);
-    setSaved((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: true } }));
+    if (insertErr) { showToast('Failed to save result', 'error'); }
+    else { setSaved((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: true } })); }
     setSaving((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: false } }));
   }
 

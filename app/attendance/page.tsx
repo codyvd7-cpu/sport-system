@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
+import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase'
 import { safeUUID } from '@/lib/uuid';
 
@@ -120,13 +121,13 @@ function getStatusClasses(status: string) {
 }
 
 export default function AttendancePage() {
+  const { showToast } = useToast();
   const [attendanceRows, setAttendanceRows] = useState<GenericRow[]>([]);
   const [athleteRows, setAthleteRows] = useState<GenericRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
 
   const [selectedAthleteId, setSelectedAthleteId] = useState('');
   const [sessionType, setSessionType] = useState('Training');
@@ -156,8 +157,8 @@ export default function AttendancePage() {
     setError('');
 
     const [attendanceRes, athletesRes] = await Promise.all([
-      supabase.from('attendance').select('*').order('session_date', { ascending: false }),
-      supabase.from('athletes').select('*'),
+      supabase.from('attendance').select('*').order('session_date', { ascending: false }).limit(1000),
+      supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability'),
     ]);
 
     if (attendanceRes.error || athletesRes.error) {
@@ -300,7 +301,7 @@ export default function AttendancePage() {
     setSessionType('Training');
     setStatus('Present');
     setDate(new Date().toISOString().split('T')[0]);
-    setSuccessMessage('Attendance record added successfully.');
+    showToast('Attendance saved');
     await loadPageData();
     setSubmitting(false);
   }
@@ -353,7 +354,7 @@ export default function AttendancePage() {
       return;
     }
 
-    setSuccessMessage('Attendance record updated successfully.');
+    showToast('Record updated');
     cancelEdit();
     await loadPageData();
     setSavingEdit(false);
@@ -373,17 +374,12 @@ export default function AttendancePage() {
       return;
     }
 
-    setSuccessMessage('Attendance record deleted successfully.');
+    showToast('Record deleted');
     await loadPageData();
   }
 
 
   // Auto-clear success
-  useEffect(() => {
-    if (!successMessage) return;
-    const t = setTimeout(() => setSuccessMessage(''), 3000);
-    return () => clearTimeout(t);
-  }, [successMessage]);
 
   function initials(name: string) {
     return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
@@ -428,7 +424,7 @@ export default function AttendancePage() {
       }));
       const { error: insertError } = await supabase.from('attendance').insert(rows);
       if (insertError) { setError(insertError.message); return; }
-      setSuccessMessage(`Attendance saved for ${teamSquad.length} players — ${selectedTeam}`);
+      showToast(`Attendance saved — ${teamSquad.length} players`);
       setSelectedTeam(null);
       setBulkStatuses({});
       await loadPageData();
@@ -456,7 +452,6 @@ export default function AttendancePage() {
         </div>
 
         {error && <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
-        {successMessage && <div className="mb-6 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-200">{successMessage}</div>}
 
         {/* Summary stats */}
         <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -578,10 +573,19 @@ export default function AttendancePage() {
                 })}
               </div>
 
-              <button onClick={handleBulkSubmit} disabled={bulkSubmitting}
-                className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-3 text-sm font-black text-sky-300 transition hover:bg-sky-500/25 disabled:opacity-50">
-                {bulkSubmitting ? 'Saving...' : `Save Attendance — ${teamSquad.length} Players`}
-              </button>
+              <div className="flex gap-3">
+                <button onClick={() => {
+                  const all: Record<string, string> = {};
+                  teamSquad.forEach((a) => { all[a.id] = 'Present'; });
+                  setBulkStatuses(all);
+                }} className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-black text-emerald-300 hover:bg-emerald-500/20 transition whitespace-nowrap">
+                  ✓ All Present
+                </button>
+                <button onClick={handleBulkSubmit} disabled={bulkSubmitting}
+                  className="flex-1 rounded-xl border border-sky-500 bg-sky-500/15 py-3 text-sm font-black text-sky-300 transition hover:bg-sky-500/25 disabled:opacity-50">
+                  {bulkSubmitting ? 'Saving...' : `Save — ${teamSquad.length} Players`}
+                </button>
+              </div>
             </div>
           )}
         </section>
