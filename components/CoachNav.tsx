@@ -71,17 +71,6 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/assistant',
-    label: 'AI Assistant',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5">
-        <path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V10a3 3 0 0 1 3-3h1V6a4 4 0 0 1 4-4z"/>
-        <circle cx="9" cy="13" r="1" fill="currentColor"/>
-        <circle cx="15" cy="13" r="1" fill="currentColor"/>
-      </svg>
-    ),
-  },
-  {
     href: '/portal-admin',
     label: 'Portal Admin',
     icon: (
@@ -161,6 +150,17 @@ export default function CoachNav() {
 
           {/* Right actions */}
           <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/assistant"
+              title="AI Hockey Assistant"
+              className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/25 to-violet-500/15 border border-sky-500/30 text-base transition hover:from-sky-500/40 hover:to-violet-500/25 hover:scale-110"
+            >
+              🤖
+              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-sky-500">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500" />
+              </span>
+            </Link>
             <Link
               href="/portal"
               target="_blank"
