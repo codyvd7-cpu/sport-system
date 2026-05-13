@@ -270,32 +270,30 @@ export default function AthletesPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
-                          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-sm font-black text-sky-300">
+                          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-sm font-black text-sky-300">
                             {initials(athlete.name)}
                             <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${availDot}`} />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <Link href={`/athletes/${athlete.id}`} className="block truncate text-sm font-bold text-white hover:text-sky-400">
+                            <Link href={`/athletes/${athlete.id}`} className="block truncate text-sm font-bold text-white hover:text-sky-400 leading-tight">
                               {athlete.name}
                             </Link>
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              {athlete.team && athlete.team !== '—' && <span className="rounded-full bg-sky-500/15 px-2.5 py-0.5 text-[10px] font-black text-sky-300">{athlete.team}</span>}
-                              {athlete.ageGroup !== '—' && (
-                                <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[10px] text-slate-500">{athlete.ageGroup}</span>
-                              )}
+                            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                              {athlete.team && athlete.team !== '—' && <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-black text-sky-300">{athlete.team}</span>}
+                              {athlete.ageGroup !== '—' && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-500">{athlete.ageGroup}</span>}
                             </div>
                           </div>
-                          <div className="flex shrink-0 gap-1.5">
+                          <div className="flex shrink-0 gap-1">
                             <Link href={`/athletes/${athlete.id}`}
-                              className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-sky-500 hover:text-white">
+                              className="rounded-xl border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-sky-500 hover:text-white">
                               Open
                             </Link>
                             <button onClick={() => startEdit(athlete)}
-                              className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 transition hover:text-white">
+                              className="rounded-xl border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
                               Edit
                             </button>
                             <button onClick={() => handleDelete(athlete)}
-                              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20">
+                              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20">
                               ✕
                             </button>
                           </div>
