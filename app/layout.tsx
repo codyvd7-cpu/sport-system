@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-950 text-white antialiased">
+      <body className="min-h-screen bg-slate-950 text-white antialiased" suppressHydrationWarning>
 
         <ToastProvider>
           <RootLayoutClient>{children}</RootLayoutClient>
