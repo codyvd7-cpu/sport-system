@@ -71,6 +71,17 @@ const NAV_ITEMS = [
     ),
   },
   {
+    href: '/assistant',
+    label: 'AI Assistant',
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5">
+        <path d="M12 2a4 4 0 0 1 4 4v1h1a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V10a3 3 0 0 1 3-3h1V6a4 4 0 0 1 4-4z"/>
+        <circle cx="9" cy="13" r="1" fill="currentColor"/>
+        <circle cx="15" cy="13" r="1" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
     href: '/portal-admin',
     label: 'Portal Admin',
     icon: (
