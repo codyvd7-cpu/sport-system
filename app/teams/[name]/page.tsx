@@ -21,6 +21,8 @@ export default function TeamDashboardPage({ params }: PageProps) {
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [aiReport, setAiReport] = React.useState('');
+  const [generatingReport, setGeneratingReport] = React.useState(false);
 
   React.useEffect(() => {
     async function load() {
@@ -95,6 +97,61 @@ export default function TeamDashboardPage({ params }: PageProps) {
     return avgs;
   }, [performance, testTypes]);
 
+  async function generateTeamReport() {
+    setGeneratingReport(true);
+    setAiReport('');
+
+    const injuredAthletes = athletes.filter((a) => a.availability === 'Injured');
+    const modifiedAthletes = athletes.filter((a) => a.availability === 'Modified');
+
+    const attData = athleteAttendance.filter((a) => a.rate !== null)
+      .sort((a, b) => (b.rate || 0) - (a.rate || 0));
+    const topAtt = attData.slice(0, 3).map((a) => ({ name: a.full_name, rate: a.rate }));
+    const lowAtt = attData.filter((a) => (a.rate || 0) < 70).map((a) => ({ name: a.full_name, rate: a.rate }));
+
+    const testAvgs = Object.entries(teamAvgByTest).map(([test, data]) => ({
+      test, avg: data.avg, unit: data.unit
+    }));
+
+    const topPerformers = athletePBs
+      .filter((a) => Object.keys(a.pbs).length > 0)
+      .slice(0, 3)
+      .map((a) => ({
+        name: a.full_name,
+        highlights: Object.entries(a.pbs).slice(0, 2).map(([t, v]) => `${t}: ${(v as any).value}${(v as any).unit}`).join(', ')
+      }));
+
+    const payload = {
+      team: {
+        name: teamName,
+        playerCount: athletes.length,
+        available: available.length,
+        injured: injuredAthletes.length,
+        modified: modifiedAthletes.length,
+        injuredNames: injuredAthletes.map((a) => a.full_name || a.name || ''),
+        modifiedNames: modifiedAthletes.map((a) => a.full_name || a.name || ''),
+        attendanceRate: teamAttRate,
+        lowAttendance: lowAtt,
+        topAttendance: topAtt,
+        testAverages: testAvgs,
+        topPerformers,
+      }
+    };
+
+    try {
+      const res = await fetch('/api/team-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      setAiReport(data.text || 'Could not generate report.');
+    } catch {
+      setAiReport('Connection error. Please try again.');
+    }
+    setGeneratingReport(false);
+  }
+
   if (loading) return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950">
       <div className="flex items-center gap-3">
@@ -147,6 +204,38 @@ export default function TeamDashboardPage({ params }: PageProps) {
                   <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
                 </div>
               ))}
+            </div>
+
+            {/* AI Team Report */}
+            <div className="mb-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">AI Intelligence</p>
+                  <h2 className="mt-0.5 text-lg font-black text-white">Team Report</h2>
+                  <p className="text-xs text-slate-500">AI-generated from live squad data</p>
+                </div>
+                <button onClick={generateTeamReport} disabled={generatingReport}
+                  className="shrink-0 rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 disabled:opacity-50 transition flex items-center gap-2">
+                  {generatingReport ? (
+                    <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" /> Generating...</>
+                  ) : (
+                    <>🤖 {aiReport ? 'Regenerate Report' : 'Generate Team Report'}</>
+                  )}
+                </button>
+              </div>
+              {aiReport && (
+                <div className="mt-4 rounded-xl border border-violet-500/15 bg-slate-950/50 p-4 space-y-3">
+                  {aiReport.split('\n').filter(Boolean).map((line, i) => (
+                    <p key={i} className={`text-sm leading-relaxed ${line.match(/^[0-9]\.|^[A-Z\s]+:/) ? 'font-black text-violet-300 mt-2' : 'text-slate-200'}`}>
+                      {line}
+                    </p>
+                  ))}
+                  <button onClick={() => { navigator.clipboard.writeText(aiReport); }}
+                    className="mt-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">
+                    Copy Report
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
