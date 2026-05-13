@@ -20,17 +20,6 @@ const NAV_ITEMS = [
     ),
   },
   {
-    href: '/ai-tools',
-    label: 'AI Tools',
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5">
-        <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
-        <circle cx="9" cy="14" r="1" fill="currentColor"/>
-        <circle cx="15" cy="14" r="1" fill="currentColor"/>
-      </svg>
-    ),
-  },
-  {
     href: '/squad',
     label: 'Squad',
     icon: (
@@ -171,6 +160,13 @@ export default function CoachNav() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500" />
               </span>
+            </Link>
+            <Link
+              href="/ai-tools"
+              title="AI Tools"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-violet-500/15 border border-violet-500/30 text-base transition hover:from-violet-500/40 hover:scale-110"
+            >
+              🛠️
             </Link>
             <Link
               href="/portal"
