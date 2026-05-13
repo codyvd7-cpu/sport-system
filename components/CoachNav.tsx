@@ -268,7 +268,7 @@ export default function CoachNav() {
       {/* ── MOBILE BOTTOM TAB BAR ───────────────────────────── */}
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#020617]/95 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-around px-2 py-2">
-          {NAV_ITEMS.map((item) => {
+          {NAV_ITEMS.filter((item) => !['Portal Admin'].includes(item.label)).map((item) => {
             const active = isActive(item.href);
             return (
               <Link
@@ -280,7 +280,7 @@ export default function CoachNav() {
               >
                 {item.icon}
                 <span className="text-[9px] font-semibold tracking-wide">
-                  {item.label === 'Portal Admin' ? 'Admin' : item.label}
+                  {item.label}
                 </span>
               </Link>
             );
