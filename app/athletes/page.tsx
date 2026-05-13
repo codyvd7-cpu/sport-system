@@ -242,7 +242,7 @@ export default function AthletesPage() {
                   const avail = athlete.raw?.availability || 'Available';
                   const availDot = avail === 'Available' ? 'bg-emerald-500' : avail === 'Injured' ? 'bg-red-500' : avail === 'Modified' ? 'bg-amber-500' : 'bg-sky-500';
                   return (
-                    <div key={athlete.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-slate-700">
+                    <div key={athlete.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 transition hover:border-slate-700 cursor-pointer">
                       {isEditing ? (
                         <div className="space-y-3">
                           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -270,31 +270,27 @@ export default function AthletesPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-3">
-                          <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-sm font-black text-sky-300">
-                            {initials(athlete.name)}
-                            <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${availDot}`} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <Link href={`/athletes/${athlete.id}`} className="block truncate text-sm font-bold text-white hover:text-sky-400 leading-tight">
-                              {athlete.name}
-                            </Link>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-1">
-                              {athlete.team && athlete.team !== '—' && <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-black text-sky-300">{athlete.team}</span>}
-                              {athlete.ageGroup !== '—' && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-500">{athlete.ageGroup}</span>}
+                          <Link href={`/athletes/${athlete.id}`} className="flex flex-1 min-w-0 items-center gap-3">
+                            <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-sm font-black text-sky-300">
+                              {initials(athlete.name)}
+                              <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-slate-900 ${availDot}`} />
                             </div>
-                          </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-bold text-white leading-tight">{athlete.name}</p>
+                              <div className="mt-0.5 flex flex-wrap items-center gap-1">
+                                {athlete.team && athlete.team !== '—' && <span className="rounded-full bg-sky-500/15 px-2 py-0.5 text-[10px] font-black text-sky-300">{athlete.team}</span>}
+                                {athlete.ageGroup !== '—' && <span className="rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-500">{athlete.ageGroup}</span>}
+                              </div>
+                            </div>
+                          </Link>
                           <div className="flex shrink-0 gap-1">
-                            <Link href={`/athletes/${athlete.id}`}
-                              className="rounded-xl border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:border-sky-500 hover:text-white">
-                              Open
-                            </Link>
-                            <button onClick={() => startEdit(athlete)}
-                              className="rounded-xl border border-slate-700 bg-slate-800/60 px-2.5 py-1.5 text-xs font-semibold text-slate-300 transition hover:text-white">
-                              Edit
+                            <button onClick={(e) => { e.stopPropagation(); startEdit(athlete); }}
+                              className="rounded-xl border border-slate-700 bg-slate-800/60 p-2 text-slate-400 transition hover:text-white hover:border-sky-500">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </button>
-                            <button onClick={() => handleDelete(athlete)}
-                              className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 transition hover:bg-red-500/20">
-                              ✕
+                            <button onClick={(e) => { e.stopPropagation(); handleDelete(athlete); }}
+                              className="rounded-xl border border-red-500/20 bg-red-500/10 p-2 text-red-400 transition hover:bg-red-500/20">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                             </button>
                           </div>
                         </div>
