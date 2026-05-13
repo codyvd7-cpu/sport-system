@@ -195,6 +195,8 @@ export default function AthleteProfilePage({ params }: PageProps) {
 
   // Structured feedback
   const [editingFeedback, setEditingFeedback] = React.useState(false);
+  const [aiSummary, setAiSummary] = React.useState('');
+  const [generatingAiSummary, setGeneratingAiSummary] = React.useState(false);
   const [fbStrengths, setFbStrengths] = React.useState('');
   const [fbFocus, setFbFocus] = React.useState('');
   const [fbComment, setFbComment] = React.useState('');
@@ -372,6 +374,43 @@ export default function AthleteProfilePage({ params }: PageProps) {
     setEditingFeedback(false); setSavingFeedback(false); showToast('Feedback saved'); await loadPageData();
   }
 
+  async function generateAiSummary() {
+    if (!athlete) return;
+    setGeneratingAiSummary(true);
+    setAiSummary('');
+    const pbs = personalBests.map((pb) => ({ testType: pb.testType, pb: pb.pb, unit: pb.unit }));
+    const tiers = performanceTrends.filter((t) => t.latest !== null).map((t) => {
+      const tier = getBenchmarkTier(t.testType, t.latest!, athlete.ageGroup);
+      return { test: t.testType, tier: tier?.label || 'Unknown' };
+    });
+    const payload = {
+      athlete: {
+        name: athlete.name,
+        team: athlete.team,
+        ageGroup: athlete.ageGroup,
+        position: positionInput || athlete.raw?.position || '',
+        availability,
+        attendanceRate: attendanceSummary.rate,
+        totalSessions: attendanceSummary.total,
+        absences: attendanceSummary.absent,
+        pbs,
+        tiers,
+      }
+    };
+    try {
+      const res = await fetch('/api/athlete-summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      setAiSummary(data.text || 'Could not generate summary.');
+    } catch {
+      setAiSummary('Connection error. Please try again.');
+    }
+    setGeneratingAiSummary(false);
+  }
+
   // ── EARLY RETURNS ────────────────────────────────────────────
   if (loading) return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950">
@@ -515,6 +554,34 @@ export default function AthleteProfilePage({ params }: PageProps) {
               {generatingCode ? '...' : playerCode ? 'Regenerate' : '🔑 Generate Code'}
             </button>
           </div>
+        </div>
+
+        {/* AI Summary */}
+        <div className="mb-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">AI Intelligence</p>
+              <h2 className="mt-0.5 text-lg font-black text-white">Athlete Summary</h2>
+              <p className="text-xs text-slate-500">AI-generated from real performance data</p>
+            </div>
+            <button onClick={generateAiSummary} disabled={generatingAiSummary}
+              className="shrink-0 rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 disabled:opacity-50 transition flex items-center gap-2">
+              {generatingAiSummary ? (
+                <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" /> Generating...</>
+              ) : (
+                <>🤖 {aiSummary ? 'Regenerate' : 'Generate Summary'}</>
+              )}
+            </button>
+          </div>
+          {aiSummary && (
+            <div className="mt-4 rounded-xl border border-violet-500/15 bg-slate-950/50 p-4">
+              <p className="text-sm leading-relaxed text-slate-200">{aiSummary}</p>
+              <button onClick={() => { navigator.clipboard.writeText(aiSummary); showToast('Summary copied!'); }}
+                className="mt-3 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">
+                Copy to Clipboard
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Empty state */}

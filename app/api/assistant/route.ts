@@ -1,40 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  
-  if (!apiKey) {
-    return NextResponse.json({ text: 'API key not configured. Please add OPENAI_API_KEY to Vercel environment variables.' });
-  }
-
   try {
     const { messages, system } = await req.json();
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+        'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'claude-opus-4-6',
         max_tokens: 1000,
-        messages: [
-          { role: 'system', content: system },
-          ...messages,
-        ],
+        system,
+        messages,
       }),
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      return NextResponse.json({ text: `OpenAI error: ${err.error?.message || response.status}` });
-    }
-
     const data = await response.json();
-    const text = data.choices?.[0]?.message?.content || 'No response.';
+    const text = data.content?.map((c: any) => c.text || '').join('') || 'No response.';
     return NextResponse.json({ text });
-  } catch (e: any) {
-    return NextResponse.json({ text: `Error: ${e.message}` });
+  } catch (e) {
+    return NextResponse.json({ text: 'Connection error. Please try again.' }, { status: 500 });
   }
 }
