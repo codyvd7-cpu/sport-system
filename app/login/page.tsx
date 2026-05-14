@@ -28,7 +28,7 @@ function LoginForm() {
   useEffect(() => {
     async function checkExistingSession() {
       const { data } = await supabase.auth.getSession();
-      if (data.session) { router.replace(redirectTo); return; }
+      if (data.session) { window.location.href = redirectTo; return; }
       setCheckingSession(false);
     }
     checkExistingSession();
@@ -43,7 +43,7 @@ function LoginForm() {
       if (result.error) { setErrorMessage(cleanAuthError(result.error.message)); setStatus(''); setLoading(false); return; }
       if (!result.data.session) { setErrorMessage('Login failed. Please confirm this user exists in Supabase.'); setStatus(''); setLoading(false); return; }
       setStatus('Login successful. Opening admin...');
-      window.location.assign(redirectTo);
+      window.location.href = redirectTo;
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Login failed.');
       setStatus(''); setLoading(false);
