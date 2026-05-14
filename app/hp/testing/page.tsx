@@ -60,6 +60,7 @@ export default function HPTestingPage() {
 
   const classStudents = React.useMemo(() => {
     if (!selectedClass) return students;
+    if (selectedClass === 'Grade 8' || selectedClass === 'Grade 9') return students.filter(s => s.grade === selectedClass);
     const grade = selectedClass.startsWith('8') ? 'Grade 8' : 'Grade 9';
     const cls = selectedClass.slice(1);
     return students.filter(s => s.grade === grade && s.class_group === cls);
@@ -112,10 +113,20 @@ export default function HPTestingPage() {
           {/* Class selector */}
           <div className="mt-4 space-y-3">
             <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">Select Class</p>
-            <button onClick={() => setSelectedClass(null)}
-              className={`w-full rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
-              All Students
-            </button>
+            <div className="grid grid-cols-3 gap-2">
+              <button onClick={() => setSelectedClass(null)}
+                className={`rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                All
+              </button>
+              <button onClick={() => setSelectedClass('Grade 8')}
+                className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === 'Grade 8' ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                Grade 8
+              </button>
+              <button onClick={() => setSelectedClass('Grade 9')}
+                className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === 'Grade 9' ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                Grade 9
+              </button>
+            </div>
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Grade 8</p>
               <div className="grid grid-cols-5 gap-2">
