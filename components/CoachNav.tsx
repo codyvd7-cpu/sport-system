@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 
 const NAV_ITEMS = [
   {
-    href: '/',
+    href: '/dashboard',
     label: 'Dashboard',
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5">
@@ -150,6 +150,13 @@ export default function CoachNav() {
 
           {/* Right actions */}
           <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/"
+              title="All Departments"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/60 text-slate-400 transition hover:text-white text-xs font-black"
+            >
+              ⊞
+            </Link>
             <Link
               href="/assistant"
               title="AI Hockey Assistant"

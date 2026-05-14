@@ -4,16 +4,17 @@ import { usePathname } from 'next/navigation';
 import Nav from '@/components/Nav';
 import CoachNav from '@/components/CoachNav';
 
-const PUBLIC_ROUTES = ['/portal', '/login', '/player'];
+const COACH_ROUTES = ['/', '/athletes', '/teams', '/attendance', '/performance', '/portal-admin'];
+const PUBLIC_ROUTES = ['/portal', '/login', '/player', '/'];
 
 export default function RootLayoutClient({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname() ?? '';
+  const pathname = usePathname();
 
   const isPublicRoute = PUBLIC_ROUTES.some(
     (route) => pathname === route || pathname.startsWith(route + '/')
-  );
+  ) || pathname === '/';
 
-  const isCoachRoute = pathname !== '' && !isPublicRoute;
+  const isCoachRoute = !isPublicRoute;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
