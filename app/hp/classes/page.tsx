@@ -20,12 +20,7 @@ export default function HPClassesPage() {
     load();
   }, []);
 
-  const classStudents = selectedClass
-    ? students.filter(s => s.class_group === selectedClass)
-    : students;
-
-  const grade8 = classStudents.filter(s => s.grade === 'Grade 8');
-  const grade9 = classStudents.filter(s => s.grade === 'Grade 9');
+  const classStudents = selectedClass ? students.filter(s => s.class_group === selectedClass) : [];
 
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
@@ -34,72 +29,53 @@ export default function HPClassesPage() {
         <div className="mb-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">High Performance</p>
           <h1 className="mt-1 text-3xl font-black text-white">Classes</h1>
-          <p className="mt-1 text-sm text-slate-500">B, E, F, J, M class groups</p>
         </div>
 
-        {/* Class filter */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          <button onClick={() => setSelectedClass(null)}
-            className={`rounded-xl px-4 py-2 text-sm font-black transition ${!selectedClass ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
-            All Classes
-          </button>
-          {HP_CLASSES.map(c => (
-            <button key={c} onClick={() => setSelectedClass(c)}
-              className={`rounded-xl px-4 py-2 text-sm font-black transition ${selectedClass === c ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
-              Class {c}
-            </button>
-          ))}
+        {/* Class grid */}
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
+          {HP_CLASSES.map(c => {
+            const cs = students.filter(s => s.class_group === c);
+            const g8 = cs.filter(s => s.grade === 'Grade 8').length;
+            const g9 = cs.filter(s => s.grade === 'Grade 9').length;
+            return (
+              <button key={c} onClick={() => setSelectedClass(selectedClass === c ? null : c)}
+                className={`rounded-2xl border p-5 text-center transition hover:scale-[1.03] ${
+                  selectedClass === c ? 'border-emerald-500/50 bg-emerald-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'
+                }`}>
+                <p className={`text-4xl font-black mb-1 ${selectedClass === c ? 'text-emerald-400' : 'text-white'}`}>{c}</p>
+                <p className="text-[10px] text-slate-500">{cs.length} students</p>
+                {cs.length > 0 && <p className="text-[9px] text-slate-600 mt-0.5">Gr8:{g8} Gr9:{g9}</p>}
+              </button>
+            );
+          })}
         </div>
 
-        {loading ? <p className="text-sm text-slate-400">Loading...</p> : (
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Grade 8 */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-black text-white">Grade 8</h2>
-                <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-black text-sky-300">{grade8.length} students</span>
-              </div>
-              <div className="space-y-1.5">
-                {grade8.map(s => (
-                  <Link key={s.id} href={`/hp/students/${s.id}`}
-                    className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 hover:border-emerald-500/30 transition">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
-                      {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold text-white">{s.full_name}</p>
-                      <p className="text-[10px] text-slate-500">{s.class_group ? `Class ${s.class_group}` : 'No class'}</p>
-                    </div>
-                  </Link>
-                ))}
-                {grade8.length === 0 && <p className="text-sm text-slate-500">No Grade 8 students{selectedClass ? ` in Class ${selectedClass}` : ''}.</p>}
-              </div>
+        {/* Selected class students */}
+        {selectedClass && (
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-black text-white">Class {selectedClass} <span className="text-emerald-400">({classStudents.length} students)</span></h2>
+              <button onClick={() => setSelectedClass(null)} className="text-xs text-slate-500 hover:text-slate-300">Clear ×</button>
             </div>
-
-            {/* Grade 9 */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-lg font-black text-white">Grade 9</h2>
-                <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-black text-violet-300">{grade9.length} students</span>
-              </div>
-              <div className="space-y-1.5">
-                {grade9.map(s => (
-                  <Link key={s.id} href={`/hp/students/${s.id}`}
-                    className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 hover:border-emerald-500/30 transition">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/15 text-[10px] font-black text-violet-300">
-                      {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold text-white">{s.full_name}</p>
-                      <p className="text-[10px] text-slate-500">{s.class_group ? `Class ${s.class_group}` : 'No class'}</p>
-                    </div>
-                  </Link>
-                ))}
-                {grade9.length === 0 && <p className="text-sm text-slate-500">No Grade 9 students{selectedClass ? ` in Class ${selectedClass}` : ''}.</p>}
-              </div>
+            <div className="grid gap-1.5 sm:grid-cols-2">
+              {classStudents.map(s => (
+                <Link key={s.id} href={`/hp/students/${s.id}`}
+                  className="flex items-center gap-3 rounded-xl border border-emerald-500/10 bg-slate-950/50 p-3 hover:border-emerald-500/30 transition">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
+                    {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{s.full_name}</p>
+                    <p className="text-[10px] text-slate-500">{s.grade}</p>
+                  </div>
+                </Link>
+              ))}
+              {classStudents.length === 0 && <p className="text-sm text-slate-500">No students in Class {selectedClass}.</p>}
             </div>
           </div>
         )}
+
+        {loading && <p className="text-sm text-slate-500">Loading...</p>}
       </div>
     </main>
   );
