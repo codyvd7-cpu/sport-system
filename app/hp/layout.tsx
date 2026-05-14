@@ -1,9 +1,11 @@
 import * as React from 'react';
-import { checkStaffAccess } from '@/lib/staffAccess';
-import { redirect } from 'next/navigation';
+import CoachNav from '@/components/CoachNav';
 
-export default async function HPLayout({ children }: { children: React.ReactNode }) {
-  const access = await checkStaffAccess(['owner', 'head_of_hockey', 'coach', 'viewer']);
-  if (!access.allowed) redirect('/login?redirect=/hp');
-  return <>{children}</>;
+export default function HPLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <CoachNav />
+      <div className="pb-20 md:pb-0">{children}</div>
+    </>
+  );
 }
