@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -57,12 +56,8 @@ export default function CoachNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  
-  React.useEffect(() => { setMounted(true); }, []);
 
   function isActive(href: string) {
-    if (!mounted) return false;
     if (href === '/dashboard') return pathname === '/dashboard';
     return pathname === href || pathname.startsWith(href + '/');
   }
@@ -75,7 +70,7 @@ export default function CoachNav() {
   return (
     <>
       {/* ── DESKTOP NAV ─────────────────────────────────── */}
-      <header className="sticky top-0 z-50 hidden border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl md:block">
+      <header suppressHydrationWarning className="sticky top-0 z-50 hidden border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl md:block">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -118,7 +113,7 @@ export default function CoachNav() {
       </header>
 
       {/* ── MOBILE TOP BAR ──────────────────────────────── */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl md:hidden">
+      <header suppressHydrationWarning className="sticky top-0 z-50 border-b border-white/5 bg-[#020617]/95 backdrop-blur-xl md:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
             <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
@@ -175,7 +170,7 @@ export default function CoachNav() {
       )}
 
       {/* ── MOBILE BOTTOM TAB BAR ───────────────────────── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#020617]/95 backdrop-blur-xl md:hidden">
+      <nav suppressHydrationWarning className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-[#020617]/95 backdrop-blur-xl md:hidden">
         <div className="flex items-center justify-around px-1 py-1.5">
           {BOTTOM_TABS.map((item) => {
             const active = isActive(item.href);
