@@ -13,14 +13,19 @@ export default function HPDashboard() {
 
   React.useEffect(() => {
     async function load() {
-      const [sRes, aRes, tRes] = await Promise.all([
-        supabase.from('hp_students').select('*').eq('is_active', true),
-        supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(200),
-        supabase.from('hp_test_results').select('*').order('test_date', { ascending: false }),
-      ]);
-      setStudents(sRes.data || []);
-      setAttendance(aRes.data || []);
-      setTestResults(tRes.data || []);
+      try {
+        const [sRes, aRes, tRes] = await Promise.all([
+          supabase.from('hp_students').select('*').eq('is_active', true),
+          supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(200),
+          supabase.from('hp_test_results').select('*').order('test_date', { ascending: false }),
+        ]);
+        console.log('HP errors:', sRes.error, aRes.error, tRes.error);
+        setStudents(sRes.data || []);
+        setAttendance(aRes.data || []);
+        setTestResults(tRes.data || []);
+      } catch(e) {
+        console.error('HP load error:', e);
+      }
       setLoading(false);
     }
     load();
@@ -30,6 +35,21 @@ export default function HPDashboard() {
   const grade9 = students.filter(s => s.grade === 'Grade 9');
   const recentSessions = [...new Set(attendance.map(a => a.session_date))].slice(0, 5);
   const testedThisTerm = [...new Set(testResults.filter(t => t.term === 'Term 1' && t.year === 2026).map(t => t.student_id))].length;
+
+  if (loading) return (
+    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <div className="h-3 w-24 rounded-full bg-slate-800 animate-pulse mb-2" />
+          <div className="h-8 w-64 rounded-full bg-slate-800 animate-pulse mb-2" />
+          <div className="h-3 w-48 rounded-full bg-slate-800 animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[1,2,3,4].map(i => <div key={i} className="h-20 rounded-2xl bg-slate-900 animate-pulse" />)}
+        </div>
+      </div>
+    </main>
+  );
 
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
@@ -92,7 +112,6 @@ export default function HPDashboard() {
           </div>
         )}
 
-        {loading && <div className="flex items-center gap-3"><div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/><p className="text-sm text-slate-400">Loading...</p></div>}
       </div>
     </main>
   );
