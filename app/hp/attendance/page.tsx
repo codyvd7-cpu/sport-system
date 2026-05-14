@@ -34,9 +34,12 @@ export default function HPAttendancePage() {
     load();
   }, []);
 
-  const classStudents = selectedClass
-    ? students.filter(s => s.class_group === selectedClass)
-    : students;
+  const classStudents = React.useMemo(() => {
+    if (!selectedClass) return students;
+    const grade = selectedClass.startsWith('8') ? 'Grade 8' : 'Grade 9';
+    const cls = selectedClass.slice(1);
+    return students.filter(s => s.grade === grade && s.class_group === cls);
+  }, [selectedClass, students]);
 
   async function saveAttendance() {
     if (classStudents.length === 0) return;
@@ -90,17 +93,39 @@ export default function HPAttendancePage() {
         {/* Step 2: Select class */}
         <div className="mb-5 rounded-2xl border border-slate-800 bg-slate-900 p-5">
           <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Step 2 — Select Class</p>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="space-y-3">
             <button onClick={() => setSelectedClass(null)}
-              className={`rounded-xl border py-3 text-sm font-black transition ${!selectedClass ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
-              All
+              className={`w-full rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+              All Students
             </button>
-            {HP_CLASSES.map(c => (
-              <button key={c} onClick={() => setSelectedClass(c)}
-                className={`rounded-xl border py-3 text-sm font-black transition ${selectedClass === c ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
-                Class {c}
-              </button>
-            ))}
+            <div>
+              <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Grade 8</p>
+              <div className="grid grid-cols-5 gap-2">
+                {HP_CLASSES.map(c => {
+                  const key = `8${c}`;
+                  return (
+                    <button key={key} onClick={() => setSelectedClass(key)}
+                      className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === key ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-violet-400">Grade 9</p>
+              <div className="grid grid-cols-5 gap-2">
+                {HP_CLASSES.map(c => {
+                  const key = `9${c}`;
+                  return (
+                    <button key={key} onClick={() => setSelectedClass(key)}
+                      className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === key ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
 
