@@ -31,49 +31,71 @@ export default function HPClassesPage() {
           <h1 className="mt-1 text-3xl font-black text-white">Classes</h1>
         </div>
 
-        {/* Class grid */}
-        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-5">
-          {HP_CLASSES.map(c => {
-            const cs = students.filter(s => s.class_group === c);
-            const g8 = cs.filter(s => s.grade === 'Grade 8').length;
-            const g9 = cs.filter(s => s.grade === 'Grade 9').length;
-            return (
-              <button key={c} onClick={() => setSelectedClass(selectedClass === c ? null : c)}
-                className={`rounded-2xl border p-5 text-center transition hover:scale-[1.03] ${
-                  selectedClass === c ? 'border-emerald-500/50 bg-emerald-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'
-                }`}>
-                <p className={`text-4xl font-black mb-1 ${selectedClass === c ? 'text-emerald-400' : 'text-white'}`}>{c}</p>
-                <p className="text-[10px] text-slate-500">{cs.length} students</p>
-                {cs.length > 0 && <p className="text-[9px] text-slate-600 mt-0.5">Gr8:{g8} Gr9:{g9}</p>}
-              </button>
-            );
-          })}
+        {/* Grade 8 Classes */}
+        <div className="mb-8">
+          <p className="mb-3 text-xs font-black uppercase tracking-wide text-sky-400">Grade 8</p>
+          <div className="grid grid-cols-5 gap-3">
+            {HP_CLASSES.map(c => {
+              const key = `8${c}`;
+              const cs = students.filter(s => s.class_group === c && s.grade === 'Grade 8');
+              const active = selectedClass === key;
+              return (
+                <button key={key} onClick={() => setSelectedClass(active ? null : key)}
+                  className={`rounded-2xl border p-4 text-center transition hover:scale-[1.03] ${active ? 'border-sky-500/50 bg-sky-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
+                  <p className={`text-3xl font-black mb-1 ${active ? 'text-sky-400' : 'text-white'}`}>{c}</p>
+                  <p className="text-[10px] text-slate-500">{cs.length}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Grade 9 Classes */}
+        <div className="mb-8">
+          <p className="mb-3 text-xs font-black uppercase tracking-wide text-violet-400">Grade 9</p>
+          <div className="grid grid-cols-5 gap-3">
+            {HP_CLASSES.map(c => {
+              const key = `9${c}`;
+              const cs = students.filter(s => s.class_group === c && s.grade === 'Grade 9');
+              const active = selectedClass === key;
+              return (
+                <button key={key} onClick={() => setSelectedClass(active ? null : key)}
+                  className={`rounded-2xl border p-4 text-center transition hover:scale-[1.03] ${active ? 'border-violet-500/50 bg-violet-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
+                  <p className={`text-3xl font-black mb-1 ${active ? 'text-violet-400' : 'text-white'}`}>{c}</p>
+                  <p className="text-[10px] text-slate-500">{cs.length}</p>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Selected class students */}
-        {selectedClass && (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-black text-white">Class {selectedClass} <span className="text-emerald-400">({classStudents.length} students)</span></h2>
-              <button onClick={() => setSelectedClass(null)} className="text-xs text-slate-500 hover:text-slate-300">Clear ×</button>
-            </div>
-            <div className="grid gap-1.5 sm:grid-cols-2">
-              {classStudents.map(s => (
-                <Link key={s.id} href={`/hp/students/${s.id}`}
-                  className="flex items-center gap-3 rounded-xl border border-emerald-500/10 bg-slate-950/50 p-3 hover:border-emerald-500/30 transition">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
-                    {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
-                  </div>
-                  <div>
+        {selectedClass && (() => {
+          const grade = selectedClass.startsWith('8') ? 'Grade 8' : 'Grade 9';
+          const cls = selectedClass.slice(1);
+          const cs = students.filter(s => s.class_group === cls && s.grade === grade);
+          const color = grade === 'Grade 8' ? 'sky' : 'violet';
+          return (
+            <div className={`rounded-2xl border p-5 ${color === 'sky' ? 'border-sky-500/20 bg-sky-500/5' : 'border-violet-500/20 bg-violet-500/5'}`}>
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-lg font-black text-white">{grade} — Class {cls} <span className={color === 'sky' ? 'text-sky-400' : 'text-violet-400'}>({cs.length} students)</span></h2>
+                <button onClick={() => setSelectedClass(null)} className="text-xs text-slate-500 hover:text-slate-300">Clear ×</button>
+              </div>
+              <div className="grid gap-1.5 sm:grid-cols-2">
+                {cs.map(s => (
+                  <Link key={s.id} href={`/hp/students/${s.id}`}
+                    className="flex items-center gap-3 rounded-xl border border-white/5 bg-slate-950/50 p-3 hover:border-emerald-500/30 transition">
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${color === 'sky' ? 'bg-sky-500/15 text-sky-300' : 'bg-violet-500/15 text-violet-300'}`}>
+                      {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
                     <p className="text-sm font-semibold text-white">{s.full_name}</p>
-                    <p className="text-[10px] text-slate-500">{s.grade}</p>
-                  </div>
-                </Link>
-              ))}
-              {classStudents.length === 0 && <p className="text-sm text-slate-500">No students in Class {selectedClass}.</p>}
+                  </Link>
+                ))}
+                {cs.length === 0 && <p className="text-sm text-slate-500">No students in {grade} Class {cls}.</p>}
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {loading && <p className="text-sm text-slate-500">Loading...</p>}
       </div>
