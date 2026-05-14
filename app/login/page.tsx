@@ -16,7 +16,7 @@ function cleanAuthError(message: string) {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get('redirect') || '/portal-admin';
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

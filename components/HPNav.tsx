@@ -31,6 +31,11 @@ const NAV_ITEMS = [
     label: 'Trends',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
   },
+  {
+    href: '/hp/classes',
+    label: 'Classes',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  },
 ];
 
 export default function HPNav() {
@@ -54,10 +59,10 @@ export default function HPNav() {
       <header suppressHydrationWarning className="sticky top-0 z-50 hidden border-b border-emerald-500/10 bg-[#020617]/95 backdrop-blur-xl md:block">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/hp" className="flex items-center gap-2.5 shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-base">⚡</div>
+            <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict's</p>
-              <p className="text-sm font-black text-white leading-none">HP Classes</p>
+              <p className="text-sm font-black text-white leading-none">High Performance</p>
             </div>
           </Link>
           <nav className="flex items-center gap-1">
@@ -85,10 +90,10 @@ export default function HPNav() {
       <header suppressHydrationWarning className="sticky top-0 z-50 border-b border-emerald-500/10 bg-[#020617]/95 backdrop-blur-xl md:hidden">
         <div className="flex h-14 items-center justify-between px-4">
           <Link href="/hp" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-sm">⚡</div>
+            <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
             <div>
               <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict's</p>
-              <p className="text-sm font-black text-white leading-none">HP Classes</p>
+              <p className="text-sm font-black text-white leading-none">High Performance</p>
             </div>
           </Link>
           <button onClick={() => setMenuOpen(!menuOpen)}

@@ -39,8 +39,10 @@ export default function DashboardPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email) {
-        const name = session.user.email.split('@')[0].split('.')[0];
-        setCoachName(name.charAt(0).toUpperCase() + name.slice(1));
+        const emailPart = session.user.email.split('@')[0];
+        // Try to get a proper name from email (e.g. cody.vd7 -> Cody, john.smith -> John)
+        const namePart = emailPart.split('.')[0].replace(/[^a-zA-Z]/g, '');
+        setCoachName(namePart.length > 2 ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Coach');
       }
       const [athRes, attRes, perfRes, notesRes] = await Promise.all([
         supabase.from('athletes').select('id, full_name, team, availability, age_group'),
@@ -171,7 +173,7 @@ export default function DashboardPage() {
                 { label: 'Mark Attendance', href: '/attendance', icon: '✅', color: 'emerald' },
                 { label: 'Testing Session', href: '/performance', icon: '⚡', color: 'violet' },
                 { label: 'Squad Board', href: '/squad', icon: '🏑', color: 'sky' },
-                { label: 'Team Portal', href: '/portal', icon: '🌐', color: 'slate' },
+                { label: 'Portal', href: '/portal', icon: '🌐', color: 'slate' },
               ].map((action) => (
                 <Link key={action.label} href={action.href}
                   className={`rounded-2xl border p-4 text-center transition hover:scale-[1.02] ${action.color === 'emerald' ? 'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10' : action.color === 'violet' ? 'border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10' : action.color === 'sky' ? 'border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10' : 'border-slate-700 bg-slate-900 hover:bg-slate-800'}`}>

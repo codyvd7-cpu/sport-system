@@ -12,6 +12,8 @@ export default function HPStudentsPage() {
   const [loading, setLoading] = React.useState(true);
   const [name, setName] = React.useState('');
   const [grade, setGrade] = React.useState('Grade 8');
+  const [hpClass, setHpClass] = React.useState('B');
+  const HP_CLASSES = ['B','E','F','J','M'];
   const [saving, setSaving] = React.useState(false);
   const [filter, setFilter] = React.useState('All');
 
@@ -27,7 +29,7 @@ export default function HPStudentsPage() {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
-    await supabase.from('hp_students').insert([{ full_name: name.trim(), grade }]);
+    await supabase.from('hp_students').insert([{ full_name: name.trim(), grade, class_group: hpClass }]);
     setName('');
     showToast('Student added');
     await load();
@@ -60,10 +62,15 @@ export default function HPStudentsPage() {
             <h2 className="mb-4 text-lg font-black text-white">Add Student</h2>
             <form onSubmit={addStudent} className="space-y-3">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
-              <select value={grade} onChange={e => setGrade(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
-                <option>Grade 8</option>
-                <option>Grade 9</option>
-              </select>
+              <div className="grid grid-cols-2 gap-2">
+                <select value={grade} onChange={e => setGrade(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                  <option>Grade 8</option>
+                  <option>Grade 9</option>
+                </select>
+                <select value={hpClass} onChange={e => setHpClass(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                  {HP_CLASSES.map(c => <option key={c}>Class {c}</option>)}
+                </select>
+              </div>
               <button type="submit" disabled={saving || !name.trim()} className="w-full rounded-xl border border-emerald-500 bg-emerald-500/15 py-2.5 text-sm font-black text-emerald-300 disabled:opacity-50">
                 {saving ? 'Adding...' : 'Add Student'}
               </button>
@@ -89,7 +96,7 @@ export default function HPStudentsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <Link href={`/hp/students/${s.id}`} className="block truncate text-sm font-semibold text-white hover:text-emerald-400">{s.full_name}</Link>
-                      <p className="text-[10px] text-slate-500">{s.grade}</p>
+                      <p className="text-[10px] text-slate-500">{s.grade}{s.class_group ? ` · Class ${s.class_group}` : ''}</p>
                     </div>
                     <button onClick={() => removeStudent(s.id)} className="rounded-lg border border-red-500/20 bg-red-500/10 p-1.5 text-red-400 hover:bg-red-500/20 transition">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>

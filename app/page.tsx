@@ -65,7 +65,7 @@ export default function LandingPage() {
 
         {/* Header */}
         <div className="mb-16 text-center">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl bg-white p-2 shadow-2xl shadow-sky-500/10 ring-1 ring-white/10">
+          <div className="mx-auto mb-6 flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl bg-white p-2 shadow-2xl shadow-sky-500/10 ring-1 ring-white/10">
             <Image src="/st-benedicts-logo.png" alt="St Benedict's College" width={80} height={80} className="h-full w-full object-contain" priority />
           </div>
           <p className="text-xs font-black uppercase tracking-[0.3em] text-sky-400">St Benedict's College</p>

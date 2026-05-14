@@ -55,8 +55,8 @@ export default function HPDashboard() {
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">HP Classes</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-white">High Performance Classes</h1>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict's College</p>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-white">High Performance</h1>
           <p className="mt-1 text-sm text-slate-500">Grade 8 & 9 dedicated HP training periods</p>
         </div>
 
