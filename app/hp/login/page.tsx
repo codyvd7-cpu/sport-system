@@ -1,21 +1,14 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 export default function HPLoginPage() {
-  const router = useRouter();
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
-  // Check if already has HP access
-  React.useEffect(() => {
-    if (sessionStorage.getItem('hp_access') === 'true') {
-      router.replace('/hp');
-    }
-  }, [router]);
+
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
