@@ -97,8 +97,6 @@ export default function HPTestingPage() {
   const [saving, setSaving] = React.useState<Record<string, boolean>>({});
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});
   const [activeStudent, setActiveStudent] = React.useState<string | null>(null);
-  const [numGroups, setNumGroups] = React.useState(3);
-  const [showGroups, setShowGroups] = React.useState(false);
 
   React.useEffect(() => {
     supabase.from('hp_students').select('*').eq('is_active', true).order('grade').order('full_name')
@@ -135,7 +133,7 @@ export default function HPTestingPage() {
   const mixedGrades = classStudents.some(s => s.grade !== classStudents[0]?.grade);
 
   const completed = classStudents.filter(s => saved[s.id]).length;
-  const groupedStudents = showGroups ? assignGroups(classStudents, results, numGroups, tests) : classStudents.map(s => ({ ...s, _group: null }));
+
 
   async function saveStudentResults(studentId: string) {
     const vals = results[studentId] || {};
@@ -170,8 +168,6 @@ export default function HPTestingPage() {
     }));
     showToast(`Groups saved — ${numGroups} groups assigned`);
   }
-
-  const GROUP_COLORS = ['', 'bg-sky-500/15 border-sky-500/30 text-sky-300', 'bg-violet-500/15 border-violet-500/30 text-violet-300', 'bg-amber-500/15 border-amber-500/30 text-amber-300', 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'];
 
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
@@ -231,31 +227,7 @@ export default function HPTestingPage() {
           )}
         </div>
 
-        {/* Grouping controls */}
-        <div className="mb-5 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Training Groups</p>
-            <div className="flex items-center gap-3">
-              <div className="flex gap-1.5">
-                {[3,4].map(n => (
-                  <button key={n} onClick={() => setNumGroups(n)}
-                    className={`rounded-xl border px-4 py-2 text-sm font-black transition ${numGroups === n ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
-                    {n} Groups
-                  </button>
-                ))}
-              </div>
-              <button onClick={() => setShowGroups(g => !g)}
-                className={`rounded-xl border px-4 py-2 text-sm font-black transition ${showGroups ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
-                {showGroups ? 'Groups On' : 'Groups Off'}
-              </button>
-              {showGroups && completed > 0 && (
-                <button onClick={saveGroups} className="rounded-xl border border-sky-500/40 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 hover:bg-sky-500/25 transition">
-                  Save Groups
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+
 
         {/* Step 2: Enter results */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
@@ -268,12 +240,10 @@ export default function HPTestingPage() {
           </div>
 
           <div className="space-y-2">
-            {groupedStudents.map(s => {
+            {classStudents.map(s => {
               const isOpen = activeStudent === s.id;
               const isDone = saved[s.id];
               const studentTests = s.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
-              const group = s._group || s.training_group;
-
               return (
                 <div key={s.id} className={`rounded-2xl border transition ${isDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800 bg-slate-900/50'}`}>
                   <button onClick={() => setActiveStudent(isOpen ? null : s.id)} className="flex w-full items-center gap-3 px-4 py-3">
@@ -284,12 +254,7 @@ export default function HPTestingPage() {
                       <p className="text-sm font-bold text-white">{s.full_name}</p>
                       <p className="text-[10px] text-slate-500">{s.grade}{s.class_group ? ` · Class ${s.class_group}` : ''}</p>
                     </div>
-                    {group && showGroups && (
-                      <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${GROUP_COLORS[group] || ''}`}>
-                        Group {group}
-                      </span>
-                    )}
-                    {isDone && !showGroups && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black text-emerald-300">Saved ✓</span>}
+                    {isDone && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black text-emerald-300">Saved ✓</span>}
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-4 w-4 text-slate-500 transition ${isOpen ? 'rotate-90' : ''}`}><path d="M9 18l6-6-6-6"/></svg>
                   </button>
                   {isOpen && (
