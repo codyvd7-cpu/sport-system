@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+async function isAuthenticated(req: NextRequest): Promise<boolean> {
+  try {
+    const authHeader = req.headers.get('authorization');
+    const cookieHeader = req.headers.get('cookie') || '';
+    
+    // Check for Supabase session cookie
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    
+    // Extract access token from cookie
+    const tokenMatch = cookieHeader.match(/sb-[^-]+-auth-token=([^;]+)/);
+    if (!tokenMatch) return false;
+    
+    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]));
+    const accessToken = tokenData?.access_token;
+    if (!accessToken) return false;
+    
+    const { data: { user } } = await supabase.auth.getUser(accessToken);
+    return !!user;
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ text: 'API key not configured.' });
+
+  // Verify authenticated session
+  const authed = await isAuthenticated(req);
+  if (!authed) return NextResponse.json({ text: 'Unauthorized' }, { status: 401 });
 
   try {
     const { team } = await req.json();

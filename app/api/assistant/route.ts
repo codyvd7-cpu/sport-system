@@ -1,28 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+async function isAuthenticated(req: NextRequest): Promise<boolean> {
+  try {
+    const cookieHeader = req.headers.get('cookie') || '';
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const tokenMatch = cookieHeader.match(/sb-[^-]+-auth-token=([^;]+)/);
+    if (!tokenMatch) return false;
+    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]));
+    const accessToken = tokenData?.access_token;
+    if (!accessToken) return false;
+    const { data: { user } } = await supabase.auth.getUser(accessToken);
+    return !!user;
+  } catch { return false; }
+}
 
 export async function POST(req: NextRequest) {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    return NextResponse.json({ text: 'API key not configured. Please add OPENAI_API_KEY to Vercel environment variables.' });
+  }
+
   try {
     const { messages, system } = await req.json();
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY || '',
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-6',
+        model: 'gpt-4o-mini',
         max_tokens: 1000,
-        system,
-        messages,
+        messages: [
+          { role: 'system', content: system },
+          ...messages,
+        ],
       }),
     });
 
+    if (!response.ok) {
+      const err = await response.json();
+      return NextResponse.json({ text: `OpenAI error: ${err.error?.message || response.status}` });
+    }
+
     const data = await response.json();
-    const text = data.content?.map((c: any) => c.text || '').join('') || 'No response.';
+    const text = data.choices?.[0]?.message?.content || 'No response.';
     return NextResponse.json({ text });
-  } catch (e) {
-    return NextResponse.json({ text: 'Connection error. Please try again.' }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ text: `Error: ${e.message}` });
   }
 }
