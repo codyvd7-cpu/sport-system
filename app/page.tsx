@@ -19,7 +19,7 @@ const DEPARTMENTS = [
     id: 'hp',
     name: 'HP Classes',
     subtitle: 'Grade 8 & 9 high performance training periods',
-    href: '/login?redirect=/hp',
+    href: '/hp/login',
     icon: '⚡',
     color: 'emerald',
     stats: ['Grade 8 & 9', 'Term testing', 'Attendance'],
