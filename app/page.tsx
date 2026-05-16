@@ -14,37 +14,42 @@ const DEPARTMENTS = [
 ];
 
 // Clean professional sport icons
+// Hockey stick + ball
 const HockeyIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9">
-    <path d="M8 38 Q16 28 28 26 Q38 24 42 28" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" fill="none"/>
-    <path d="M8 38 L12 42 Q14 44 17 43 L22 41" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    <circle cx="10" cy="40" r="2.5" fill="currentColor"/>
-    <path d="M32 12 L36 8 M36 14 L40 10 M38 18 L42 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="6" x2="12" y2="34" strokeWidth="3"/>
+    <path d="M12 34 Q12 42 22 42 Q30 42 30 36 Q30 30 22 30 L12 30" strokeWidth="3" fill="none"/>
+    <circle cx="38" cy="18" r="4" strokeWidth="2.5"/>
   </svg>
 );
 
+// Dumbbell for HP/Gym
 const HPIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9">
-    <path d="M10 38 L20 14 L28 30 L34 20 L40 30" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-    <circle cx="24" cy="10" r="4" stroke="currentColor" strokeWidth="2.5" fill="none"/>
-    <path d="M20 20 L28 20" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="18" width="5" height="12" rx="2" strokeWidth="2.5"/>
+    <rect x="9" y="20" width="5" height="8" rx="1" strokeWidth="2.5"/>
+    <line x1="14" y1="24" x2="34" y2="24" strokeWidth="3"/>
+    <rect x="34" y="20" width="5" height="8" rx="1" strokeWidth="2.5"/>
+    <rect x="39" y="18" width="5" height="12" rx="2" strokeWidth="2.5"/>
   </svg>
 );
 
+// Rugby ball
 const RugbyIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9">
-    <ellipse cx="24" cy="24" rx="13" ry="8" transform="rotate(-30 24 24)" stroke="currentColor" strokeWidth="2.5" fill="none"/>
-    <path d="M16 16 L32 32" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-    <path d="M13 20 L17 16 M20 13 L16 17" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-    <path d="M31 28 L35 32 M28 31 L32 35" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M24 8 C36 8 42 16 42 24 C42 32 36 40 24 40 C12 40 6 32 6 24 C6 16 12 8 24 8Z" strokeWidth="2.5"/>
+    <line x1="24" y1="8" x2="24" y2="40" strokeWidth="2"/>
+    <path d="M14 24 Q24 18 34 24" strokeWidth="2"/>
+    <path d="M14 24 Q24 30 34 24" strokeWidth="2"/>
   </svg>
 );
 
+// Cricket bat
 const CricketIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9">
-    <path d="M28 8 L40 12 L36 24 L24 20 Z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" fill="none"/>
-    <path d="M28 8 L10 38" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
-    <path d="M6 40 L10 44 M10 40 L14 44" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"/>
+  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M32 6 L42 16 L20 38 L10 28 Z" strokeWidth="2.5"/>
+    <path d="M20 38 L14 44 L10 40 L16 34" strokeWidth="2.5"/>
+    <line x1="16" y1="12" x2="36" y2="32" strokeWidth="1.5" opacity="0.5"/>
   </svg>
 );
 
@@ -80,7 +85,7 @@ export default function LandingPage() {
           {PHOTOS.map((src, i) => (
             <div key={i} className="relative overflow-hidden">
               <Image src={src} alt="" fill className="object-cover object-center"
-                style={{ filter: 'saturate(0.5) brightness(0.25)' }} priority={i === 0} />
+                style={{ filter: 'saturate(0.6) brightness(0.35)' }} priority={i === 0} />
             </div>
           ))}
         </div>
@@ -91,16 +96,10 @@ export default function LandingPage() {
             <div key={i} className="absolute inset-0 transition-opacity duration-1000"
               style={{ opacity: i === activePhoto ? 1 : 0 }}>
               <Image src={src} alt="" fill className="object-cover object-center"
-                style={{ filter: 'saturate(0.5) brightness(0.25)' }} priority={i === 0} />
+                style={{ filter: 'saturate(0.6) brightness(0.35)' }} priority={i === 0} />
             </div>
           ))}
-          {/* Dots indicator */}
-          <div className="absolute bottom-36 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
-            {PHOTOS.map((_, i) => (
-              <button key={i} onClick={() => setActivePhoto(i)}
-                className={`h-1 rounded-full transition-all duration-300 ${i === activePhoto ? 'w-4 bg-white' : 'w-1 bg-white/30'}`} />
-            ))}
-          </div>
+
         </div>
 
         {/* Overlays */}
