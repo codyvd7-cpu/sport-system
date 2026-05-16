@@ -183,21 +183,38 @@ export default function HPTrendsPage() {
             {/* Summary strip */}
             {(() => {
               const tested = gradeStudents.filter(s => latest[s.id]);
-              const a10 = avg(gradeStudents,'sprint_10m');
-              const a500 = avg(gradeStudents,'run_500m');
+              const pctTested = Math.round(tested.length/Math.max(gradeStudents.length,1)*100);
+              const classCounts = HP_CLASSES.map(c => {
+                const ss = students.filter(s => s.grade===grade && s.class_group===c);
+                const elites = ss.filter(s => {
+                  const r = latest[s.id]; if (!r) return false;
+                  return tests.some(t => { const v = parseFloat(r[t.key]); return !isNaN(v) && getTier(t.key,v,t.higher).label==='Elite'; });
+                }).length;
+                return { c, elites, total: ss.length };
+              }).filter(x => x.total > 0).sort((a,b) => b.elites/b.total - a.elites/a.total);
+              const topClass = classCounts[0];
+              const attention = gradeStudents.filter(s => {
+                const r = latest[s.id]; if (!r) return false;
+                return tests.some(t => { const v = parseFloat(r[t.key]); return !isNaN(v) && getTier(t.key,v,t.higher).label==='Poor'; });
+              }).length;
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { v: gradeStudents.length,   l: 'Students',  c: 'border-slate-700' },
-                    { v: `${tested.length} (${Math.round(tested.length/Math.max(gradeStudents.length,1)*100)}%)`, l: 'Tested', c: 'border-emerald-500/20 bg-emerald-500/5' },
-                    { v: a10 ? a10.toFixed(2)+'s' : '—',         l: 'Avg 10m',   c: 'border-sky-500/20 bg-sky-500/5' },
-                    { v: a500 ? fmt('run_500m',a500) : '—',       l: 'Avg 500m',  c: 'border-violet-500/20 bg-violet-500/5' },
-                  ].map(({ v, l, c }) => (
-                    <div key={l} className={`rounded-2xl border p-4 ${c}`}>
-                      <p className="text-2xl font-black text-white">{v}</p>
-                      <p className="text-xs font-semibold text-slate-500 mt-0.5">{l}</p>
-                    </div>
-                  ))}
+                  <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4">
+                    <p className="text-2xl font-black text-white">{gradeStudents.length}</p>
+                    <p className="text-xs font-semibold text-slate-500 mt-0.5">Students</p>
+                  </div>
+                  <div className={`rounded-2xl border p-4 ${pctTested===100?'border-emerald-500/20 bg-emerald-500/5':pctTested>50?'border-amber-500/20 bg-amber-500/5':'border-red-500/20 bg-red-500/5'}`}>
+                    <p className={`text-2xl font-black ${pctTested===100?'text-emerald-400':pctTested>50?'text-amber-400':'text-red-400'}`}>{pctTested}%</p>
+                    <p className="text-xs font-semibold text-slate-500 mt-0.5">Tested ({tested.length}/{gradeStudents.length})</p>
+                  </div>
+                  <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
+                    <p className="text-2xl font-black text-sky-400">{topClass ? `Class ${topClass.c}` : '—'}</p>
+                    <p className="text-xs font-semibold text-slate-500 mt-0.5">Top Class{topClass ? ` · ${topClass.elites} elite` : ''}</p>
+                  </div>
+                  <div className={`rounded-2xl border p-4 ${attention>0?'border-red-500/20 bg-red-500/5':'border-emerald-500/20 bg-emerald-500/5'}`}>
+                    <p className={`text-2xl font-black ${attention>0?'text-red-400':'text-emerald-400'}`}>{attention}</p>
+                    <p className="text-xs font-semibold text-slate-500 mt-0.5">Need Attention</p>
+                  </div>
                 </div>
               );
             })()}
