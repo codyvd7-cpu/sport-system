@@ -39,10 +39,7 @@ export default function DashboardPage() {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email) {
-        const emailPart = session.user.email.split('@')[0];
-        // Try to get a proper name from email (e.g. cody.vd7 -> Cody, john.smith -> John)
-        const namePart = emailPart.split('.')[0].replace(/[^a-zA-Z]/g, '');
-        setCoachName(namePart.length > 2 ? namePart.charAt(0).toUpperCase() + namePart.slice(1) : 'Coach');
+        setCoachName('Coach');
       }
       const [athRes, attRes, perfRes, notesRes] = await Promise.all([
         supabase.from('athletes').select('id, full_name, team, availability, age_group'),
