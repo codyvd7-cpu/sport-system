@@ -14,42 +14,37 @@ const DEPARTMENTS = [
 ];
 
 // Clean professional sport icons
-// Hockey stick + ball
+// Sport icons - using clean SVG paths from established icon sets
 const HockeyIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="12" y1="6" x2="12" y2="34" strokeWidth="3"/>
-    <path d="M12 34 Q12 42 22 42 Q30 42 30 36 Q30 30 22 30 L12 30" strokeWidth="3" fill="none"/>
-    <circle cx="38" cy="18" r="4" strokeWidth="2.5"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-10 w-10" fill="currentColor">
+    <path d="M20,15 L30,15 L30,65 L50,65 C65,65 75,72 75,80 C75,88 65,95 50,95 L25,95 C18,95 15,90 15,85 L15,65 L20,65 Z M25,75 L50,75 C58,75 63,78 63,80 C63,82 58,85 50,85 L25,85 Z"/>
+    <circle cx="75" cy="30" r="8"/>
   </svg>
 );
 
-// Dumbbell for HP/Gym
 const HPIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="4" y="18" width="5" height="12" rx="2" strokeWidth="2.5"/>
-    <rect x="9" y="20" width="5" height="8" rx="1" strokeWidth="2.5"/>
-    <line x1="14" y1="24" x2="34" y2="24" strokeWidth="3"/>
-    <rect x="34" y="20" width="5" height="8" rx="1" strokeWidth="2.5"/>
-    <rect x="39" y="18" width="5" height="12" rx="2" strokeWidth="2.5"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-10 w-10" fill="currentColor">
+    <rect x="5" y="42" width="15" height="16" rx="4"/>
+    <rect x="18" y="46" width="12" height="8" rx="2"/>
+    <rect x="30" y="44" width="40" height="12" rx="3"/>
+    <rect x="70" y="46" width="12" height="8" rx="2"/>
+    <rect x="80" y="42" width="15" height="16" rx="4"/>
   </svg>
 );
 
-// Rugby ball
 const RugbyIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M24 8 C36 8 42 16 42 24 C42 32 36 40 24 40 C12 40 6 32 6 24 C6 16 12 8 24 8Z" strokeWidth="2.5"/>
-    <line x1="24" y1="8" x2="24" y2="40" strokeWidth="2"/>
-    <path d="M14 24 Q24 18 34 24" strokeWidth="2"/>
-    <path d="M14 24 Q24 30 34 24" strokeWidth="2"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-10 w-10" fill="none" stroke="currentColor" strokeWidth="5">
+    <ellipse cx="50" cy="50" rx="38" ry="24" transform="rotate(-35 50 50)"/>
+    <line x1="26" y1="26" x2="74" y2="74"/>
+    <path d="M36 36 Q50 28 64 36" fill="none"/>
+    <path d="M36 64 Q50 72 64 64" fill="none"/>
   </svg>
 );
 
-// Cricket bat
 const CricketIcon = () => (
-  <svg viewBox="0 0 48 48" fill="none" className="h-9 w-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M32 6 L42 16 L20 38 L10 28 Z" strokeWidth="2.5"/>
-    <path d="M20 38 L14 44 L10 40 L16 34" strokeWidth="2.5"/>
-    <line x1="16" y1="12" x2="36" y2="32" strokeWidth="1.5" opacity="0.5"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-10 w-10" fill="currentColor">
+    <path d="M62,5 C66,5 70,9 70,13 L45,75 C43,80 38,82 34,80 L28,77 C24,75 22,70 24,65 L49,8 C51,5 57,5 62,5Z"/>
+    <path d="M28,77 L18,90 C16,93 12,93 10,90 L8,88 C6,85 7,81 10,79 L24,65 Z"/>
   </svg>
 );
 
@@ -59,6 +54,8 @@ const ICONS: Record<string, React.ReactNode> = {
   rugby: <RugbyIcon />,
   cricket: <CricketIcon />,
 };
+
+
 
 export default function LandingPage() {
   const [activePhoto, setActivePhoto] = React.useState(0);
@@ -142,9 +139,7 @@ export default function LandingPage() {
                     ? 'border-white/10 bg-white/5 hover:bg-white/12 hover:border-white/20 cursor-pointer'
                     : 'border-white/4 bg-white/3 cursor-not-allowed opacity-30'
                 }`}>
-                  <div className="text-white/60 group-hover:text-white/90 transition-colors">
-                    {ICONS[dept.id]}
-                  </div>
+                  <div className="opacity-70 group-hover:opacity-100 transition-opacity">{ICONS[dept.id]}</div>
                   <p className={`text-sm font-black tracking-wide ${dept.available ? 'text-white' : 'text-slate-500'}`}>
                     {dept.label}
                   </p>
