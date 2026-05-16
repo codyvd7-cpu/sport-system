@@ -4,275 +4,249 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
-
 const HP_CLASSES = ['B','E','F','J','M'];
+const TERMS = ['Term 1','Term 2','Term 3'];
 
 const TESTS = [
-  { key: 'chin_up_hang', label: 'Chin Up Hang', unit: 's', higher: true, grade: '8' },
-  { key: 'broad_jump', label: 'Broad Jump', unit: 'cm', higher: true, grade: '8' },
-  { key: 'pushup_2min', label: '2 Min Push Up', unit: 'reps', higher: true, grade: '9' },
-  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm', higher: true, grade: '9' },
-  { key: 'sprint_10m', label: '10m Sprint', unit: 's', higher: false, grade: 'both' },
-  { key: 'sprint_30m', label: '30m Sprint', unit: 's', higher: false, grade: 'both' },
-  { key: 'run_500m', label: '500m Run', unit: 's', higher: false, grade: 'both' },
+  { key: 'chin_up_hang',      label: 'Chin Up Hang',     unit: 's',    higher: true,  grade: '8' },
+  { key: 'broad_jump',        label: 'Broad Jump',        unit: 'cm',   higher: true,  grade: '8' },
+  { key: 'pushup_2min',       label: '2 Min Push Up',     unit: 'reps', higher: true,  grade: '9' },
+  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm',   higher: true,  grade: '9' },
+  { key: 'sprint_10m',        label: '10m Sprint',        unit: 's',    higher: false, grade: 'both' },
+  { key: 'sprint_30m',        label: '30m Sprint',        unit: 's',    higher: false, grade: 'both' },
+  { key: 'run_500m',          label: '500m Run',          unit: '',     higher: false, grade: 'both' },
 ];
 
-const BENCHMARKS: Record<string, { elite: number; good: number; avg: number; dev: number; label: string }> = {
-  chin_up_hang:     { elite: 60, good: 30, avg: 15, dev: 5,    label: 'Chin Up Hang' },
-  broad_jump:       { elite: 200, good: 175, avg: 155, dev: 135, label: 'Broad Jump' },
-  pushup_2min:      { elite: 20, good: 14, avg: 10, dev: 6,    label: 'Push Ups' },
-  triple_broad_jump:{ elite: 700, good: 600, avg: 520, dev: 450, label: 'Triple Broad' },
-  sprint_10m:       { elite: 2.10, good: 2.30, avg: 2.50, dev: 2.70, label: '10m Sprint' },
-  sprint_30m:       { elite: 4.60, good: 5.00, avg: 5.40, dev: 5.80, label: '30m Sprint' },
-  run_500m:         { elite: 100, good: 120, avg: 140, dev: 160, label: '500m Run' },
+const BENCH: Record<string, [number, number, number, number]> = {
+  chin_up_hang:      [60, 30, 15, 5],
+  broad_jump:        [200, 175, 155, 135],
+  pushup_2min:       [20, 14, 10, 6],
+  triple_broad_jump: [700, 600, 520, 450],
+  sprint_10m:        [2.10, 2.30, 2.50, 2.70],
+  sprint_30m:        [4.60, 5.00, 5.40, 5.80],
+  run_500m:          [100, 120, 140, 160],
 };
 
-function getTier(key: string, value: number, higher: boolean) {
-  const b = BENCHMARKS[key];
-  if (!b) return { label: '—', color: 'text-slate-500', bg: 'bg-slate-800' };
+const TIERS = [
+  { label: 'Elite', color: 'text-emerald-400', bg: 'bg-emerald-500/15', bar: 'bg-emerald-500' },
+  { label: 'Good',  color: 'text-sky-400',     bg: 'bg-sky-500/15',     bar: 'bg-sky-500' },
+  { label: 'Avg',   color: 'text-amber-400',   bg: 'bg-amber-500/15',   bar: 'bg-amber-500' },
+  { label: 'Dev',   color: 'text-orange-400',  bg: 'bg-orange-500/15',  bar: 'bg-orange-500' },
+  { label: 'Poor',  color: 'text-red-400',     bg: 'bg-red-500/15',     bar: 'bg-red-500' },
+];
+
+function getTier(key: string, val: number, higher: boolean) {
+  const b = BENCH[key]; if (!b) return TIERS[2];
+  const [e, g, a, d] = b;
   if (higher) {
-    if (value >= b.elite) return { label: 'Elite', color: 'text-emerald-400', bg: 'bg-emerald-500/15' };
-    if (value >= b.good)  return { label: 'Good',  color: 'text-sky-400',     bg: 'bg-sky-500/15' };
-    if (value >= b.avg)   return { label: 'Avg',   color: 'text-amber-400',   bg: 'bg-amber-500/15' };
-    if (value >= b.dev)   return { label: 'Dev',   color: 'text-orange-400',  bg: 'bg-orange-500/15' };
-    return { label: 'Poor', color: 'text-red-400', bg: 'bg-red-500/15' };
+    if (val >= e) return TIERS[0]; if (val >= g) return TIERS[1];
+    if (val >= a) return TIERS[2]; if (val >= d) return TIERS[3]; return TIERS[4];
   } else {
-    if (value <= b.elite) return { label: 'Elite', color: 'text-emerald-400', bg: 'bg-emerald-500/15' };
-    if (value <= b.good)  return { label: 'Good',  color: 'text-sky-400',     bg: 'bg-sky-500/15' };
-    if (value <= b.avg)   return { label: 'Avg',   color: 'text-amber-400',   bg: 'bg-amber-500/15' };
-    if (value <= b.dev)   return { label: 'Dev',   color: 'text-orange-400',  bg: 'bg-orange-500/15' };
-    return { label: 'Poor', color: 'text-red-400', bg: 'bg-red-500/15' };
+    if (val <= e) return TIERS[0]; if (val <= g) return TIERS[1];
+    if (val <= a) return TIERS[2]; if (val <= d) return TIERS[3]; return TIERS[4];
   }
 }
 
-function Sparkline({ values, higher }: { values: (number | null)[]; higher: boolean }) {
-  const valid = values.filter(v => v !== null) as number[];
-  if (valid.length < 2) return <span className="text-[10px] text-slate-600">—</span>;
-  const min = Math.min(...valid), max = Math.max(...valid), range = max - min || 1;
-  const W = 64, H = 24;
-  const pts = values.map((v, i) => v !== null ? `${(i / (values.length - 1)) * W},${H - ((v - min) / range) * (H - 2) - 1}` : null).filter(Boolean).join(' ');
-  const last = valid[valid.length - 1], first = valid[0];
-  const improved = higher ? last > first : last < first;
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="h-6 w-16" preserveAspectRatio="none">
-      <polyline points={pts} fill="none" stroke={improved ? '#10b981' : '#ef4444'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={(values.length - 1) / (values.length - 1) * W} cy={H - ((last - min) / range) * (H - 2) - 1} r="2" fill={improved ? '#10b981' : '#ef4444'} />
-    </svg>
-  );
-}
-
-function formatVal(key: string, val: number): string {
+function fmt(key: string, val: number): string {
   if (key === 'run_500m') {
-    const m = Math.floor(val / 60), s = Math.round(val % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
+    const m = Math.floor(val/60), s = Math.round(val%60);
+    return `${m}:${s.toString().padStart(2,'0')}`;
   }
   if (key === 'chin_up_hang') {
-    if (val >= 60) { const m = Math.floor(val / 60), s = val % 60; return s > 0 ? `${m}m${s}s` : `${m}min`; }
-    return `${val}s`;
+    if (val >= 60) { const m = Math.floor(val/60), s = val%60; return s ? `${m}m${s}s` : `${m}min`; }
+    return `${Math.round(val)}s`;
   }
   return val % 1 === 0 ? String(val) : val.toFixed(2);
 }
 
-function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color: string }) {
+function BenchBar({ k, val, higher }: { k: string; val: number; higher: boolean }) {
+  const b = BENCH[k]; if (!b) return null;
+  const [e, g, a, d] = higher ? b : [...b].reverse() as [number,number,number,number];
+  const min = Math.min(e,g,a,d), max = Math.max(e,g,a,d);
+  const pct = Math.min(100, Math.max(2, ((val - min) / (max - min)) * 100));
+  const pos = higher ? pct : 100 - pct + 2;
   return (
-    <div className={`rounded-2xl border p-4 ${color}`}>
-      <p className="text-2xl font-black text-white">{value}</p>
-      <p className="mt-0.5 text-xs font-black text-white/70">{label}</p>
-      {sub && <p className="text-[10px] text-white/40 mt-0.5">{sub}</p>}
+    <div className="mt-3 relative">
+      <div className="h-1.5 w-full rounded-full overflow-hidden flex">
+        <div className="flex-1 bg-red-500/60" /><div className="flex-1 bg-orange-500/60" />
+        <div className="flex-1 bg-amber-500/60" /><div className="flex-1 bg-sky-500/60" /><div className="flex-1 bg-emerald-500/60" />
+      </div>
+      <div className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full border-2 border-white bg-slate-950 shadow" style={{ left: `calc(${pos}% - 6px)` }} />
     </div>
+  );
+}
+
+function Spark({ vals, higher }: { vals: (number|null)[]; higher: boolean }) {
+  const v = vals.filter((x): x is number => x !== null);
+  if (v.length === 0) return <span className="text-[10px] text-slate-700">no data</span>;
+  if (v.length === 1) return <span className="text-[10px] text-slate-500">T1 only</span>;
+  const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 1;
+  const W = 72, H = 28;
+  const improved = higher ? v[v.length-1] > v[0] : v[v.length-1] < v[0];
+  const pts = vals.map((x, i) => x !== null ? `${(i/(vals.length-1))*W},${H-2-((x-mn)/rng)*(H-4)}` : null).filter(Boolean).join(' ');
+  const lx = (vals.length-1)/(vals.length-1)*W;
+  const lv = v[v.length-1];
+  const ly = H-2-((lv-mn)/rng)*(H-4);
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-7 w-18" preserveAspectRatio="none">
+      <polyline points={pts} fill="none" stroke={improved?'#10b981':'#ef4444'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      <circle cx={lx} cy={ly} r="2.5" fill={improved?'#10b981':'#ef4444'}/>
+    </svg>
   );
 }
 
 export default function HPTrendsPage() {
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [results, setResults] = React.useState<Row[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [view, setView] = React.useState<'overview' | 'class' | 'individual'>('overview');
-  const [selectedGrade, setSelectedGrade] = React.useState<'Grade 8' | 'Grade 9'>('Grade 8');
-  const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
-  const [selectedStudent, setSelectedStudent] = React.useState<Row | null>(null);
-  const [selectedTest, setSelectedTest] = React.useState('sprint_10m');
+  const [results,  setResults]  = React.useState<Row[]>([]);
+  const [loading,  setLoading]  = React.useState(true);
+  const [grade, setGrade]       = React.useState<'Grade 8'|'Grade 9'>('Grade 8');
+  const [view,  setView]        = React.useState<'overview'|'class'|'student'>('overview');
+  const [selClass,   setSelClass]   = React.useState<string|null>(null);
+  const [selStudent, setSelStudent] = React.useState<Row|null>(null);
+  const [selTest,    setSelTest]    = React.useState('sprint_10m');
+  const [search,     setSearch]     = React.useState('');
 
   React.useEffect(() => {
-    async function load() {
-      const [sRes, rRes] = await Promise.all([
-        supabase.from('hp_students').select('*').eq('is_active', true).order('grade').order('full_name'),
-        supabase.from('hp_test_results').select('*').order('year').order('term'),
-      ]);
-      setStudents(sRes.data || []);
-      setResults(rRes.data || []);
-      setLoading(false);
-    }
-    load();
+    Promise.all([
+      supabase.from('hp_students').select('*').eq('is_active',true).order('grade').order('full_name'),
+      supabase.from('hp_test_results').select('*').order('year').order('term'),
+    ]).then(([s, r]) => { setStudents(s.data||[]); setResults(r.data||[]); setLoading(false); });
   }, []);
 
-  const TERMS = ['Term 1', 'Term 2', 'Term 3'];
+  const latest = React.useMemo(() => {
+    const map: Record<string,Row> = {};
+    results.forEach(r => { map[r.student_id] = r; });
+    return map;
+  }, [results]);
 
-  // Get latest result per student
-  function getLatest(studentId: string) {
-    const rs = results.filter(r => r.student_id === studentId);
-    return rs[rs.length - 1] || null;
+  const gradeStudents = students.filter(s => s.grade === grade);
+  const tests = TESTS.filter(t => t.grade === grade.split(' ')[1] || t.grade === 'both');
+  const testObj = tests.find(t => t.key === selTest) || tests[0];
+
+  function avg(ss: Row[], key: string) {
+    const vals = ss.map(s => { const v = parseFloat(latest[s.id]?.[key]); return isNaN(v) ? null : v; }).filter((v): v is number => v !== null);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
   }
 
-  function getClassStudents(grade: string, cls: string) {
-    return students.filter(s => s.grade === grade && s.class_group === cls);
-  }
-
-  function classAvg(grade: string, cls: string, testKey: string) {
-    const ss = getClassStudents(grade, cls);
-    const vals = ss.map(s => {
-      const r = getLatest(s.id);
-      return r ? parseFloat(r[testKey]) : null;
-    }).filter(v => v !== null && !isNaN(v as number)) as number[];
-    return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-  }
-
-  function gradeAvg(grade: string, testKey: string) {
-    const ss = students.filter(s => s.grade === grade);
-    const vals = ss.map(s => {
-      const r = getLatest(s.id);
-      return r ? parseFloat(r[testKey]) : null;
-    }).filter(v => v !== null && !isNaN(v as number)) as number[];
-    return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
-  }
-
-  function tierBreakdown(grade: string, cls: string | null, testKey: string, higher: boolean) {
-    const ss = cls ? getClassStudents(grade, cls) : students.filter(s => s.grade === grade);
-    const counts = { Elite: 0, Good: 0, Avg: 0, Dev: 0, Poor: 0, noData: 0 };
+  function breakdown(ss: Row[], key: string, higher: boolean) {
+    const counts: Record<string,number> = { Elite:0,Good:0,Avg:0,Dev:0,Poor:0,noData:0 };
     ss.forEach(s => {
-      const r = getLatest(s.id);
-      const val = r ? parseFloat(r[testKey]) : null;
-      if (val === null || isNaN(val)) { counts.noData++; return; }
-      const tier = getTier(testKey, val, higher).label;
-      if (tier in counts) (counts as any)[tier]++;
+      const v = parseFloat(latest[s.id]?.[key]);
+      if (isNaN(v)) { counts.noData++; return; }
+      counts[getTier(key,v,higher).label]++;
     });
-    return { ...counts, total: ss.length };
+    return counts;
   }
-
-  const grade8Tests = TESTS.filter(t => t.grade === '8' || t.grade === 'both');
-  const grade9Tests = TESTS.filter(t => t.grade === '9' || t.grade === 'both');
-  const currentTests = selectedGrade === 'Grade 8' ? grade8Tests : grade9Tests;
-  const selectedTestObj = TESTS.find(t => t.key === selectedTest) || TESTS[4];
 
   if (loading) return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <div className="space-y-3">{[1,2,3,4].map(i => <div key={i} className="h-16 rounded-2xl bg-slate-900 animate-pulse" />)}</div>
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-3">
+        {[1,2,3].map(i => <div key={i} className="h-20 rounded-2xl bg-slate-900 animate-pulse"/>)}
       </div>
     </main>
   );
 
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← High Performance</Link>
-        <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
-          <h1 className="mt-1 text-3xl font-black text-white">Trends & Analytics</h1>
-        </div>
 
-        {/* View toggle */}
-        <div className="mb-6 flex gap-2 flex-wrap">
-          {(['overview', 'class', 'individual'] as const).map(v => (
-            <button key={v} onClick={() => { setView(v); setSelectedStudent(null); }}
-              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${view === v ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
-              {v === 'overview' ? '📊 Overview' : v === 'class' ? '📚 Class View' : '👤 Individual'}
-            </button>
-          ))}
-          <div className="flex gap-1.5 ml-2">
-            {(['Grade 8', 'Grade 9'] as const).map(g => (
-              <button key={g} onClick={() => setSelectedGrade(g)}
-                className={`rounded-xl px-3 py-2 text-xs font-black transition ${selectedGrade === g ? g === 'Grade 8' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
+        {/* Header + grade toggle always visible */}
+        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
+            <h1 className="mt-1 text-3xl font-black text-white">Trends & Analytics</h1>
+          </div>
+          <div className="flex gap-1.5">
+            {(['Grade 8','Grade 9'] as const).map(g => (
+              <button key={g} onClick={() => { setGrade(g); setSelClass(null); setSelStudent(null); setSelTest('sprint_10m'); }}
+                className={`rounded-xl px-4 py-2 text-sm font-black transition ${grade===g ? g==='Grade 8' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
                 {g}
               </button>
             ))}
           </div>
         </div>
 
-        {/* ── OVERVIEW ── */}
+        {/* View tabs */}
+        <div className="mb-6 flex gap-1.5 border-b border-slate-800 pb-4">
+          {([['overview','Overview'],['class','By Class'],['student','Individual']] as const).map(([v,l]) => (
+            <button key={v} onClick={() => { setView(v); if(v!=='student') setSelStudent(null); }}
+              className={`rounded-xl px-4 py-2 text-sm font-black transition ${view===v ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+
+        {/* ── OVERVIEW ─────────────────────────────────── */}
         {view === 'overview' && (
-          <div className="space-y-6">
-            {/* Grade stats */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {(() => {
-                const ss = students.filter(s => s.grade === selectedGrade);
-                const tested = ss.filter(s => getLatest(s.id));
-                const avg10 = gradeAvg(selectedGrade, 'sprint_10m');
-                const avg500 = gradeAvg(selectedGrade, 'run_500m');
-                return (
-                  <>
-                    <StatCard label="Students" value={ss.length} color="border-sky-500/20 bg-sky-500/5" />
-                    <StatCard label="Tested" value={tested.length} sub={`${Math.round(tested.length/ss.length*100)}% complete`} color="border-emerald-500/20 bg-emerald-500/5" />
-                    <StatCard label="Avg 10m" value={avg10 ? avg10.toFixed(2)+'s' : '—'} color="border-violet-500/20 bg-violet-500/5" />
-                    <StatCard label="Avg 500m" value={avg500 ? formatVal('run_500m', avg500) : '—'} color="border-amber-500/20 bg-amber-500/5" />
-                  </>
-                );
-              })()}
-            </div>
+          <div className="space-y-8">
+            {/* Summary strip */}
+            {(() => {
+              const tested = gradeStudents.filter(s => latest[s.id]);
+              const a10 = avg(gradeStudents,'sprint_10m');
+              const a500 = avg(gradeStudents,'run_500m');
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { v: gradeStudents.length,   l: 'Students',  c: 'border-slate-700' },
+                    { v: `${tested.length} (${Math.round(tested.length/Math.max(gradeStudents.length,1)*100)}%)`, l: 'Tested', c: 'border-emerald-500/20 bg-emerald-500/5' },
+                    { v: a10 ? a10.toFixed(2)+'s' : '—',         l: 'Avg 10m',   c: 'border-sky-500/20 bg-sky-500/5' },
+                    { v: a500 ? fmt('run_500m',a500) : '—',       l: 'Avg 500m',  c: 'border-violet-500/20 bg-violet-500/5' },
+                  ].map(({ v, l, c }) => (
+                    <div key={l} className={`rounded-2xl border p-4 ${c}`}>
+                      <p className="text-2xl font-black text-white">{v}</p>
+                      <p className="text-xs font-semibold text-slate-500 mt-0.5">{l}</p>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
-            {/* Test selector */}
-            <div>
-              <p className="mb-3 text-xs font-black uppercase tracking-wide text-slate-500">Select Test to Analyse</p>
-              <div className="flex flex-wrap gap-2">
-                {currentTests.map(t => (
-                  <button key={t.key} onClick={() => setSelectedTest(t.key)}
-                    className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${selectedTest === t.key ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
-                    {t.label}
-                  </button>
-                ))}
+            {/* Test picker + class comparison */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              <div className="border-b border-slate-800 p-5">
+                <p className="mb-3 text-xs font-black uppercase tracking-wide text-slate-500">Compare Classes</p>
+                <div className="flex flex-wrap gap-2">
+                  {tests.map(t => (
+                    <button key={t.key} onClick={() => setSelTest(t.key)}
+                      className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${selTest===t.key ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Class comparison for selected test */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <h2 className="mb-5 text-lg font-black text-white">{selectedTestObj.label} — Class Comparison</h2>
-              <div className="space-y-3">
+              <div className="divide-y divide-slate-800/50">
                 {HP_CLASSES.map(c => {
-                  const avg = classAvg(selectedGrade, c, selectedTest);
-                  const ss = getClassStudents(selectedGrade, c);
-                  const breakdown = tierBreakdown(selectedGrade, c, selectedTest, selectedTestObj.higher);
-                  if (ss.length === 0) return null;
-                  const tier = avg !== null ? getTier(selectedTest, avg, selectedTestObj.higher) : null;
-                  const pctTested = Math.round((ss.length - breakdown.noData) / ss.length * 100);
+                  const ss = students.filter(s => s.grade===grade && s.class_group===c);
+                  if (!ss.length) return null;
+                  const a = avg(ss, selTest);
+                  const bd = breakdown(ss, selTest, testObj.higher);
+                  const tier = a !== null ? getTier(selTest, a, testObj.higher) : null;
+                  const pctTested = Math.round((ss.length - bd.noData) / ss.length * 100);
                   return (
-                    <div key={c} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                      <div className="flex items-center gap-4 mb-3">
-                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black ${selectedGrade === 'Grade 8' ? 'bg-sky-500/15 text-sky-300' : 'bg-violet-500/15 text-violet-300'}`}>{c}</div>
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3">
+                    <div key={c} className="p-4 sm:p-5">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`h-10 w-10 shrink-0 flex items-center justify-center rounded-xl text-base font-black ${grade==='Grade 8'?'bg-sky-500/15 text-sky-300':'bg-violet-500/15 text-violet-300'}`}>{c}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-black text-white">Class {c}</p>
-                            {tier && avg !== null && (
-                              <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>
-                            )}
+                            {tier && a !== null && <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
+                            <span className="text-xs text-slate-500">{a !== null ? fmt(selTest,a)+testObj.unit : '—'} avg · {pctTested}% tested</span>
                           </div>
-                          <p className="text-xs text-slate-500">{ss.length} students · {pctTested}% tested · Avg: {avg !== null ? formatVal(selectedTest, avg) + selectedTestObj.unit : '—'}</p>
                         </div>
                       </div>
-                      {/* Tier bar */}
-                      <div className="flex h-2 w-full overflow-hidden rounded-full gap-0.5">
-                        {[
-                          { key: 'Elite', color: 'bg-emerald-500' },
-                          { key: 'Good', color: 'bg-sky-500' },
-                          { key: 'Avg', color: 'bg-amber-500' },
-                          { key: 'Dev', color: 'bg-orange-500' },
-                          { key: 'Poor', color: 'bg-red-500' },
-                        ].map(({ key, color }) => {
-                          const count = (breakdown as any)[key] || 0;
-                          const pct = (count / ss.length) * 100;
-                          return pct > 0 ? <div key={key} className={`${color} h-full rounded-full transition-all`} style={{ width: `${pct}%` }} title={`${key}: ${count}`} /> : null;
+                      {/* Stacked tier bar */}
+                      <div className="flex h-3 w-full overflow-hidden rounded-lg gap-0.5">
+                        {TIERS.map(({ label, bar }) => {
+                          const n = bd[label]||0;
+                          return n > 0 ? <div key={label} className={`${bar} h-full flex items-center justify-center`} style={{ flex: n }} title={`${label}: ${n}`}><span className="text-[8px] font-black text-white/80">{n}</span></div> : null;
                         })}
+                        {bd.noData > 0 && <div className="bg-slate-700 h-full" style={{ flex: bd.noData }} title={`No data: ${bd.noData}`}/>}
                       </div>
                       <div className="mt-1.5 flex gap-3 flex-wrap">
-                        {[
-                          { key: 'Elite', color: 'text-emerald-400' },
-                          { key: 'Good', color: 'text-sky-400' },
-                          { key: 'Avg', color: 'text-amber-400' },
-                          { key: 'Dev', color: 'text-orange-400' },
-                          { key: 'Poor', color: 'text-red-400' },
-                        ].map(({ key, color }) => {
-                          const count = (breakdown as any)[key] || 0;
-                          return count > 0 ? <span key={key} className={`text-[10px] font-black ${color}`}>{key} {count}</span> : null;
-                        })}
+                        {TIERS.map(({ label, color }) => { const n = bd[label]||0; return n > 0 ? <span key={label} className={`text-[9px] font-black ${color}`}>{label} {n}</span> : null; })}
+                        {bd.noData > 0 && <span className="text-[9px] text-slate-600">No data {bd.noData}</span>}
                       </div>
                     </div>
                   );
@@ -282,71 +256,75 @@ export default function HPTrendsPage() {
           </div>
         )}
 
-        {/* ── CLASS VIEW ── */}
+        {/* ── CLASS VIEW ─────────────────────────────── */}
         {view === 'class' && (
           <div className="space-y-5">
-            {/* Class selector */}
+            {/* Class grid */}
             <div className="grid grid-cols-5 gap-3">
               {HP_CLASSES.map(c => {
-                const key = `${selectedGrade === 'Grade 8' ? '8' : '9'}${c}`;
-                const ss = getClassStudents(selectedGrade, c);
+                const ss = students.filter(s => s.grade===grade && s.class_group===c);
+                const tested = ss.filter(s => latest[s.id]).length;
+                const isActive = selClass === c;
                 return (
-                  <button key={c} onClick={() => setSelectedClass(selectedClass === c ? null : c)}
-                    className={`rounded-2xl border p-4 text-center transition hover:scale-[1.03] ${selectedClass === c ? selectedGrade === 'Grade 8' ? 'border-sky-500/50 bg-sky-500/15' : 'border-violet-500/50 bg-violet-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
-                    <p className={`text-2xl font-black ${selectedClass === c ? selectedGrade === 'Grade 8' ? 'text-sky-300' : 'text-violet-300' : 'text-white'}`}>{c}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{ss.length} students</p>
+                  <button key={c} onClick={() => setSelClass(isActive ? null : c)}
+                    className={`rounded-2xl border p-4 text-center transition hover:scale-[1.02] ${isActive ? grade==='Grade 8' ? 'border-sky-500/40 bg-sky-500/10' : 'border-violet-500/40 bg-violet-500/10' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
+                    <p className={`text-3xl font-black ${isActive ? grade==='Grade 8' ? 'text-sky-300' : 'text-violet-300' : 'text-white'}`}>{c}</p>
+                    <p className="text-[10px] text-slate-500 mt-1">{tested}/{ss.length} tested</p>
                   </button>
                 );
               })}
             </div>
 
-            {selectedClass && (() => {
-              const ss = getClassStudents(selectedGrade, selectedClass);
+            {selClass && (() => {
+              const ss = students.filter(s => s.grade===grade && s.class_group===selClass);
               return (
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-                  {/* Header */}
-                  <div className="border-b border-slate-800 px-5 py-4">
-                    <h2 className="text-lg font-black text-white">{selectedGrade} Class {selectedClass}</h2>
-                    <p className="text-xs text-slate-500">{ss.length} students · Term 1 2026</p>
+                  <div className="border-b border-slate-800 px-5 py-4 flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-black text-white">{grade} · Class {selClass}</h2>
+                      <p className="text-xs text-slate-500">{ss.filter(s=>latest[s.id]).length}/{ss.length} students tested</p>
+                    </div>
                   </div>
-                  {/* Table header */}
-                  <div className="grid border-b border-slate-800 bg-slate-950/50 px-5 py-2.5" style={{ gridTemplateColumns: '1fr repeat(5, 80px) 60px' }}>
-                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">Student</p>
-                    {currentTests.slice(0, 5).map(t => (
-                      <p key={t.key} className="text-[10px] font-black uppercase tracking-wide text-slate-500 text-center">{t.label.split(' ')[0]}</p>
-                    ))}
-                    <p className="text-[10px] font-black uppercase tracking-wide text-slate-500 text-center">Group</p>
-                  </div>
-                  {/* Rows */}
-                  <div className="divide-y divide-slate-800/50">
-                    {ss.map(s => {
-                      const r = getLatest(s.id);
-                      return (
-                        <button key={s.id} onClick={() => { setSelectedStudent(s); setView('individual'); }}
-                          className="grid w-full items-center px-5 py-3 text-left hover:bg-slate-800/30 transition" style={{ gridTemplateColumns: '1fr repeat(5, 80px) 60px' }}>
-                          <div>
-                            <p className="text-sm font-semibold text-white">{s.full_name}</p>
-                          </div>
-                          {currentTests.slice(0, 5).map(t => {
-                            const val = r ? parseFloat(r[t.key]) : null;
-                            if (val === null || isNaN(val)) return <div key={t.key} className="text-center text-slate-700 text-xs">—</div>;
-                            const tier = getTier(t.key, val, t.higher);
-                            return (
-                              <div key={t.key} className="text-center">
-                                <p className={`text-xs font-black ${tier.color}`}>{formatVal(t.key, val)}</p>
-                                <p className="text-[9px] text-slate-600">{tier.label}</p>
-                              </div>
-                            );
-                          })}
-                          <div className="text-center">
-                            {s.training_group
-                              ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${s.training_group === 1 ? 'bg-sky-500/15 text-sky-300' : s.training_group === 2 ? 'bg-violet-500/15 text-violet-300' : s.training_group === 3 ? 'bg-amber-500/15 text-amber-300' : 'bg-emerald-500/15 text-emerald-300'}`}>G{s.training_group}</span>
-                              : <span className="text-slate-700 text-xs">—</span>
-                            }
-                          </div>
-                        </button>
-                      );
-                    })}
+                  {/* Scrollable table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[600px]">
+                      <thead>
+                        <tr className="border-b border-slate-800 bg-slate-950/50">
+                          <th className="px-5 py-2.5 text-left text-[10px] font-black uppercase tracking-wide text-slate-500">Student</th>
+                          {tests.map(t => <th key={t.key} className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wide text-slate-500">{t.label.replace(' Sprint','').replace(' Broad','').replace(' Jump','').replace(' Run','')}</th>)}
+                          <th className="px-3 py-2.5 text-center text-[10px] font-black uppercase tracking-wide text-slate-500">Group</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/50">
+                        {ss.map(s => {
+                          const r = latest[s.id];
+                          return (
+                            <tr key={s.id} onClick={() => { setSelStudent(s); setView('student'); }}
+                              className="cursor-pointer hover:bg-slate-800/30 transition">
+                              <td className="px-5 py-3">
+                                <p className="text-sm font-semibold text-white">{s.full_name}</p>
+                              </td>
+                              {tests.map(t => {
+                                const val = r ? parseFloat(r[t.key]) : NaN;
+                                if (isNaN(val)) return <td key={t.key} className="px-3 py-3 text-center text-slate-700 text-xs">—</td>;
+                                const tier = getTier(t.key, val, t.higher);
+                                return (
+                                  <td key={t.key} className="px-3 py-3 text-center">
+                                    <p className={`text-xs font-black ${tier.color}`}>{fmt(t.key,val)}</p>
+                                    <p className="text-[9px] text-slate-600">{tier.label}</p>
+                                  </td>
+                                );
+                              })}
+                              <td className="px-3 py-3 text-center">
+                                {s.training_group
+                                  ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${[,'bg-sky-500/15 text-sky-300','bg-violet-500/15 text-violet-300','bg-amber-500/15 text-amber-300','bg-emerald-500/15 text-emerald-300'][s.training_group]||''}`}>G{s.training_group}</span>
+                                  : <span className="text-slate-700 text-[10px]">—</span>}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               );
@@ -354,104 +332,130 @@ export default function HPTrendsPage() {
           </div>
         )}
 
-        {/* ── INDIVIDUAL ── */}
-        {view === 'individual' && (
+        {/* ── INDIVIDUAL ────────────────────────────── */}
+        {view === 'student' && (
           <div className="space-y-5">
-            {/* Student selector */}
-            {!selectedStudent ? (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                <p className="mb-4 text-sm text-slate-400">Select a student to view their profile</p>
+            {!selStudent ? (
+              <>
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search student..."
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
                 <div className="grid gap-1.5 sm:grid-cols-2">
-                  {students.filter(s => s.grade === selectedGrade).map(s => (
-                    <button key={s.id} onClick={() => setSelectedStudent(s)}
-                      className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3 text-left hover:border-sky-500/30 transition">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
-                        {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold text-white">{s.full_name}</p>
-                        <p className="text-[10px] text-slate-500">{s.grade} · Class {s.class_group}</p>
-                      </div>
-                    </button>
-                  ))}
+                  {gradeStudents.filter(s => !search || s.full_name.toLowerCase().includes(search.toLowerCase())).map(s => {
+                    const r = latest[s.id];
+                    const a10 = r ? parseFloat(r.sprint_10m) : NaN;
+                    const tier = !isNaN(a10) ? getTier('sprint_10m', a10, false) : null;
+                    return (
+                      <button key={s.id} onClick={() => setSelStudent(s)}
+                        className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-900 p-3 text-left hover:border-sky-500/30 transition">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                          {s.full_name.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">{s.full_name}</p>
+                          <p className="text-[10px] text-slate-500">Class {s.class_group}{s.training_group ? ` · G${s.training_group}` : ''}</p>
+                        </div>
+                        {tier && !isNaN(a10) && <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
+                        {!r && <span className="shrink-0 text-[9px] text-amber-500">No data</span>}
+                      </button>
+                    );
+                  })}
                 </div>
-              </div>
+              </>
             ) : (
               <div className="space-y-5">
                 {/* Student header */}
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 text-xl font-black text-emerald-300">
-                    {selectedStudent.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-xl font-black text-sky-300">
+                    {selStudent.full_name.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
                   </div>
-                  <div>
-                    <h2 className="text-2xl font-black text-white">{selectedStudent.full_name}</h2>
-                    <p className="text-sm text-slate-400">{selectedStudent.grade} · Class {selectedStudent.class_group}
-                      {selectedStudent.training_group ? ` · Group ${selectedStudent.training_group}` : ''}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-black text-white truncate">{selStudent.full_name}</h2>
+                    <p className="text-sm text-slate-400">{selStudent.grade} · Class {selStudent.class_group}{selStudent.training_group ? ` · Group ${selStudent.training_group}` : ''}</p>
                   </div>
-                  <button onClick={() => setSelectedStudent(null)} className="ml-auto rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-400 hover:text-white transition">← Back</button>
+                  <button onClick={() => setSelStudent(null)} className="shrink-0 rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-400 hover:text-white transition">← Back</button>
                 </div>
 
-                {/* Test results across terms */}
                 {(() => {
-                  const studentResults = results.filter(r => r.student_id === selectedStudent.id);
-                  const sTests = selectedStudent.grade === 'Grade 9' ? grade9Tests : grade8Tests;
-                  if (studentResults.length === 0) return (
-                    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-                      <p className="text-slate-500">No test results recorded yet.</p>
+                  const sResults = results.filter(r => r.student_id === selStudent.id);
+                  const sTests = TESTS.filter(t => t.grade === selStudent.grade.split(' ')[1] || t.grade === 'both');
+                  if (!sResults.length) return (
+                    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
+                      <p className="text-3xl mb-3">📋</p>
+                      <p className="text-slate-400">No test results recorded yet.</p>
                     </div>
                   );
+
+                  // Overall tier summary
+                  const termData = TERMS.map(term => sResults.find(r => r.term === term));
+                  const latestResult = termData.filter(Boolean).pop();
+                  const overallTiers = sTests.map(t => {
+                    const v = latestResult ? parseFloat(latestResult[t.key]) : NaN;
+                    return isNaN(v) ? null : getTier(t.key, v, t.higher);
+                  }).filter(Boolean);
+                  const eliteCount = overallTiers.filter(t => t?.label === 'Elite').length;
+                  const goodCount  = overallTiers.filter(t => t?.label === 'Good').length;
+
                   return (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                      {sTests.map(t => {
-                        const termVals = TERMS.map(term => {
-                          const r = studentResults.find(r => r.term === term);
-                          const v = r ? parseFloat(r[t.key]) : null;
-                          return v !== null && !isNaN(v) ? v : null;
-                        });
-                        const latest = termVals.filter(v => v !== null).pop();
-                        const tier = latest !== null && latest !== undefined ? getTier(t.key, latest, t.higher) : null;
-                        return (
-                          <div key={t.key} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
-                            <div className="mb-3 flex items-start justify-between">
-                              <div>
-                                <p className="text-xs font-black uppercase tracking-wide text-slate-500">{t.label}</p>
-                                {latest !== null && latest !== undefined && (
-                                  <p className={`text-2xl font-black mt-0.5 ${tier?.color}`}>{formatVal(t.key, latest)}<span className="text-sm ml-1 text-slate-500">{t.unit}</span></p>
-                                )}
+                    <>
+                      {/* Summary row */}
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
+                          <p className="text-3xl font-black text-emerald-400">{eliteCount}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Elite Tests</p>
+                        </div>
+                        <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4 text-center">
+                          <p className="text-3xl font-black text-sky-400">{goodCount}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Good Tests</p>
+                        </div>
+                        <div className="rounded-2xl border border-slate-700 bg-slate-900 p-4 text-center">
+                          <p className="text-3xl font-black text-white">{sResults.length}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Terms Tested</p>
+                        </div>
+                      </div>
+
+                      {/* Test cards */}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {sTests.map(t => {
+                          const termVals = TERMS.map(term => {
+                            const r = sResults.find(r => r.term === term);
+                            const v = r ? parseFloat(r[t.key]) : NaN;
+                            return isNaN(v) ? null : v;
+                          });
+                          const latest = termVals.filter((v): v is number => v !== null).pop();
+                          const tier = latest !== undefined ? getTier(t.key, latest, t.higher) : null;
+                          const hasAny = termVals.some(v => v !== null);
+
+                          return (
+                            <div key={t.key} className={`rounded-2xl border p-4 ${tier ? tier.bg.replace('/15','/8') + ' ' + tier.color.replace('text-','border-').replace('-400','-500/30') : 'border-slate-800 bg-slate-900'}`}>
+                              <div className="flex items-start justify-between mb-2">
+                                <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{t.label}</p>
+                                {tier && <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
                               </div>
-                              {tier && <span className={`rounded-full px-2.5 py-1 text-[10px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
-                            </div>
-                            <Sparkline values={termVals} higher={t.higher} />
-                            <div className="mt-2 grid grid-cols-3 gap-1">
-                              {TERMS.map((term, i) => (
-                                <div key={term} className="text-center">
-                                  <p className="text-[9px] text-slate-600">{term.replace('Term ', 'T')}</p>
-                                  <p className="text-xs font-black text-white">{termVals[i] !== null ? formatVal(t.key, termVals[i]!) : '—'}</p>
-                                </div>
-                              ))}
-                            </div>
-                            {/* Benchmark bar */}
-                            {latest !== null && latest !== undefined && BENCHMARKS[t.key] && (() => {
-                              const b = BENCHMARKS[t.key];
-                              const benchmarks = t.higher
-                                ? [b.dev, b.avg, b.good, b.elite]
-                                : [b.elite, b.good, b.avg, b.dev];
-                              const min = Math.min(...benchmarks), max = Math.max(...benchmarks);
-                              const pct = Math.min(100, Math.max(0, ((latest - min) / (max - min)) * 100));
-                              const adjustedPct = t.higher ? pct : 100 - pct;
-                              return (
-                                <div className="mt-3">
-                                  <div className="h-1.5 w-full rounded-full bg-gradient-to-r from-red-500 via-amber-500 via-sky-500 to-emerald-500 relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-slate-800" style={{ left: `${adjustedPct}%` }} />
+                              {latest !== undefined
+                                ? <p className={`text-2xl font-black ${tier?.color||'text-white'}`}>{fmt(t.key, latest)}<span className="text-sm ml-1 opacity-50">{t.unit}</span></p>
+                                : <p className="text-xl font-black text-slate-700">—</p>
+                              }
+                              {hasAny && (
+                                <>
+                                  <div className="mt-3 flex items-center gap-3">
+                                    <Spark vals={termVals} higher={t.higher}/>
+                                    <div className="flex gap-2">
+                                      {TERMS.map((term, i) => (
+                                        <div key={term} className="text-center">
+                                          <p className="text-[8px] text-slate-600">{term.replace('Term ','T')}</p>
+                                          <p className={`text-[10px] font-black ${termVals[i]!==null ? 'text-white' : 'text-slate-700'}`}>{termVals[i]!==null ? fmt(t.key,termVals[i]!) : '—'}</p>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })}
-                    </div>
+                                  {latest !== undefined && <BenchBar k={t.key} val={latest} higher={t.higher}/>}
+                                </>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   );
                 })()}
               </div>
