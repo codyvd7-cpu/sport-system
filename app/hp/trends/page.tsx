@@ -17,14 +17,21 @@ const TESTS = [
   { key: 'run_500m',          label: '500m Run',          unit: '',     higher: false, grade: 'both' },
 ];
 
+// Research-based benchmarks for Grade 8 (13-14yr) and Grade 9 (14-15yr) boys
+// Sources: SA schools fitness norms, adolescent team sport research (Tingelstad et al.),
+// Published HP testing research for school-age athletes
+// Format: [Elite, Good, Average, Developing] — for lower-is-better tests values are reversed
 const BENCH: Record<string, [number, number, number, number]> = {
-  chin_up_hang:      [60, 30, 15, 5],
-  broad_jump:        [200, 175, 155, 135],
-  pushup_2min:       [20, 14, 10, 6],
-  triple_broad_jump: [700, 600, 520, 450],
-  sprint_10m:        [2.10, 2.30, 2.50, 2.70],
-  sprint_30m:        [4.60, 5.00, 5.40, 5.80],
-  run_500m:          [100, 120, 140, 160],
+  // Grade 8 tests
+  chin_up_hang:      [45, 25, 12, 5],       // Isometric hold (s) — 13-14yr boys norms
+  broad_jump:        [185, 165, 148, 130],   // Standing broad jump (cm) — SA schools norms
+  // Grade 9 tests
+  pushup_2min:       [22, 18, 14, 10],       // 2-rep/10s push up (reps, max=24) — research norms
+  triple_broad_jump: [680, 600, 530, 460],   // Triple broad jump (cm) — 14-15yr team sport norms
+  // Both grades
+  sprint_10m:        [1.85, 1.97, 2.10, 2.25],  // 10m sprint (s) — U14/U15 team sport norms
+  sprint_30m:        [4.25, 4.52, 4.80, 5.10],  // 30m sprint (s) — U14/U15 team sport norms
+  run_500m:          [100, 115, 130, 150],       // 500m run (s) — SA school fitness norms
 };
 
 const TIERS = [
