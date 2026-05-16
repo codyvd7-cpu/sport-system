@@ -48,23 +48,19 @@ export default function LandingPage() {
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {DEPARTMENTS.map(dept => {
             const card = (
-              <div className={`group flex flex-col items-center gap-2.5 rounded-2xl border px-3 py-4 text-center transition-all duration-200 backdrop-blur-sm ${
+              <div className={`group flex flex-col items-center gap-2.5 rounded-2xl px-3 py-4 text-center transition-all duration-200 backdrop-blur-md ${
                 dept.available
-                  ? dept.color === 'sky'
-                    ? 'border-sky-500/30 bg-sky-500/10 hover:border-sky-400/60 hover:bg-sky-500/20 cursor-pointer'
-                    : dept.color === 'emerald'
-                    ? 'border-emerald-500/30 bg-emerald-500/10 hover:border-emerald-400/60 hover:bg-emerald-500/20 cursor-pointer'
-                    : 'border-slate-700/30 bg-slate-900/30 cursor-not-allowed opacity-40'
-                  : 'border-slate-700/30 bg-slate-900/30 cursor-not-allowed opacity-40'
+                  ? 'border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 cursor-pointer'
+                  : 'border border-white/5 bg-white/3 cursor-not-allowed opacity-30'
               }`}>
                 <span className="text-3xl">{dept.icon}</span>
                 <div>
                   <p className={`text-sm font-black ${dept.available ? 'text-white' : 'text-slate-500'}`}>{dept.label}</p>
-                  {!dept.available && <p className="text-[9px] font-black uppercase tracking-wide text-slate-600 mt-0.5">Coming soon</p>}
+                  {!dept.available && <p className="text-[9px] font-black uppercase tracking-wide text-slate-500 mt-0.5">Coming soon</p>}
                 </div>
                 {dept.available && (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-                    className={`h-3.5 w-3.5 transition-transform group-hover:translate-x-1 ${dept.color === 'sky' ? 'text-sky-400' : 'text-emerald-400'}`}>
+                    className="h-3.5 w-3.5 text-white/50 transition-transform group-hover:translate-x-1">
                     <path d="M5 12h14M12 5l7 7-7 7"/>
                   </svg>
                 )}
