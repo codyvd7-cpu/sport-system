@@ -207,7 +207,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
   async function loadPageData() {
     setLoading(true);
     const [athRes, attRes, perfRes, notesRes] = await Promise.all([
-      supabase.from('athletes').select('*'),
+      supabase.from('athletes').select('*').eq('id', athleteId),
       supabase.from('attendance').select('*').eq('athlete_id', athleteId).order('session_date', { ascending: false }).limit(100),
       supabase.from('performance_tests').select('*').eq('athlete_id', athleteId).order('test_date', { ascending: false }).limit(100),
       supabase.from('coach_notes').select('*').eq('athlete_id', athleteId).order('created_at', { ascending: false }),
@@ -224,10 +224,10 @@ export default function AthleteProfilePage({ params }: PageProps) {
 
   // ── MEMOS ────────────────────────────────────────────────────
   const athletes = React.useMemo(() => athleteRows.map(normalizeAthlete), [athleteRows]);
-  const athlete = React.useMemo(() => athletes.find((a) => String(a.id) === String(athleteId)) || null, [athletes, athleteId]);
-  const athleteIndex = React.useMemo(() => athletes.findIndex((a) => String(a.id) === String(athleteId)), [athletes, athleteId]);
-  const previousAthlete = athleteIndex > 0 ? athletes[athleteIndex - 1] : null;
-  const nextAthlete = athleteIndex >= 0 && athleteIndex < athletes.length - 1 ? athletes[athleteIndex + 1] : null;
+  const athlete = React.useMemo(() => athletes[0] || null, [athletes]);
+  const athleteIndex = 0;
+  const previousAthlete = null;
+  const nextAthlete = null;
   const attendanceRecords = React.useMemo(() => attendanceRows.map(normalizeAttendance).sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime()), [attendanceRows]);
   const performanceRecords = React.useMemo(() => performanceRows.map(normalizePerformance).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime()), [performanceRows]);
 
