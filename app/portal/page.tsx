@@ -155,6 +155,7 @@ export default function PortalPage() {
             </div>
             <div className="flex items-center gap-1.5">
               <div className="flex items-center gap-2">
+              <a href="/" className="rounded-full border border-slate-700/50 bg-slate-900 px-3 py-1.5 text-xs font-black text-slate-500 transition hover:text-slate-300">← Departments</a>
               <a href="/login" className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-black text-slate-300 transition hover:text-white">Coach Login</a>
               <a href="/player" className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">Player Login</a>
               <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-3 py-1.5">
