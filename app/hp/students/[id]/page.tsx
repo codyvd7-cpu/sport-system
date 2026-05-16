@@ -6,52 +6,115 @@ import { supabase } from '@/lib/supabase';
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
 
-const TESTS = [
-  { key: 'sprint_10m', label: '10m Sprint', unit: 's', lower: true },
-  { key: 'sprint_30m', label: '30m Sprint', unit: 's', lower: true },
-  { key: 'agility_505_left', label: '505 Left', unit: 's', lower: true },
-  { key: 'agility_505_right', label: '505 Right', unit: 's', lower: true },
-  { key: 'cmj', label: 'CMJ', unit: 'cm', lower: false },
-  { key: 'yoyo_ir1', label: 'Yo-Yo IR1', unit: 'm', lower: false },
-  { key: 'rsa_best', label: 'RSA Best', unit: 's', lower: true },
-  { key: 'rsa_mean', label: 'RSA Mean', unit: 's', lower: true },
-  { key: 'rsa_decrement', label: 'RSA Dec%', unit: '%', lower: true },
+const GRADE8_TESTS = [
+  { key: 'chin_up_hang',  label: 'Chin Up Hang',  unit: 's',   lower: false },
+  { key: 'broad_jump',    label: 'Broad Jump',     unit: 'cm',  lower: false },
+  { key: 'sprint_10m',    label: '10m Sprint',     unit: 's',   lower: true  },
+  { key: 'sprint_30m',    label: '30m Sprint',     unit: 's',   lower: true  },
+  { key: 'run_500m',      label: '500m Run',       unit: '',    lower: true  },
 ];
 
-const BENCHMARKS: Record<string, number[]> = {
-  sprint_10m: [1.72, 1.82, 1.92, 2.02],
-  sprint_30m: [4.25, 4.45, 4.65, 4.85],
-  agility_505_left: [2.35, 2.50, 2.65, 2.80],
-  agility_505_right: [2.35, 2.50, 2.65, 2.80],
-  cmj: [40, 35, 30, 25],
-  yoyo_ir1: [1200, 900, 700, 500],
-  rsa_best: [3.5, 3.8, 4.1, 4.4],
-  rsa_mean: [3.8, 4.1, 4.4, 4.7],
-  rsa_decrement: [3.0, 5.0, 7.0, 10.0],
+const GRADE9_TESTS = [
+  { key: 'pushup_2min',       label: '2 Min Push Up',     unit: 'reps', lower: false },
+  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm',   lower: false },
+  { key: 'sprint_10m',        label: '10m Sprint',        unit: 's',    lower: true  },
+  { key: 'sprint_30m',        label: '30m Sprint',        unit: 's',    lower: true  },
+  { key: 'run_500m',          label: '500m Run',          unit: '',     lower: true  },
+];
+
+// Research-based benchmarks [Elite, Good, Average, Developing]
+const BENCH: Record<string, [number,number,number,number]> = {
+  chin_up_hang:      [45, 25, 12, 5],
+  broad_jump:        [185, 165, 148, 130],
+  pushup_2min:       [22, 18, 14, 10],
+  triple_broad_jump: [680, 600, 530, 460],
+  sprint_10m:        [1.85, 1.97, 2.10, 2.25],
+  sprint_30m:        [4.25, 4.52, 4.80, 5.10],
+  run_500m:          [100, 115, 130, 150],
 };
 
-const TIERS = ['Elite','Good','Average','Developing','Poor'];
-const TIER_COLORS = ['text-emerald-400','text-sky-400','text-amber-400','text-orange-400','text-red-400'];
+const TIERS = [
+  { label: 'Elite',      color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', bar: 'bg-emerald-500' },
+  { label: 'Good',       color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/30',     bar: 'bg-sky-500' },
+  { label: 'Average',    color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   bar: 'bg-amber-500' },
+  { label: 'Developing', color: 'text-orange-400',  bg: 'bg-orange-500/15',  border: 'border-orange-500/30',  bar: 'bg-orange-500' },
+  { label: 'Poor',       color: 'text-red-400',     bg: 'bg-red-500/15',     border: 'border-red-500/30',     bar: 'bg-red-500' },
+];
 
-function getTier(key: string, value: number, lower: boolean) {
-  const b = BENCHMARKS[key]; if (!b) return null;
-  if (lower) { if (value <= b[0]) return 0; if (value <= b[1]) return 1; if (value <= b[2]) return 2; if (value <= b[3]) return 3; return 4; }
-  else { if (value >= b[0]) return 0; if (value >= b[1]) return 1; if (value >= b[2]) return 2; if (value >= b[3]) return 3; return 4; }
+function getTier(key: string, val: number, lower: boolean) {
+  const b = BENCH[key]; if (!b) return null;
+  const [e,g,a,d] = b;
+  if (lower) {
+    if (val <= e) return TIERS[0]; if (val <= g) return TIERS[1];
+    if (val <= a) return TIERS[2]; if (val <= d) return TIERS[3]; return TIERS[4];
+  } else {
+    if (val >= e) return TIERS[0]; if (val >= g) return TIERS[1];
+    if (val >= a) return TIERS[2]; if (val >= d) return TIERS[3]; return TIERS[4];
+  }
 }
+
+function fmt(key: string, val: number): string {
+  if (key === 'run_500m') {
+    const m = Math.floor(val/60), s = Math.round(val%60);
+    return `${m}:${s.toString().padStart(2,'0')}`;
+  }
+  if (key === 'chin_up_hang') {
+    if (val >= 60) { const m = Math.floor(val/60), s = val%60; return s ? `${m}m${s}s` : `${m}min`; }
+    return `${Math.round(val)}s`;
+  }
+  return val % 1 === 0 ? String(val) : val.toFixed(2);
+}
+
+function BenchBar({ k, val, lower }: { k: string; val: number; lower: boolean }) {
+  const b = BENCH[k]; if (!b) return null;
+  const [e,g,a,d] = lower ? [...b].reverse() as [number,number,number,number] : b;
+  const min = Math.min(e,g,a,d), max = Math.max(e,g,a,d);
+  const pct = Math.min(96, Math.max(4, ((val - min) / (max - min)) * 100));
+  return (
+    <div className="mt-2 relative h-2">
+      <div className="absolute inset-0 flex rounded-full overflow-hidden">
+        <div className="flex-1 bg-red-500/40"/>
+        <div className="flex-1 bg-orange-500/40"/>
+        <div className="flex-1 bg-amber-500/40"/>
+        <div className="flex-1 bg-sky-500/40"/>
+        <div className="flex-1 bg-emerald-500/40"/>
+      </div>
+      <div className="absolute top-1/2 -translate-y-1/2 h-3.5 w-3.5 rounded-full border-2 border-slate-950 bg-white shadow-lg"
+        style={{ left: `calc(${pct}% - 7px)` }} />
+    </div>
+  );
+}
+
+function Sparkline({ vals, lower }: { vals: (number|null)[]; lower: boolean }) {
+  const v = vals.filter((x): x is number => x !== null);
+  if (v.length < 2) return null;
+  const mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 1;
+  const W = 60, H = 20;
+  const improved = lower ? v[v.length-1] < v[0] : v[v.length-1] > v[0];
+  const pts = vals.map((x,i) => x!==null ? `${(i/(vals.length-1))*W},${H-2-((x-mn)/rng)*(H-4)}` : null).filter(Boolean).join(' ');
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-5 w-15" preserveAspectRatio="none">
+      <polyline points={pts} fill="none" stroke={improved?'#10b981':'#ef4444'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+const TERMS = ['Term 1','Term 2','Term 3'];
 
 export default function HPStudentProfile({ params }: PageProps) {
   const { id } = React.use(params);
-  const [student, setStudent] = React.useState<Row | null>(null);
+  const [student, setStudent] = React.useState<Row|null>(null);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [results, setResults] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [attTab, setAttTab] = React.useState<'summary'|'history'>('summary');
 
   React.useEffect(() => {
     async function load() {
       const [sRes, aRes, rRes] = await Promise.all([
         supabase.from('hp_students').select('*').eq('id', id).single(),
         supabase.from('hp_attendance').select('*').eq('student_id', id).order('session_date', { ascending: false }),
-        supabase.from('hp_test_results').select('*').eq('student_id', id).order('test_date', { ascending: false }),
+        supabase.from('hp_test_results').select('*').eq('student_id', id).order('year').order('term'),
       ]);
       setStudent(sRes.data);
       setAttendance(aRes.data || []);
@@ -61,10 +124,35 @@ export default function HPStudentProfile({ params }: PageProps) {
     load();
   }, [id]);
 
-  if (loading) return <main className="flex min-h-screen items-center justify-center bg-slate-950"><div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/></main>;
-  if (!student) return <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white"><p>Student not found</p></main>;
+  if (loading) return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
+    </main>
+  );
+  if (!student) return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+      <p>Student not found</p>
+    </main>
+  );
 
-  const attRate = attendance.length > 0 ? Math.round((attendance.filter(a => ['Present','Late'].includes(a.status)).length / attendance.length) * 100) : null;
+  const tests = student.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
+  const present = attendance.filter(a => ['Present','Late'].includes(a.status)).length;
+  const attRate = attendance.length > 0 ? Math.round((present / attendance.length) * 100) : null;
+
+  // Latest result
+  const latest = results[results.length - 1] || null;
+
+  // Overall tier summary from latest
+  const tierCounts = { Elite:0, Good:0, Average:0, Developing:0, Poor:0 };
+  if (latest) {
+    tests.forEach(t => {
+      const v = parseFloat(latest[t.key]);
+      if (!isNaN(v)) {
+        const tier = getTier(t.key, v, t.lower);
+        if (tier) (tierCounts as any)[tier.label]++;
+      }
+    });
+  }
 
   return (
     <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
@@ -72,69 +160,160 @@ export default function HPStudentProfile({ params }: PageProps) {
         <Link href="/hp/students" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← Students</Link>
 
         {/* Hero */}
-        <div className="mb-8 flex items-start gap-5">
+        <div className="mb-8 flex items-center gap-5">
           <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 text-xl font-black text-emerald-300">
-            {student.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
+            {student.full_name.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
           </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">HP Student</p>
-            <h1 className="mt-0.5 text-3xl font-black text-white">{student.full_name}</h1>
-            <div className="mt-2 flex gap-2">
-              <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-black text-emerald-300">{student.grade}</span>
-              {attRate !== null && <span className={`rounded-full px-3 py-1 text-xs font-black ${attRate >= 80 ? 'bg-emerald-500/15 text-emerald-300' : attRate >= 60 ? 'bg-amber-500/15 text-amber-300' : 'bg-red-500/15 text-red-300'}`}>{attRate}% attendance</span>}
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">High Performance</p>
+            <h1 className="mt-0.5 text-3xl font-black text-white truncate">{student.full_name}</h1>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">{student.grade}</span>
+              {student.class_group && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">Class {student.class_group}</span>}
+              {student.training_group && <span className={`rounded-full px-3 py-1 text-xs font-black ${student.training_group===1?'bg-sky-500/15 text-sky-300':student.training_group===2?'bg-violet-500/15 text-violet-300':student.training_group===3?'bg-amber-500/15 text-amber-300':'bg-emerald-500/15 text-emerald-300'}`}>Group {student.training_group}</span>}
+              {attRate !== null && <span className={`rounded-full px-3 py-1 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% attendance</span>}
             </div>
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Test results by term */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <h2 className="mb-4 text-lg font-black text-white">Test Results</h2>
-            {results.length === 0 ? <p className="text-sm text-slate-500">No test results yet.</p> : (
-              <div className="space-y-4">
-                {results.map(r => (
-                  <div key={r.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-                    <p className="mb-3 text-xs font-black uppercase tracking-wide text-emerald-400">{r.term} {r.year} · {new Date(r.test_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {TESTS.map(t => {
-                        const val = r[t.key];
-                        if (val === null || val === undefined) return null;
-                        const tier = getTier(t.key, val, t.lower);
-                        return (
-                          <div key={t.key} className="flex items-center justify-between">
-                            <span className="text-[10px] text-slate-500">{t.label}</span>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-black text-white">{val}{t.unit}</span>
-                              {tier !== null && <span className={`text-[9px] font-black ${TIER_COLORS[tier]}`}>{TIERS[tier]}</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Summary strip */}
+        {latest && (
+          <div className="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-5">
+            {Object.entries(tierCounts).map(([tier, count]) => {
+              const t = TIERS.find(x => x.label === tier)!;
+              return count > 0 ? (
+                <div key={tier} className={`rounded-2xl border p-3 text-center ${t.bg} ${t.border}`}>
+                  <p className={`text-2xl font-black ${t.color}`}>{count}</p>
+                  <p className="text-[10px] font-semibold text-white/50 mt-0.5">{tier}</p>
+                </div>
+              ) : null;
+            }).filter(Boolean)}
+          </div>
+        )}
+
+        {/* Test results */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+          <div className="border-b border-slate-800 px-5 py-4">
+            <h2 className="text-lg font-black text-white">Test Results</h2>
+            <p className="text-xs text-slate-500 mt-0.5">{student.grade} battery · {results.length} term{results.length !== 1 ? 's' : ''} recorded</p>
           </div>
 
-          {/* Attendance history */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <h2 className="mb-4 text-lg font-black text-white">Attendance ({attendance.length} sessions)</h2>
-            {attendance.length === 0 ? <p className="text-sm text-slate-500">No attendance records yet.</p> : (
-              <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
-                {attendance.map(a => {
-                  const cls = a.status === 'Present' ? 'bg-emerald-500/15 text-emerald-300' : a.status === 'Late' ? 'bg-amber-500/15 text-amber-300' : a.status === 'Absent' ? 'bg-red-500/15 text-red-300' : 'bg-sky-500/15 text-sky-300';
-                  return (
-                    <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5">
-                      <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black ${cls}`}>{a.status}</span>
-                      <p className="flex-1 text-xs text-slate-300">{a.session_type}</p>
-                      <p className="text-[10px] text-slate-500">{new Date(a.session_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}</p>
+          {results.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-3xl mb-2">📋</p>
+              <p className="text-slate-500 text-sm">No test results recorded yet.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
+              {tests.map(t => {
+                const termVals = TERMS.map(term => {
+                  const r = results.find(r => r.term === term);
+                  const v = r ? parseFloat(r[t.key]) : NaN;
+                  return isNaN(v) ? null : v;
+                });
+                const latestVal = termVals.filter((v): v is number => v !== null).pop();
+                const tier = latestVal !== undefined ? getTier(t.key, latestVal, t.lower) : null;
+
+                return (
+                  <div key={t.key} className={`rounded-2xl border p-4 ${tier ? `${tier.bg} ${tier.border}` : 'border-slate-800 bg-slate-950/40'}`}>
+                    <div className="flex items-start justify-between mb-1">
+                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{t.label}</p>
+                      {tier && <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                    {latestVal !== undefined
+                      ? <p className={`text-2xl font-black ${tier?.color||'text-white'}`}>{fmt(t.key, latestVal)}<span className="text-sm ml-1 opacity-40">{t.unit}</span></p>
+                      : <p className="text-2xl font-black text-slate-700">—</p>
+                    }
+                    {/* Term breakdown */}
+                    <div className="mt-2 flex items-center justify-between">
+                      <div className="flex gap-2">
+                        {TERMS.map((term, i) => (
+                          <div key={term} className="text-center">
+                            <p className="text-[8px] text-slate-600">{term.replace('Term ','T')}</p>
+                            <p className="text-[10px] font-black text-white">{termVals[i] !== null ? fmt(t.key, termVals[i]!) : '—'}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <Sparkline vals={termVals} lower={t.lower} />
+                    </div>
+                    {latestVal !== undefined && <BenchBar k={t.key} val={latestVal} lower={t.lower} />}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Attendance */}
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+          <div className="border-b border-slate-800 px-5 py-4 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-black text-white">Attendance</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{attendance.length} sessions · {present} present</p>
+            </div>
+            <div className="flex gap-1">
+              {(['summary','history'] as const).map(tab => (
+                <button key={tab} onClick={() => setAttTab(tab)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-black capitalize transition ${attTab===tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {attTab === 'summary' ? (
+            <div className="p-5">
+              {attendance.length === 0 ? (
+                <p className="text-sm text-slate-500">No attendance recorded yet.</p>
+              ) : (
+                <>
+                  {/* Attendance ring */}
+                  <div className="flex items-center gap-6 mb-5">
+                    <div className="relative h-20 w-20 shrink-0">
+                      <svg viewBox="0 0 36 36" className="h-20 w-20 -rotate-90">
+                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e293b" strokeWidth="3"/>
+                        <circle cx="18" cy="18" r="15.9" fill="none"
+                          stroke={attRate!==null&&attRate>=80?'#10b981':attRate!==null&&attRate>=60?'#f59e0b':'#ef4444'}
+                          strokeWidth="3" strokeLinecap="round"
+                          strokeDasharray={`${attRate||0} ${100-(attRate||0)}`}/>
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <p className={`text-lg font-black ${attRate!==null&&attRate>=80?'text-emerald-400':attRate!==null&&attRate>=60?'text-amber-400':'text-red-400'}`}>{attRate}%</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      {[
+                        { label: 'Present', val: attendance.filter(a=>a.status==='Present').length, color: 'text-emerald-400' },
+                        { label: 'Late',    val: attendance.filter(a=>a.status==='Late').length,    color: 'text-amber-400' },
+                        { label: 'Absent',  val: attendance.filter(a=>a.status==='Absent').length,  color: 'text-red-400' },
+                        { label: 'Excused', val: attendance.filter(a=>a.status==='Excused').length, color: 'text-sky-400' },
+                      ].filter(x => x.val > 0).map(x => (
+                        <div key={x.label} className="flex items-center gap-3">
+                          <span className={`text-sm font-black ${x.color} w-8 text-right`}>{x.val}</span>
+                          <span className="text-xs text-slate-500">{x.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/50">
+              {attendance.length === 0 ? (
+                <p className="p-5 text-sm text-slate-500">No attendance recorded yet.</p>
+              ) : attendance.map(a => {
+                const cls = a.status==='Present'?'bg-emerald-500/15 text-emerald-300':a.status==='Late'?'bg-amber-500/15 text-amber-300':a.status==='Absent'?'bg-red-500/15 text-red-300':'bg-sky-500/15 text-sky-300';
+                return (
+                  <div key={a.id} className="flex items-center gap-3 px-5 py-2.5">
+                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black ${cls}`}>{a.status}</span>
+                    <p className="flex-1 text-xs text-slate-400">{a.session_type}</p>
+                    <p className="text-[10px] text-slate-600">{new Date(a.session_date).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </main>
