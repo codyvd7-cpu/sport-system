@@ -4,11 +4,39 @@ import Link from 'next/link';
 import * as React from 'react';
 import Image from 'next/image';
 
+const ICONS: Record<string, React.ReactNode> = {
+  hockey: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8">
+      <path d="M3 17c0 0 2-8 8-8s10 4 10 4" strokeLinecap="round"/>
+      <circle cx="5" cy="19" r="2" fill="currentColor" stroke="none"/>
+      <path d="M3 17l2 2" strokeLinecap="round"/>
+    </svg>
+  ),
+  hp: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  rugby: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8">
+      <ellipse cx="12" cy="12" rx="8" ry="5" transform="rotate(-35 12 12)" strokeLinecap="round"/>
+      <path d="M8 8l8 8M6 10l3 3M10 6l3 3M13 15l3 3M15 13l3 3" strokeLinecap="round"/>
+    </svg>
+  ),
+  cricket: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-8 w-8">
+      <path d="M4 20l10-10" strokeLinecap="round"/>
+      <path d="M14 10l3-6 3 3-6 3z" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M4 20h3M4 20v-3" strokeLinecap="round"/>
+    </svg>
+  ),
+};
+
 const DEPARTMENTS = [
-  { id: 'hockey', label: 'Hockey', href: '/portal', icon: '🏑', available: true },
-  { id: 'hp', label: 'HP Classes', href: '/hp-login', icon: '⚡', available: true },
-  { id: 'rugby', label: 'Rugby', href: '#', icon: '🏉', available: false },
-  { id: 'cricket', label: 'Cricket', href: '#', icon: '🏏', available: false },
+  { id: 'hockey', label: 'Hockey', href: '/portal', available: true },
+  { id: 'hp', label: 'HP Classes', href: '/hp-login', available: true },
+  { id: 'rugby', label: 'Rugby', href: '#', available: false },
+  { id: 'cricket', label: 'Cricket', href: '#', available: false },
 ];
 
 export default function LandingPage() {
@@ -83,7 +111,7 @@ export default function LandingPage() {
                     ? 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 cursor-pointer'
                     : 'border-white/5 bg-white/3 cursor-not-allowed opacity-30'
                 }`}>
-                  <span className="text-3xl">{dept.icon}</span>
+                  <div className="text-white/70">{ICONS[dept.id]}</div>
                   <p className={`text-sm font-black ${dept.available ? 'text-white' : 'text-slate-500'}`}>{dept.label}</p>
                   {!dept.available
                     ? <p className="text-[9px] font-black uppercase tracking-wide text-slate-500">Coming soon</p>
