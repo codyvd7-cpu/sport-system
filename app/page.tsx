@@ -41,12 +41,12 @@ const DEPARTMENTS = [
 
 export default function LandingPage() {
   return (
-    <main className="relative min-h-screen bg-[#040810] text-white overflow-hidden flex flex-col">
+    <main className="relative h-screen bg-[#040810] text-white overflow-hidden flex flex-col">
 
       {/* ── FULL BLEED PHOTO BACKGROUND ─────────── */}
       <div className="absolute inset-0">
         {/* 4 photo panels side by side */}
-        <div className="absolute inset-0 grid grid-cols-4">
+        <div className="absolute inset-0 grid grid-cols-4 h-full">
           {['/sbc-photo-4.jpg', '/sbc-photo-1.jpg', '/sbc-photo-3.jpg', '/sbc-photo-2.jpg'].map((src, i) => (
             <div key={i} className="relative overflow-hidden">
               <Image
@@ -73,11 +73,11 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_60%_at_50%_40%,rgba(4,8,16,0.5),transparent)]" />
 
         {/* Bottom dark fade for department bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black/95 via-black/70 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-80 bg-gradient-to-t from-black via-black/90 to-transparent" />
       </div>
 
       {/* ── CONTENT ────────────────────────────── */}
-      <div className="relative flex flex-1 flex-col">
+      <div className="relative flex flex-1 flex-col" style={{ minHeight: "100vh" }}>
 
         {/* Hero — vertically centered */}
         <div className="flex flex-1 flex-col items-center justify-center px-4 pb-8 pt-16 text-center">
@@ -112,7 +112,7 @@ export default function LandingPage() {
         </div>
 
         {/* ── DEPARTMENT BAR ────────────────────── */}
-        <div className="relative border-t border-white/8 bg-black/50 backdrop-blur-md">
+        <div className="relative border-t border-white/8 bg-black">
           <div className="mx-auto max-w-4xl px-4 py-6">
             <p className="text-center text-[9px] font-black uppercase tracking-[0.35em] text-slate-500 mb-5">
               Select Department
