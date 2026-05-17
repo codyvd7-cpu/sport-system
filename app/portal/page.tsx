@@ -526,7 +526,14 @@ export default function PortalPage() {
         </div>
       </footer>
 
-    </main>
+      <footer className="py-4 text-center border-t border-slate-800/50">
+    <p className="text-[10px] text-slate-700">
+      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+      <span className="mx-2">·</span>
+      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+    </p>
+  </footer>
+</main>
   );
 }
 

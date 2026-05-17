@@ -56,7 +56,14 @@ function LoginForm() {
         <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-400">St Benedict&apos;s Hockey</p>
         <h1 className="mt-3 text-2xl font-black">Checking session...</h1>
       </div>
-    </main>
+      <footer className="py-4 text-center">
+    <p className="text-[10px] text-slate-700">
+      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+      <span className="mx-2">·</span>
+      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+    </p>
+  </footer>
+</main>
   );
 
   return (
@@ -100,7 +107,14 @@ function LoginForm() {
           <span>Coach Access Only</span>
         </div>
       </section>
-    </main>
+      <footer className="py-4 text-center">
+    <p className="text-[10px] text-slate-700">
+      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+      <span className="mx-2">·</span>
+      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+    </p>
+  </footer>
+</main>
   );
 }
 
@@ -109,7 +123,14 @@ export default function LoginPage() {
     <Suspense fallback={
       <main className="flex min-h-screen items-center justify-center bg-[#020617] text-white">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-      </main>
+        <footer className="py-4 text-center">
+    <p className="text-[10px] text-slate-700">
+      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+      <span className="mx-2">·</span>
+      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+    </p>
+  </footer>
+</main>
     }>
       <LoginForm />
     </Suspense>
