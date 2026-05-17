@@ -515,24 +515,16 @@ export default function PortalPage() {
       <footer className="border-t border-white/5 bg-[#030410] py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <span className="text-2xl">🏑</span>
             <p className="text-sm font-black text-white">St Benedict's College Hockey</p>
-            <a href="/player"
-              className="rounded-full border border-sky-500/30 bg-sky-500/10 px-5 py-2.5 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">
-              Player &amp; Parent Login →
-            </a>
             <p className="text-xs text-slate-600">© {new Date().getFullYear()} — Built for excellence</p>
+            <p className="text-[10px] text-slate-700">
+              <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+              <span className="mx-2">·</span>
+              <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+            </p>
           </div>
         </div>
       </footer>
-
-      <footer className="py-4 text-center border-t border-slate-800/50">
-    <p className="text-[10px] text-slate-700">
-      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
-      <span className="mx-2">·</span>
-      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
-    </p>
-  </footer>
 </main>
   );
 }
