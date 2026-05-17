@@ -16,10 +16,10 @@ const DEPARTMENTS = [
 // Clean professional sport icons
 // Sport icons - using clean SVG paths from established icon sets
 const ICON_SRCS: Record<string, string> = {
-  hockey: '/icon-hockey.png',
-  hp: '/icon-hp.png',
-  rugby: '/icon-rugby.png',
-  cricket: '/icon-cricket.png',
+  hockey: '/icon-hockey.svg',
+  hp: '/icon-hp.svg',
+  rugby: '/icon-rugby.svg',
+  cricket: '/icon-cricket.svg',
 };
 
 
