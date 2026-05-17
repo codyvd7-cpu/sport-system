@@ -15,7 +15,8 @@ export default function HPLoginPage() {
     setLoading(true);
     setError('');
 
-    const HP_CODE = process.env.NEXT_PUBLIC_HP_ACCESS_CODE || 'hp2026';
+    const HP_CODE = process.env.NEXT_PUBLIC_HP_ACCESS_CODE;
+    if (!HP_CODE) { setError('Access system not configured. Contact admin.'); setLoading(false); return; }
 
     if (code.trim().toLowerCase() === HP_CODE.toLowerCase()) {
       sessionStorage.setItem('hp_access', 'true');

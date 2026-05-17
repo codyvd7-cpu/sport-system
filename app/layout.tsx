@@ -4,9 +4,24 @@ import RootLayoutClient from '@/components/RootLayoutClient';
 import { ToastProvider } from '@/components/Toast';
 
 export const metadata: Metadata = {
-  title: "St Benedict's Hockey",
-  description: 'High-performance hockey operations platform',
+  title: "St Benedict's College — High Performance",
+  description: 'High-performance sport operations platform for St Benedict\'s College.',
   manifest: '/manifest.json',
+  openGraph: {
+    title: "St Benedict's College — High Performance",
+    description: 'High-performance sport operations platform for St Benedict\'s College.',
+    url: 'https://sport-system-rosy.vercel.app',
+    siteName: "SBC High Performance",
+    images: [{ url: '/sbc-photo-1.jpg', width: 1200, height: 630, alt: "St Benedict's College" }],
+    locale: 'en_ZA',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "St Benedict's College — High Performance",
+    description: 'High-performance sport operations platform for St Benedict\'s College.',
+    images: ['/sbc-photo-1.jpg'],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
