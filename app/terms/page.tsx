@@ -59,7 +59,7 @@ export default function TermsOfUse() {
 
           <section>
             <h2 className="text-lg font-black text-white mb-3">7. Intellectual Property</h2>
-            <p>The Platform, including its code, design, architecture, and features, is the intellectual property of Cody van Deventer ("the Developer"). St Benedict's College holds a licence to use the Platform for its internal operational purposes.</p>
+            <p>The Platform, including its code, design, architecture, and features, is the intellectual property of Cody Jason Van Dyk ("the Developer"). St Benedict's College holds a licence to use the Platform for its internal operational purposes.</p>
             <p className="mt-3">Nothing in these Terms grants St Benedict's College or any user ownership of the Platform or any of its components. The Developer retains all intellectual property rights including the right to license the Platform to other institutions.</p>
             <p className="mt-3">Data entered into the Platform by St Benedict's College staff remains the property of St Benedict's College.</p>
           </section>
@@ -95,15 +95,16 @@ export default function TermsOfUse() {
             <h2 className="text-lg font-black text-white mb-3">12. Contact</h2>
             <p>For any questions relating to these Terms:</p>
             <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <p className="text-white font-black">St Benedict's College</p>
-              <p className="text-slate-400 mt-1">High Performance Operations Platform · Bedfordview, Gauteng, South Africa</p>
+              <p className="text-white font-black">Cody Jason Van Dyk</p>
+              <p className="text-slate-400 mt-1">KINETIQ (Pty) Ltd (in registration)</p>
+              <p className="text-slate-400">Johannesburg, Gauteng, South Africa</p>
             </div>
           </section>
 
         </div>
 
         <div className="mt-16 border-t border-slate-800 pt-8 flex items-center justify-between flex-wrap gap-4">
-          <p className="text-xs text-slate-600">© 2026 St Benedict's College · HPOS · All rights reserved</p>
+          <p className="text-xs text-slate-600">© 2026 KINETIQ · All rights reserved</p>
           <a href="/privacy" className="text-xs text-sky-500 hover:text-sky-400">Privacy Policy →</a>
         </div>
       </div>

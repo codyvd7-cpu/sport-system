@@ -19,8 +19,8 @@ export default function PrivacyPolicy() {
 
           <section>
             <h2 className="text-lg font-black text-white mb-3">2. Who We Are</h2>
-            <p>The Platform is developed and maintained by Cody van Deventer, operating under the supervision and authority of St Benedict's College. The Platform is currently in an internal pilot phase and is not a commercial product.</p>
-            <p className="mt-3"><strong className="text-white">Responsible Party (as defined by POPIA):</strong> St Benedict's College, in conjunction with the Platform developer, is responsible for the processing of personal information collected through this Platform.</p>
+            <p>The Platform is developed and maintained by Cody Jason Van Dyk, operating under the supervision and authority of St Benedict's College. The Platform is currently in an internal pilot phase and is not a commercial product.</p>
+            <p className="mt-3"><strong className="text-white">Responsible Party (as defined by POPIA):</strong> KINETIQ (Pty) Ltd (in registration), represented by Cody Jason Van Dyk, in conjunction with St Benedict's College, is responsible for the processing of personal information collected through this Platform.</p>
           </section>
 
           <section>
@@ -116,15 +116,16 @@ export default function PrivacyPolicy() {
             <h2 className="text-lg font-black text-white mb-3">12. Contact</h2>
             <p>For any questions or requests relating to this Privacy Policy:</p>
             <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <p className="text-white font-black">St Benedict's College</p>
-              <p className="text-slate-400 mt-1">High Performance Operations Platform · Bedfordview, Gauteng, South Africa</p>
+              <p className="text-white font-black">Cody Jason Van Dyk</p>
+              <p className="text-slate-400 mt-1">KINETIQ (Pty) Ltd (in registration)</p>
+              <p className="text-slate-400">Johannesburg, Gauteng, South Africa</p>
             </div>
           </section>
 
         </div>
 
         <div className="mt-16 border-t border-slate-800 pt-8 flex items-center justify-between flex-wrap gap-4">
-          <p className="text-xs text-slate-600">© 2026 St Benedict's College · HPOS · All rights reserved</p>
+          <p className="text-xs text-slate-600">© 2026 KINETIQ · All rights reserved</p>
           <a href="/terms" className="text-xs text-sky-500 hover:text-sky-400">Terms of Use →</a>
         </div>
       </div>
