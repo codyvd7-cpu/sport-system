@@ -19,8 +19,15 @@ export default function HPStudentsPage() {
   const [classFilter, setClassFilter] = React.useState('All');
 
   async function load() {
-    const { data } = await supabase.from('hp_students').select('*').eq('is_active', true).order('grade').order('full_name');
-    setStudents(data || []);
+    const { data } = await supabase.from('hp_students').select('*').eq('is_active', true);
+    // Sort by surname (last word of full_name) alphabetically, then by grade
+    const sorted = (data || []).sort((a, b) => {
+      const surnameA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+      const surnameB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+      if (surnameA !== surnameB) return surnameA.localeCompare(surnameB);
+      return a.grade.localeCompare(b.grade);
+    });
+    setStudents(sorted);
     setLoading(false);
   }
 

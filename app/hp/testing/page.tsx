@@ -52,11 +52,11 @@ function assignGroups(students: Row[], results: Record<string, Row>, numGroups: 
       const val = t.key === 'run_500m' ? mmssToSeconds(r[t.key] || '') : parseFloat(r[t.key] || '');
       if (val !== null && !isNaN(val)) scores.push(val);
     });
-    return { ...s, _scores: scores, _avgScore: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : null };
+    return { ...s, _scores: scores, _avgScore: scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : null } as Row;
   });
 
   // Compute normalised composite score per student
-  const withScores = scored.map(s => {
+  const withScores = scored.map((s: Row) => {
     const r = results[s.id] || {};
     let total = 0, count = 0;
     tests.forEach(t => {
@@ -89,7 +89,7 @@ function assignGroups(students: Row[], results: Record<string, Row>, numGroups: 
 export default function HPTestingPage() {
   const { showToast } = useToast();
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [term, setTerm] = React.useState('Term 1');
+  const [term, setTerm] = React.useState('Term 2');
   const [year, setYear] = React.useState(2026);
   const [testDate, setTestDate] = React.useState(() => new Date().toISOString().split('T')[0]);
   const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
@@ -97,10 +97,19 @@ export default function HPTestingPage() {
   const [saving, setSaving] = React.useState<Record<string, boolean>>({});
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});
   const [activeStudent, setActiveStudent] = React.useState<string | null>(null);
+  const [numGroups, setNumGroups] = React.useState(3);
 
   React.useEffect(() => {
-    supabase.from('hp_students').select('*').eq('is_active', true).order('grade').order('full_name')
-      .then(({ data }) => setStudents(data || []));
+    supabase.from('hp_students').select('*').eq('is_active', true)
+      .then(({ data }) => {
+        const sorted = (data || []).sort((a, b) => {
+          const surnameA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          const surnameB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          if (surnameA !== surnameB) return surnameA.localeCompare(surnameB);
+          return a.grade.localeCompare(b.grade);
+        });
+        setStudents(sorted);
+      });
   }, []);
 
   React.useEffect(() => {
