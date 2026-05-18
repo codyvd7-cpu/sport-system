@@ -96,8 +96,8 @@ export default function HPTestingPage() {
   const [results, setResults] = React.useState<Record<string, Row>>({});
   const [saving, setSaving] = React.useState<Record<string, boolean>>({});
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});
-  const [activeStudent, setActiveStudent] = React.useState<string | null>(null);
-  const [numGroups, setNumGroups] = React.useState(3);
+  const [prevResults, setPrevResults] = React.useState<Record<string, Row>>({});
+  const [loadError, setLoadError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     supabase.from('hp_students').select('*').eq('is_active', true)
@@ -114,18 +114,31 @@ export default function HPTestingPage() {
 
   React.useEffect(() => {
     if (students.length === 0) return;
-    supabase.from('hp_test_results').select('*').eq('term', term).eq('year', year)
-      .then(({ data }) => {
-        const pre: typeof results = {};
-        const preSaved: typeof saved = {};
-        (data || []).forEach(r => {
-          pre[r.student_id] = r;
-          if (r.run_500m) pre[r.student_id].run_500m = secondsToMmss(r.run_500m);
-          preSaved[r.student_id] = true;
-        });
-        setResults(pre);
-        setSaved(preSaved);
+    setLoadError(null);
+    const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
+    Promise.all([
+      supabase.from('hp_test_results').select('*').eq('term', term).eq('year', year),
+      prevTerm
+        ? supabase.from('hp_test_results').select('*').eq('term', prevTerm).eq('year', year)
+        : Promise.resolve({ data: [] as Row[], error: null }),
+    ]).then(([curr, prev]) => {
+      if (curr.error) {
+        setLoadError(`Could not load results: ${curr.error.message}`);
+        return;
+      }
+      const pre: typeof results = {};
+      const preSaved: typeof saved = {};
+      (curr.data || []).forEach(r => {
+        pre[r.student_id] = r;
+        if (r.run_500m) pre[r.student_id].run_500m = secondsToMmss(r.run_500m);
+        preSaved[r.student_id] = true;
       });
+      setResults(pre);
+      setSaved(preSaved);
+      const prevPre: typeof results = {};
+      (prev.data || []).forEach(r => { prevPre[r.student_id] = r; });
+      setPrevResults(prevPre);
+    });
   }, [term, year, students]);
 
   const classStudents = React.useMemo(() => {
@@ -168,7 +181,15 @@ export default function HPTestingPage() {
   }
 
   async function saveGroups() {
-    const grouped = assignGroups(classStudents, results, numGroups, tests);
+    const { data: allResults } = await supabase
+      .from('hp_test_results').select('*').eq('year', year).order('term', { ascending: true });
+    const latestMap: Record<string, Row> = {};
+    (allResults || []).forEach(r => {
+      const converted = { ...r };
+      if (converted.run_500m) converted.run_500m = secondsToMmss(converted.run_500m);
+      latestMap[r.student_id] = converted;
+    });
+    const grouped = assignGroups(classStudents, latestMap, numGroups, tests);
     const updates = grouped.filter(s => s._group !== null).map(s =>
       supabase.from('hp_students').update({ training_group: s._group }).eq('id', s.id)
     );
@@ -177,7 +198,7 @@ export default function HPTestingPage() {
       const g = grouped.find(gs => gs.id === s.id);
       return g ? { ...s, training_group: g._group } : s;
     }));
-    showToast(`Groups saved — ${numGroups} groups assigned`);
+    showToast(`Groups saved — ${numGroups} groups assigned from latest results`);
   }
 
   return (
@@ -240,6 +261,13 @@ export default function HPTestingPage() {
 
 
 
+        {/* Load error banner */}
+        {loadError && (
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            ⚠ {loadError}
+          </div>
+        )}
+
         {/* Step 2: Enter results */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
           <div className="mb-4 flex items-center justify-between">
@@ -255,6 +283,7 @@ export default function HPTestingPage() {
               const isOpen = activeStudent === s.id;
               const isDone = saved[s.id];
               const studentTests = s.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
+              const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
               return (
                 <div key={s.id} className={`rounded-2xl border transition ${isDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800 bg-slate-900/50'}`}>
                   <button onClick={() => setActiveStudent(isOpen ? null : s.id)} className="flex w-full items-center gap-3 px-4 py-3">
@@ -270,6 +299,25 @@ export default function HPTestingPage() {
                   </button>
                   {isOpen && (
                     <div className="border-t border-slate-800 px-4 pb-4 pt-3">
+                      {/* Previous term reference */}
+                      {prevTerm && prevResults[s.id] && (
+                        <div className="mb-3 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2">
+                          <p className="mb-1.5 text-[9px] font-black uppercase tracking-wide text-slate-500">{prevTerm} Reference</p>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1">
+                            {studentTests.map(t => {
+                              const prev = prevResults[s.id];
+                              const raw = t.key === 'run_500m' ? prev[t.key] : parseFloat(prev[t.key]);
+                              const display = t.key === 'run_500m' && raw ? secondsToMmss(raw as number) : (isNaN(raw as number) ? null : raw);
+                              return display != null ? (
+                                <span key={t.key} className="text-[10px]">
+                                  <span className="text-slate-600">{t.label}: </span>
+                                  <span className="font-black text-slate-300">{display}{t.unit !== 'mm:ss' ? t.unit : ''}</span>
+                                </span>
+                              ) : null;
+                            })}
+                          </div>
+                        </div>
+                      )}
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {studentTests.map(t => (
                           <div key={t.key}>
@@ -296,6 +344,63 @@ export default function HPTestingPage() {
             })}
           </div>
         </div>
+
+        {/* Step 3: Assign Training Groups */}
+        {classStudents.length > 0 && !mixedGrades && (
+          <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <p className="mb-1 text-xs font-black uppercase tracking-wide text-slate-500">Step 3 — Assign Training Groups</p>
+            <p className="mb-4 text-[11px] text-slate-600">Ranked from <span className="text-white font-black">latest available results</span> per student — Term 2 if done, Term 1 fallback. Students without results are left ungrouped.</p>
+            <div className="mb-4 flex items-center gap-3">
+              <p className="text-xs font-black text-slate-400">Number of Groups</p>
+              <div className="flex gap-1.5">
+                {[2, 3, 4, 5].map(n => (
+                  <button key={n} onClick={() => setNumGroups(n)}
+                    className={`h-8 w-8 rounded-xl text-sm font-black transition ${numGroups === n ? 'border border-violet-500/40 bg-violet-500/20 text-violet-300' : 'border border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(() => {
+              const preview = assignGroups(classStudents, results, numGroups, tests);
+              const ungrouped = preview.filter(s => s._group === null);
+              const groupColors = [
+                'border-sky-500/20 bg-sky-500/5 text-sky-300',
+                'border-violet-500/20 bg-violet-500/5 text-violet-300',
+                'border-amber-500/20 bg-amber-500/5 text-amber-300',
+                'border-emerald-500/20 bg-emerald-500/5 text-emerald-300',
+                'border-rose-500/20 bg-rose-500/5 text-rose-300',
+              ];
+              return (
+                <div className="mb-4 space-y-2">
+                  {Array.from({ length: numGroups }, (_, i) => i + 1).map(g => {
+                    const members = preview.filter(s => s._group === g);
+                    if (!members.length) return null;
+                    return (
+                      <div key={g} className={`rounded-xl border p-3 ${groupColors[g - 1]}`}>
+                        <p className="mb-2 text-[10px] font-black uppercase tracking-wide">Group {g} · {members.length} students</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {members.map(s => (
+                            <span key={s.id} className="rounded-lg bg-black/20 px-2 py-0.5 text-[10px] font-semibold">
+                              {s.full_name.trim().split(' ').pop()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {ungrouped.length > 0 && (
+                    <p className="text-[11px] text-slate-600">{ungrouped.length} student{ungrouped.length > 1 ? 's' : ''} not yet tested — will not be assigned</p>
+                  )}
+                </div>
+              );
+            })()}
+            <button onClick={saveGroups}
+              className="w-full rounded-xl border border-violet-500 bg-violet-500/15 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 transition">
+              Save Groups to Students
+            </button>
+          </div>
+        )}
       </div>
     </main>
   );
