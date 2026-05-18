@@ -157,12 +157,14 @@ export default function HPTestingPage() {
         payload[t.key] = vals[t.key] ? parseFloat(vals[t.key]) : null;
       }
     });
-    await supabase.from('hp_test_results').delete().eq('student_id', studentId).eq('term', term).eq('year', year);
-    await supabase.from('hp_test_results').insert([payload]);
+    const { error: delError } = await supabase.from('hp_test_results').delete().eq('student_id', studentId).eq('term', term).eq('year', year);
+    if (delError) { showToast(`Delete error: ${delError.message}`); setSaving(p => ({ ...p, [studentId]: false })); return; }
+    const { error: insError } = await supabase.from('hp_test_results').insert([payload]);
+    if (insError) { showToast(`Save error: ${insError.message}`); setSaving(p => ({ ...p, [studentId]: false })); return; }
     setSaved(p => ({ ...p, [studentId]: true }));
     setSaving(p => ({ ...p, [studentId]: false }));
     setActiveStudent(null);
-    showToast('Results saved');
+    showToast('Results saved ✓');
   }
 
   async function saveGroups() {

@@ -108,6 +108,7 @@ export default function HPStudentProfile({ params }: PageProps) {
   const [results, setResults] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [attTab, setAttTab] = React.useState<'summary'|'history'>('summary');
+  const [selectedYear, setSelectedYear] = React.useState(2026);
 
   React.useEffect(() => {
     async function load() {
@@ -139,8 +140,8 @@ export default function HPStudentProfile({ params }: PageProps) {
   const present = attendance.filter(a => ['Present','Late'].includes(a.status)).length;
   const attRate = attendance.length > 0 ? Math.round((present / attendance.length) * 100) : null;
 
-  // Latest result
-  const latest = results[results.length - 1] || null;
+  const yearResults = results.filter(r => r.year === selectedYear);
+  const latest = yearResults[yearResults.length - 1] || null;
 
   // Overall tier summary from latest
   const tierCounts = { Elite:0, Good:0, Average:0, Developing:0, Poor:0 };
@@ -193,21 +194,31 @@ export default function HPStudentProfile({ params }: PageProps) {
 
         {/* Test results */}
         <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="border-b border-slate-800 px-5 py-4">
-            <h2 className="text-lg font-black text-white">Test Results</h2>
-            <p className="text-xs text-slate-500 mt-0.5">{student.grade} battery · {results.length} term{results.length !== 1 ? 's' : ''} recorded</p>
+          <div className="border-b border-slate-800 px-5 py-4 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg font-black text-white">Test Results</h2>
+              <p className="text-xs text-slate-500 mt-0.5">{student.grade} battery · {yearResults.length} term{yearResults.length !== 1 ? 's' : ''} recorded</p>
+            </div>
+            <div className="flex gap-1.5">
+              {[2025, 2026, 2027].map(y => (
+                <button key={y} onClick={() => setSelectedYear(y)}
+                  className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${selectedYear === y ? 'bg-violet-500/20 text-violet-300' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>
+                  {y}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {results.length === 0 ? (
+          {yearResults.length === 0 ? (
             <div className="p-8 text-center">
               <p className="text-3xl mb-2">📋</p>
-              <p className="text-slate-500 text-sm">No test results recorded yet.</p>
+              <p className="text-slate-500 text-sm">No test results recorded for {selectedYear}.</p>
             </div>
           ) : (
             <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
               {tests.map(t => {
                 const termVals = TERMS.map(term => {
-                  const r = results.find(r => r.term === term);
+                  const r = yearResults.find(r => r.term === term);
                   const v = r ? parseFloat(r[t.key]) : NaN;
                   return isNaN(v) ? null : v;
                 });
