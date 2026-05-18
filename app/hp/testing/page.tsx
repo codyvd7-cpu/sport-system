@@ -98,6 +98,8 @@ export default function HPTestingPage() {
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});
   const [prevResults, setPrevResults] = React.useState<Record<string, Row>>({});
   const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [activeStudent, setActiveStudent] = React.useState<string | null>(null);
+  const [numGroups, setNumGroups] = React.useState(3);
 
   React.useEffect(() => {
     supabase.from('hp_students').select('*').eq('is_active', true)
@@ -116,29 +118,31 @@ export default function HPTestingPage() {
     if (students.length === 0) return;
     setLoadError(null);
     const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
-    Promise.all([
-      supabase.from('hp_test_results').select('*').eq('term', term).eq('year', year),
-      prevTerm
-        ? supabase.from('hp_test_results').select('*').eq('term', prevTerm).eq('year', year)
-        : Promise.resolve({ data: [] as Row[], error: null }),
-    ]).then(([curr, prev]) => {
-      if (curr.error) {
-        setLoadError(`Could not load results: ${curr.error.message}`);
-        return;
-      }
-      const pre: typeof results = {};
-      const preSaved: typeof saved = {};
-      (curr.data || []).forEach(r => {
-        pre[r.student_id] = r;
-        if (r.run_500m) pre[r.student_id].run_500m = secondsToMmss(r.run_500m);
-        preSaved[r.student_id] = true;
+
+    supabase.from('hp_test_results').select('*').eq('term', term).eq('year', year)
+      .then(({ data, error }) => {
+        if (error) { setLoadError(`Could not load results: ${error.message}`); return; }
+        const pre: Record<string, Row> = {};
+        const preSaved: Record<string, boolean> = {};
+        (data || []).forEach(r => {
+          pre[r.student_id] = r;
+          if (r.run_500m) pre[r.student_id].run_500m = secondsToMmss(r.run_500m);
+          preSaved[r.student_id] = true;
+        });
+        setResults(pre);
+        setSaved(preSaved);
       });
-      setResults(pre);
-      setSaved(preSaved);
-      const prevPre: typeof results = {};
-      (prev.data || []).forEach(r => { prevPre[r.student_id] = r; });
-      setPrevResults(prevPre);
-    });
+
+    if (prevTerm) {
+      supabase.from('hp_test_results').select('*').eq('term', prevTerm).eq('year', year)
+        .then(({ data }) => {
+          const prevPre: Record<string, Row> = {};
+          (data || []).forEach(r => { prevPre[r.student_id] = r; });
+          setPrevResults(prevPre);
+        });
+    } else {
+      setPrevResults({});
+    }
   }, [term, year, students]);
 
   const classStudents = React.useMemo(() => {
