@@ -8,7 +8,7 @@ type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
 
 const GRADE8_TESTS = [
-  { key: 'chin_up_hang', label: 'Chin Up Hang', unit: 's', higher: true },
+  { key: 'chin_up_hang', label: 'Chin Up Hang', unit: 'mm:ss', higher: true },
   { key: 'broad_jump', label: 'Broad Jump', unit: 'cm', higher: true },
   { key: 'sprint_10m', label: '10m Sprint', unit: 's', higher: false },
   { key: 'sprint_30m', label: '30m Sprint', unit: 's', higher: false },
@@ -127,6 +127,7 @@ export default function HPTestingPage() {
         (data || []).forEach(r => {
           pre[r.student_id] = r;
           if (r.run_500m) pre[r.student_id].run_500m = secondsToMmss(r.run_500m);
+          if (r.chin_up_hang) pre[r.student_id].chin_up_hang = secondsToMmss(r.chin_up_hang);
           preSaved[r.student_id] = true;
         });
         setResults(pre);
@@ -168,7 +169,7 @@ export default function HPTestingPage() {
     const studentTests = student?.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
     const payload: Row = { student_id: studentId, term, year, test_date: testDate };
     studentTests.forEach(t => {
-      if (t.key === 'run_500m') {
+      if (t.key === 'run_500m' || t.key === 'chin_up_hang') {
         payload[t.key] = mmssToSeconds(vals[t.key] || '');
       } else {
         payload[t.key] = vals[t.key] ? parseFloat(vals[t.key]) : null;
@@ -328,7 +329,8 @@ export default function HPTestingPage() {
                             <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-500">{t.label} ({t.unit})</label>
                             <input
                               type={t.unit === 'mm:ss' ? 'text' : 'number'}
-                              step="any" inputMode="decimal"
+                              step="any"
+                              inputMode={t.unit === 'mm:ss' ? 'text' : 'decimal'}
                               value={results[s.id]?.[t.key] || ''}
                               onChange={e => setResults(p => ({ ...p, [s.id]: { ...(p[s.id] || {}), [t.key]: e.target.value } }))}
                               placeholder={t.unit === 'mm:ss' ? '2:05' : '—'}
