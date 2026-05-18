@@ -107,6 +107,7 @@ export default function HPTrendsPage() {
   const [results,  setResults]  = React.useState<Row[]>([]);
   const [loading,  setLoading]  = React.useState(true);
   const [grade, setGrade]       = React.useState<'Grade 8'|'Grade 9'>('Grade 8');
+  const [selYear, setSelYear]   = React.useState(2026);
   const [view,  setView]        = React.useState<'overview'|'class'|'student'>('overview');
   const [selClass,   setSelClass]   = React.useState<string|null>(null);
   const [selStudent, setSelStudent] = React.useState<Row|null>(null);
@@ -122,9 +123,9 @@ export default function HPTrendsPage() {
 
   const latest = React.useMemo(() => {
     const map: Record<string,Row> = {};
-    results.forEach(r => { map[r.student_id] = r; });
+    results.filter(r => r.year === selYear).forEach(r => { map[r.student_id] = r; });
     return map;
-  }, [results]);
+  }, [results, selYear]);
 
   const gradeStudents = students.filter(s => s.grade === grade);
   const tests = TESTS.filter(t => t.grade === grade.split(' ')[1] || t.grade === 'both');
@@ -158,19 +159,28 @@ export default function HPTrendsPage() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← High Performance</Link>
 
-        {/* Header + grade toggle always visible */}
         <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
             <h1 className="mt-1 text-3xl font-black text-white">Trends & Analytics</h1>
           </div>
-          <div className="flex gap-1.5">
-            {(['Grade 8','Grade 9'] as const).map(g => (
-              <button key={g} onClick={() => { setGrade(g); setSelClass(null); setSelStudent(null); setSelTest('sprint_10m'); }}
-                className={`rounded-xl px-4 py-2 text-sm font-black transition ${grade===g ? g==='Grade 8' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
-                {g}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1.5">
+              {[2025, 2026, 2027].map(y => (
+                <button key={y} onClick={() => setSelYear(y)}
+                  className={`rounded-xl px-3 py-2 text-sm font-black transition ${selYear === y ? 'bg-slate-700 border border-slate-500 text-white' : 'border border-slate-700 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                  {y}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-1.5">
+              {(['Grade 8','Grade 9'] as const).map(g => (
+                <button key={g} onClick={() => { setGrade(g); setSelClass(null); setSelStudent(null); setSelTest('sprint_10m'); }}
+                  className={`rounded-xl px-4 py-2 text-sm font-black transition ${grade===g ? g==='Grade 8' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
+                  {g}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -400,7 +410,7 @@ export default function HPTrendsPage() {
                 </div>
 
                 {(() => {
-                  const sResults = results.filter(r => r.student_id === selStudent.id);
+                  const sResults = results.filter(r => r.student_id === selStudent.id && r.year === selYear);
                   const sTests = TESTS.filter(t => t.grade === selStudent.grade.split(' ')[1] || t.grade === 'both');
                   if (!sResults.length) return (
                     <div className="rounded-2xl border border-slate-800 bg-slate-900 p-10 text-center">
