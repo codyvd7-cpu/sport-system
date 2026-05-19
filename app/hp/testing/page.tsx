@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 
@@ -88,11 +89,13 @@ function assignGroups(students: Row[], results: Record<string, Row>, numGroups: 
 
 export default function HPTestingPage() {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const urlClass = searchParams.get('class');
   const [students, setStudents] = React.useState<Row[]>([]);
   const [term, setTerm] = React.useState('Term 2');
   const [year, setYear] = React.useState(2026);
   const [testDate, setTestDate] = React.useState(() => new Date().toISOString().split('T')[0]);
-  const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = React.useState<string | null>(urlClass || null);
   const [results, setResults] = React.useState<Record<string, Row>>({});
   const [saving, setSaving] = React.useState<Record<string, boolean>>({});
   const [saved, setSaved] = React.useState<Record<string, boolean>>({});

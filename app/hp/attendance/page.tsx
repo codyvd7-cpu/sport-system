@@ -1,22 +1,30 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
+const CLASS_OPTIONS = [
+  '8B','8E','8F','8J','8M',
+  '9B','9E','9F','9J','9M',
+];
 
 export default function HPAttendancePage() {
   const { showToast } = useToast();
+  const searchParams = useSearchParams();
+  const urlClass = searchParams.get('class');
+
   const [students, setStudents] = React.useState<Row[]>([]);
   const [statuses, setStatuses] = React.useState<Record<string, string>>({});
   const [sessionDate, setSessionDate] = React.useState(() => new Date().toISOString().split('T')[0]);
   const [sessionType, setSessionType] = React.useState('HP Training');
-  const [selectedClass, setSelectedClass] = React.useState<string | null>(null);
+  const [selectedClass, setSelectedClass] = React.useState<string | null>(urlClass || null);
   const [saving, setSaving] = React.useState(false);
   const [history, setHistory] = React.useState<Row[]>([]);
-  const [step, setStep] = React.useState(1);
+  const [step, setStep] = React.useState(urlClass ? 2 : 1);
 
   React.useEffect(() => {
     async function load() {
@@ -24,7 +32,11 @@ export default function HPAttendancePage() {
         supabase.from('hp_students').select('*').eq('is_active', true).order('grade').order('full_name'),
         supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(100),
       ]);
-      const s = sRes.data || [];
+      const s = (sRes.data || []).sort((a: Row, b: Row) => {
+        const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+        const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+        return sA.localeCompare(sB);
+      });
       setStudents(s);
       const init: Record<string, string> = {};
       s.forEach((st: Row) => { init[st.id] = 'Present'; });
