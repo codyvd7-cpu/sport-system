@@ -175,20 +175,16 @@ ${testLines}
 ${improvements ? `\nKey improvements (Term 1 → Term 2): ${improvements}` : ''}`;
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/hp-summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
-      const text = data.content?.map((c: any) => c.text || '').join('') || 'Could not generate summary.';
-      setAiSummary(text);
-    } catch {
-      setAiSummary('Failed to generate summary. Please try again.');
+      if (data.error) { setAiSummary(`⚠ ${data.error}`); setAiLoading(false); return; }
+      setAiSummary(data.text || 'Could not generate summary.');
+    } catch (e: any) {
+      setAiSummary(`⚠ ${e.message || 'Failed to reach server.'}`);
     }
     setAiLoading(false);
   }
