@@ -147,7 +147,7 @@ export default function HPTrendsPage() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-3">
         {[1,2,3].map(i => <div key={i} className="h-20 rounded-2xl bg-slate-900 animate-pulse"/>)}
       </div>
@@ -155,7 +155,7 @@ export default function HPTrendsPage() {
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← High Performance</Link>
 

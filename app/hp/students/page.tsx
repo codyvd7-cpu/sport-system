@@ -6,25 +6,27 @@ import { useToast } from '@/components/Toast';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
+const CLASS_OPTIONS = ['8B','8E','8F','8J','8M','9B','9E','9F','9J','9M'];
 
 export default function HPStudentsPage() {
   const { showToast } = useToast();
   const [students, setStudents] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [search, setSearch] = React.useState('');
+  const [gradeFilter, setGradeFilter] = React.useState('All');
+  const [classFilter, setClassFilter] = React.useState('All');
+  const [showAdd, setShowAdd] = React.useState(false);
   const [name, setName] = React.useState('');
   const [grade, setGrade] = React.useState('Grade 8');
   const [hpClass, setHpClass] = React.useState('B');
   const [saving, setSaving] = React.useState(false);
-  const [gradeFilter, setGradeFilter] = React.useState('All');
-  const [classFilter, setClassFilter] = React.useState('All');
 
   async function load() {
     const { data } = await supabase.from('hp_students').select('*').eq('is_active', true);
-    // Sort by surname (last word of full_name) alphabetically, then by grade
     const sorted = (data || []).sort((a, b) => {
-      const surnameA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-      const surnameB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-      if (surnameA !== surnameB) return surnameA.localeCompare(surnameB);
+      const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+      const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+      if (sA !== sB) return sA.localeCompare(sB);
       return a.grade.localeCompare(b.grade);
     });
     setStudents(sorted);
@@ -37,15 +39,17 @@ export default function HPStudentsPage() {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
-    await supabase.from('hp_students').insert([{ full_name: name.trim(), grade, class_group: hpClass }]);
+    const { error } = await supabase.from('hp_students').insert([{ full_name: name.trim(), grade, class_group: hpClass }]);
+    if (error) { showToast(`Error: ${error.message}`); setSaving(false); return; }
     setName('');
-    showToast('Student added');
+    setShowAdd(false);
+    showToast(`${name.trim()} added ✓`);
     await load();
     setSaving(false);
   }
 
-  async function removeStudent(id: string) {
-    if (!confirm('Remove this student?')) return;
+  async function removeStudent(id: string, n: string) {
+    if (!confirm(`Remove ${n}?`)) return;
     await supabase.from('hp_students').update({ is_active: false }).eq('id', id);
     showToast('Student removed');
     await load();
@@ -53,86 +57,128 @@ export default function HPStudentsPage() {
 
   const filtered = students.filter(s => {
     if (gradeFilter !== 'All' && s.grade !== gradeFilter) return false;
-    if (classFilter !== 'All' && s.class_group !== classFilter) return false;
+    if (classFilter !== 'All') {
+      const g = classFilter[0] === '8' ? 'Grade 8' : 'Grade 9';
+      const c = classFilter[1];
+      if (s.grade !== g || s.class_group !== c) return false;
+    }
+    if (search && !s.full_name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
+  const g8 = students.filter(s => s.grade === 'Grade 8').length;
+  const g9 = students.filter(s => s.grade === 'Grade 9').length;
+
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <Link href="/hp" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← High Performance</Link>
-        <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">High Performance</p>
-          <h1 className="mt-1 text-3xl font-black text-white">Students</h1>
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+
+        {/* Header */}
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">High Performance</p>
+            <h1 className="mt-1 text-3xl font-black text-white">Students</h1>
+            <p className="mt-1 text-sm text-slate-500">{students.length} athletes · {g8} Grade 8 · {g9} Grade 9</p>
+          </div>
+          <button onClick={() => setShowAdd(v => !v)}
+            className="shrink-0 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-black text-emerald-300 hover:bg-emerald-500/20 transition">
+            {showAdd ? 'Cancel' : '+ Add Student'}
+          </button>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Add student */}
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <h2 className="mb-4 text-base font-black text-white">Add Student</h2>
-            <form onSubmit={addStudent} className="space-y-3">
+        {/* Add form */}
+        {showAdd && (
+          <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+            <p className="mb-4 text-xs font-black uppercase tracking-wide text-emerald-400">New Student</p>
+            <form onSubmit={addStudent} className="grid gap-3 sm:grid-cols-4">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
-                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
-              <div className="grid grid-cols-2 gap-2">
-                <select value={grade} onChange={e => setGrade(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
-                  <option>Grade 8</option>
-                  <option>Grade 9</option>
-                </select>
-                <select value={hpClass} onChange={e => setHpClass(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
-                  {HP_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
-                </select>
-              </div>
+                className="sm:col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+              <select value={grade} onChange={e => setGrade(e.target.value)}
+                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                <option>Grade 8</option>
+                <option>Grade 9</option>
+              </select>
+              <select value={hpClass} onChange={e => setHpClass(e.target.value)}
+                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                {HP_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
+              </select>
               <button type="submit" disabled={saving || !name.trim()}
-                className="w-full rounded-xl border border-emerald-500 bg-emerald-500/15 py-2.5 text-sm font-black text-emerald-300 disabled:opacity-50">
+                className="sm:col-span-4 rounded-xl border border-emerald-500 bg-emerald-500/15 py-2.5 text-sm font-black text-emerald-300 disabled:opacity-50 hover:bg-emerald-500/25 transition">
                 {saving ? 'Adding...' : 'Add Student'}
               </button>
             </form>
           </div>
+        )}
 
-          {/* Student list */}
-          <div className="lg:col-span-2 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-              <h2 className="text-base font-black text-white">Roster ({filtered.length})</h2>
-              <div className="flex flex-wrap gap-1.5">
-                {['All','Grade 8','Grade 9'].map(f => (
-                  <button key={f} onClick={() => setGradeFilter(f)}
-                    className={`rounded-lg px-2.5 py-1 text-[10px] font-black transition ${gradeFilter === f ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>{f}</button>
-                ))}
-                <span className="text-slate-700">|</span>
-                {['All', ...HP_CLASSES].map(c => (
-                  <button key={c} onClick={() => setClassFilter(c)}
-                    className={`rounded-lg px-2.5 py-1 text-[10px] font-black transition ${classFilter === c ? 'bg-sky-500/20 text-sky-300' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>
-                    {c === 'All' ? 'All Classes' : `Class ${c}`}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {loading ? <p className="text-sm text-slate-500">Loading...</p> : (
-              <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
-                {filtered.map(s => (
-                  <div key={s.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                    <Link href={`/hp/students/${s.id}`} className="flex flex-1 min-w-0 items-center gap-3">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
-                        {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-white hover:text-emerald-400">{s.full_name}</p>
-                        <p className="text-[10px] text-slate-500">{s.grade} · {s.class_group ? `Class ${s.class_group}` : 'No class'}</p>
-                      </div>
-                    </Link>
-                    <button onClick={() => removeStudent(s.id)}
-                      className="shrink-0 rounded-lg border border-red-500/20 bg-red-500/10 p-1.5 text-red-400 hover:bg-red-500/20 transition">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    </button>
-                  </div>
-                ))}
-                {filtered.length === 0 && <p className="text-sm text-slate-500">No students found.</p>}
-              </div>
-            )}
+        {/* Filters + search */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          <div className="relative flex-1 min-w-[160px]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search students..."
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-emerald-500" />
+          </div>
+          <div className="flex gap-1.5 flex-wrap">
+            {['All','Grade 8','Grade 9'].map(f => (
+              <button key={f} onClick={() => { setGradeFilter(f); setClassFilter('All'); }}
+                className={`rounded-xl px-3 py-2 text-xs font-black transition ${gradeFilter === f && classFilter === 'All' ? 'border border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border border-slate-700 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                {f}
+              </button>
+            ))}
+          </div>
+          <div className="flex gap-1 flex-wrap">
+            {CLASS_OPTIONS.map(c => (
+              <button key={c} onClick={() => { setClassFilter(c); setGradeFilter('All'); }}
+                className={`rounded-xl px-2.5 py-2 text-xs font-black transition ${classFilter === c ? 'border border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                {c}
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Count */}
+        <p className="mb-3 text-xs text-slate-600">{filtered.length} student{filtered.length !== 1 ? 's' : ''}</p>
+
+        {/* Student list */}
+        {loading ? (
+          <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-14 rounded-2xl bg-slate-900 animate-pulse" />)}</div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 py-12 text-center">
+            <p className="text-slate-500 text-sm">No students found.</p>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {filtered.map(s => {
+              const grpColors: Record<number,string> = {1:'bg-sky-500/15 text-sky-300',2:'bg-violet-500/15 text-violet-300',3:'bg-amber-500/15 text-amber-300',4:'bg-emerald-500/15 text-emerald-300'};
+              return (
+                <div key={s.id} className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 hover:border-slate-700 transition">
+                  <Link href={`/hp/students/${s.id}`} className="flex flex-1 min-w-0 items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
+                      {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-white">{s.full_name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] text-slate-500">{s.grade}</span>
+                        {s.class_group && <span className="text-[10px] text-slate-600">· Class {s.class_group}</span>}
+                        {s.training_group && (
+                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${grpColors[s.training_group] || 'bg-slate-700 text-slate-300'}`}>
+                            G{s.training_group}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                  <button onClick={() => removeStudent(s.id, s.full_name)}
+                    className="shrink-0 rounded-lg border border-red-500/20 bg-red-500/5 p-1.5 text-red-500 hover:bg-red-500/15 transition">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </main>
   );
