@@ -257,6 +257,11 @@ ${testBreakdown || 'No results recorded yet.'}`;
               {attRate !== null && <span className={`rounded-full px-3 py-1 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% attendance</span>}
             </div>
           </div>
+          <a href={`/hp/export/student/${id}`} target="_blank"
+            className="shrink-0 flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-black text-slate-300 hover:text-white hover:border-slate-500 transition">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export PDF
+          </a>
         </div>
 
         {/* Summary strip */}

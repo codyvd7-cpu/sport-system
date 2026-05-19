@@ -65,9 +65,13 @@ function ClassCard({ c, term }: { c: any; term: string }) {
         <Link href={`/hp/attendance?class=${c.id}`} className="flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition border-r border-slate-800">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4"/></svg>Register
         </Link>
-        <Link href={`/hp/testing?class=${c.id}`} className="flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-slate-400 hover:bg-slate-800 hover:text-violet-400 transition">
+        <Link href={`/hp/testing?class=${c.id}`} className="flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-slate-400 hover:bg-slate-800 hover:text-violet-400 transition border-r border-slate-800">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Test
         </Link>
+        <a href={`/hp/export/class/${c.id}`} target="_blank" className="col-span-2 flex items-center justify-center gap-1.5 py-2 text-[10px] font-black text-slate-600 hover:bg-slate-800 hover:text-slate-300 transition border-t border-slate-800">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export PDF
+        </a>
       </div>
     </div>
   );
@@ -159,6 +163,10 @@ export default function HPDashboard() {
           <div className="mb-3 flex items-center gap-3">
             <span className="h-px flex-1 bg-slate-800" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">Grade 8</p>
+            <a href="/hp/export/grade/8" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-sky-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
             <span className="h-px flex-1 bg-slate-800" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -171,6 +179,10 @@ export default function HPDashboard() {
           <div className="mb-3 flex items-center gap-3">
             <span className="h-px flex-1 bg-slate-800" />
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400">Grade 9</p>
+            <a href="/hp/export/grade/9" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-violet-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
             <span className="h-px flex-1 bg-slate-800" />
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
