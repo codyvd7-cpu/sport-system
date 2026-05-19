@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
@@ -17,21 +18,18 @@ const TESTS = [
 ];
 
 const BENCH: Record<string,[number,number,number,number]> = {
-  chin_up_hang:      [45,25,12,5],
-  broad_jump:        [185,165,148,130],
-  pushup_2min:       [22,18,14,10],
-  triple_broad_jump: [680,600,530,460],
-  sprint_10m:        [1.85,1.97,2.10,2.25],
-  sprint_30m:        [4.25,4.52,4.80,5.10],
-  run_500m:          [100,115,130,150],
+  chin_up_hang:[45,25,12,5], broad_jump:[185,165,148,130],
+  pushup_2min:[22,18,14,10], triple_broad_jump:[680,600,530,460],
+  sprint_10m:[1.85,1.97,2.10,2.25], sprint_30m:[4.25,4.52,4.80,5.10],
+  run_500m:[100,115,130,150],
 };
 
 const TIERS = [
-  { label:'Outstanding', color:'#10b981', bg:'rgba(16,185,129,0.12)', border:'rgba(16,185,129,0.25)' },
-  { label:'Strong',      color:'#38bdf8', bg:'rgba(56,189,248,0.12)', border:'rgba(56,189,248,0.25)' },
-  { label:'On Track',    color:'#a78bfa', bg:'rgba(167,139,250,0.12)',border:'rgba(167,139,250,0.25)'},
-  { label:'Developing',  color:'#fbbf24', bg:'rgba(251,191,36,0.12)', border:'rgba(251,191,36,0.25)' },
-  { label:'Needs Work',  color:'#94a3b8', bg:'rgba(148,163,184,0.10)',border:'rgba(148,163,184,0.2)' },
+  { label:'Outstanding', color:'#10b981', bg:'rgba(16,185,129,0.12)', border:'rgba(16,185,129,0.3)'  },
+  { label:'Strong',      color:'#38bdf8', bg:'rgba(56,189,248,0.12)', border:'rgba(56,189,248,0.3)'  },
+  { label:'On Track',    color:'#a78bfa', bg:'rgba(167,139,250,0.12)',border:'rgba(167,139,250,0.3)' },
+  { label:'Developing',  color:'#fbbf24', bg:'rgba(251,191,36,0.12)', border:'rgba(251,191,36,0.3)'  },
+  { label:'Needs Work',  color:'#94a3b8', bg:'rgba(148,163,184,0.10)',border:'rgba(148,163,184,0.25)'},
 ];
 
 function getTier(key:string,val:number,higher:boolean){
@@ -47,18 +45,35 @@ function fmt(key:string,val:number):string{
   return val%1===0?String(val):val.toFixed(2);
 }
 
-function TrendArrow({vals,higher}:{vals:(number|null)[];higher:boolean}){
+// ─── Mini sparkline ───────────────────────────────────────────────────────────
+function Spark({vals,higher}:{vals:(number|null)[];higher:boolean}){
   const v=vals.filter((x):x is number=>x!==null);
-  if(v.length<2)return<span className="text-slate-700 text-xs">—</span>;
+  if(v.length<2)return null;
+  const mn=Math.min(...v),mx=Math.max(...v),rng=mx-mn||1;
+  const W=48,H=20;
   const improved=higher?v[v.length-1]>v[0]:v[v.length-1]<v[0];
-  const pct=Math.abs(((v[v.length-1]-v[0])/v[0])*100).toFixed(1);
+  const col=improved?'#10b981':'#f87171';
+  const pts=vals.map((x,i)=>x!==null?`${(i/(vals.length-1))*W},${H-3-((x-mn)/rng)*(H-6)}`:null).filter(Boolean).join(' ');
   return(
-    <span className={`text-xs font-black ${improved?'text-emerald-400':'text-red-400'}`}>
-      {improved?'▲':'▼'} {pct}%
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-5 w-12">
+      <polyline points={pts} fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      {v.length>0&&<circle cx={(vals.lastIndexOf(v[v.length-1])/(vals.length-1))*W} cy={H-3-((v[v.length-1]-mn)/rng)*(H-6)} r="2.5" fill={col}/>}
+    </svg>
+  );
+}
+
+// ─── Tier pill ────────────────────────────────────────────────────────────────
+function TierPill({label}:{label:string}){
+  const t=TIERS.find(x=>x.label===label)||TIERS[2];
+  return(
+    <span className="rounded-full px-2 py-0.5 text-[9px] font-black whitespace-nowrap"
+      style={{background:t.bg,color:t.color,border:`1px solid ${t.border}`}}>
+      {t.label}
     </span>
   );
 }
 
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function HPTrendsPage(){
   const[students,setStudents]=React.useState<Row[]>([]);
   const[results,setResults]=React.useState<Row[]>([]);
@@ -66,6 +81,7 @@ export default function HPTrendsPage(){
   const[grade,setGrade]=React.useState<'Grade 8'|'Grade 9'>('Grade 8');
   const[selYear,setSelYear]=React.useState(()=>new Date().getFullYear());
   const[selClass,setSelClass]=React.useState<string|null>(null);
+  const[selTest,setSelTest]=React.useState<string|null>(null);
 
   React.useEffect(()=>{
     Promise.all([
@@ -84,12 +100,14 @@ export default function HPTrendsPage(){
   const tests=TESTS.filter(t=>t.grade===grade.split(' ')[1]||t.grade==='both');
   const gradeStudents=students.filter(s=>s.grade===grade);
 
+  // latest result per student for selected year
   const latestMap=React.useMemo(()=>{
     const map:Record<string,Row>={};
     results.filter(r=>r.year===selYear).forEach(r=>{map[r.student_id]=r;});
     return map;
   },[results,selYear]);
 
+  // term averages for a set of students + test key
   function termAvgs(ss:Row[],key:string){
     return TERMS.map(term=>{
       const vals=ss.map(s=>{
@@ -100,238 +118,317 @@ export default function HPTrendsPage(){
     });
   }
 
-  const selClassStudents=React.useMemo(()=>{
+  // students in selected class
+  const classStudents=React.useMemo(()=>{
     if(!selClass)return[];
-    return gradeStudents.filter(s=>s.class_group===selClass[1]);
+    return gradeStudents.filter(s=>s.class_group===selClass);
   },[selClass,gradeStudents]);
+
+  // selected test object
+  const testObj=tests.find(t=>t.key===selTest);
 
   if(loading)return(
     <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-3">
-        {[1,2,3].map(i=><div key={i} className="h-16 rounded-2xl bg-slate-900 animate-pulse"/>)}
+        {[1,2,3].map(i=><div key={i} className="h-14 rounded-2xl bg-slate-900 animate-pulse"/>)}
       </div>
     </main>
   );
+
+  const isG8=grade==='Grade 8';
+  const gradeColor=isG8?'text-sky-400':'text-violet-400';
+  const gradeBg=isG8?'bg-sky-500/20 text-sky-300 border-sky-500/40':'bg-violet-500/20 text-violet-300 border-violet-500/40';
 
   return(
     <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 
-        {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
-            <h1 className="mt-1 text-3xl font-black text-white">Trends</h1>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
-              {[new Date().getFullYear()-1, new Date().getFullYear()].map(y=>(
-                <button key={y} onClick={()=>{setSelYear(y);setSelClass(null);}}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${selYear===y?'bg-slate-700 text-white':'text-slate-500 hover:text-white'}`}>{y}</button>
-              ))}
-            </div>
-            <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
-              {(['Grade 8','Grade 9'] as const).map(g=>(
-                <button key={g} onClick={()=>{setGrade(g);setSelClass(null);}}
-                  className={`rounded-lg px-4 py-1.5 text-xs font-black transition ${grade===g?g==='Grade 8'?'bg-sky-500/25 text-sky-300':'bg-violet-500/25 text-violet-300':'text-slate-500 hover:text-white'}`}>{g}</button>
-              ))}
-            </div>
-          </div>
+        {/* ── HEADER ── */}
+        <div className="mb-8">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
+          <h1 className="mt-1 text-3xl font-black text-white">Trends</h1>
         </div>
 
-        {/* ── CLASS SELECTED — athlete table ── */}
-        {selClass ? (
-          <div>
-            <div className="mb-5 flex items-center gap-3">
-              <button onClick={()=>setSelClass(null)}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-black text-slate-400 hover:text-white transition">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-                Back
-              </button>
-              <div>
-                <h2 className={`text-xl font-black ${grade==='Grade 8'?'text-sky-400':'text-violet-400'}`}>
-                  {grade==='Grade 8'?'8':'9'}{selClass[1]}
-                </h2>
-                <p className="text-xs text-slate-500">{selClassStudents.filter(s=>latestMap[s.id]).length}/{selClassStudents.length} tested</p>
-              </div>
-            </div>
-
-            {/* Athlete results table */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-slate-800 bg-slate-950/50">
-                      <th className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-wide text-slate-600 sticky left-0 bg-slate-950/50">Athlete</th>
-                      {tests.map(t=>(
-                        <th key={t.key} className="px-3 py-3 text-center text-[10px] font-black uppercase tracking-wide text-slate-600 whitespace-nowrap">{t.label}</th>
-                      ))}
-                      <th className="px-3 py-3 text-center text-[10px] font-black uppercase tracking-wide text-slate-600">Grp</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800/40">
-                    {selClassStudents.map(s=>{
-                      const r=latestMap[s.id];
-                      const surname=s.full_name.trim().split(' ').pop()||s.full_name;
-                      return(
-                        <tr key={s.id} className="hover:bg-slate-800/30 transition">
-                          <td className="px-4 py-3 sticky left-0 bg-[#030810]">
-                            <p className="text-sm font-semibold text-white whitespace-nowrap">{surname}</p>
-                            {!r&&<p className="text-[9px] text-amber-500">Untested</p>}
-                          </td>
-                          {tests.map(t=>{
-                            if(!r)return<td key={t.key} className="px-3 py-3 text-center text-slate-700 text-sm">—</td>;
-                            const val=parseFloat(r[t.key]);
-                            if(isNaN(val))return<td key={t.key} className="px-3 py-3 text-center text-slate-700 text-sm">—</td>;
-                            const tier=getTier(t.key,val,t.higher);
-                            // T1→T2 delta
-                            const r1=results.find(x=>x.student_id===s.id&&x.term==='Term 1'&&x.year===selYear);
-                            const r2=results.find(x=>x.student_id===s.id&&x.term==='Term 2'&&x.year===selYear);
-                            const v1=r1?parseFloat(r1[t.key]):NaN;
-                            const v2=r2?parseFloat(r2[t.key]):NaN;
-                            const hasDelta=!isNaN(v1)&&!isNaN(v2);
-                            const improved=hasDelta&&(t.higher?v2>v1:v2<v1);
-                            return(
-                              <td key={t.key} className="px-3 py-3 text-center">
-                                <p className="text-xs font-black" style={{color:tier.color}}>{fmt(t.key,val)}</p>
-                                <p className="text-[8px] mt-0.5" style={{color:tier.color,opacity:0.6}}>{tier.label}</p>
-                                {hasDelta&&<p className={`text-[8px] font-black ${improved?'text-emerald-400':'text-red-400'}`}>{improved?'▲':'▼'}</p>}
-                              </td>
-                            );
-                          })}
-                          <td className="px-3 py-3 text-center">
-                            {s.training_group
-                              ?<span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${[,'bg-sky-500/15 text-sky-300','bg-violet-500/15 text-violet-300','bg-amber-500/15 text-amber-300','bg-emerald-500/15 text-emerald-300'][s.training_group]||''}`}>G{s.training_group}</span>
-                              :<span className="text-slate-700 text-[10px]">—</span>}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {/* Class averages footer */}
-              <div className="border-t border-slate-700 bg-slate-950/50">
-                <table className="w-full">
-                  <tbody>
-                    <tr>
-                      <td className="px-4 py-3 sticky left-0 bg-slate-950/50">
-                        <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">Class Avg</p>
-                      </td>
-                      {tests.map(t=>{
-                        const vals=selClassStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
-                        const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-                        const avgs=termAvgs(selClassStudents,t.key);
-                        const tier=avg!==null?getTier(t.key,avg,t.higher):null;
-                        return(
-                          <td key={t.key} className="px-3 py-3 text-center">
-                            {avg!==null
-                              ?<>
-                                <p className="text-xs font-black" style={{color:tier?.color}}>{fmt(t.key,avg)}</p>
-                                <TrendArrow vals={avgs} higher={t.higher}/>
-                              </>
-                              :<span className="text-slate-700 text-xs">—</span>
-                            }
-                          </td>
-                        );
-                      })}
-                      <td/>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+        {/* ── CONTROL BAR ── */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          {/* Year */}
+          <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
+            {[selYear-1,selYear].map(y=>(
+              <button key={y} onClick={()=>{setSelYear(y);setSelClass(null);setSelTest(null);}}
+                className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${selYear===y?'bg-slate-700 text-white':'text-slate-500 hover:text-white'}`}>{y}</button>
+            ))}
           </div>
+          {/* Grade */}
+          <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
+            {(['Grade 8','Grade 9'] as const).map(g=>(
+              <button key={g} onClick={()=>{setGrade(g);setSelClass(null);setSelTest(null);}}
+                className={`rounded-lg px-4 py-1.5 text-xs font-black transition ${grade===g?isG8?'bg-sky-500/25 text-sky-300':'bg-violet-500/25 text-violet-300':'text-slate-500 hover:text-white'}`}>{g}</button>
+            ))}
+          </div>
+          {/* Class pills */}
+          {HP_CLASSES.map(c=>{
+            const cs=gradeStudents.filter(s=>s.class_group===c);
+            if(!cs.length)return null;
+            const tested=cs.filter(s=>latestMap[s.id]).length;
+            const pct=Math.round(tested/cs.length*100);
+            const active=selClass===c;
+            return(
+              <button key={c} onClick={()=>{setSelClass(active?null:c);setSelTest(null);}}
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-black transition ${active?`${gradeBg} border`:'border-slate-700 bg-slate-900 text-slate-400 hover:text-white hover:border-slate-500'}`}>
+                <span>{isG8?'8':'9'}{c}</span>
+                <span className={`text-[9px] ${active?'opacity-80':'text-slate-600'}`}>{pct}%</span>
+              </button>
+            );
+          })}
+        </div>
 
-        ) : (
-          /* ── OVERVIEW — grade stats + class tiles ── */
-          <div className="space-y-8">
+        {/* ── BREADCRUMB ── */}
+        {selClass&&(
+          <div className="mb-5 flex items-center gap-2 text-xs text-slate-500">
+            <button onClick={()=>{setSelClass(null);setSelTest(null);}} className="hover:text-white transition">{grade}</button>
+            <span>/</span>
+            <span className={gradeColor}>{isG8?'8':'9'}{selClass}</span>
+            {selTest&&testObj&&<><span>/</span><span className="text-white">{testObj.label}</span></>}
+          </div>
+        )}
 
-            {/* Grade test summary — one row per test */}
+        {/* ════════════════════════════════════════
+            VIEW A — No class selected: grade overview
+        ════════════════════════════════════════ */}
+        {!selClass&&(
+          <div className="space-y-3">
+            {/* Stat strip */}
+            <div className="grid grid-cols-3 gap-3 mb-2">
+              {[
+                {label:'Athletes',val:gradeStudents.length,color:'text-white'},
+                {label:'Tested',val:gradeStudents.filter(s=>latestMap[s.id]).length,color:'text-emerald-400'},
+                {label:'Untested',val:gradeStudents.filter(s=>!latestMap[s.id]).length,color:'text-amber-400'},
+              ].map(x=>(
+                <div key={x.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+                  <p className={`text-2xl font-black ${x.color}`}>{x.val}</p>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mt-0.5">{x.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Per-test grade summary */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-              <div className={`px-5 py-3 border-b border-slate-800 ${grade==='Grade 8'?'bg-sky-500/5':'bg-violet-500/5'}`}>
-                <p className={`text-sm font-black ${grade==='Grade 8'?'text-sky-400':'text-violet-400'}`}>{grade} · {selYear}</p>
-                <p className="text-xs text-slate-500">{gradeStudents.filter(s=>latestMap[s.id]).length}/{gradeStudents.length} athletes tested</p>
+              <div className="border-b border-slate-800 px-5 py-3">
+                <p className="text-xs font-black uppercase tracking-wide text-slate-500">{grade} · {selYear} · Latest results</p>
               </div>
               <div className="divide-y divide-slate-800/40">
                 {tests.map(t=>{
                   const vals=gradeStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
-                  if(!vals.length)return(
-                    <div key={t.key} className="flex items-center justify-between px-5 py-3">
-                      <p className="text-sm text-slate-600">{t.label}</p>
-                      <p className="text-xs text-slate-700">No data</p>
-                    </div>
-                  );
-                  const avg=vals.reduce((a,b)=>a+b,0)/vals.length;
-                  const tier=getTier(t.key,avg,t.higher);
-                  const best=t.higher?Math.max(...vals):Math.min(...vals);
+                  const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+                  const tier=avg!==null?getTier(t.key,avg,t.higher):null;
                   const avgs=termAvgs(gradeStudents,t.key);
-                  const counts:Record<string,number>={};
-                  vals.forEach(v=>{const l=getTier(t.key,v,t.higher).label;counts[l]=(counts[l]||0)+1;});
+                  const best=vals.length?(t.higher?Math.max(...vals):Math.min(...vals)):null;
+                  const validTerms=avgs.filter((v):v is number=>v!==null);
+                  const improved=validTerms.length>1&&(t.higher?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
                   return(
-                    <div key={t.key} className="flex items-center gap-4 px-5 py-3.5">
-                      {/* Test name */}
-                      <div className="w-28 shrink-0">
-                        <p className="text-xs font-black text-slate-300">{t.label}</p>
+                    <div key={t.key} className="flex items-center gap-3 px-5 py-3.5">
+                      <div className="w-24 shrink-0">
+                        <p className="text-xs font-bold text-white">{t.label}</p>
                         <p className="text-[10px] text-slate-600">{vals.length} tested</p>
                       </div>
-                      {/* Average */}
                       <div className="w-20 shrink-0">
-                        <p className="text-base font-black" style={{color:tier.color}}>{fmt(t.key,avg)}{t.unit&&t.unit!=='mm:ss'?<span className="text-[10px] ml-0.5 opacity-50">{t.unit}</span>:null}</p>
-                        <p className="text-[9px]" style={{color:tier.color,opacity:0.7}}>{tier.label}</p>
+                        {avg!==null
+                          ?<><p className="text-sm font-black" style={{color:tier?.color}}>{fmt(t.key,avg)}{t.unit&&t.unit!=='mm:ss'&&<span className="text-[9px] ml-0.5 opacity-50">{t.unit}</span>}</p>
+                            {tier&&<TierPill label={tier.label}/>}</>
+                          :<p className="text-sm text-slate-700">No data</p>}
                       </div>
-                      {/* Tier dots */}
-                      <div className="flex-1 flex flex-wrap gap-1 min-w-0">
-                        {TIERS.map(tier=>{const n=counts[tier.label]||0;return n>0?(
-                          <span key={tier.label} className="rounded-full px-2 py-0.5 text-[9px] font-black whitespace-nowrap"
-                            style={{background:tier.bg,color:tier.color,border:`1px solid ${tier.border}`}}>{n} {tier.label}</span>
-                        ):null;})}
+                      <div className="flex-1 flex items-center gap-3 min-w-0">
+                        {validTerms.length>1&&<Spark vals={avgs} higher={t.higher}/>}
+                        {validTerms.length>1&&(
+                          <span className={`text-[10px] font-black ${improved?'text-emerald-400':'text-red-400'}`}>
+                            {improved?'▲':'▼'}
+                          </span>
+                        )}
                       </div>
-                      {/* Trend */}
-                      <div className="shrink-0 text-right">
-                        <TrendArrow vals={avgs} higher={t.higher}/>
-                        <p className="text-[9px] text-slate-600 mt-0.5">Best {fmt(t.key,best)}</p>
-                      </div>
+                      {best!==null&&(
+                        <div className="shrink-0 text-right">
+                          <p className="text-[9px] text-slate-600">Best</p>
+                          <p className="text-xs font-black text-white">{fmt(t.key,best)}</p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             </div>
+            <p className="text-center text-[11px] text-slate-700 pt-2">Select a class above to drill in</p>
+          </div>
+        )}
 
-            {/* Class tiles */}
+        {/* ════════════════════════════════════════
+            VIEW B — Class selected: test pills + data
+        ════════════════════════════════════════ */}
+        {selClass&&(
+          <div className="space-y-5">
+
+            {/* Class stat strip */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                {label:'Athletes',val:classStudents.length,color:'text-white'},
+                {label:'Tested',val:classStudents.filter(s=>latestMap[s.id]).length,color:'text-emerald-400'},
+                {label:'Groups',val:Math.max(...classStudents.map(s=>s.training_group||0),0)||0,color:isG8?'text-sky-400':'text-violet-400'},
+              ].map(x=>(
+                <div key={x.label} className={`rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center`}>
+                  <p className={`text-2xl font-black ${x.color}`}>{x.val||'—'}</p>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mt-0.5">{x.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Test pills */}
             <div>
-              <p className="mb-3 text-[10px] font-black uppercase tracking-[0.18em] text-slate-600">Drill into a class</p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {HP_CLASSES.map(c=>{
-                  const cs=gradeStudents.filter(s=>s.class_group===c);
-                  if(!cs.length)return null;
-                  const tested=cs.filter(s=>latestMap[s.id]).length;
-                  const pct=Math.round(tested/cs.length*100);
-                  const isG8=grade==='Grade 8';
-                  // Count top tiers
-                  const outstanding=cs.filter(s=>{
-                    const r=latestMap[s.id];if(!r)return false;
-                    return tests.some(t=>{const v=parseFloat(r[t.key]);return!isNaN(v)&&getTier(t.key,v,t.higher).label==='Outstanding';});
-                  }).length;
+              <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-slate-600">Select a test</p>
+              <div className="flex flex-wrap gap-2">
+                {tests.map(t=>{
+                  const vals=classStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
+                  const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+                  const tier=avg!==null?getTier(t.key,avg,t.higher):null;
+                  const active=selTest===t.key;
                   return(
-                    <button key={c} onClick={()=>setSelClass(`${grade==='Grade 8'?'8':'9'}${c}`)}
-                      className="group rounded-2xl border border-slate-800 bg-slate-900 p-4 text-left transition hover:border-slate-600 hover:scale-[1.02] active:scale-[0.99]">
-                      <p className={`text-3xl font-black ${isG8?'text-sky-400':'text-violet-400'}`}>{grade==='Grade 8'?'8':'9'}{c}</p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">{cs.length} athletes</p>
-                      <div className="mt-3 h-1.5 w-full rounded-full bg-slate-800">
-                        <div className={`h-full rounded-full ${pct===100?'bg-emerald-500':isG8?'bg-sky-500':'bg-violet-500'}`} style={{width:`${pct}%`}}/>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className={`text-[10px] font-black ${pct===100?'text-emerald-400':pct>50?'text-amber-400':'text-slate-500'}`}>{pct}% tested</span>
-                        {outstanding>0&&<span className="text-[9px] text-emerald-400 font-black">{outstanding} ★</span>}
-                      </div>
+                    <button key={t.key} onClick={()=>setSelTest(active?null:t.key)}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm transition ${active
+                        ?'border-white/20 bg-slate-700 text-white'
+                        :'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-600 hover:text-white'}`}>
+                      <span className="font-black">{t.label}</span>
+                      {avg!==null&&tier&&(
+                        <span className="text-xs font-black" style={{color:tier.color}}>{fmt(t.key,avg)}</span>
+                      )}
+                      {!vals.length&&<span className="text-[10px] text-slate-600">no data</span>}
                     </button>
                   );
                 })}
               </div>
             </div>
+
+            {/* ── Test selected ── */}
+            {selTest&&testObj&&(()=>{
+              const vals=classStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[testObj.key]):NaN;return isNaN(v)?null:{id:s.id,name:s.full_name.trim().split(' ').pop()||s.full_name,val:v,group:s.training_group};}).filter((x):x is{id:string;name:string;val:number;group:number|null}=>x!==null);
+              const sorted=[...vals].sort((a,b)=>testObj.higher?b.val-a.val:a.val-b.val);
+              const avg=vals.length?vals.reduce((a,b)=>a+b.val,0)/vals.length:null;
+              const avgTier=avg!==null?getTier(testObj.key,avg,testObj.higher):null;
+              const avgs=termAvgs(classStudents,testObj.key);
+              const validTerms=avgs.filter((v):v is number=>v!==null);
+              const improved=validTerms.length>1&&(testObj.higher?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
+              const counts:Record<string,number>={};
+              vals.forEach(x=>{const l=getTier(testObj.key,x.val,testObj.higher).label;counts[l]=(counts[l]||0)+1;});
+
+              return(
+                <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+
+                  {/* Test header */}
+                  <div className="px-5 py-5 border-b border-slate-800 flex items-start justify-between gap-4"
+                    style={avgTier?{borderColor:avgTier.border,background:avgTier.bg}:{}}>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500 mb-1">{testObj.label}</p>
+                      {avg!==null&&avgTier&&(
+                        <>
+                          <p className="text-4xl font-black" style={{color:avgTier.color}}>
+                            {fmt(testObj.key,avg)}
+                            {testObj.unit&&testObj.unit!=='mm:ss'&&<span className="text-base ml-1.5 opacity-40">{testObj.unit}</span>}
+                          </p>
+                          <div className="mt-1.5 flex items-center gap-2">
+                            <TierPill label={avgTier.label}/>
+                            <span className="text-[10px] text-slate-500">class average · {vals.length}/{classStudents.length} tested</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    {/* Term trend */}
+                    <div className="shrink-0 text-right">
+                      <div className="flex items-center gap-3 justify-end mb-1">
+                        {TERMS.map((term,i)=>(
+                          <div key={term} className="text-center">
+                            <p className="text-[8px] text-slate-600 mb-0.5">{term.replace('Term ','T')}</p>
+                            <p className="text-xs font-black" style={{color:avgs[i]!==null?(improved?'#10b981':'#f87171'):'#334155'}}>
+                              {avgs[i]!==null?fmt(testObj.key,avgs[i]!):'—'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                      {validTerms.length>1&&(
+                        <span className={`text-xs font-black ${improved?'text-emerald-400':'text-red-400'}`}>
+                          {improved?'▲ Improving':'▼ Declining'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tier breakdown pills */}
+                  <div className="px-5 py-3 border-b border-slate-800 flex flex-wrap gap-2">
+                    {TIERS.map(tier=>{
+                      const n=counts[tier.label]||0;
+                      return n>0?(
+                        <span key={tier.label} className="rounded-full px-3 py-1 text-xs font-black"
+                          style={{background:tier.bg,color:tier.color,border:`1px solid ${tier.border}`}}>
+                          {n} {tier.label}
+                        </span>
+                      ):null;
+                    })}
+                    {(classStudents.length-vals.length)>0&&(
+                      <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-black text-slate-500">
+                        {classStudents.length-vals.length} untested
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Athlete rankings */}
+                  <div className="divide-y divide-slate-800/40">
+                    {sorted.map((x,i)=>{
+                      const tier=getTier(testObj.key,x.val,testObj.higher);
+                      // T1→T2 delta
+                      const r1=results.find(r=>r.student_id===x.id&&r.term==='Term 1'&&r.year===selYear);
+                      const r2=results.find(r=>r.student_id===x.id&&r.term==='Term 2'&&r.year===selYear);
+                      const v1=r1?parseFloat(r1[testObj.key]):NaN;
+                      const v2=r2?parseFloat(r2[testObj.key]):NaN;
+                      const hasDelta=!isNaN(v1)&&!isNaN(v2);
+                      const delta=hasDelta?((testObj.higher?v2-v1:v1-v2)):0;
+                      const pctDelta=hasDelta?Math.abs((delta/v1)*100).toFixed(1):null;
+                      return(
+                        <div key={x.id} className="flex items-center gap-3 px-5 py-3">
+                          <span className="w-5 shrink-0 text-[10px] text-slate-600 text-right">{i+1}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-white truncate">{x.name}</p>
+                            {x.group&&<p className="text-[10px] text-slate-600">Group {x.group}</p>}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-sm font-black" style={{color:tier.color}}>{fmt(testObj.key,x.val)}</p>
+                            <TierPill label={tier.label}/>
+                          </div>
+                          {hasDelta&&(
+                            <span className={`shrink-0 w-14 text-right text-[10px] font-black ${delta>0?'text-emerald-400':'text-red-400'}`}>
+                              {delta>0?'▲':'▼'} {pctDelta}%
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Link to profiles */}
+                  <div className="border-t border-slate-800 px-5 py-3">
+                    <p className="text-[10px] text-slate-600">
+                      View individual profiles in{' '}
+                      <Link href="/hp/students" className="text-sky-400 hover:text-sky-300 transition">Students</Link>
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* No test selected yet */}
+            {!selTest&&(
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/50 py-10 text-center">
+                <p className="text-slate-600 text-sm">Select a test above to see the rankings and trends</p>
+              </div>
+            )}
           </div>
         )}
+
       </div>
     </main>
   );
