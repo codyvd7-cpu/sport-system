@@ -8,7 +8,8 @@ export default function HPAuthGuard({ children }: { children: React.ReactNode })
   const [checked, setChecked] = React.useState(false);
 
   React.useEffect(() => {
-    if (pathname === '/hp-login') {
+    // Export pages and login page bypass auth check
+    if (pathname === '/hp-login' || pathname.startsWith('/hp/export')) {
       setChecked(true);
       return;
     }
