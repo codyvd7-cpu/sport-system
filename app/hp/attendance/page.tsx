@@ -24,13 +24,13 @@ export default function HPAttendancePage() {
   const [selectedClass, setSelectedClass] = React.useState<string | null>(urlClass || null);
   const [saving, setSaving] = React.useState(false);
   const [history, setHistory] = React.useState<Row[]>([]);
-  const [step, setStep] = React.useState(urlClass ? 2 : 1);
+  
 
   React.useEffect(() => {
     async function load() {
       const [sRes, aRes] = await Promise.all([
-        supabase.from('hp_students').select('*').eq('is_active', true).order('grade').order('full_name'),
-        supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(100),
+        supabase.from('hp_students').select('*').eq('is_active', true),
+        supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(500),
       ]);
       const s = (sRes.data || []).sort((a: Row, b: Row) => {
         const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
@@ -62,20 +62,32 @@ export default function HPAttendancePage() {
       session_type: sessionType,
       status: statuses[s.id] || 'Present',
     }));
-    await supabase.from('hp_attendance').delete()
+    const { error: delError } = await supabase.from('hp_attendance').delete()
       .eq('session_date', sessionDate)
       .in('student_id', classStudents.map(s => s.id));
-    await supabase.from('hp_attendance').insert(records);
-    showToast(`Attendance saved — ${classStudents.length} students`);
-    const { data } = await supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(100);
+    if (delError) { showToast(`Error: ${delError.message}`); setSaving(false); return; }
+    const { error: insError } = await supabase.from('hp_attendance').insert(records);
+    if (insError) { showToast(`Error: ${insError.message}`); setSaving(false); return; }
+    showToast(`Attendance saved — ${classStudents.length} students ✓`);
+    // Reload history filtered to current class
+    const studentIds = classStudents.map(s => s.id);
+    const { data } = await supabase.from('hp_attendance').select('*')
+      .in('student_id', studentIds)
+      .order('session_date', { ascending: false }).limit(150);
     setHistory(data || []);
     setSaving(false);
   }
 
-  const recentDates = [...new Set(history.map(h => h.session_date))].slice(0, 5);
+  const classHistory = React.useMemo(() => {
+    if (!selectedClass) return history;
+    const ids = new Set(classStudents.map(s => s.id));
+    return history.filter(h => ids.has(h.student_id));
+  }, [history, classStudents, selectedClass]);
+
+  const recentDates = [...new Set(classHistory.map(h => h.session_date))].slice(0, 6);
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← High Performance</Link>
         <div className="mb-8">
@@ -182,7 +194,7 @@ export default function HPAttendancePage() {
             <h2 className="mb-4 text-base font-black text-white">Recent Sessions</h2>
             <div className="space-y-2">
               {recentDates.map(date => {
-                const sess = history.filter(h => h.session_date === date);
+                const sess = classHistory.filter(h => h.session_date === date);
                 const present = sess.filter(h => ['Present','Late'].includes(h.status)).length;
                 const sessionT = sess[0]?.session_type || '';
                 return (

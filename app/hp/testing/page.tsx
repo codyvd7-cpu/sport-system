@@ -92,8 +92,14 @@ export default function HPTestingPage() {
   const searchParams = useSearchParams();
   const urlClass = searchParams.get('class');
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [term, setTerm] = React.useState('Term 2');
-  const [year, setYear] = React.useState(2026);
+  const [term, setTerm] = React.useState(() => {
+    const m = new Date().getMonth() + 1;
+    if (m <= 3) return 'Term 1';
+    if (m <= 6) return 'Term 2';
+    if (m <= 9) return 'Term 3';
+    return 'Term 4';
+  });
+  const [year, setYear] = React.useState(() => new Date().getFullYear());
   const [testDate, setTestDate] = React.useState(() => new Date().toISOString().split('T')[0]);
   const [selectedClass, setSelectedClass] = React.useState<string | null>(urlClass || null);
   const [results, setResults] = React.useState<Record<string, Row>>({});
