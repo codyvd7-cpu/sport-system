@@ -140,40 +140,52 @@ export default function HPStudentProfile({ params }: PageProps) {
     if (!student) return;
     setAiLoading(true);
     setAiSummary(null);
-    const termResults = results.filter(r => r.year === selectedYear && (aiTerm === 'Full Year' || r.term === aiTerm));
-    const latest = termResults[termResults.length - 1] || null;
     const tests = student.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
     const attRate = attendance.length > 0 ? Math.round((attendance.filter(a => ['Present','Late'].includes(a.status)).length / attendance.length) * 100) : null;
 
-    const testLines = latest ? tests.map(t => {
-      const v = parseFloat(latest[t.key]);
-      if (isNaN(v)) return null;
-      const tier = getTier(t.key, v, t.lower);
-      return `${t.label}: ${fmt(t.key, v)}${t.unit} (${tier?.label || 'N/A'})`;
-    }).filter(Boolean).join('\n') : 'No test results recorded.';
-
+    // Build full term-by-term breakdown per test
     const t1 = results.find(r => r.year === selectedYear && r.term === 'Term 1');
     const t2 = results.find(r => r.year === selectedYear && r.term === 'Term 2');
-    const improvements = t1 && t2 ? tests.map(t => {
-      const v1 = parseFloat(t1[t.key]), v2 = parseFloat(t2[t.key]);
-      if (isNaN(v1) || isNaN(v2)) return null;
-      const improved = t.lower ? v2 < v1 : v2 > v1;
-      const pct = Math.abs(((v2 - v1) / v1) * 100).toFixed(1);
-      return improved ? `${t.label} improved by ${pct}%` : null;
-    }).filter(Boolean).join(', ') : null;
+    const t3 = results.find(r => r.year === selectedYear && r.term === 'Term 3');
+    const termRefs = [
+      { label: 'Term 1', r: t1 },
+      { label: 'Term 2', r: t2 },
+      { label: 'Term 3', r: t3 },
+    ].filter(x => x.r);
 
-    const prompt = `You are an HP (high performance) sport coach at St Benedict's College in South Africa. Write a concise, encouraging, professional end-of-${aiTerm} summary for the following student. Be specific about their results, highlight strengths, mention what to work on, and keep it to 3-4 sentences maximum. Do not use bullet points. Use their first name.
+    const testBreakdown = tests.map(t => {
+      const termVals = termRefs.map(({ label, r }) => {
+        const v = parseFloat(r![t.key]);
+        if (isNaN(v)) return null;
+        const tier = getTier(t.key, v, t.lower);
+        return `${label}: ${fmt(t.key, v)}${t.unit} (${tier?.label})`;
+      }).filter(Boolean);
+      if (!termVals.length) return null;
+
+      // Delta T1 → latest
+      const v1 = t1 ? parseFloat(t1[t.key]) : NaN;
+      const latest = [t3, t2, t1].find(r => r && !isNaN(parseFloat(r![t.key])));
+      const vLatest = latest ? parseFloat(latest[t.key]) : NaN;
+      let deltaStr = '';
+      if (!isNaN(v1) && !isNaN(vLatest) && v1 !== vLatest) {
+        const improved = t.lower ? vLatest < v1 : vLatest > v1;
+        const pct = Math.abs(((vLatest - v1) / v1) * 100).toFixed(1);
+        deltaStr = improved ? ` → improved ${pct}%` : ` → declined ${pct}%`;
+      }
+      return `${t.label}: ${termVals.join(' | ')}${deltaStr}`;
+    }).filter(Boolean).join('\n');
+
+    const prompt = `You are an HP (high performance) sport coach at St Benedict's College in South Africa writing an end-of-${aiTerm} athlete report.
+
+Write 4-5 sentences. You MUST quote specific numbers and percentages from the data below. Mention which tests improved and by how much. Mention any declines honestly but constructively. Reference the attendance rate. End with a forward-looking development focus sentence. Do not use bullet points. Use the student's first name throughout.
 
 Student: ${student.full_name}
 Grade: ${student.grade}
 Training Group: ${student.training_group ? `Group ${student.training_group}` : 'Not assigned'}
-Attendance Rate: ${attRate !== null ? `${attRate}%` : 'No data'}
-Sessions attended: ${attendance.filter(a => ['Present','Late'].includes(a.status)).length} of ${attendance.length}
+Attendance: ${attRate !== null ? `${attRate}% (${attendance.filter(a => ['Present','Late'].includes(a.status)).length} of ${attendance.length} sessions)` : 'No data'}
 
-${aiTerm} Test Results (${selectedYear}):
-${testLines}
-${improvements ? `\nKey improvements (Term 1 → Term 2): ${improvements}` : ''}`;
-
+Test Results by Term (${selectedYear}):
+${testBreakdown || 'No results recorded yet.'}`;
     try {
       const res = await fetch('/api/hp-summary', {
         method: 'POST',

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        max_tokens: 400,
+        max_tokens: 600,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
