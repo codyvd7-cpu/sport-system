@@ -191,11 +191,24 @@ export default function HPAttendancePage() {
         {/* History */}
         {recentDates.length > 0 && (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <h2 className="mb-4 text-base font-black text-white">Recent Sessions</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-base font-black text-white">Recent Sessions</h2>
+              {selectedClass && (() => {
+                const total = classHistory.length;
+                const attended = classHistory.filter(h => ['Present','Late'].includes(h.status)).length;
+                const rate = total > 0 ? Math.round((attended / total) * 100) : null;
+                return rate !== null ? (
+                  <span className={`rounded-xl border px-3 py-1 text-xs font-black ${rate>=80?'border-emerald-500/30 bg-emerald-500/10 text-emerald-300':rate>=60?'border-amber-500/30 bg-amber-500/10 text-amber-300':'border-red-500/30 bg-red-500/10 text-red-300'}`}>
+                    {rate}% attendance rate
+                  </span>
+                ) : null;
+              })()}
+            </div>
             <div className="space-y-2">
               {recentDates.map(date => {
                 const sess = classHistory.filter(h => h.session_date === date);
                 const present = sess.filter(h => ['Present','Late'].includes(h.status)).length;
+                const absent = sess.filter(h => h.status === 'Absent').length;
                 const sessionT = sess[0]?.session_type || '';
                 return (
                   <div key={date} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/40 p-3">
@@ -203,7 +216,10 @@ export default function HPAttendancePage() {
                       <p className="text-sm font-semibold text-white">{new Date(date).toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' })}</p>
                       <p className="text-[10px] text-slate-500">{sessionT}</p>
                     </div>
-                    <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-black text-emerald-300">{present}/{sess.length}</span>
+                    <div className="flex items-center gap-2">
+                      {absent > 0 && <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-black text-red-400">{absent} absent</span>}
+                      <span className="rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-xs font-black text-emerald-300">{present}/{sess.length}</span>
+                    </div>
                   </div>
                 );
               })}

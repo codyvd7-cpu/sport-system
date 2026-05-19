@@ -268,7 +268,6 @@ export default function AttendancePage() {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-    setSuccessMessage('');
 
     if (!selectedAthleteId) {
       setError('Please select an athlete.');
@@ -325,7 +324,6 @@ export default function AttendancePage() {
   async function handleSaveEdit(id: string) {
     setSavingEdit(true);
     setError('');
-    setSuccessMessage('');
 
     if (!editSelectedAthleteId) {
       setError('Please select an athlete.');
@@ -365,7 +363,6 @@ export default function AttendancePage() {
     if (!confirmed) return;
 
     setError('');
-    setSuccessMessage('');
 
     const { error } = await supabase.from('attendance').delete().eq('id', id);
 
@@ -422,6 +419,9 @@ export default function AttendancePage() {
         session_type: bulkSessionType,
         status: bulkStatuses[athlete.id] || 'Present',
       }));
+      // Delete existing records for same team + date first
+      const athleteIds = teamSquad.map((a) => a.id);
+      await supabase.from('attendance').delete().eq('session_date', bulkDate).in('athlete_id', athleteIds);
       const { error: insertError } = await supabase.from('attendance').insert(rows);
       if (insertError) { setError(insertError.message); return; }
       showToast(`Attendance saved — ${teamSquad.length} players`);
@@ -456,7 +456,7 @@ export default function AttendancePage() {
         {/* Summary stats */}
         <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[
-            { label: 'Total', value: summary.total, color: 'slate' },
+            { label: teamFilter !== 'All' || statusFilter !== 'All' || sessionFilter !== 'All' || dateFilter ? 'Filtered' : 'Total', value: summary.total, color: 'slate' },
             { label: 'Present', value: summary.present, color: 'emerald' },
             { label: 'Late', value: summary.late, color: 'amber' },
             { label: 'Absent', value: summary.absent, color: 'red' },
