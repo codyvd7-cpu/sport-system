@@ -2,17 +2,27 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import type { UserRole } from '@/lib/useRole';
 
-export default function AuthGuard({ children }: { children: React.ReactNode }) {
+interface Props {
+  children: React.ReactNode;
+  requiredRole?: UserRole;
+}
+
+export default function AuthGuard({ children, requiredRole }: Props) {
   const router = useRouter();
   const [checked, setChecked] = React.useState(false);
 
   React.useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) router.replace('/login');
-      else setChecked(true);
+      if (!session) { router.replace('/login'); return; }
+      if (requiredRole) {
+        const userRole = session.user?.user_metadata?.role as UserRole || 'coach';
+        if (userRole !== requiredRole) { router.replace('/dashboard'); return; }
+      }
+      setChecked(true);
     });
-  }, [router]);
+  }, [router, requiredRole]);
 
   if (!checked) return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950">
