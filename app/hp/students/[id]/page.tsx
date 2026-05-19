@@ -22,7 +22,7 @@ const GRADE9_TESTS = [
   { key: 'run_500m',          label: '500m Run',          unit: '',     lower: true  },
 ];
 
-// Research-based benchmarks [Elite, Good, Average, Developing]
+// Research-based benchmarks [Outstanding, Strong, On Track, Developing, Needs Work]
 const BENCH: Record<string, [number,number,number,number]> = {
   chin_up_hang:      [45, 25, 12, 5],
   broad_jump:        [185, 165, 148, 130],
@@ -34,11 +34,11 @@ const BENCH: Record<string, [number,number,number,number]> = {
 };
 
 const TIERS = [
-  { label: 'Elite',      color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', bar: 'bg-emerald-500' },
-  { label: 'Good',       color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/30',     bar: 'bg-sky-500' },
-  { label: 'Average',    color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   bar: 'bg-amber-500' },
-  { label: 'Developing', color: 'text-orange-400',  bg: 'bg-orange-500/15',  border: 'border-orange-500/30',  bar: 'bg-orange-500' },
-  { label: 'Poor',       color: 'text-red-400',     bg: 'bg-red-500/15',     border: 'border-red-500/30',     bar: 'bg-red-500' },
+  { label: 'Outstanding', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', bar: 'bg-emerald-500' },
+  { label: 'Strong',      color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/30',     bar: 'bg-sky-500'     },
+  { label: 'On Track',    color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/30',  bar: 'bg-violet-500'  },
+  { label: 'Developing',  color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   bar: 'bg-amber-500'   },
+  { label: 'Needs Work',  color: 'text-slate-400',   bg: 'bg-slate-500/15',   border: 'border-slate-500/30',   bar: 'bg-slate-500'   },
 ];
 
 function getTier(key: string, val: number, lower: boolean) {
@@ -108,7 +108,8 @@ export default function HPStudentProfile({ params }: PageProps) {
   const [results, setResults] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [attTab, setAttTab] = React.useState<'summary'|'history'>('summary');
-  const [selectedYear, setSelectedYear] = React.useState(2026);
+  const [selectedYear, setSelectedYear] = React.useState(() => new Date().getFullYear());
+  const [loadError, setLoadError] = React.useState<string|null>(null);
 
   React.useEffect(() => {
     async function load() {
@@ -117,6 +118,9 @@ export default function HPStudentProfile({ params }: PageProps) {
         supabase.from('hp_attendance').select('*').eq('student_id', id).order('session_date', { ascending: false }),
         supabase.from('hp_test_results').select('*').eq('student_id', id).order('year').order('term'),
       ]);
+      if (sRes.error) { setLoadError(`Could not load student: ${sRes.error.message}`); setLoading(false); return; }
+      if (aRes.error) setLoadError(`Attendance error: ${aRes.error.message}`);
+      if (rRes.error) setLoadError(`Results error: ${rRes.error.message}`);
       setStudent(sRes.data);
       setAttendance(aRes.data || []);
       setResults(rRes.data || []);
@@ -126,12 +130,12 @@ export default function HPStudentProfile({ params }: PageProps) {
   }, [id]);
 
   if (loading) return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+    <main className="flex min-h-screen items-center justify-center bg-[#030810]">
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
   );
   if (!student) return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+    <main className="flex min-h-screen items-center justify-center bg-[#030810] text-white">
       <p>Student not found</p>
     </main>
   );
@@ -144,7 +148,7 @@ export default function HPStudentProfile({ params }: PageProps) {
   const latest = yearResults[yearResults.length - 1] || null;
 
   // Overall tier summary from latest
-  const tierCounts = { Elite:0, Good:0, Average:0, Developing:0, Poor:0 };
+  const tierCounts = { Outstanding:0, Strong:0, 'On Track':0, Developing:0, 'Needs Work':0 };
   if (latest) {
     tests.forEach(t => {
       const v = parseFloat(latest[t.key]);
@@ -156,9 +160,15 @@ export default function HPStudentProfile({ params }: PageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
         <Link href="/hp/students" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← Students</Link>
+
+        {loadError && (
+          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+            ⚠ {loadError}
+          </div>
+        )}
 
         {/* Hero */}
         <div className="mb-8 flex items-center gap-5">
@@ -262,10 +272,10 @@ export default function HPStudentProfile({ params }: PageProps) {
               <h2 className="text-lg font-black text-white">Attendance</h2>
               <p className="text-xs text-slate-500 mt-0.5">{attendance.length} sessions · {present} present</p>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 rounded-xl border border-slate-700 bg-slate-800 p-0.5">
               {(['summary','history'] as const).map(tab => (
                 <button key={tab} onClick={() => setAttTab(tab)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-black capitalize transition ${attTab===tab ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                  className={`rounded-lg px-3 py-1.5 text-xs font-black capitalize transition ${attTab===tab ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
                   {tab}
                 </button>
               ))}
