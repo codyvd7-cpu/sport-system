@@ -55,15 +55,13 @@ function LoginForm() {
       <div className="rounded-[2rem] border border-slate-800 bg-slate-950 p-6 text-center shadow-2xl">
         <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-400">St Benedict&apos;s Hockey</p>
         <h1 className="mt-3 text-2xl font-black">Checking session...</h1>
+        <p className="mt-4 text-[10px] text-slate-700">
+          <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+          <span className="mx-2">·</span>
+          <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+        </p>
       </div>
-      <footer className="py-4 text-center">
-    <p className="text-[10px] text-slate-700">
-      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
-      <span className="mx-2">·</span>
-      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
-    </p>
-  </footer>
-</main>
+    </main>
   );
 
   return (
@@ -106,15 +104,16 @@ function LoginForm() {
           <a href="/portal" className="font-bold text-slate-400 transition hover:text-white">Back to Portal</a>
           <span>Coach Access Only</span>
         </div>
+
+        <div className="mt-4 border-t border-slate-800 pt-4 text-center">
+          <p className="text-[10px] text-slate-700">
+            <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+            <span className="mx-2">·</span>
+            <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+          </p>
+        </div>
       </section>
-      <footer className="py-4 text-center">
-    <p className="text-[10px] text-slate-700">
-      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
-      <span className="mx-2">·</span>
-      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
-    </p>
-  </footer>
-</main>
+    </main>
   );
 }
 
