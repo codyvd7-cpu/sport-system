@@ -180,13 +180,6 @@ export default function CoachesPage() {
           )}
         </div>
 
-        {/* Setup note */}
-        <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-          <p className="text-[11px] font-black uppercase tracking-wide text-slate-600 mb-1">Supabase Setup Required</p>
-          <p className="text-[11px] text-slate-600">
-            Make sure a <span className="text-slate-400 font-semibold">coaches</span> table exists in Supabase with columns: <span className="text-slate-400">id, email, full_name, team, role, created_at</span>. To assign HOH role to yourself, update your user in Supabase Auth → Users → Edit → user_metadata: <span className="text-slate-400">{`{"role":"head_of_hockey"}`}</span>
-          </p>
-        </div>
       </div>
     </main>
   );
