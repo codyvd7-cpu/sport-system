@@ -110,6 +110,13 @@ export default function HPStudentProfile({ params }: PageProps) {
   const [attTab, setAttTab] = React.useState<'summary'|'history'>('summary');
   const [selectedYear, setSelectedYear] = React.useState(() => new Date().getFullYear());
   const [loadError, setLoadError] = React.useState<string|null>(null);
+  const [aiSummary, setAiSummary] = React.useState<string|null>(null);
+  const [aiLoading, setAiLoading] = React.useState(false);
+  const [aiTerm, setAiTerm] = React.useState(() => {
+    const m = new Date().getMonth() + 1;
+    if (m <= 3) return 'Term 1'; if (m <= 6) return 'Term 2';
+    if (m <= 9) return 'Term 3'; return 'Full Year';
+  });
 
   React.useEffect(() => {
     async function load() {
@@ -129,7 +136,62 @@ export default function HPStudentProfile({ params }: PageProps) {
     load();
   }, [id]);
 
-  if (loading) return (
+  async function generateAiSummary() {
+    if (!student) return;
+    setAiLoading(true);
+    setAiSummary(null);
+    const termResults = results.filter(r => r.year === selectedYear && (aiTerm === 'Full Year' || r.term === aiTerm));
+    const latest = termResults[termResults.length - 1] || null;
+    const tests = student.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
+    const attRate = attendance.length > 0 ? Math.round((attendance.filter(a => ['Present','Late'].includes(a.status)).length / attendance.length) * 100) : null;
+
+    const testLines = latest ? tests.map(t => {
+      const v = parseFloat(latest[t.key]);
+      if (isNaN(v)) return null;
+      const tier = getTier(t.key, v, t.lower);
+      return `${t.label}: ${fmt(t.key, v)}${t.unit} (${tier?.label || 'N/A'})`;
+    }).filter(Boolean).join('\n') : 'No test results recorded.';
+
+    const t1 = results.find(r => r.year === selectedYear && r.term === 'Term 1');
+    const t2 = results.find(r => r.year === selectedYear && r.term === 'Term 2');
+    const improvements = t1 && t2 ? tests.map(t => {
+      const v1 = parseFloat(t1[t.key]), v2 = parseFloat(t2[t.key]);
+      if (isNaN(v1) || isNaN(v2)) return null;
+      const improved = t.lower ? v2 < v1 : v2 > v1;
+      const pct = Math.abs(((v2 - v1) / v1) * 100).toFixed(1);
+      return improved ? `${t.label} improved by ${pct}%` : null;
+    }).filter(Boolean).join(', ') : null;
+
+    const prompt = `You are an HP (high performance) sport coach at St Benedict's College in South Africa. Write a concise, encouraging, professional end-of-${aiTerm} summary for the following student. Be specific about their results, highlight strengths, mention what to work on, and keep it to 3-4 sentences maximum. Do not use bullet points. Use their first name.
+
+Student: ${student.full_name}
+Grade: ${student.grade}
+Training Group: ${student.training_group ? `Group ${student.training_group}` : 'Not assigned'}
+Attendance Rate: ${attRate !== null ? `${attRate}%` : 'No data'}
+Sessions attended: ${attendance.filter(a => ['Present','Late'].includes(a.status)).length} of ${attendance.length}
+
+${aiTerm} Test Results (${selectedYear}):
+${testLines}
+${improvements ? `\nKey improvements (Term 1 → Term 2): ${improvements}` : ''}`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+      const data = await res.json();
+      const text = data.content?.map((c: any) => c.text || '').join('') || 'Could not generate summary.';
+      setAiSummary(text);
+    } catch {
+      setAiSummary('Failed to generate summary. Please try again.');
+    }
+    setAiLoading(false);
+  }
     <main className="flex min-h-screen items-center justify-center bg-[#030810]">
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
@@ -336,6 +398,57 @@ export default function HPStudentProfile({ params }: PageProps) {
             </div>
           )}
         </div>
+        {/* AI Term Summary */}
+        <div className="mt-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
+          <div className="border-b border-violet-500/15 px-5 py-4 flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h2 className="text-base font-black text-white flex items-center gap-2">
+                <span className="text-lg">✦</span> AI Performance Summary
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">Generate a coach-ready summary for any term</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex rounded-xl border border-slate-700 bg-slate-900 p-0.5">
+                {(['Term 1','Term 2','Term 3','Full Year'] as const).map(t => (
+                  <button key={t} onClick={() => setAiTerm(t)}
+                    className={`rounded-lg px-2.5 py-1.5 text-[10px] font-black transition ${aiTerm === t ? 'bg-violet-500/30 text-violet-300' : 'text-slate-500 hover:text-white'}`}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <button onClick={generateAiSummary} disabled={aiLoading}
+                className="rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2 text-xs font-black text-violet-300 hover:bg-violet-500/25 transition disabled:opacity-50 flex items-center gap-2">
+                {aiLoading ? (
+                  <><div className="h-3 w-3 animate-spin rounded-full border-2 border-violet-400 border-t-transparent"/>Generating...</>
+                ) : (
+                  <>Generate {aiTerm} Summary</>
+                )}
+              </button>
+            </div>
+          </div>
+          <div className="px-5 py-4">
+            {aiSummary ? (
+              <div>
+                <p className="text-sm leading-relaxed text-slate-200">{aiSummary}</p>
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => { navigator.clipboard.writeText(aiSummary); }}
+                    className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">
+                    Copy
+                  </button>
+                  <button onClick={() => setAiSummary(null)}
+                    className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">
+                    Clear
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-600">
+                Select a term above and hit Generate — the AI will produce a short, personalised summary covering test results, attendance, improvements and areas to focus on.
+              </p>
+            )}
+          </div>
+        </div>
+
       </div>
     </main>
   );
