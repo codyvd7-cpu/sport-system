@@ -192,6 +192,8 @@ ${improvements ? `\nKey improvements (Term 1 → Term 2): ${improvements}` : ''}
     }
     setAiLoading(false);
   }
+
+  if (loading) return (
     <main className="flex min-h-screen items-center justify-center bg-[#030810]">
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
