@@ -269,6 +269,123 @@ export default function HPTrendsPage() {
           </div>
         </div>
 
+        {/* ── GRADE OVERVIEW ── */}
+        {!selClass && (() => {
+          const gradeStudents = students.filter(s => s.grade===grade);
+          const gradeTested = gradeStudents.filter(s => latestMap[s.id]).length;
+          const gradePct = gradeStudents.length>0 ? Math.round(gradeTested/gradeStudents.length*100) : 0;
+          return (
+            <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              {/* Grade header strip */}
+              <div className={`px-5 py-4 border-b border-slate-800 flex items-center justify-between ${grade==='Grade 8'?'bg-sky-500/5':'bg-violet-500/5'}`}>
+                <div>
+                  <p className={`text-lg font-black ${grade==='Grade 8'?'text-sky-400':'text-violet-400'}`}>{grade} Overview</p>
+                  <p className="text-xs text-slate-500">{gradeStudents.length} athletes · {gradeTested} tested · {selYear}</p>
+                </div>
+                <div className="text-right">
+                  <p className={`text-2xl font-black ${gradePct===100?'text-emerald-400':gradePct>50?'text-amber-400':'text-red-400'}`}>{gradePct}%</p>
+                  <p className="text-[10px] text-slate-600">tested this year</p>
+                </div>
+              </div>
+
+              {/* Per-test grade stats */}
+              <div className="divide-y divide-slate-800/50">
+                {tests.map(t => {
+                  const vals = gradeStudents.map(s => {
+                    const r=latestMap[s.id]; const v=r?parseFloat(r[t.key]):NaN; return isNaN(v)?null:v;
+                  }).filter((v): v is number => v!==null);
+                  if (!vals.length) return null;
+                  const avgVal = vals.reduce((a,b)=>a+b,0)/vals.length;
+                  const avgTier = getTier(t.key,avgVal,t.higher);
+                  const best = t.higher ? Math.max(...vals) : Math.min(...vals);
+                  const counts: Record<string,number> = {};
+                  vals.forEach(v => { const tier=getTier(t.key,v,t.higher).label; counts[tier]=(counts[tier]||0)+1; });
+
+                  // Term trend
+                  const termAvgs = TERMS.map(term => {
+                    const tv = gradeStudents.map(s => {
+                      const r=results.find(r=>r.student_id===s.id&&r.term===term&&r.year===selYear);
+                      const v=r?parseFloat(r[t.key]):NaN; return isNaN(v)?null:v;
+                    }).filter((v): v is number => v!==null);
+                    return tv.length ? tv.reduce((a,b)=>a+b,0)/tv.length : null;
+                  });
+                  const validTerms = termAvgs.filter((v): v is number => v!==null);
+                  const improved = validTerms.length>1 && (t.higher ? validTerms[validTerms.length-1]>validTerms[0] : validTerms[validTerms.length-1]<validTerms[0]);
+
+                  return (
+                    <div key={t.key} className="px-5 py-4 flex items-center gap-4 flex-wrap sm:flex-nowrap">
+                      {/* Test label + avg */}
+                      <div className="w-full sm:w-36 shrink-0">
+                        <p className="text-[10px] font-black uppercase tracking-wide text-slate-600">{t.label}</p>
+                        <p className="text-xl font-black mt-0.5" style={{ color:avgTier.color }}>
+                          {fmt(t.key,avgVal)}
+                          {t.unit && t.unit!=='mm:ss' && <span className="text-xs ml-1 opacity-40">{t.unit}</span>}
+                        </p>
+                        <span className="rounded-full px-2 py-0.5 text-[9px] font-black"
+                          style={{ background:avgTier.bg, color:avgTier.color, border:`1px solid ${avgTier.border}` }}>
+                          {avgTier.label} avg
+                        </span>
+                      </div>
+
+                      {/* Tier bar */}
+                      <div className="flex-1 min-w-[120px]">
+                        <div className="flex h-5 w-full overflow-hidden rounded-lg gap-px mb-1.5">
+                          {TIERS.map(tier => {
+                            const n=counts[tier.label]||0;
+                            return n>0 ? (
+                              <div key={tier.label} className="h-full flex items-center justify-center text-[9px] font-black"
+                                style={{ flex:n, background:tier.color, color:'rgba(0,0,0,0.7)' }}>{n}</div>
+                            ) : null;
+                          })}
+                          {(gradeStudents.length-vals.length)>0 && <div className="h-full bg-slate-800" style={{ flex:gradeStudents.length-vals.length }}/>}
+                        </div>
+                        <div className="flex gap-2 flex-wrap">
+                          {TIERS.map(tier => { const n=counts[tier.label]||0; return n>0?<span key={tier.label} className="text-[9px] font-black" style={{color:tier.color}}>{tier.label} {n}</span>:null; })}
+                        </div>
+                      </div>
+
+                      {/* Term sparkline */}
+                      <div className="w-32 shrink-0">
+                        {validTerms.length > 1 ? (
+                          <>
+                            <div className="flex justify-between mb-1">
+                              {termAvgs.map((v,i) => (
+                                <div key={i} className="text-center">
+                                  <p className="text-[8px] text-slate-700">{TERMS[i].replace('Term ','T')}</p>
+                                  <p className="text-[9px] font-black" style={{color: v!==null?(improved?'#10b981':'#f87171'):'#334155'}}>
+                                    {v!==null?fmt(t.key,v):'—'}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <div className={`h-1.5 flex-1 rounded-full ${improved?'bg-emerald-500/30':'bg-red-500/30'}`}>
+                                <div className={`h-full rounded-full ${improved?'bg-emerald-500':'bg-red-500'}`}
+                                  style={{ width: validTerms.length>1?`${Math.abs(((validTerms[validTerms.length-1]-validTerms[0])/validTerms[0])*100)*3}%`:'0%', maxWidth:'100%' }}/>
+                              </div>
+                              <span className={`text-[9px] font-black ${improved?'text-emerald-400':'text-red-400'}`}>
+                                {improved?'▲':'▼'}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-[10px] text-slate-700">1 term only</p>
+                        )}
+                      </div>
+
+                      {/* Best */}
+                      <div className="shrink-0 text-right hidden sm:block">
+                        <p className="text-[10px] text-slate-600">Best</p>
+                        <p className="text-sm font-black text-white">{fmt(t.key,best)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* ── CLASS TILES ── */}
         {!selClass && (
           <>
