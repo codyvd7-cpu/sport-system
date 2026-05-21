@@ -7,11 +7,11 @@ type Message = { role: 'user' | 'assistant'; content: string };
 type Row = Record<string, any>;
 
 const QUICK_PROMPTS = [
-  { label: 'Who needs attention?', icon: '⚠️', prompt: 'Which athletes need attention right now based on attendance, availability and performance trends?' },
-  { label: 'Team fitness report', icon: '📊', prompt: 'Give me a fitness and attendance overview for all teams. Flag any concerns.' },
+  { label: 'Who needs attention?', icon: '', prompt: 'Which athletes need attention right now based on attendance, availability and performance trends?' },
+  { label: 'Team fitness report', icon: '', prompt: 'Give me a fitness and attendance overview for all teams. Flag any concerns.' },
   { label: 'Write player feedback', icon: '✍️', prompt: 'Help me write structured feedback for a player. Ask me their name and key points to highlight.' },
-  { label: 'Training session plan', icon: '📋', prompt: 'Help me plan a training session. Ask me the team, focus area, and what equipment is available.' },
-  { label: 'Benchmark analysis', icon: '⚡', prompt: 'Analyse our testing results and tell me where we are strongest and where we need to improve most.' },
+  { label: 'Training session plan', icon: '', prompt: 'Help me plan a training session. Ask me the team, focus area, and what equipment is available.' },
+  { label: 'Benchmark analysis', icon: '', prompt: 'Analyse our testing results and tell me where we are strongest and where we need to improve most.' },
   { label: 'Injury & availability', icon: '🏥', prompt: 'Which players are injured or on modified training? What should I consider for their return to play?' },
 ];
 
@@ -145,11 +145,11 @@ export default function AssistantPage() {
             <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">AI Assistant</p>
             <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white">Hockey Intelligence</h1>
             <p className="mt-1 text-sm text-slate-500">
-              {contextLoading ? 'Loading team data...' : `Connected · ${context.includes('FLAGGED') ? '⚠️ Athletes flagged' : 'All systems nominal'}`}
+              {contextLoading ? 'Loading team data...' : `Connected · ${context.includes('FLAGGED') ? 'Athletes flagged' : 'All systems nominal'}`}
             </p>
           </div>
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/25 to-violet-500/15 text-3xl border border-sky-500/20">
-            🤖
+            
           </div>
         </div>
 
@@ -181,7 +181,7 @@ export default function AssistantPage() {
           {messages.map((msg, i) => (
             <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {msg.role === 'assistant' && (
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 text-base border border-sky-500/20">🤖</div>
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 text-base border border-sky-500/20"></div>
               )}
               <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                 msg.role === 'user' ? 'bg-sky-500/15 border border-sky-500/20 text-white' : 'bg-slate-900 border border-slate-800 text-slate-200'
@@ -196,7 +196,7 @@ export default function AssistantPage() {
 
           {loading && (
             <div className="flex gap-3 justify-start">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 text-base border border-sky-500/20">🤖</div>
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 text-base border border-sky-500/20"></div>
               <div className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-4">
                 <div className="flex gap-1.5">
                   {[0, 150, 300].map((d) => (

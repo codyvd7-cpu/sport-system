@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { safeUUID } from '@/lib/uuid';
+import { safeUUID, generatePlayerCode } from '@/lib/uuid';
 import { PerformanceTrendChart, AttendanceChart } from '@/components/AthleteCharts';
 
 // ── TYPES ─────────────────────────────────────────────────────
@@ -320,8 +320,32 @@ export default function AthleteProfilePage({ params }: PageProps) {
   async function handleGenerateCode() {
     if (!athlete) return;
     setGeneratingCode(true);
-    const code = `SBC${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-    await supabase.from('athletes').update({ player_code: code }).eq('id', athlete.id);
+
+    // Generate a unique secure player code (max 8 attempts on collision)
+    let code = '';
+    let attempts = 0;
+    while (attempts < 8) {
+      code = generatePlayerCode();
+      const { data: existing } = await supabase
+        .from('athletes')
+        .select('id')
+        .eq('player_code', code)
+        .maybeSingle();
+      if (!existing) break;
+      attempts++;
+    }
+    if (attempts >= 8) {
+      showToast('Could not generate a unique code. Try again.', 'error');
+      setGeneratingCode(false);
+      return;
+    }
+
+    const { error } = await supabase.from('athletes').update({ player_code: code }).eq('id', athlete.id);
+    if (error) {
+      showToast(`Failed to save code: ${error.message}`, 'error');
+      setGeneratingCode(false);
+      return;
+    }
     showToast(`Access code: ${code}`);
     await loadPageData();
     setGeneratingCode(false);
@@ -569,7 +593,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
               {generatingAiSummary ? (
                 <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" /> Generating...</>
               ) : (
-                <>🤖 {aiSummary ? 'Regenerate' : 'Generate Summary'}</>
+                <>{aiSummary ? 'Regenerate' : 'Generate Summary'}</>
               )}
             </button>
           </div>
@@ -587,11 +611,11 @@ export default function AthleteProfilePage({ params }: PageProps) {
         {/* Empty state */}
         {performanceTrends.length === 0 && attendanceRecords.length === 0 && (
           <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-4xl mb-3">🏑</p>
+            <p className="text-4xl mb-3"></p>
             <p className="text-lg font-black text-white">Season hasn't started yet</p>
             <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">Once attendance and testing data is logged, this athlete's full performance profile will appear here.</p>
             <div className="mt-6 grid grid-cols-3 gap-3 text-left">
-              {[{ icon: '📊', t: 'Attendance', d: 'Every session logged' }, { icon: '⚡', t: 'Benchmark testing', d: 'Sprint, jump, endurance' }, { icon: '📈', t: 'Progress trends', d: 'Track improvement' }].map((item) => (
+              {[{ icon: '', t: 'Attendance', d: 'Every session logged' }, { icon: '', t: 'Benchmark testing', d: 'Sprint, jump, endurance' }, { icon: '', t: 'Progress trends', d: 'Track improvement' }].map((item) => (
                 <div key={item.t} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
                   <p className="text-xl mb-1">{item.icon}</p>
                   <p className="text-xs font-black text-white">{item.t}</p>
@@ -621,8 +645,8 @@ export default function AthleteProfilePage({ params }: PageProps) {
               </div>
               {editingFeedback ? (
                 <div className="space-y-3">
-                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-emerald-400">💪 Strengths</label><textarea value={fbStrengths} onChange={(e) => setFbStrengths(e.target.value)} rows={2} placeholder="e.g. Excellent work ethic..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500" /></div>
-                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-amber-400">🎯 Current Focus</label><textarea value={fbFocus} onChange={(e) => setFbFocus(e.target.value)} rows={2} placeholder="e.g. Improve acceleration..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-amber-500" /></div>
+                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</label><textarea value={fbStrengths} onChange={(e) => setFbStrengths(e.target.value)} rows={2} placeholder="e.g. Excellent work ethic..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500" /></div>
+                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</label><textarea value={fbFocus} onChange={(e) => setFbFocus(e.target.value)} rows={2} placeholder="e.g. Improve acceleration..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-amber-500" /></div>
                   <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-sky-400">💬 Coach Comment</label><textarea value={fbComment} onChange={(e) => setFbComment(e.target.value)} rows={2} placeholder="e.g. Has shown great consistency..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500" /></div>
                   <div className="flex gap-2">
                     <button onClick={handleSaveFeedback} disabled={savingFeedback} className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingFeedback ? 'Saving...' : 'Save'}</button>
@@ -631,8 +655,8 @@ export default function AthleteProfilePage({ params }: PageProps) {
                 </div>
               ) : latestFeedback ? (
                 <div className="space-y-3">
-                  {latestFeedback.strengths && <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">💪 Strengths</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.strengths}</p></div>}
-                  {latestFeedback.current_focus && <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">🎯 Current Focus</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.current_focus}</p></div>}
+                  {latestFeedback.strengths && <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.strengths}</p></div>}
+                  {latestFeedback.current_focus && <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.current_focus}</p></div>}
                   {latestFeedback.coach_comment && <div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">💬 Comment</p><p className="text-sm leading-relaxed text-slate-200 italic">"{latestFeedback.coach_comment}"</p></div>}
                 </div>
               ) : (

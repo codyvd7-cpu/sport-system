@@ -172,7 +172,7 @@ export default function PlayerProfilePage({ params }: PageProps) {
 
   if (notFound) return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-[#06071a] px-4">
-      <span className="text-5xl">🏑</span>
+      <span className="text-5xl"></span>
       <p className="mt-4 text-lg font-black text-white">Code not found</p>
       <p className="mt-2 text-sm text-slate-500">Check your code and try again.</p>
       <Link href="/player" className="mt-6 rounded-xl border border-sky-500 bg-sky-500/15 px-5 py-2.5 text-sm font-black text-sky-300">Try Again</Link>
@@ -192,7 +192,7 @@ export default function PlayerProfilePage({ params }: PageProps) {
           {/* School header */}
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-xl">🏑</span>
+              <span className="text-xl"></span>
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-400">St Benedict's College</p>
                 <p className="text-[9px] uppercase tracking-widest text-slate-600">Hockey Department</p>
@@ -247,11 +247,11 @@ export default function PlayerProfilePage({ params }: PageProps) {
         {/* Empty state */}
         {performanceTrends.length === 0 && attendanceSummary.total === 0 && !latestFeedback && (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-4xl mb-3">🏑</p>
+            <p className="text-4xl mb-3"></p>
             <p className="text-lg font-black text-white">Your season profile is being built</p>
             <p className="mt-2 text-sm text-slate-500 max-w-xs mx-auto">As your coach logs attendance and testing data, your performance profile will appear here.</p>
             <div className="mt-6 grid grid-cols-3 gap-3 text-left">
-              {[{ icon: '📊', t: 'Attendance', d: 'Every session' }, { icon: '⚡', t: 'Testing', d: 'Benchmarks' }, { icon: '📈', t: 'Trends', d: 'Your progress' }].map((item) => (
+              {[{ icon: '', t: 'Attendance', d: 'Every session' }, { icon: '', t: 'Testing', d: 'Benchmarks' }, { icon: '', t: 'Trends', d: 'Your progress' }].map((item) => (
                 <div key={item.t} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
                   <p className="text-xl mb-1">{item.icon}</p>
                   <p className="text-xs font-black text-white">{item.t}</p>
@@ -272,13 +272,13 @@ export default function PlayerProfilePage({ params }: PageProps) {
             <div className="space-y-3">
               {latestFeedback.strengths && (
                 <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">💪 Strengths</p>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p>
                   <p className="text-sm leading-relaxed text-slate-200">{latestFeedback.strengths}</p>
                 </div>
               )}
               {latestFeedback.current_focus && (
                 <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">🎯 Current Focus</p>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p>
                   <p className="text-sm leading-relaxed text-slate-200">{latestFeedback.current_focus}</p>
                 </div>
               )}

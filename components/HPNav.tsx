@@ -127,7 +127,7 @@ export default function HPNav() {
                 </Link>
               ))}
               <div className="mx-4 mt-4 space-y-2 border-t border-white/5 pt-4">
-                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300">🏠 All Departments</Link>
+                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300">All Departments</Link>
                 <button onClick={handleLogout} className="w-full rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-left text-sm font-semibold text-red-300">Logout</button>
               </div>
             </div>

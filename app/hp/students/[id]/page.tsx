@@ -302,7 +302,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
 
           {yearResults.length === 0 ? (
             <div className="p-8 text-center">
-              <p className="text-3xl mb-2">📋</p>
+              <p className="text-3xl mb-2"></p>
               <p className="text-slate-500 text-sm">No test results recorded for {selectedYear}.</p>
             </div>
           ) : (

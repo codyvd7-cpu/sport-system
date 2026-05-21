@@ -2,27 +2,63 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import type { UserRole } from '@/lib/useRole';
+
+export type StaffRole = 'owner' | 'head_of_hockey' | 'coach' | 'viewer';
 
 interface Props {
   children: React.ReactNode;
-  requiredRole?: UserRole;
+  // If provided, user MUST have one of these roles. Otherwise just needs a valid session.
+  requiredRoles?: StaffRole[];
+  // Legacy prop for backwards compatibility
+  requiredRole?: StaffRole;
 }
 
-export default function AuthGuard({ children, requiredRole }: Props) {
+export default function AuthGuard({ children, requiredRoles, requiredRole }: Props) {
   const router = useRouter();
   const [checked, setChecked] = React.useState(false);
 
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) { router.replace('/login'); return; }
-      if (requiredRole) {
-        const userRole = session.user?.user_metadata?.role as UserRole || 'coach';
-        if (userRole !== requiredRole) { router.replace('/dashboard'); return; }
+    async function verify() {
+      // 1. Must have valid Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.email) {
+        router.replace('/login');
+        return;
       }
+
+      // Build list of acceptable roles
+      const acceptedRoles = requiredRoles || (requiredRole ? [requiredRole] : null);
+
+      // 2. If no role required, valid session is enough
+      if (!acceptedRoles) {
+        setChecked(true);
+        return;
+      }
+
+      // 3. Check staff_roles table — fail closed if no record found
+      const email = session.user.email.toLowerCase();
+      const { data: staffRole, error } = await supabase
+        .from('staff_roles')
+        .select('role, is_active')
+        .eq('email', email)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error || !staffRole) {
+        // No role assigned — fail closed
+        router.replace('/dashboard');
+        return;
+      }
+
+      if (!acceptedRoles.includes(staffRole.role as StaffRole)) {
+        router.replace('/dashboard');
+        return;
+      }
+
       setChecked(true);
-    });
-  }, [router, requiredRole]);
+    }
+    verify();
+  }, [router, requiredRoles, requiredRole]);
 
   if (!checked) return (
     <div className="flex min-h-screen items-center justify-center bg-slate-950">

@@ -1,39 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { authenticateRequest } from '@/lib/serverAuth';
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 
-async function isAuthenticated(req: NextRequest): Promise<boolean> {
-  try {
-    const authHeader = req.headers.get('authorization');
-    const cookieHeader = req.headers.get('cookie') || '';
-    
-    // Check for Supabase session cookie
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    
-    // Extract access token from cookie
-    const tokenMatch = cookieHeader.match(/sb-[^-]+-auth-token=([^;]+)/);
-    if (!tokenMatch) return false;
-    
-    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]));
-    const accessToken = tokenData?.access_token;
-    if (!accessToken) return false;
-    
-    const { data: { user } } = await supabase.auth.getUser(accessToken);
-    return !!user;
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ text: 'API key not configured.' });
 
   // Verify authenticated session
-  const authed = await isAuthenticated(req);
-  if (!authed) return NextResponse.json({ text: 'Unauthorized' }, { status: 401 });
+  // Rate limit
+  const ip = getClientId(req);
+  const rl = rateLimit('app/api/session-builder/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
+  if (!rl.ok) return NextResponse.json({ text: 'Rate limit exceeded.' }, { status: 429 });
+
+  // Authenticate
+  const auth = await authenticateRequest(req);
+  if (!auth.ok) return NextResponse.json({ text: 'Unauthorised' }, { status: 401 });
 
   try {
     const { data } = await req.json();

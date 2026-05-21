@@ -1,32 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-async function isAuthenticated(req: NextRequest): Promise<boolean> {
-  try {
-    const cookieHeader = req.headers.get('cookie') || '';
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    const tokenMatch = cookieHeader.match(/sb-[^-]+-auth-token=([^;]+)/);
-    if (!tokenMatch) return false;
-    const tokenData = JSON.parse(decodeURIComponent(tokenMatch[1]));
-    const accessToken = tokenData?.access_token;
-    if (!accessToken) return false;
-    const { data: { user } } = await supabase.auth.getUser(accessToken);
-    return !!user;
-  } catch { return false; }
-}
+import { authenticateRequest } from '@/lib/serverAuth';
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  // Rate limit
+  const ip = getClientId(req);
+  const rl = rateLimit(`assistant:${ip}`, { max: 30, windowMs: 5 * 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json({ text: 'Rate limit exceeded. Please wait.' }, { status: 429 });
+  }
+
+  // Authentication
+  const auth = await authenticateRequest(req);
+  if (!auth.ok) {
+    return NextResponse.json({ text: 'Unauthorised' }, { status: 401 });
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
-  
   if (!apiKey) {
-    return NextResponse.json({ text: 'API key not configured. Please add OPENAI_API_KEY to Vercel environment variables.' });
+    return NextResponse.json({ text: 'API key not configured.' }, { status: 500 });
   }
 
   try {
     const { messages, system } = await req.json();
+    if (!Array.isArray(messages) || typeof system !== 'string' || system.length > 4000) {
+      return NextResponse.json({ text: 'Invalid request.' }, { status: 400 });
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -46,13 +45,13 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const err = await response.json();
-      return NextResponse.json({ text: `OpenAI error: ${err.error?.message || response.status}` });
+      return NextResponse.json({ text: `OpenAI error: ${err.error?.message || response.status}` }, { status: 500 });
     }
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content || 'No response.';
     return NextResponse.json({ text });
   } catch (e: any) {
-    return NextResponse.json({ text: `Error: ${e.message}` });
+    return NextResponse.json({ text: 'Server error.' }, { status: 500 });
   }
 }

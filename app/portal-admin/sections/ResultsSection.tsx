@@ -78,7 +78,7 @@ export function ResultsSection({ results, busy, newResultTeam, setNewResultTeam,
                           <span className={`rounded-full px-2 py-0.5 text-[10px] font-black ${won ? 'bg-emerald-500/15 text-emerald-300' : drew ? 'bg-slate-700 text-slate-300' : 'bg-red-500/15 text-red-300'}`}>{won ? 'W' : drew ? 'D' : 'L'} {result.final_score}</span>
                           <p className="text-sm font-semibold text-white">{result.team} vs {result.opponent}</p>
                         </div>
-                        <p className="text-xs text-slate-500">{formatDate(result.result_date)}{result.goal_scorers ? ` · 🏑 ${result.goal_scorers}` : ''}</p>
+                        <p className="text-xs text-slate-500">{formatDate(result.result_date)}{result.goal_scorers ? ` · ${result.goal_scorers}` : ''}</p>
                       </div>
                       <div className="flex shrink-0 gap-1">
                         <button onClick={() => moveItem('portal_results', results, index, 'up')} disabled={index === 0} className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs disabled:opacity-30">↑</button>

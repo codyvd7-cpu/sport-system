@@ -182,7 +182,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
 
         {athletes.length === 0 ? (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-4xl mb-3">🏑</p>
+            <p className="text-4xl mb-3"></p>
             <p className="text-lg font-black text-white">No players assigned</p>
             <p className="mt-2 text-sm text-slate-500">Go to the Squad Board to assign players to this team.</p>
             <Link href="/squad" className="mt-4 inline-block rounded-xl border border-sky-500 bg-sky-500/15 px-5 py-2.5 text-sm font-black text-sky-300">Open Squad Board →</Link>
@@ -219,7 +219,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
                   {generatingReport ? (
                     <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" /> Generating...</>
                   ) : (
-                    <>🤖 {aiReport ? 'Regenerate Report' : 'Generate Team Report'}</>
+                    <>{aiReport ? 'Regenerate Report' : 'Generate Team Report'}</>
                   )}
                 </button>
               </div>
@@ -291,7 +291,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
                   {/* Alerts */}
                   {lowAttendance.length > 0 && (
                     <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-red-400">⚠️ Attention Required</p>
+                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-red-400">Attention Required</p>
                       <div className="space-y-1.5">
                         {lowAttendance.map((a) => (
                           <div key={a.id} className="flex items-center justify-between">

@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
+import { generateSecurePassword } from '@/lib/uuid';
 
 type Coach = {
   id: string;
@@ -42,7 +43,7 @@ export default function CoachesPage() {
     // Create auth user via Supabase admin invite
     const { data, error } = await supabase.auth.signUp({
       email: inviteEmail.trim().toLowerCase(),
-      password: Math.random().toString(36).slice(-12) + 'A1!',
+      password: generateSecurePassword(),
       options: {
         data: { role: inviteRole, full_name: inviteName.trim() },
         emailRedirectTo: `${window.location.origin}/login`,

@@ -133,7 +133,7 @@ export default function SquadBoardPage() {
               className={`rounded-xl px-4 py-2 text-sm font-black transition ${
                 view === v ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
               }`}>
-              {v === 'assign' ? '⚡ Assign Players' : '📋 Team Overview'}
+              {v === 'assign' ? 'Assign Players' : 'Team Overview'}
             </button>
           ))}
         </div>
@@ -174,7 +174,7 @@ export default function SquadBoardPage() {
                   </div>
                 ) : filteredUnassigned.length === 0 ? (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
-                    <p className="text-2xl mb-1">✅</p>
+                    <p className="text-2xl mb-1"></p>
                     <p className="text-sm font-bold text-emerald-300">All players assigned!</p>
                   </div>
                 ) : (

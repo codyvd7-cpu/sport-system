@@ -125,9 +125,9 @@ export default function CoachNav() {
                 Head of Hockey
               </span>
             )}
-            <Link href="/" title="Departments" className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/60 text-slate-400 transition hover:text-white text-sm">🏠</Link>
+            <Link href="/" title="Departments" className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/60 text-slate-400 transition hover:text-white text-sm"></Link>
             <Link href="/assistant" title="AI Assistant" className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/25 to-violet-500/15 border border-sky-500/30 text-base transition hover:scale-110">
-              🤖
+              
               <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-sky-500 ring-1 ring-slate-950" />
             </Link>
             <Link href="/ai-tools" title="AI Tools" className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-violet-500/15 border border-violet-500/30 text-base transition hover:scale-110">🛠️</Link>
@@ -194,9 +194,9 @@ export default function CoachNav() {
                 );
               })}
               <div className="mx-4 my-4 border-t border-white/5 pt-4 space-y-2">
-                <Link href="/assistant" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300">🤖 AI Assistant</Link>
+                <Link href="/assistant" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300"> AI Assistant</Link>
                 <Link href="/ai-tools" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-300">🛠️ AI Tools</Link>
-                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300">🏠 All Departments</Link>
+                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300"> All Departments</Link>
                 <Link href="/portal" target="_blank" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-300">Portal ↗</Link>
                 <button onClick={handleLogout} className="w-full rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 text-left">Logout</button>
               </div>

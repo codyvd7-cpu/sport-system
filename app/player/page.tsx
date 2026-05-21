@@ -35,7 +35,7 @@ export default function PlayerPortalPage() {
         {/* Header */}
         <div className="mb-10 text-center">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-4xl shadow-lg shadow-sky-500/10">
-            🏑
+            
           </div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-400">St Benedict's College</p>
           <h1 className="mt-1.5 text-3xl font-black tracking-tight text-white">Player Portal</h1>

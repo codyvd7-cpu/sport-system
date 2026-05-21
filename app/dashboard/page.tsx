@@ -138,7 +138,7 @@ export default function DashboardPage() {
         {/* Alerts */}
         {(lowAttendanceTeams.length > 0 || injuredAthletes.length > 0 || unassigned > 10) && (
           <div className="mb-8 rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
-            <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-red-400">⚠️ Requires Attention</p>
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-red-400">Requires Attention</p>
             <div className="flex flex-wrap gap-3">
               {unassigned > 10 && (
                 <Link href="/squad" className="flex items-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition">
@@ -167,9 +167,9 @@ export default function DashboardPage() {
             {/* Quick actions */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: 'Mark Attendance', href: '/attendance', icon: '✅', color: 'emerald' },
-                { label: 'Testing Session', href: '/performance', icon: '⚡', color: 'violet' },
-                { label: 'Squad Board', href: '/squad', icon: '🏑', color: 'sky' },
+                { label: 'Mark Attendance', href: '/attendance', icon: '', color: 'emerald' },
+                { label: 'Testing Session', href: '/performance', icon: '', color: 'violet' },
+                { label: 'Squad Board', href: '/squad', icon: '', color: 'sky' },
                 { label: 'Portal', href: '/portal', icon: '🌐', color: 'slate' },
               ].map((action) => (
                 <Link key={action.label} href={action.href}

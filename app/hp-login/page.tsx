@@ -8,21 +8,26 @@ export default function HPLoginPage() {
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
 
-
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
-    const HP_CODE = process.env.NEXT_PUBLIC_HP_ACCESS_CODE;
-    if (!HP_CODE) { setError('Access system not configured. Contact admin.'); setLoading(false); return; }
-
-    if (code.trim().toLowerCase() === HP_CODE.toLowerCase()) {
-      sessionStorage.setItem('hp_access', 'true');
+    try {
+      const res = await fetch('/api/hp/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Access denied.');
+        setLoading(false);
+        return;
+      }
       window.location.href = '/hp';
-    } else {
-      setError('Incorrect access code. Please try again.');
+    } catch {
+      setError('Network error. Please try again.');
       setLoading(false);
     }
   }
@@ -50,6 +55,7 @@ export default function HPLoginPage() {
               type="password" required
               value={code} onChange={(e) => setCode(e.target.value)}
               placeholder="Enter access code"
+              autoComplete="off"
               className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500 transition text-center tracking-widest text-lg"
             />
           </div>

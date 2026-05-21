@@ -1,32 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { authenticateRequest, verifyHpCookie } from '@/lib/serverAuth';
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
-  // Auth check — must have valid HP session cookie or Supabase session
-  const cookieHeader = req.headers.get('cookie') || '';
-  const hpAccess = cookieHeader.includes('hp_access') ||
-    req.headers.get('x-hp-access') === 'true';
-
-  // Also accept Supabase auth token (coaches logged into hockey side)
-  const tokenMatch = cookieHeader.match(/sb-[^-]+-auth-token=([^;]+)/);
-  let supabaseAuthed = false;
-  if (tokenMatch) {
-    try {
-      const token = decodeURIComponent(tokenMatch[1]);
-      const parsed = JSON.parse(token);
-      const accessToken = Array.isArray(parsed) ? parsed[0] : parsed?.access_token;
-      if (accessToken) {
-        const supabase = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-        );
-        const { data: { user } } = await supabase.auth.getUser(accessToken);
-        if (user) supabaseAuthed = true;
-      }
-    } catch {}
+  // Rate limit: 20 calls per 5 mins per IP
+  const ip = getClientId(req);
+  const rl = rateLimit(`hp-summary:${ip}`, { max: 20, windowMs: 5 * 60_000 });
+  if (!rl.ok) {
+    return NextResponse.json({ error: 'Rate limit exceeded. Please wait.' }, { status: 429 });
   }
 
-  if (!hpAccess && !supabaseAuthed) {
+  // Accept either valid HP session cookie OR valid Supabase auth
+  const hpOk = verifyHpCookie(req);
+  let authed = hpOk;
+
+  if (!authed) {
+    const result = await authenticateRequest(req);
+    authed = result.ok;
+  }
+
+  if (!authed) {
     return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
   }
 
@@ -50,6 +43,6 @@ export async function POST(req: NextRequest) {
     const text = data.choices?.[0]?.message?.content || 'Could not generate summary.';
     return NextResponse.json({ text });
   } catch (e: any) {
-    return NextResponse.json({ error: `Server error: ${e.message}` }, { status: 500 });
+    return NextResponse.json({ error: 'Server error.' }, { status: 500 });
   }
 }

@@ -147,7 +147,7 @@ export default function PortalPage() {
           {/* Top bar */}
           <div className="flex items-center justify-between border-b border-white/5 py-4">
             <div className="flex items-center gap-2.5">
-              <span className="text-2xl">🏑</span>
+              <span className="text-2xl"></span>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">St Benedict's College</p>
                 <p className="text-[10px] uppercase tracking-widest text-slate-400">Hockey Department</p>
@@ -381,7 +381,7 @@ export default function PortalPage() {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-black text-white">{result.team} vs {result.opponent}</p>
                                   <p className="text-xs text-slate-500">{score}</p>
-                                  {result.goal_scorers && <p className="text-[10px] text-slate-500 mt-0.5">🏑 {result.goal_scorers}</p>}
+                                  {result.goal_scorers && <p className="text-[10px] text-slate-500 mt-0.5">{result.goal_scorers}</p>}
                                 </div>
                               </div>
                             );

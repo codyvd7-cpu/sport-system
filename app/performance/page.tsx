@@ -138,13 +138,14 @@ export default function PerformancePage() {
     if (!value.trim() || Number.isNaN(num)) return;
     setSaving((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: true } }));
     const unit = TEST_LIBRARY.find((t) => t.name === testName)?.unit || '';
-    // Upsert — delete existing then insert
-    await supabase.from('performance_tests').delete()
-      .eq('athlete_id', athleteId).eq('test_date', sessionDate).eq('test_type', testName);
-    const { error: insertErr } = await supabase.from('performance_tests').insert([{
+
+    // Upsert via unique constraint (athlete_id, test_date, test_type).
+    // No more delete-then-insert — that risked data loss on insert failure.
+    const { error: upsertErr } = await supabase.from('performance_tests').upsert([{
       athlete_id: athleteId, test_date: sessionDate, test_type: testName, value: num, unit,
-    }]);
-    if (insertErr) { showToast('Failed to save result', 'error'); }
+    }], { onConflict: 'athlete_id,test_date,test_type' });
+
+    if (upsertErr) { showToast('Failed to save result', 'error'); }
     else { setSaved((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: true } })); }
     setSaving((prev) => ({ ...prev, [athleteId]: { ...prev[athleteId], [testName]: false } }));
   }
@@ -420,7 +421,7 @@ export default function PerformancePage() {
         {/* ── DONE STEP ──────────────────────────────────── */}
         {step === 'done' && (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
-            <p className="text-5xl mb-4">✅</p>
+            <p className="text-5xl mb-4"></p>
             <h2 className="text-2xl font-black text-white">Session Complete</h2>
             <p className="mt-2 text-slate-400">{completedCount} of {athletes.length} players tested · {selectedTests.join(', ')}</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
