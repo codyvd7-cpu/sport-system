@@ -196,7 +196,7 @@ export default function LandingPage() {
                 St Benedict's College
               </p>
               <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.25em] text-white/20">
-                Est. 1958 &nbsp;·&nbsp; Johannesburg
+                Est. 1958 &nbsp;·&nbsp; Bedfordview
               </p>
             </div>
 
