@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/Toast';
 import { PageLoader, EmptyState, IconUsers, IconPlus, IconTrash, IconSearch } from '@/components/HPIcons';
 
 type Row = Record<string, any>;

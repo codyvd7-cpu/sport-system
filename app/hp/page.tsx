@@ -1,6 +1,8 @@
 'use client';
 import * as React from 'react';
-import { PageLoader, SkeletonCard, IconCheckSquare, IconActivity, IconTrendUp, IconUsers, IconSettings } from '@/components/HPIcons';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { PageLoader, IconCheckSquare, IconActivity, IconTrendUp, IconUsers, IconSettings } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 
