@@ -189,7 +189,10 @@ ${testBreakdown || 'No results recorded yet.'}`;
     try {
       const res = await fetch('/api/hp-summary', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-hp-access': 'true',
+        },
         body: JSON.stringify({ prompt }),
       });
       const data = await res.json();

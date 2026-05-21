@@ -36,7 +36,7 @@ function ClassCard({ c, term }: { c: any; term: string }) {
   const allTested = c.tested === c.total && c.total > 0;
   const noneTested = c.tested === 0;
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden transition hover:border-slate-700">
+    <div className={`rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden transition-all duration-200 hover:border-slate-600 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5`}>
       <div className={`px-4 py-3 flex items-center justify-between border-b border-slate-800 ${isGrade8 ? 'bg-sky-500/5' : 'bg-violet-500/5'}`}>
         <div>
           <p className={`text-xl font-black ${isGrade8 ? 'text-sky-400' : 'text-violet-400'}`}>{c.grade === 'Grade 8' ? '8' : '9'}{c.cls}</p>

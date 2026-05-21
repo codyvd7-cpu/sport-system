@@ -14,6 +14,8 @@ export default function HPRolloverPage() {
   const [step, setStep] = React.useState<1|2|3|4>(1);
   const [processing, setProcessing] = React.useState(false);
   const [done, setDone] = React.useState<string[]>([]);
+  const [confirmText, setConfirmText] = React.useState('');
+  const CONFIRM_PHRASE = 'YEAR END ROLLOVER';
 
   // New Grade 8 bulk add
   const [newNames, setNewNames] = React.useState('');
@@ -169,8 +171,20 @@ export default function HPRolloverPage() {
               <p className="mt-3 text-[11px] text-slate-600">All test results and attendance history carry over. Training groups will reset — you'll re-assign after new testing.</p>
             </div>
 
-            <button onClick={() => setStep(2)}
-              className="w-full rounded-xl border border-amber-500/40 bg-amber-500/15 py-3 text-sm font-black text-amber-300 hover:bg-amber-500/25 transition">
+            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+              <p className="text-xs text-slate-500 mb-2">Type <span className="font-black text-white">{CONFIRM_PHRASE}</span> to confirm</p>
+              <input
+                value={confirmText}
+                onChange={e => setConfirmText(e.target.value.toUpperCase())}
+                placeholder="Type here..."
+                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-amber-500"
+              />
+            </div>
+
+            <button
+              onClick={() => setStep(2)}
+              disabled={confirmText !== CONFIRM_PHRASE}
+              className="w-full rounded-xl border border-amber-500/40 bg-amber-500/15 py-3 text-sm font-black text-amber-300 hover:bg-amber-500/25 transition disabled:opacity-30 disabled:cursor-not-allowed">
               I understand — Begin Rollover →
             </button>
           </div>
