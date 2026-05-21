@@ -193,10 +193,10 @@ ${testBreakdown || 'No results recorded yet.'}`;
         body: JSON.stringify({ prompt }),
       });
       const data = await res.json();
-      if (data.error) { setAiSummary(`⚠ ${data.error}`); setAiLoading(false); return; }
+      if (data.error) { setAiSummary(`Error: ${data.error}`); setAiLoading(false); return; }
       setAiSummary(data.text || 'Could not generate summary.');
     } catch (e: any) {
-      setAiSummary(`⚠ ${e.message || 'Failed to reach server.'}`);
+      setAiSummary(`Error: ${e.message || 'Failed to reach server.'}`);
     }
     setAiLoading(false);
   }
@@ -233,12 +233,13 @@ ${testBreakdown || 'No results recorded yet.'}`;
 
   return (
     <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-fade-in">
         <Link href="/hp/students" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← Students</Link>
 
         {loadError && (
           <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            ⚠ {loadError}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            {loadError}
           </div>
         )}
 
@@ -418,7 +419,8 @@ ${testBreakdown || 'No results recorded yet.'}`;
           <div className="border-b border-violet-500/15 px-5 py-4 flex items-center justify-between flex-wrap gap-3">
             <div>
               <h2 className="text-base font-black text-white flex items-center gap-2">
-                <span className="text-lg">✦</span> AI Performance Summary
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 text-violet-400"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
+                AI Performance Summary
               </h2>
               <p className="text-xs text-slate-500 mt-0.5">Generate a coach-ready summary for any term</p>
             </div>

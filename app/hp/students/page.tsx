@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/Toast';
+import { PageLoader, EmptyState, IconUsers, IconPlus, IconTrash, IconSearch } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -142,11 +142,15 @@ export default function HPStudentsPage() {
 
         {/* Student list */}
         {loading ? (
-          <div className="space-y-2">{[1,2,3,4,5].map(i => <div key={i} className="h-14 rounded-2xl bg-slate-900 animate-pulse" />)}</div>
-        ) : filtered.length === 0 ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 py-12 text-center">
-            <p className="text-slate-500 text-sm">No students found.</p>
+          <div className="space-y-2">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="h-14 w-full overflow-hidden rounded-2xl bg-slate-900">
+                <div className="h-full w-full" style={{background:'linear-gradient(90deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)',backgroundSize:'200% 100%',animation:'shimmer 1.8s infinite'}}/>
+              </div>
+            ))}
           </div>
+        ) : filtered.length === 0 ? (
+          <EmptyState icon={<IconUsers className="h-8 w-8"/>} title="No students found" sub="Try adjusting your search or filters"/>
         ) : (
           <div className="space-y-1.5">
             {filtered.map(s => {

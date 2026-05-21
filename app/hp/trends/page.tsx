@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { PageLoader } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -127,13 +128,7 @@ export default function HPTrendsPage(){
   // selected test object
   const testObj=tests.find(t=>t.key===selTest);
 
-  if(loading)return(
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-3">
-        {[1,2,3].map(i=><div key={i} className="h-14 rounded-2xl bg-slate-900 animate-pulse"/>)}
-      </div>
-    </main>
-  );
+  if(loading) return <PageLoader label="Loading Trends"/>;
 
   const isG8=grade==='Grade 8';
   const gradeColor=isG8?'text-sky-400':'text-violet-400';
@@ -141,7 +136,7 @@ export default function HPTrendsPage(){
 
   return(
     <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-fade-in">
 
         {/* ── HEADER ── */}
         <div className="mb-8">

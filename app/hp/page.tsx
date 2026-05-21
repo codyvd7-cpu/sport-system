@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
-import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { PageLoader, SkeletonCard, IconCheckSquare, IconActivity, IconTrendUp, IconUsers, IconSettings } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 
@@ -120,17 +119,11 @@ export default function HPDashboard() {
   const totalTested = new Set(testResults.filter(r => r.term === currentTerm).map(r => r.student_id)).size;
   const totalUntested = totalStudents - totalTested;
 
-  if (loading) return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-4">
-        {[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-slate-900 animate-pulse" />)}
-      </div>
-    </main>
-  );
+  if (loading) return <PageLoader label="Loading HP Dashboard"/>;
 
   return (
     <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-fade-in">
 
         {/* Header */}
         <div className="mb-8 flex items-start justify-between gap-4">
@@ -193,13 +186,15 @@ export default function HPDashboard() {
         {/* Quick actions */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {[
-            { href: '/hp/attendance', label: 'Take Register', sub: 'Mark attendance', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-emerald-400"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
-            { href: '/hp/testing', label: 'Enter Tests', sub: 'Record results', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-violet-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, border: 'border-violet-500/20', bg: 'bg-violet-500/5' },
-            { href: '/hp/trends', label: 'Trends', sub: 'Performance data', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-sky-400"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, border: 'border-sky-500/20', bg: 'bg-sky-500/5' },
-            { href: '/hp/students', label: 'Students', sub: 'All profiles', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-amber-400"><circle cx="9" cy="7" r="4"/><path d="M3 20c0-3.314 2.686-6 6-6h6c3.314 0 6 2.686 6 6"/></svg>, border: 'border-amber-500/20', bg: 'bg-amber-500/5' },
-            { href: '/hp/admin/rollover', label: 'Year End Rollover', sub: 'Promote & graduate', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-rose-400"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>, border: 'border-rose-500/20', bg: 'bg-rose-500/5' },
-          ].map(a => (
-            <Link key={a.href} href={a.href} className={`group rounded-2xl border ${a.border} ${a.bg} p-4 transition hover:scale-[1.02]`}>
+            { href: '/hp/attendance', label: 'Take Register', sub: 'Mark attendance', icon: <IconCheckSquare className="h-6 w-6 text-emerald-400"/>, border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
+            { href: '/hp/testing',    label: 'Enter Tests',   sub: 'Record results',  icon: <IconActivity   className="h-6 w-6 text-violet-400"/>, border: 'border-violet-500/20',  bg: 'bg-violet-500/5'  },
+            { href: '/hp/trends',     label: 'Trends',        sub: 'Performance data',icon: <IconTrendUp    className="h-6 w-6 text-sky-400"/>,    border: 'border-sky-500/20',     bg: 'bg-sky-500/5'     },
+            { href: '/hp/students',   label: 'Students',      sub: 'All profiles',    icon: <IconUsers      className="h-6 w-6 text-amber-400"/>,   border: 'border-amber-500/20',   bg: 'bg-amber-500/5'   },
+            { href: '/hp/admin/rollover', label: 'Year End',  sub: 'Promote & graduate',icon: <IconSettings className="h-6 w-6 text-rose-400"/>,   border: 'border-rose-500/20',    bg: 'bg-rose-500/5'    },
+          ].map((a, i) => (
+            <Link key={a.href} href={a.href}
+              className={`group rounded-2xl border ${a.border} ${a.bg} p-4 transition hover:scale-[1.03] hover:shadow-lg animate-fade-in`}
+              style={{animationDelay:`${i*60}ms`}}>
               <div className="mb-2">{a.icon}</div>
               <p className="text-sm font-black text-white">{a.label}</p>
               <p className="text-[10px] text-slate-500">{a.sub}</p>

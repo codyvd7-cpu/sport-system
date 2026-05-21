@@ -2,6 +2,7 @@
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
+import { PageLoader, IconGraduate, IconArrowUp } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -107,7 +108,7 @@ export default function HPRolloverPage() {
         {/* Warning banner */}
         {step === 1 && (
           <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
-            <p className="text-sm font-black text-amber-300 mb-2">⚠ Read before proceeding</p>
+            <p className="text-sm font-black text-amber-300 mb-2"><span>Read before proceeding</span></p>
             <ul className="space-y-1.5 text-sm text-amber-200/80">
               <li>• All test results and attendance history is <strong>preserved</strong> — nothing is deleted</li>
               <li>• Grade 9 students will be <strong>archived</strong> (no longer appear in active lists)</li>
@@ -178,7 +179,7 @@ export default function HPRolloverPage() {
         {/* Step 2: Graduate Grade 9s */}
         {step === 2 && (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center space-y-4">
-            <div className="text-4xl">🎓</div>
+            <IconGraduate className="h-10 w-10 text-slate-400"/>
             <h2 className="text-xl font-black text-white">Graduate Grade 9s</h2>
             <p className="text-sm text-slate-400">
               <span className="text-white font-black">{grade9s.length} students</span> will be archived. Their results and attendance are preserved.
@@ -205,7 +206,7 @@ export default function HPRolloverPage() {
         {/* Step 3: Promote Grade 8s */}
         {step === 3 && (
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center space-y-4">
-            <div className="text-4xl">⬆️</div>
+            <IconArrowUp className="h-10 w-10 text-slate-400"/>
             <h2 className="text-xl font-black text-white">Promote to Grade 9</h2>
             <p className="text-sm text-slate-400">
               <span className="text-white font-black">{grade8s.length} students</span> currently in Grade 8 will become Grade 9. Their class groups carry over — you can reassign after testing.
