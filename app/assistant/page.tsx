@@ -7,12 +7,12 @@ type Message = { role: 'user' | 'assistant'; content: string };
 type Row = Record<string, any>;
 
 const QUICK_PROMPTS = [
-  { label: 'Who needs attention?', icon: '', prompt: 'Which athletes need attention right now based on attendance, availability and performance trends?' },
-  { label: 'Team fitness report', icon: '', prompt: 'Give me a fitness and attendance overview for all teams. Flag any concerns.' },
-  { label: 'Write player feedback', icon: '✍️', prompt: 'Help me write structured feedback for a player. Ask me their name and key points to highlight.' },
-  { label: 'Training session plan', icon: '', prompt: 'Help me plan a training session. Ask me the team, focus area, and what equipment is available.' },
-  { label: 'Benchmark analysis', icon: '', prompt: 'Analyse our testing results and tell me where we are strongest and where we need to improve most.' },
-  { label: 'Injury & availability', icon: '🏥', prompt: 'Which players are injured or on modified training? What should I consider for their return to play?' },
+  { label: 'Who needs attention?',  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, prompt: 'Which athletes need attention right now based on attendance, availability and performance trends?' },
+  { label: 'Team fitness report',   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, prompt: 'Give me a fitness and attendance overview for all teams. Flag any concerns.' },
+  { label: 'Write player feedback', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>, prompt: 'Help me write structured feedback for a player. Ask me their name and key points to highlight.' },
+  { label: 'Training session plan', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, prompt: 'Help me plan a training session. Ask me the team, focus area, and what equipment is available.' },
+  { label: 'Benchmark analysis',    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, prompt: 'Analyse our testing results and tell me where we are strongest and where we need to improve most.' },
+  { label: 'Injury & availability', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, prompt: 'Which players are injured or on modified training? What should I consider for their return to play?' },
 ];
 
 export default function AssistantPage() {
@@ -161,7 +161,7 @@ export default function AssistantPage() {
               {QUICK_PROMPTS.map((p) => (
                 <button key={p.label} onClick={() => sendMessage(p.prompt)}
                   className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-left transition hover:border-sky-500/30 hover:bg-sky-500/5 active:scale-[0.98]">
-                  <span className="text-2xl">{p.icon}</span>
+                  <span className="text-sky-400">{p.icon}</span>
                   <p className="mt-2 text-xs font-black text-white leading-snug">{p.label}</p>
                 </button>
               ))}

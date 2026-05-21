@@ -575,7 +575,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
               ) : <p className="mt-1 text-sm text-slate-500">No code yet — player can't access portal.</p>}
             </div>
             <button onClick={handleGenerateCode} disabled={generatingCode} className={`shrink-0 rounded-xl border px-4 py-2.5 text-xs font-black transition disabled:opacity-50 ${playerCode ? 'border-slate-700 bg-slate-800 text-slate-300' : 'border-sky-500 bg-sky-500/15 text-sky-300 hover:bg-sky-500/20'}`}>
-              {generatingCode ? '...' : playerCode ? 'Regenerate' : '🔑 Generate Code'}
+              {generatingCode ? '...' : playerCode ? 'Regenerate' : 'Generate Code'}
             </button>
           </div>
         </div>
@@ -611,13 +611,17 @@ export default function AthleteProfilePage({ params }: PageProps) {
         {/* Empty state */}
         {performanceTrends.length === 0 && attendanceRecords.length === 0 && (
           <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-4xl mb-3"></p>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-slate-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg></div>
             <p className="text-lg font-black text-white">Season hasn't started yet</p>
             <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">Once attendance and testing data is logged, this athlete's full performance profile will appear here.</p>
             <div className="mt-6 grid grid-cols-3 gap-3 text-left">
-              {[{ icon: '', t: 'Attendance', d: 'Every session logged' }, { icon: '', t: 'Benchmark testing', d: 'Sprint, jump, endurance' }, { icon: '', t: 'Progress trends', d: 'Track improvement' }].map((item) => (
+              {[
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, t: 'Attendance', d: 'Every session logged' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, t: 'Benchmark testing', d: 'Sprint, jump, endurance' },
+                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, t: 'Progress trends', d: 'Track improvement' },
+              ].map((item) => (
                 <div key={item.t} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                  <p className="text-xl mb-1">{item.icon}</p>
+                  <div className="text-sky-400 mb-1">{item.icon}</div>
                   <p className="text-xs font-black text-white">{item.t}</p>
                   <p className="mt-0.5 text-[10px] text-slate-500">{item.d}</p>
                 </div>
@@ -647,7 +651,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
                 <div className="space-y-3">
                   <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</label><textarea value={fbStrengths} onChange={(e) => setFbStrengths(e.target.value)} rows={2} placeholder="e.g. Excellent work ethic..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500" /></div>
                   <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</label><textarea value={fbFocus} onChange={(e) => setFbFocus(e.target.value)} rows={2} placeholder="e.g. Improve acceleration..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-amber-500" /></div>
-                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-sky-400">💬 Coach Comment</label><textarea value={fbComment} onChange={(e) => setFbComment(e.target.value)} rows={2} placeholder="e.g. Has shown great consistency..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500" /></div>
+                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-sky-400">Coach Comment</label><textarea value={fbComment} onChange={(e) => setFbComment(e.target.value)} rows={2} placeholder="e.g. Has shown great consistency..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500" /></div>
                   <div className="flex gap-2">
                     <button onClick={handleSaveFeedback} disabled={savingFeedback} className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingFeedback ? 'Saving...' : 'Save'}</button>
                     <button onClick={() => setEditingFeedback(false)} className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-300">Cancel</button>
@@ -657,7 +661,7 @@ export default function AthleteProfilePage({ params }: PageProps) {
                 <div className="space-y-3">
                   {latestFeedback.strengths && <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.strengths}</p></div>}
                   {latestFeedback.current_focus && <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.current_focus}</p></div>}
-                  {latestFeedback.coach_comment && <div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">💬 Comment</p><p className="text-sm leading-relaxed text-slate-200 italic">"{latestFeedback.coach_comment}"</p></div>}
+                  {latestFeedback.coach_comment && <div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p><p className="text-sm leading-relaxed text-slate-200 italic">"{latestFeedback.coach_comment}"</p></div>}
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-700 p-6 text-center">

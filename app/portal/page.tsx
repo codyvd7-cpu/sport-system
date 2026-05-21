@@ -131,7 +131,7 @@ export default function PortalPage() {
   }, [sponsors]);
 
   const activeSponsor = sponsors[activeSponsorIndex];
-  const MEDALS = ['🥇', '🥈', '🥉', '', ''];
+  const MEDALS = ['1st', '2nd', '3rd', '4th', '5th'];
 
   return (
     <main className="min-h-screen bg-[#06071a] text-white">
@@ -316,7 +316,7 @@ export default function PortalPage() {
                                 {fixture.fixture_time && <span className="text-[10px] text-slate-500">{fixture.fixture_time}</span>}
                               </div>
                               <p className="text-sm font-black text-white">vs {fixture.opponent}</p>
-                              {fixture.venue && <p className="mt-0.5 text-xs text-slate-500">📍 {fixture.venue}</p>}
+                              {fixture.venue && <p className="mt-0.5 text-xs text-slate-500">{fixture.venue}</p>}
                             </div>
                           ))}
                         </div>

@@ -125,12 +125,16 @@ export default function CoachNav() {
                 Head of Hockey
               </span>
             )}
-            <Link href="/" title="Departments" className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/60 text-slate-400 transition hover:text-white text-sm"></Link>
-            <Link href="/assistant" title="AI Assistant" className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/25 to-violet-500/15 border border-sky-500/30 text-base transition hover:scale-110">
-              
+            <Link href="/" title="Departments" className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 bg-slate-800/60 text-slate-400 transition hover:text-white text-sm">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </Link>
+            <Link href="/assistant" title="AI Assistant" className="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/25 to-violet-500/15 border border-sky-500/30 transition hover:scale-110">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 text-sky-300"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
               <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-sky-500 ring-1 ring-slate-950" />
             </Link>
-            <Link href="/ai-tools" title="AI Tools" className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-violet-500/15 border border-violet-500/30 text-base transition hover:scale-110">🛠️</Link>
+            <Link href="/ai-tools" title="AI Tools" className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/25 to-violet-500/15 border border-violet-500/30 transition hover:scale-110">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 text-violet-300"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </Link>
             <Link href="/portal" target="_blank" className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">Portal ↗</Link>
             <Link href="/player" target="_blank" className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-semibold text-sky-300 hover:bg-sky-500/20 transition">Player ↗</Link>
             <button onClick={handleLogout} className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition">Logout</button>
@@ -194,9 +198,15 @@ export default function CoachNav() {
                 );
               })}
               <div className="mx-4 my-4 border-t border-white/5 pt-4 space-y-2">
-                <Link href="/assistant" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300"> AI Assistant</Link>
-                <Link href="/ai-tools" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-300">🛠️ AI Tools</Link>
-                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300"> All Departments</Link>
+                <Link href="/assistant" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-2.5 text-sm font-semibold text-sky-300">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
+                  AI Assistant
+                </Link>
+                <Link href="/ai-tools" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-violet-500/20 bg-violet-500/10 px-4 py-2.5 text-sm font-semibold text-violet-300"> AI Tools</Link>
+                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  All Departments
+                </Link>
                 <Link href="/portal" target="_blank" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-slate-300">Portal ↗</Link>
                 <button onClick={handleLogout} className="w-full rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-semibold text-red-300 text-left">Logout</button>
               </div>

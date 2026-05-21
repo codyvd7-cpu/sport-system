@@ -284,7 +284,7 @@ export default function PlayerProfilePage({ params }: PageProps) {
               )}
               {latestFeedback.coach_comment && (
                 <div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">💬 Comment</p>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p>
                   <p className="text-sm leading-relaxed text-slate-200 italic">"{latestFeedback.coach_comment}"</p>
                 </div>
               )}

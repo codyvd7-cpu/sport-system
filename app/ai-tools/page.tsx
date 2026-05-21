@@ -78,7 +78,7 @@ export default function AIToolsPage() {
         <div className="mb-6 flex gap-2">
           <button onClick={() => setActiveTab('parent')}
             className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${activeTab === 'parent' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
-            📱 Parent Update
+            Parent Update
           </button>
           <button onClick={() => setActiveTab('session')}
             className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${activeTab === 'session' ? 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
@@ -128,7 +128,7 @@ export default function AIToolsPage() {
               </div>
               <button onClick={generateParentUpdate} disabled={parentLoading || !parentTeam || !parentFocus}
                 className="mt-5 w-full rounded-xl border border-sky-500/40 bg-sky-500/15 py-3 text-sm font-black text-sky-300 hover:bg-sky-500/25 disabled:opacity-40 transition flex items-center justify-center gap-2">
-                {parentLoading ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300 border-t-transparent" />Generating...</> : '📱 Generate Parent Message'}
+                {parentLoading ? <><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-300 border-t-transparent" />Generating...</> : 'Generate Parent Message'}
               </button>
             </div>
 

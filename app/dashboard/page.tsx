@@ -152,7 +152,7 @@ export default function DashboardPage() {
               ))}
               {injuredAthletes.map((a) => (
                 <Link key={a.id} href={`/athletes/${a.id}`} className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition">
-                  🔴 {a.full_name || a.name} — Injured
+                  {a.full_name || a.name} — Injured
                 </Link>
               ))}
             </div>
@@ -167,14 +167,18 @@ export default function DashboardPage() {
             {/* Quick actions */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { label: 'Mark Attendance', href: '/attendance', icon: '', color: 'emerald' },
-                { label: 'Testing Session', href: '/performance', icon: '', color: 'violet' },
-                { label: 'Squad Board', href: '/squad', icon: '', color: 'sky' },
-                { label: 'Portal', href: '/portal', icon: '🌐', color: 'slate' },
+                { label: 'Mark Attendance', href: '/attendance', color: 'emerald',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 mx-auto"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
+                { label: 'Testing Session', href: '/performance', color: 'violet',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 mx-auto"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+                { label: 'Squad Board', href: '/squad', color: 'sky',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 mx-auto"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
+                { label: 'Portal', href: '/portal', color: 'slate',
+                  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 mx-auto"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> },
               ].map((action) => (
                 <Link key={action.label} href={action.href}
-                  className={`rounded-2xl border p-4 text-center transition hover:scale-[1.02] ${action.color === 'emerald' ? 'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10' : action.color === 'violet' ? 'border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10' : action.color === 'sky' ? 'border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10' : 'border-slate-700 bg-slate-900 hover:bg-slate-800'}`}>
-                  <p className="text-2xl mb-1">{action.icon}</p>
+                  className={`rounded-2xl border p-4 text-center transition hover:scale-[1.02] ${action.color === 'emerald' ? 'border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-400' : action.color === 'violet' ? 'border-violet-500/20 bg-violet-500/5 hover:bg-violet-500/10 text-violet-400' : action.color === 'sky' ? 'border-sky-500/20 bg-sky-500/5 hover:bg-sky-500/10 text-sky-400' : 'border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-400'}`}>
+                  <div className="mb-2">{action.icon}</div>
                   <p className="text-xs font-black text-white">{action.label}</p>
                 </Link>
               ))}

@@ -248,10 +248,14 @@ export default function TeamDashboardPage({ params }: PageProps) {
                   <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Readiness</p><h2 className="mt-0.5 text-lg font-black text-white">Availability Board</h2></div>
                   <div className="space-y-3">
                     {[
-                      { label: 'Available', athletes: available, color: 'emerald', icon: '🟢' },
-                      { label: 'Modified', athletes: modified, color: 'amber', icon: '🟡' },
-                      { label: 'Injured', athletes: injured, color: 'red', icon: '🔴' },
-                      { label: 'Resting', athletes: resting, color: 'sky', icon: '⚪' },
+                      { label: 'Available', athletes: available, color: 'emerald',
+                        icon: <span className="inline-block h-2 w-2 rounded-full bg-emerald-400"/> },
+                      { label: 'Modified', athletes: modified, color: 'amber',
+                        icon: <span className="inline-block h-2 w-2 rounded-full bg-amber-400"/> },
+                      { label: 'Injured', athletes: injured, color: 'red',
+                        icon: <span className="inline-block h-2 w-2 rounded-full bg-red-400"/> },
+                      { label: 'Resting', athletes: resting, color: 'sky',
+                        icon: <span className="inline-block h-2 w-2 rounded-full bg-slate-400"/> },
                     ].filter((g) => g.athletes.length > 0).map((group) => (
                       <div key={group.label}>
                         <p className={`mb-2 text-xs font-black uppercase tracking-wide ${group.color === 'emerald' ? 'text-emerald-400' : group.color === 'amber' ? 'text-amber-400' : group.color === 'red' ? 'text-red-400' : 'text-sky-400'}`}>

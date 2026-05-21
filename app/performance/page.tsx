@@ -421,7 +421,7 @@ export default function PerformancePage() {
         {/* ── DONE STEP ──────────────────────────────────── */}
         {step === 'done' && (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
-            <p className="text-5xl mb-4"></p>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-slate-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
             <h2 className="text-2xl font-black text-white">Session Complete</h2>
             <p className="mt-2 text-slate-400">{completedCount} of {athletes.length} players tested · {selectedTests.join(', ')}</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">

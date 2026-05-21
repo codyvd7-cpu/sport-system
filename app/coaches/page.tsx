@@ -150,7 +150,7 @@ export default function CoachesPage() {
             </div>
           ) : coaches.length === 0 ? (
             <div className="py-12 text-center">
-              <p className="text-2xl mb-2">👤</p>
+              <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-400"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="12" cy="8" r="4"/><path d="M20 20c0-4.418-3.582-8-8-8s-8 3.582-8 8"/></svg></div>
               <p className="text-slate-500 text-sm">No coaches added yet.</p>
             </div>
           ) : (
