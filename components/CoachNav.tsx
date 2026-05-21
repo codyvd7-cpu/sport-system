@@ -33,6 +33,11 @@ const NAV_ITEMS = [
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
   },
   {
+    href: '/gym',
+    label: 'Gym',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M6 4v16M18 4v16M3 8h3m12 0h3M3 16h3m12 0h3M9 8h6v8H9z"/></svg>,
+  },
+  {
     href: '/performance',
     label: 'Performance',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
@@ -50,6 +55,12 @@ const HOH_NAV_ITEM = {
   icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
 };
 
+const HOH_EXPORT_ITEM = {
+  href: '/export/attendance',
+  label: 'Att. Export',
+  icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+};
+
 const BOTTOM_TABS = [
   { href: '/dashboard', label: 'Home', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> },
   { href: '/athletes', label: 'Athletes', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6"/></svg> },
@@ -64,7 +75,7 @@ export default function CoachNav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isHOH, email } = useRole();
 
-  const allNavItems = isHOH ? [...NAV_ITEMS, HOH_NAV_ITEM] : NAV_ITEMS;
+  const allNavItems = isHOH ? [...NAV_ITEMS, HOH_NAV_ITEM, HOH_EXPORT_ITEM] : NAV_ITEMS;
 
   function isActive(href: string) {
     if (href === '/dashboard') return pathname === '/dashboard';
