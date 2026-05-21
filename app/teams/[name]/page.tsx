@@ -79,7 +79,7 @@ export default function TeamDashboardPage({ params }: PageProps) {
         const best = lower ? vals.reduce((a, b) => a.value < b.value ? a : b) : vals.reduce((a, b) => a.value > b.value ? a : b);
         pbs[t] = { value: best.value, unit: best.unit || '' };
       });
-      return { ...a, pbs, testCount: perf.length };
+      return { ...a, full_name: a.full_name || a.name || '', pbs, testCount: perf.length };
     });
   }, [athletes, performance]);
 
