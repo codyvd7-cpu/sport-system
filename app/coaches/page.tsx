@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { generateSecurePassword } from '@/lib/uuid';
 import { useToast } from '@/components/Toast';
 
-type Coach = { id: string; email: string; full_name: string; role: string; teams?: string[] };
+type Coach = { id: string; email: string; full_name: string; role: string; teams?: string[]; is_active?: boolean };
 
 const TEAM_GROUPS = [
   { group: 'Senior', teams: ['1sts','2nds','3rds','4ths','5ths'] },
