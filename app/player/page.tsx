@@ -51,9 +51,6 @@ export default function PlayerPortalPage() {
           <h1 className="mt-2 text-3xl font-black text-white">Player & Parent</h1>
           <p className="mt-2 text-sm text-slate-400">Enter your personal access code</p>
         </div>
-          <h1 className="mt-1.5 text-3xl font-black tracking-tight text-white">Player Portal</h1>
-          <p className="mt-2 text-sm text-slate-500">Enter your access code to view your profile.</p>
-        </div>
 
         {/* Card */}
         <div className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-2xl backdrop-blur">
