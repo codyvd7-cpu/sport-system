@@ -13,10 +13,16 @@ export async function POST(req: NextRequest) {
   }
 
   const expectedCode = process.env.PORTAL_ACCESS_CODE;
-  const secret = process.env.HP_SESSION_SECRET; // reuse same secret
+  const secret = process.env.HP_SESSION_SECRET;
 
-  if (!expectedCode || !secret) {
-    return NextResponse.json({ error: 'Portal access not configured.' }, { status: 500 });
+  if (!expectedCode && !secret) {
+    return NextResponse.json({ error: 'Portal access not configured: both vars missing.' }, { status: 500 });
+  }
+  if (!expectedCode) {
+    return NextResponse.json({ error: 'Portal access not configured: PORTAL_ACCESS_CODE missing.' }, { status: 500 });
+  }
+  if (!secret) {
+    return NextResponse.json({ error: 'Portal access not configured: HP_SESSION_SECRET missing.' }, { status: 500 });
   }
 
   try {
