@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/Toast';
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase';
+import { useRole } from '@/lib/useRole';
 import { safeUUID } from '@/lib/uuid';
 
 type GenericRow = Record<string, any>;
@@ -152,13 +153,18 @@ export default function AttendancePage() {
   const [bulkStatuses, setBulkStatuses] = useState<Record<string, string>>({});
   const [bulkSubmitting, setBulkSubmitting] = useState(false);
 
+  const { canSeeAllTeams, teams: myTeams, loading: roleLoading } = useRole();
+
   async function loadPageData() {
     setLoading(true);
     setError('');
 
+    let athQuery = supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability');
+    if (!canSeeAllTeams && myTeams.length > 0) athQuery = athQuery.in('team', myTeams);
+
     const [attendanceRes, athletesRes] = await Promise.all([
       supabase.from('attendance').select('*').order('session_date', { ascending: false }).limit(1000),
-      supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability'),
+      athQuery,
     ]);
 
     if (attendanceRes.error || athletesRes.error) {
@@ -179,8 +185,8 @@ export default function AttendancePage() {
   }
 
   useEffect(() => {
-    loadPageData();
-  }, []);
+    if (!roleLoading) loadPageData();
+  }, [roleLoading, canSeeAllTeams, myTeams.join(',')]);
 
   const athletes = useMemo(() => {
     return athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name));

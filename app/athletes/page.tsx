@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { safeUUID } from '@/lib/uuid';
+import { useRole } from '@/lib/useRole';
 
 type GenericRow = Record<string, any>;
 
@@ -73,15 +74,19 @@ export default function AthletesPage() {
     return () => clearTimeout(t);
   }, [successMessage]);
 
+  const { canSeeAllTeams, teams: myTeams, loading: roleLoading } = useRole();
+
   async function loadAthletes() {
     setLoading(true);
-    const { data, error: err } = await supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability, position, player_code, is_active').order('full_name');
+    let q = supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability, position, player_code, is_active').order('full_name');
+    if (!canSeeAllTeams && myTeams.length > 0) q = q.in('team', myTeams);
+    const { data, error: err } = await q;
     if (err) { setError(err.message); setLoading(false); return; }
     setAthleteRows((data as GenericRow[]) || []);
     setLoading(false);
   }
 
-  useEffect(() => { loadAthletes(); }, []);
+  useEffect(() => { if (!roleLoading) loadAthletes(); }, [roleLoading, canSeeAllTeams, myTeams.join(',')]);
 
   const athletes = useMemo(() =>
     athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name)),

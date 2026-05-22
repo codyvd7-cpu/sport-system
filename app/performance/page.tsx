@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
+import { useRole } from '@/lib/useRole';
 
 type Row = Record<string, any>;
 
@@ -78,6 +79,7 @@ function getTierTextColor(testName: string, value: number, ageGroup: string) {
 export default function PerformancePage() {
   // Step state
   const { showToast } = useToast();
+  const { canSeeAllTeams, teams: myTeams } = useRole();
   const [step, setStep] = React.useState<'setup' | 'capture' | 'done'>('setup');
 
   // Setup
@@ -211,11 +213,15 @@ export default function PerformancePage() {
                   <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
                     className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-sky-500">
                     <option value="">Select team...</option>
-                    {TEAM_GROUPS.map((g) => (
-                      <optgroup key={g.group} label={g.group}>
-                        {g.teams.map((t) => <option key={t} value={t}>{t}</option>)}
-                      </optgroup>
-                    ))}
+                    {TEAM_GROUPS.map((g) => {
+                      const visibleTeams = g.teams.filter(t => canSeeAllTeams || myTeams.includes(t));
+                      if (!visibleTeams.length) return null;
+                      return (
+                        <optgroup key={g.group} label={g.group}>
+                          {visibleTeams.map((t) => <option key={t} value={t}>{t}</option>)}
+                        </optgroup>
+                      );
+                    })}
                   </select>
                 </div>
                 <div>

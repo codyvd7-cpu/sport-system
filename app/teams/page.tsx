@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
+import { useRole } from '@/lib/useRole';
 
 type Row = Record<string, any>;
 
@@ -26,24 +27,36 @@ function getGroupColor(team: string) {
 }
 
 export default function TeamsPage() {
+  const { canSeeAllTeams, teams: myTeams, loading: roleLoading } = useRole();
   const [athletes, setAthletes] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
+    if (roleLoading) return;
     async function load() {
+      let athQuery = supabase.from('athletes').select('id, full_name, team, availability').order('full_name');
+      if (!canSeeAllTeams && myTeams.length > 0) athQuery = athQuery.in('team', myTeams);
       const [athRes, attRes] = await Promise.all([
-        supabase.from('athletes').select('id, full_name, team, availability').order('full_name'),
-        supabase.from('attendance').select('athlete_id, status, session_date').gte('session_date', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
+        athQuery,
+        supabase.from('attendance').select('athlete_id, status, session_date').gte('session_date', new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0]),
       ]);
       setAthletes(athRes.data || []);
       setAttendance(attRes.data || []);
       setLoading(false);
     }
     load();
-  }, []);
+  }, [roleLoading, canSeeAllTeams, myTeams.join(',')]);
 
-  const allTeams = TEAM_GROUPS.flatMap((g) => g.teams);
+  const visibleTeamGroups = React.useMemo(() => {
+    if (canSeeAllTeams) return TEAM_GROUPS;
+    return TEAM_GROUPS.map(g => ({
+      ...g,
+      teams: g.teams.filter(t => myTeams.includes(t)),
+    })).filter(g => g.teams.length > 0);
+  }, [canSeeAllTeams, myTeams.join(',')]);
+
+  const allTeams = visibleTeamGroups.flatMap(g => g.teams);
 
   const teamStats = React.useMemo(() => {
     const stats: Record<string, { count: number; available: number; injured: number; modified: number; resting: number; attendanceRate: number | null }> = {};
@@ -98,7 +111,7 @@ export default function TeamsPage() {
           <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" /><p className="text-sm text-slate-400">Loading...</p></div>
         ) : (
           <div className="space-y-8">
-            {TEAM_GROUPS.map((group) => {
+            {visibleTeamGroups.map((group) => {
               const col = COLORS[group.color];
               return (
                 <div key={group.group}>
