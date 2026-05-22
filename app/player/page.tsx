@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import Image from 'next/image';
 
 export default function PlayerPortalPage() {
   const router = useRouter();
@@ -15,29 +15,42 @@ export default function PlayerPortalPage() {
     if (!code.trim()) { setError('Please enter your access code.'); return; }
     setChecking(true);
     setError('');
-    const { data, error: err } = await supabase
-      .from('athletes')
-      .select('id, player_code')
-      .eq('player_code', code.trim().toUpperCase())
-      .single();
-    if (err || !data) { setError('Invalid code. Please check and try again.'); setChecking(false); return; }
-    router.push(`/player/${code.trim().toUpperCase()}`);
+
+    // Route through API to apply server-side rate limiting
+    try {
+      const res = await fetch('/api/player/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: code.trim().toUpperCase() }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.found) {
+        setError(data.error || 'Invalid code. Please check and try again.');
+        setChecking(false);
+        return;
+      }
+      router.push(`/player/${code.trim().toUpperCase()}`);
+    } catch {
+      setError('Network error. Please try again.');
+      setChecking(false);
+    }
   }
 
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#06071a] px-4">
-      {/* Background glows */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(14,165,233,0.08),transparent)]" />
-      <div className="absolute left-[5%] top-[10%] h-64 w-64 animate-pulse rounded-full bg-sky-500/10 blur-3xl" />
-      <div className="absolute bottom-[10%] right-[5%] h-64 w-64 animate-pulse rounded-full bg-violet-500/10 blur-3xl" />
+      <div className="absolute left-[5%] top-[10%] h-64 w-64 rounded-full bg-sky-500/8 blur-3xl" />
+      <div className="absolute bottom-[10%] right-[5%] h-64 w-64 rounded-full bg-violet-500/8 blur-3xl" />
 
       <div className="relative w-full max-w-sm">
-        {/* Header */}
         <div className="mb-10 text-center">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-4xl shadow-lg shadow-sky-500/10">
-            
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl ring-1 ring-white/10">
+            <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
           </div>
           <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-400">St Benedict's College</p>
+          <h1 className="mt-2 text-3xl font-black text-white">Player & Parent</h1>
+          <p className="mt-2 text-sm text-slate-400">Enter your personal access code</p>
+        </div>
           <h1 className="mt-1.5 text-3xl font-black tracking-tight text-white">Player Portal</h1>
           <p className="mt-2 text-sm text-slate-500">Enter your access code to view your profile.</p>
         </div>

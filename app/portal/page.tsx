@@ -487,11 +487,14 @@ export default function PortalPage() {
                         i === 0 ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-transparent'
                           : 'border-white/6 bg-white/3'
                       }`}>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/8 text-lg">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/8 text-lg font-black text-slate-300">
                           {MEDALS[i] || <span className="text-sm font-black text-slate-500">{i + 1}</span>}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-black text-white">{athlete.name}</p>
+                          {/* Show first name only + team to protect student privacy */}
+                          <p className="truncate text-sm font-black text-white">
+                            {(athlete.name || '').split(' ')[0] || 'Athlete'}
+                          </p>
                           <p className="truncate text-xs text-slate-500">{athlete.team}</p>
                         </div>
                         <div className="shrink-0 text-right">

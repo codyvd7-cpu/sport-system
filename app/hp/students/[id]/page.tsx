@@ -179,7 +179,7 @@ export default function HPStudentProfile({ params }: PageProps) {
 
 Write 4-5 sentences. You MUST quote specific numbers and percentages from the data below. Mention which tests improved and by how much. Mention any declines honestly but constructively. Reference the attendance rate. End with a forward-looking development focus sentence. Do not use bullet points. Use the student's first name throughout.
 
-Student: ${student.full_name}
+Student First Name: ${student.full_name.trim().split(' ')[0] || 'The student'}
 Grade: ${student.grade}
 Training Group: ${student.training_group ? `Group ${student.training_group}` : 'Not assigned'}
 Attendance: ${attRate !== null ? `${attRate}% (${attendance.filter(a => ['Present','Late'].includes(a.status)).length} of ${attendance.length} sessions)` : 'No data'}

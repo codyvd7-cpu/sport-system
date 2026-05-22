@@ -83,7 +83,18 @@ export default function PrivacyPolicy() {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-slate-500">No athlete or student data is shared with third parties or made publicly available in any identifiable form.</p>
+            <p className="mt-4 text-slate-500">
+              Athlete and student data is not sold or shared with third parties for commercial purposes.
+              However, the Platform uses the following third-party services that may process limited data:
+            </p>
+            <ul className="mt-3 space-y-2 pl-4 text-slate-500 list-disc">
+              <li><strong className="text-slate-300">Supabase</strong> — our database and authentication provider, hosted in the EU (West).</li>
+              <li><strong className="text-slate-300">OpenAI</strong> — used to generate AI-assisted coach summaries. When generating a summary, only the athlete or student&apos;s <strong>first name</strong> (not full name), performance statistics, and attendance rate are transmitted. Full names and surnames are never sent to OpenAI. OpenAI&apos;s API does not use submitted data for model training by default. Data is processed in the United States.</li>
+              <li><strong className="text-slate-300">Vercel</strong> — our hosting provider. Application traffic passes through Vercel&apos;s servers. No athlete data is stored by Vercel.</li>
+            </ul>
+            <p className="mt-4 text-slate-500">
+              The school and authorised coaching staff are the primary data processors. No personally identifiable athlete information is made publicly available without consent.
+            </p>
           </section>
 
           <section>

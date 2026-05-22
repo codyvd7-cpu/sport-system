@@ -20,11 +20,15 @@ export async function POST(req: NextRequest) {
   try {
     const { athlete } = await req.json();
 
+    // POPIA: Send first name only to OpenAI — not full name.
+    // This minimises personal data leaving our infrastructure.
+    const firstName = (athlete.name || '').split(' ')[0] || 'The athlete';
+
     const prompt = `You are a high-performance hockey coach analyst at St Benedict's College, Johannesburg. 
 Write a professional, concise athlete summary (3-4 sentences) for a coach or parent.
 
 Athlete data:
-- Name: ${athlete.name}
+- First Name: ${firstName}
 - Team: ${athlete.team}
 - Age Group: ${athlete.ageGroup}
 - Position: ${athlete.position || 'Not specified'}
