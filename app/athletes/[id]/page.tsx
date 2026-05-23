@@ -281,7 +281,7 @@ export default function AthleteProfile({params}:PageProps) {
   ] as const;
 
   return(
-    <main className="min-h-screen bg-slate-950 pb-24 text-white md:pb-0">
+    <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
         {/* Back */}
@@ -291,7 +291,7 @@ export default function AthleteProfile({params}:PageProps) {
         </Link>
 
         {/* ── PROFILE HEADER ── */}
-        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+        <div className="mb-6 rounded-2xl border border-white/6 overflow-hidden">
           {/* Top banner */}
           <div className="px-5 pt-5 pb-4 flex items-start gap-4">
             {/* Avatar */}
@@ -368,7 +368,7 @@ export default function AthleteProfile({params}:PageProps) {
         </div>
 
         {/* ── TABS ── */}
-        <div className="mb-6 flex gap-1 rounded-2xl border border-slate-800 bg-slate-900 p-1">
+        <div className="mb-6 flex gap-1 rounded-2xl border border-white/5 p-1">
           {TABS.map(t=>(
             <button key={t.key} onClick={()=>setActiveTab(t.key)}
               className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${activeTab===t.key?'bg-slate-700 text-white':'text-slate-500 hover:text-slate-300'}`}>
@@ -388,7 +388,7 @@ export default function AthleteProfile({params}:PageProps) {
                 {label:'Absent',val:absent,color:absent>0?'text-red-400':'text-slate-600'},
                 {label:'Excused',val:excused,color:'text-sky-400'},
               ].map(s=>(
-                <div key={s.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+                <div key={s.label} className="rounded-2xl border border-white/5 p-4 text-center">
                   <p className={`text-2xl font-black ${s.color}`}>{s.val}</p>
                   <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mt-0.5">{s.label}</p>
                 </div>
@@ -397,7 +397,7 @@ export default function AthleteProfile({params}:PageProps) {
 
             {/* Personal bests */}
             {pbs.length>0&&(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              <div className="rounded-2xl border border-white/6 overflow-hidden">
                 <div className="border-b border-slate-800 px-5 py-3">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">Personal Bests</p>
                 </div>
@@ -424,7 +424,7 @@ export default function AthleteProfile({params}:PageProps) {
             )}
 
             {/* Player feedback */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div className="rounded-2xl border border-white/6 overflow-hidden">
               <div className="border-b border-slate-800 px-5 py-3 flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-500">Coach Feedback</p>
                 <button onClick={()=>{setEditFb(true);setFbStr(latestFeedback?.strengths||'');setFbFoc(latestFeedback?.current_focus||'');setFbCom(latestFeedback?.coach_comment||'');}}
@@ -507,7 +507,7 @@ export default function AthleteProfile({params}:PageProps) {
         {activeTab==='attendance'&&(
           <div className="space-y-5">
             {/* Quick add */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/6 p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Add Session</p>
               <form onSubmit={addAttendance} className="grid gap-3 sm:grid-cols-3">
                 <input type="date" value={attDate} onChange={e=>setAttDate(e.target.value)}
@@ -527,7 +527,7 @@ export default function AthleteProfile({params}:PageProps) {
               </form>
             </div>
             {/* History */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+            <div className="rounded-2xl border border-white/6 overflow-hidden">
               <div className="border-b border-slate-800 px-5 py-3 flex items-center justify-between">
                 <p className="text-xs font-black uppercase tracking-wide text-slate-500">History</p>
                 {attRate!==null&&<span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% rate</span>}
@@ -562,7 +562,7 @@ export default function AthleteProfile({params}:PageProps) {
         {activeTab==='performance'&&(
           <div className="space-y-5">
             {/* Quick add */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/6 p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Add Result</p>
               <form onSubmit={addPerformance} className="grid gap-3 sm:grid-cols-3">
                 <input type="date" value={perfDate} onChange={e=>setPerfDate(e.target.value)}
@@ -587,11 +587,11 @@ export default function AthleteProfile({params}:PageProps) {
             </div>
             {/* All results */}
             {performance.length===0?(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-10 text-center">
+              <div className="rounded-2xl border border-white/5 py-10 text-center">
                 <p className="text-sm text-slate-600">No results recorded yet.</p>
               </div>
             ):(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              <div className="rounded-2xl border border-white/6 overflow-hidden">
                 <div className="border-b border-slate-800 px-5 py-3">
                   <p className="text-xs font-black uppercase tracking-wide text-slate-500">All Results</p>
                 </div>
@@ -623,7 +623,7 @@ export default function AthleteProfile({params}:PageProps) {
         {activeTab==='notes'&&(
           <div className="space-y-5">
             {/* Add note */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/6 p-5">
               <form onSubmit={addNote} className="space-y-3">
                 <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={3}
                   placeholder="Add a coach note…"
@@ -636,13 +636,13 @@ export default function AthleteProfile({params}:PageProps) {
             </div>
             {/* Notes list */}
             {coachNotes.length===0?(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-10 text-center">
+              <div className="rounded-2xl border border-white/5 py-10 text-center">
                 <p className="text-sm text-slate-600">No notes yet.</p>
               </div>
             ):(
               <div className="space-y-3">
                 {coachNotes.map(n=>(
-                  <div key={n.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                  <div key={n.id} className="rounded-2xl border border-white/5 p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <p className="text-[10px] text-slate-600">{fDate(n.created_at)}{n.author_email&&` · ${n.author_email}`}</p>
                       <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('coach_notes').delete().eq('id',n.id);await load();}}
