@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
+import { useSearchParams } from 'next/navigation';
 import { PageLoader, EmptyState, IconUsers, IconPlus, IconTrash, IconSearch } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
@@ -15,7 +16,9 @@ export default function HPStudentsPage() {
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
   const [gradeFilter, setGradeFilter] = React.useState('All');
-  const [classFilter, setClassFilter] = React.useState('All');
+  const searchParams = useSearchParams();
+  const [classFilter, setClassFilter] = React.useState(() => searchParams.get('class') || 'All');
+  const [testedFilter] = React.useState(() => searchParams.get('tested') || null);
   const [showAdd, setShowAdd] = React.useState(false);
   const [name, setName] = React.useState('');
   const [grade, setGrade] = React.useState('Grade 8');

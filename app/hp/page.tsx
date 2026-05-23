@@ -96,18 +96,21 @@ export default function HPDashboard() {
 
         {/* ── STAT STRIP ── */}
         <div className="mb-5 grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+          <Link href="/hp/students"
+            className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center hover:border-slate-600 hover:-translate-y-0.5 transition-all">
             <p className="text-2xl font-black text-white">{totalStudents}</p>
             <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600">Students</p>
-          </div>
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
+          </Link>
+          <Link href={`/hp/students?tested=true`}
+            className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center hover:border-emerald-500/40 hover:-translate-y-0.5 transition-all">
             <p className="text-2xl font-black text-emerald-400">{totalTested}</p>
             <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600">Tested</p>
-          </div>
-          <div className={`rounded-2xl border p-4 text-center ${totalUntested > 0 ? 'border-amber-500/20 bg-amber-500/5' : 'border-slate-800 bg-slate-900'}`}>
+          </Link>
+          <Link href={`/hp/students?tested=false`}
+            className={`rounded-2xl border p-4 text-center hover:-translate-y-0.5 transition-all ${totalUntested > 0 ? 'border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40' : 'border-slate-800 bg-slate-900 hover:border-slate-600'}`}>
             <p className={`text-2xl font-black ${totalUntested > 0 ? 'text-amber-400' : 'text-slate-600'}`}>{totalUntested}</p>
             <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600">Untested</p>
-          </div>
+          </Link>
         </div>
 
         {/* ── QUICK ACTIONS ── */}
