@@ -6,871 +6,664 @@ import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { safeUUID, generatePlayerCode } from '@/lib/uuid';
-import { PerformanceTrendChart, AttendanceChart } from '@/components/AthleteCharts';
 
-// ── TYPES ─────────────────────────────────────────────────────
-type GenericRow = Record<string, any>;
+type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
-type Athlete = { id: string; name: string; team: string; sport: string; ageGroup: string; raw: GenericRow };
-type AttendanceRecord = { id: string; athlete_id: string; session_date: string; session_type: string; status: string; created_at: string | null; raw: GenericRow };
-type PerformanceRecord = { id: string; athlete_id: string; test_date: string; test_type: string; value: number | null; unit: string; notes: string; created_at: string | null; raw: GenericRow };
 
-// ── UTILITIES ─────────────────────────────────────────────────
-function firstString(...values: any[]) { for (const v of values) { if (typeof v === 'string' && v.trim() !== '') return v.trim(); } return ''; }
-function firstValue(...values: any[]) { for (const v of values) { if (v !== null && v !== undefined && v !== '') return String(v); } return ''; }
-function firstNumber(...values: any[]) { for (const v of values) { if (v === null || v === undefined || v === '') continue; const n = Number(v); if (!Number.isNaN(n)) return n; } return null; }
-function formatDate(d?: string | null) { if (!d) return '—'; const date = new Date(d); if (Number.isNaN(date.getTime())) return '—'; return date.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }); }
-function formatStatus(s: string) { const c = (s || '').toLowerCase(); if (!c) return '—'; return c.charAt(0).toUpperCase() + c.slice(1); }
-function getStatusClasses(s: string) { const c = (s || '').toLowerCase(); if (c === 'present') return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'; if (c === 'late') return 'bg-amber-500/15 text-amber-300 border border-amber-500/20'; if (c === 'absent') return 'bg-red-500/15 text-red-300 border border-red-500/20'; if (c === 'excused') return 'bg-sky-500/15 text-sky-300 border border-sky-500/20'; return 'bg-slate-800 text-slate-300 border border-slate-700'; }
-function formatResult(result: number | null, unit: string) { if (result === null || Number.isNaN(result as number)) return '—'; return `${result}${unit ? ` ${unit}` : ''}`; }
-function initials(name: string) { return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(); }
+// ── Utilities ─────────────────────────────────────────────────
+function fStr(...v: any[]) { for (const x of v) if (typeof x==='string'&&x.trim()) return x.trim(); return ''; }
+function fVal(...v: any[]) { for (const x of v) if (x!==null&&x!==undefined&&x!=='') return String(x); return ''; }
+function fNum(...v: any[]) { for (const x of v) { if (x===null||x===undefined||x==='') continue; const n=Number(x); if (!Number.isNaN(n)) return n; } return null; }
+function fDate(d?: string|null) { if (!d) return '—'; const dt=new Date(d); if (Number.isNaN(dt.getTime())) return '—'; return dt.toLocaleDateString('en-ZA',{day:'2-digit',month:'short',year:'numeric'}); }
+function initials(name: string) { return name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(); }
 
-function normalizeAthlete(row: GenericRow): Athlete {
-  return {
-    id: firstValue(row.id, row.athlete_id, safeUUID()),
-    name: firstString(row.name, row.full_name, row.athlete_name, row.first_name && row.last_name ? `${row.first_name} ${row.last_name}` : '', row.first_name) || 'Unknown',
-    team: firstString(row.team, row.team_name) || 'Unassigned',
-    sport: firstString(row.sport) || '—',
-    ageGroup: firstString(row.age_group, row.agegroup) || '—',
-    raw: row,
-  };
-}
-function normalizeAttendance(row: GenericRow): AttendanceRecord {
-  return { id: firstValue(row.id, safeUUID()), athlete_id: firstValue(row.athlete_id), session_date: firstString(row.session_date), session_type: firstString(row.session_type) || '—', status: firstString(row.status) || '—', created_at: firstString(row.created_at) || null, raw: row };
-}
-function normalizePerformance(row: GenericRow): PerformanceRecord {
-  return { id: firstValue(row.id, safeUUID()), athlete_id: firstValue(row.athlete_id), test_date: firstString(row.test_date), test_type: firstString(row.test_type) || '—', value: firstNumber(row.value), unit: firstString(row.unit) || '', notes: firstString(row.notes) || '', created_at: firstString(row.created_at) || null, raw: row };
-}
-function buildAthleteUpdatePayload(raw: GenericRow, input: { name: string; team: string; sport: string; ageGroup: string }) {
-  const p: GenericRow = {};
-  if ('name' in raw) p.name = input.name; else if ('full_name' in raw) p.full_name = input.name;
-  if ('team' in raw) p.team = input.team;
-  if ('age_group' in raw) p.age_group = input.ageGroup; else if ('agegroup' in raw) p.agegroup = input.ageGroup;
-  return p;
-}
-
-// ── CONSTANTS ─────────────────────────────────────────────────
-const LOWER_IS_BETTER = ['Bronco', '10m Sprint', '30m Sprint', '505', 'RSA'];
-const BENCHMARKS: Record<string, { u1415: number[]; u1618: number[] }> = {
-  'SBJ':        { u1415: [195,175,155,135], u1618: [215,195,175,155] },
-  '10m Sprint': { u1415: [1.72,1.82,1.92,2.02], u1618: [1.65,1.75,1.85,1.95] },
-  '30m Sprint': { u1415: [4.25,4.45,4.65,4.85], u1618: [4.05,4.25,4.45,4.65] },
-  '505 Left':   { u1415: [2.35,2.50,2.65,2.80], u1618: [2.25,2.40,2.55,2.70] },
-  '505 Right':  { u1415: [2.35,2.50,2.65,2.80], u1618: [2.25,2.40,2.55,2.70] },
-  'Push-Ups':   { u1415: [40,30,20,10], u1618: [50,38,26,14] },
-  'Pull-Ups':   { u1415: [10,7,4,1], u1618: [10,7,4,1] },
-  'Yo-Yo IR1':  { u1415: [1200,900,700,500], u1618: [1600,1200,900,600] },
-  'RSA Sdec%':  { u1415: [3.0,5.0,7.0,10.0], u1618: [2.5,4.0,6.0,9.0] },
+const STATUS_STYLES: Record<string,string> = {
+  present: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
+  late:    'bg-amber-500/15 text-amber-300 border-amber-500/20',
+  absent:  'bg-red-500/15 text-red-300 border-red-500/20',
+  excused: 'bg-sky-500/15 text-sky-300 border-sky-500/20',
 };
-const TEST_DESCRIPTIONS: Record<string, string> = {
-  'SBJ': 'Lower body explosive power',
-  '10m Sprint': 'Acceleration speed',
-  '30m Sprint': 'Maximum speed',
-  '505 Left': 'Change of direction (left)',
-  '505 Right': 'Change of direction (right)',
-  'Push-Ups': 'Upper body muscular endurance',
-  'Pull-Ups': 'Upper body pulling strength',
-  'Yo-Yo IR1': 'Aerobic fitness',
-  'RSA Sdec%': 'Fatigue resistance under repeated sprints',
-  'Bronco': 'Aerobic capacity and running fitness',
+const AVAIL_STYLES: Record<string,{label:string;color:string;bg:string;border:string}> = {
+  'Available': { label:'Available', color:'text-emerald-300', bg:'bg-emerald-500/15', border:'border-emerald-500/30' },
+  'Modified':  { label:'Modified',  color:'text-amber-300',   bg:'bg-amber-500/15',   border:'border-amber-500/30'   },
+  'Injured':   { label:'Injured',   color:'text-red-300',     bg:'bg-red-500/15',     border:'border-red-500/30'     },
+  'Resting':   { label:'Resting',   color:'text-sky-300',     bg:'bg-sky-500/15',     border:'border-sky-500/30'     },
+};
+const LOWER = ['Sprint','505','Bronco','RSA'];
+const BENCHMARKS: Record<string,{u1415:number[];u1618:number[]}> = {
+  'SBJ':        {u1415:[195,175,155,135],u1618:[215,195,175,155]},
+  '10m Sprint': {u1415:[1.72,1.82,1.92,2.02],u1618:[1.65,1.75,1.85,1.95]},
+  '30m Sprint': {u1415:[4.25,4.45,4.65,4.85],u1618:[4.05,4.25,4.45,4.65]},
+  '505 Left':   {u1415:[2.35,2.50,2.65,2.80],u1618:[2.25,2.40,2.55,2.70]},
+  '505 Right':  {u1415:[2.35,2.50,2.65,2.80],u1618:[2.25,2.40,2.55,2.70]},
+  'Push-Ups':   {u1415:[40,30,20,10],u1618:[50,38,26,14]},
+  'Pull-Ups':   {u1415:[10,7,4,1],u1618:[10,7,4,1]},
+  'Yo-Yo IR1':  {u1415:[1200,900,700,500],u1618:[1600,1200,900,600]},
 };
 const TIERS = [
-  { label: 'Elite',      color: 'text-emerald-300', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40' },
-  { label: 'Good',       color: 'text-sky-300',     bg: 'bg-sky-500/20',     border: 'border-sky-500/40' },
-  { label: 'Average',    color: 'text-amber-300',   bg: 'bg-amber-500/20',   border: 'border-amber-500/40' },
-  { label: 'Developing', color: 'text-orange-300',  bg: 'bg-orange-500/20',  border: 'border-orange-500/40' },
-  { label: 'Poor',       color: 'text-red-300',     bg: 'bg-red-500/20',     border: 'border-red-500/40' },
+  {label:'Outstanding',color:'#10b981',bg:'rgba(16,185,129,0.12)',border:'rgba(16,185,129,0.3)'},
+  {label:'Strong',     color:'#38bdf8',bg:'rgba(56,189,248,0.12)',border:'rgba(56,189,248,0.3)'},
+  {label:'On Track',   color:'#a78bfa',bg:'rgba(167,139,250,0.12)',border:'rgba(167,139,250,0.3)'},
+  {label:'Developing', color:'#fbbf24',bg:'rgba(251,191,36,0.12)',border:'rgba(251,191,36,0.3)'},
+  {label:'Needs Work', color:'#94a3b8',bg:'rgba(148,163,184,0.10)',border:'rgba(148,163,184,0.25)'},
 ];
-
-function getBenchmarkTier(testKey: string, value: number, ag: string) {
-  const b = BENCHMARKS[testKey]; if (!b) return null;
-  const lower = LOWER_IS_BETTER.some((t) => testKey.toLowerCase().includes(t.toLowerCase()));
-  const t = ag.includes('14') || ag.includes('15') ? b.u1415 : b.u1618;
-  if (lower) { if (value < t[0]) return TIERS[0]; if (value < t[1]) return TIERS[1]; if (value < t[2]) return TIERS[2]; if (value < t[3]) return TIERS[3]; return TIERS[4]; }
-  else { if (value > t[0]) return TIERS[0]; if (value > t[1]) return TIERS[1]; if (value > t[2]) return TIERS[2]; if (value > t[3]) return TIERS[3]; return TIERS[4]; }
+function getTier(key:string,val:number,ag:string) {
+  const b=BENCHMARKS[key]; if(!b) return null;
+  const lower=LOWER.some(t=>key.toLowerCase().includes(t.toLowerCase()));
+  const t=ag.includes('14')||ag.includes('15')?b.u1415:b.u1618;
+  if(lower){if(val<t[0])return TIERS[0];if(val<t[1])return TIERS[1];if(val<t[2])return TIERS[2];if(val<t[3])return TIERS[3];return TIERS[4];}
+  else{if(val>t[0])return TIERS[0];if(val>t[1])return TIERS[1];if(val>t[2])return TIERS[2];if(val>t[3])return TIERS[3];return TIERS[4];}
 }
 
-// ── SUB-COMPONENTS ────────────────────────────────────────────
-function AttendanceRing({ rate }: { rate: number | null }) {
-  const r = 36; const circ = 2 * Math.PI * r;
-  const pct = rate ?? 0;
-  const dash = (pct / 100) * circ;
-  const color = pct >= 80 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444';
-  return (
-    <div className="relative flex h-24 w-24 items-center justify-center">
+// ── Attendance ring ──────────────────────────────────────────
+function AttRing({rate}:{rate:number|null}) {
+  const r=36,circ=2*Math.PI*r,pct=rate??0,dash=(pct/100)*circ;
+  const col=pct>=80?'#10b981':pct>=60?'#f59e0b':'#ef4444';
+  return(
+    <div className="relative flex h-20 w-20 items-center justify-center">
       <svg viewBox="0 0 80 80" className="absolute inset-0 w-full h-full -rotate-90">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#1e293b" strokeWidth="6" />
-        <circle cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="6"
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+        <circle cx="40" cy="40" r={r} fill="none" stroke="#1e293b" strokeWidth="6"/>
+        <circle cx="40" cy="40" r={r} fill="none" stroke={col} strokeWidth="6"
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"/>
       </svg>
       <div className="text-center">
-        <p className="text-lg font-black text-white leading-none">{rate !== null ? `${rate}%` : '—'}</p>
-        <p className="text-[9px] text-slate-500 uppercase tracking-wide">Att.</p>
+        <p className="text-base font-black text-white leading-none">{rate!==null?`${rate}%`:'—'}</p>
+        <p className="text-[8px] text-slate-500 uppercase tracking-wide mt-0.5">Att.</p>
       </div>
     </div>
   );
 }
 
-function Sparkline({ values, lower }: { values: number[]; lower: boolean }) {
-  if (values.length < 2) return <div className="h-8 flex items-center"><p className="text-[9px] text-slate-600">—</p></div>;
-  const min = Math.min(...values); const max = Math.max(...values);
-  const range = max - min || 1;
-  const W = 80; const H = 28;
-  const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - ((v - min) / range) * H}`).join(' ');
-  const last = values[values.length - 1]; const first = values[0];
-  const improved = lower ? last < first : last > first;
-  const color = improved ? '#10b981' : '#ef4444';
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-20 h-7" preserveAspectRatio="none">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+// ── Sparkline ────────────────────────────────────────────────
+function Spark({vals,lower}:{vals:number[];lower:boolean}) {
+  if(vals.length<2) return <span className="text-[10px] text-slate-700">—</span>;
+  const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
+  const W=56,H=24;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1))*W},${H-((v-mn)/rng)*H}`).join(' ');
+  const improved=lower?vals[vals.length-1]<vals[0]:vals[vals.length-1]>vals[0];
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-14 h-6">
+      <polyline points={pts} fill="none" stroke={improved?'#10b981':'#ef4444'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
-// ── MAIN COMPONENT ────────────────────────────────────────────
-export default function AthleteProfilePage({ params }: PageProps) {
-  const resolvedParams = React.use(params);
-  const athleteId = resolvedParams.id;
+// ── Main ─────────────────────────────────────────────────────
+export default function AthleteProfile({params}:PageProps) {
+  const {id} = React.use(params);
   const router = useRouter();
-  const { showToast } = useToast();
+  const {showToast} = useToast();
 
-  // ── STATE ────────────────────────────────────────────────────
-  const [athleteRows, setAthleteRows] = React.useState<GenericRow[]>([]);
-  const [attendanceRows, setAttendanceRows] = React.useState<GenericRow[]>([]);
-  const [performanceRows, setPerformanceRows] = React.useState<GenericRow[]>([]);
-  const [notes, setNotes] = React.useState<GenericRow[]>([]);
+  const [rawAthlete, setRawAthlete] = React.useState<Row|null>(null);
+  const [attendance, setAttendance] = React.useState<Row[]>([]);
+  const [performance, setPerformance] = React.useState<Row[]>([]);
+  const [notes, setNotes] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState('');
+  const [activeTab, setActiveTab] = React.useState<'overview'|'attendance'|'performance'|'notes'>('overview');
 
-  // Edit athlete
-  const [isEditingAthlete, setIsEditingAthlete] = React.useState(false);
-  const [athleteNameInput, setAthleteNameInput] = React.useState('');
-  const [athleteTeamInput, setAthleteTeamInput] = React.useState('');
-  const [athleteSportInput, setAthleteSportInput] = React.useState('');
-  const [athleteAgeGroupInput, setAthleteAgeGroupInput] = React.useState('');
-  const [savingAthlete, setSavingAthlete] = React.useState(false);
+  // Edit states
+  const [editingInfo, setEditingInfo] = React.useState(false);
+  const [editName, setEditName] = React.useState('');
+  const [editTeam, setEditTeam] = React.useState('');
+  const [editAge, setEditAge] = React.useState('');
+  const [editPos, setEditPos] = React.useState('');
+  const [savingInfo, setSavingInfo] = React.useState(false);
 
-  // Availability + position
-  const [availability, setAvailability] = React.useState('Available');
-  const [savingAvailability, setSavingAvailability] = React.useState(false);
-  const [positionInput, setPositionInput] = React.useState('');
-  const [editingPosition, setEditingPosition] = React.useState(false);
+  // Quick add attendance
+  const [attDate, setAttDate] = React.useState(()=>new Date().toISOString().split('T')[0]);
+  const [attType, setAttType] = React.useState('Training');
+  const [attStatus, setAttStatus] = React.useState('Present');
+  const [savingAtt, setSavingAtt] = React.useState(false);
 
-  // Player code
-  const [generatingCode, setGeneratingCode] = React.useState(false);
-
-  // Attendance quick add
-  const [quickAttendanceDate, setQuickAttendanceDate] = React.useState(() => new Date().toISOString().split('T')[0]);
-  const [quickAttendanceSessionType, setQuickAttendanceSessionType] = React.useState('Training');
-  const [quickAttendanceStatus, setQuickAttendanceStatus] = React.useState('Present');
-  const [savingQuickAttendance, setSavingQuickAttendance] = React.useState(false);
-
-  // Attendance edit
-  const [editingAttendanceId, setEditingAttendanceId] = React.useState<string | null>(null);
-  const [editAttendanceDate, setEditAttendanceDate] = React.useState('');
-  const [editAttendanceSessionType, setEditAttendanceSessionType] = React.useState('Training');
-  const [editAttendanceStatus, setEditAttendanceStatus] = React.useState('Present');
-  const [savingAttendanceEdit, setSavingAttendanceEdit] = React.useState(false);
-
-  // Performance quick add
-  const [quickPerformanceDate, setQuickPerformanceDate] = React.useState(() => new Date().toISOString().split('T')[0]);
-  const [quickPerformanceTestType, setQuickPerformanceTestType] = React.useState('');
-  const [quickPerformanceResult, setQuickPerformanceResult] = React.useState('');
-  const [quickPerformanceUnit, setQuickPerformanceUnit] = React.useState('');
-  const [quickPerformanceNotes, setQuickPerformanceNotes] = React.useState('');
-  const [savingQuickPerformance, setSavingQuickPerformance] = React.useState(false);
-
-  // Performance edit
-  const [editingPerformanceId, setEditingPerformanceId] = React.useState<string | null>(null);
-  const [editPerformanceDate, setEditPerformanceDate] = React.useState('');
-  const [editPerformanceTestType, setEditPerformanceTestType] = React.useState('');
-  const [editPerformanceResult, setEditPerformanceResult] = React.useState('');
-  const [editPerformanceUnit, setEditPerformanceUnit] = React.useState('');
-  const [editPerformanceNotes, setEditPerformanceNotes] = React.useState('');
-  const [savingPerformanceEdit, setSavingPerformanceEdit] = React.useState(false);
+  // Quick add performance
+  const [perfDate, setPerfDate] = React.useState(()=>new Date().toISOString().split('T')[0]);
+  const [perfTest, setPerfTest] = React.useState('');
+  const [perfVal, setPerfVal] = React.useState('');
+  const [perfUnit, setPerfUnit] = React.useState('');
+  const [savingPerf, setSavingPerf] = React.useState(false);
 
   // Notes
   const [newNote, setNewNote] = React.useState('');
   const [savingNote, setSavingNote] = React.useState(false);
 
-  // Structured feedback
-  const [editingFeedback, setEditingFeedback] = React.useState(false);
-  const [aiSummary, setAiSummary] = React.useState('');
-  const [generatingAiSummary, setGeneratingAiSummary] = React.useState(false);
-  const [fbStrengths, setFbStrengths] = React.useState('');
-  const [fbFocus, setFbFocus] = React.useState('');
-  const [fbComment, setFbComment] = React.useState('');
-  const [savingFeedback, setSavingFeedback] = React.useState(false);
+  // Feedback
+  const [editFb, setEditFb] = React.useState(false);
+  const [fbStr, setFbStr] = React.useState('');
+  const [fbFoc, setFbFoc] = React.useState('');
+  const [fbCom, setFbCom] = React.useState('');
+  const [savingFb, setSavingFb] = React.useState(false);
 
-  // ── EFFECTS ──────────────────────────────────────────────────
+  // AI
+  const [aiText, setAiText] = React.useState('');
+  const [genAI, setGenAI] = React.useState(false);
 
-  async function loadPageData() {
+  // Availability
+  const [availability, setAvailability] = React.useState('Available');
+
+  // Player code
+  const [genCode, setGenCode] = React.useState(false);
+
+  async function load() {
     setLoading(true);
-    const [athRes, attRes, perfRes, notesRes] = await Promise.all([
-      supabase.from('athletes').select('*').eq('id', athleteId),
-      supabase.from('attendance').select('*').eq('athlete_id', athleteId).order('session_date', { ascending: false }).limit(100),
-      supabase.from('performance_tests').select('*').eq('athlete_id', athleteId).order('test_date', { ascending: false }).limit(100),
-      supabase.from('coach_notes').select('*').eq('athlete_id', athleteId).order('created_at', { ascending: false }),
+    const [aRes,attRes,perfRes,nRes] = await Promise.all([
+      supabase.from('athletes').select('*').eq('id',id).single(),
+      supabase.from('attendance').select('*').eq('athlete_id',id).order('session_date',{ascending:false}).limit(100),
+      supabase.from('performance_tests').select('*').eq('athlete_id',id).order('test_date',{ascending:false}).limit(100),
+      supabase.from('coach_notes').select('*').eq('athlete_id',id).order('created_at',{ascending:false}),
     ]);
-    if (athRes.error) { setError(athRes.error.message); setLoading(false); return; }
-    setAthleteRows((athRes.data as GenericRow[]) || []);
-    setAttendanceRows((attRes.data as GenericRow[]) || []);
-    setPerformanceRows((perfRes.data as GenericRow[]) || []);
-    setNotes((notesRes.data as GenericRow[]) || []);
+    if(aRes.data){
+      setRawAthlete(aRes.data);
+      setAvailability(aRes.data.availability||'Available');
+      setEditName(fStr(aRes.data.full_name,aRes.data.name));
+      setEditTeam(fStr(aRes.data.team));
+      setEditAge(fStr(aRes.data.age_group));
+      setEditPos(fStr(aRes.data.position));
+    }
+    setAttendance(attRes.data||[]);
+    setPerformance(perfRes.data||[]);
+    setNotes(nRes.data||[]);
     setLoading(false);
   }
 
-  React.useEffect(() => { loadPageData(); }, [athleteId]);
+  React.useEffect(()=>{ load(); },[id]);
 
-  // ── MEMOS ────────────────────────────────────────────────────
-  const athletes = React.useMemo(() => athleteRows.map(normalizeAthlete), [athleteRows]);
-  const athlete = React.useMemo(() => athletes[0] || null, [athletes]);
-  const athleteIndex = 0;
-  const previousAthlete = null;
-  const nextAthlete = null;
-  const attendanceRecords = React.useMemo(() => attendanceRows.map(normalizeAttendance).sort((a, b) => new Date(b.session_date).getTime() - new Date(a.session_date).getTime()), [attendanceRows]);
-  const performanceRecords = React.useMemo(() => performanceRows.map(normalizePerformance).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime()), [performanceRows]);
-
-  const attendanceSummary = React.useMemo(() => {
-    const total = attendanceRecords.length;
-    const present = attendanceRecords.filter((r) => r.status.toLowerCase() === 'present').length;
-    const late = attendanceRecords.filter((r) => r.status.toLowerCase() === 'late').length;
-    const absent = attendanceRecords.filter((r) => r.status.toLowerCase() === 'absent').length;
-    const excused = attendanceRecords.filter((r) => r.status.toLowerCase() === 'excused').length;
-    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : null;
-    return { total, present, late, absent, excused, rate };
-  }, [attendanceRecords]);
-
-  const performanceTrends = React.useMemo(() => {
-    const grouped = new Map<string, PerformanceRecord[]>();
-    performanceRecords.forEach((r) => { if (!grouped.has(r.test_type)) grouped.set(r.test_type, []); grouped.get(r.test_type)!.push(r); });
-    const rows: { testType: string; latest: number | null; previous: number | null; delta: number | null; unit: string; latestDate: string }[] = [];
-    grouped.forEach((entries, testType) => {
-      const sorted = [...entries].filter((e) => e.value !== null).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
-      if (!sorted.length) return;
-      const latest = sorted[0]; const prev = sorted[1];
-      rows.push({ testType, latest: latest.value, previous: prev ? prev.value : null, delta: latest.value !== null && prev?.value !== null && prev ? latest.value - prev.value : null, unit: latest.unit, latestDate: latest.test_date });
-    });
-    return rows;
-  }, [performanceRecords]);
-
-  const personalBests = React.useMemo(() => {
-    const grouped = new Map<string, number[]>();
-    performanceRecords.forEach((r) => { if (r.value === null) return; if (!grouped.has(r.test_type)) grouped.set(r.test_type, []); grouped.get(r.test_type)!.push(r.value); });
-    const pbs: { testType: string; pb: number; unit: string }[] = [];
-    grouped.forEach((values, testType) => {
-      const lower = LOWER_IS_BETTER.some((t) => testType.toLowerCase().includes(t.toLowerCase()));
-      const pb = lower ? Math.min(...values) : Math.max(...values);
-      const unit = performanceRecords.find((r) => r.test_type === testType)?.unit || '';
-      pbs.push({ testType, pb, unit });
-    });
-    return pbs;
-  }, [performanceRecords]);
-
-  const sparklines = React.useMemo(() => {
-    const grouped = new Map<string, number[]>();
-    [...performanceRecords].reverse().forEach((r) => { if (r.value === null) return; if (!grouped.has(r.test_type)) grouped.set(r.test_type, []); grouped.get(r.test_type)!.push(r.value); });
-    return grouped;
-  }, [performanceRecords]);
-
-  const latestFeedback = React.useMemo(() => notes.find((n) => n.is_feedback) || null, [notes]);
-
-  const playerCode = athlete ? firstString(athlete.raw?.player_code) : '';
-
-  // ── POPULATE EDIT STATE ──────────────────────────────────────
-  React.useEffect(() => {
-    if (!athlete) return;
-    setAthleteNameInput(athlete.name);
-    setAthleteTeamInput(athlete.team);
-    setAthleteSportInput(athlete.sport === '—' ? '' : athlete.sport);
-    setAthleteAgeGroupInput(athlete.ageGroup === '—' ? '' : athlete.ageGroup);
-    setAvailability(athlete.raw?.availability || 'Available');
-    setPositionInput(athlete.raw?.position || '');
-  }, [athlete]);
-
-  // ── HANDLERS ─────────────────────────────────────────────────
-  async function handleSaveAthleteProfile() {
-    if (!athlete || !athleteNameInput.trim()) { setError('Name is required.'); return; }
-    setSavingAthlete(true);
-    const payload = buildAthleteUpdatePayload(athlete.raw, { name: athleteNameInput.trim(), team: athleteTeamInput.trim(), sport: athleteSportInput.trim(), ageGroup: athleteAgeGroupInput.trim() });
-    const { error: err } = await supabase.from('athletes').update(payload).eq('id', athlete.id);
-    if (err) { setError(err.message); setSavingAthlete(false); return; }
-    showToast('Profile updated'); setIsEditingAthlete(false); await loadPageData(); setSavingAthlete(false);
-  }
-  async function handleDeleteAthlete() {
-    if (!athlete || !confirm(`Delete ${athlete.name}?`)) return;
-    await supabase.from('athletes').delete().eq('id', athlete.id);
-    router.push('/athletes');
-  }
-  async function handleSetAvailability(status: string) {
-    if (!athlete) return;
-    setSavingAvailability(true);
-    await supabase.from('athletes').update({ availability: status }).eq('id', athlete.id);
-    setAvailability(status);
-    showToast(`Status: ${status}`);
-    setSavingAvailability(false);
-  }
-  async function handleSavePosition() {
-    if (!athlete) return;
-    await supabase.from('athletes').update({ position: positionInput.trim() }).eq('id', athlete.id);
-    setEditingPosition(false);
-    showToast('Position saved');
-    await loadPageData();
-  }
-  async function handleGenerateCode() {
-    if (!athlete) return;
-    setGeneratingCode(true);
-
-    // Generate a unique secure player code (max 8 attempts on collision)
-    let code = '';
-    let attempts = 0;
-    while (attempts < 8) {
-      code = generatePlayerCode();
-      const { data: existing } = await supabase
-        .from('athletes')
-        .select('id')
-        .eq('player_code', code)
-        .maybeSingle();
-      if (!existing) break;
-      attempts++;
-    }
-    if (attempts >= 8) {
-      showToast('Could not generate a unique code. Try again.', 'error');
-      setGeneratingCode(false);
-      return;
-    }
-
-    const { error } = await supabase.from('athletes').update({ player_code: code }).eq('id', athlete.id);
-    if (error) {
-      showToast(`Failed to save code: ${error.message}`, 'error');
-      setGeneratingCode(false);
-      return;
-    }
-    showToast(`Access code: ${code}`);
-    await loadPageData();
-    setGeneratingCode(false);
-  }
-  async function handleQuickAddAttendance(e: React.FormEvent) {
-    e.preventDefault(); if (!athlete) return;
-    setSavingQuickAttendance(true);
-    const { error: err } = await supabase.from('attendance').insert([{ athlete_id: athlete.id, session_date: quickAttendanceDate, session_type: quickAttendanceSessionType, status: quickAttendanceStatus }]);
-    if (err) { setError(err.message); setSavingQuickAttendance(false); return; }
-    showToast('Session added'); await loadPageData(); setSavingQuickAttendance(false);
-  }
-  async function handleQuickAddPerformance(e: React.FormEvent) {
-    e.preventDefault(); if (!athlete || !quickPerformanceTestType.trim()) { setError('Test type required.'); return; }
-    const num = Number(quickPerformanceResult); if (quickPerformanceResult === '' || Number.isNaN(num)) { setError('Result must be a number.'); return; }
-    setSavingQuickPerformance(true);
-    const { error: err } = await supabase.from('performance_tests').insert([{ athlete_id: athlete.id, test_date: quickPerformanceDate, test_type: quickPerformanceTestType.trim(), value: num, unit: quickPerformanceUnit.trim(), notes: quickPerformanceNotes.trim() }]);
-    if (err) { setError(err.message); setSavingQuickPerformance(false); return; }
-    showToast('Session added'); setQuickPerformanceTestType(''); setQuickPerformanceResult(''); setQuickPerformanceUnit(''); await loadPageData(); setSavingQuickPerformance(false);
-  }
-  function startAttendanceEdit(r: AttendanceRecord) { setEditingAttendanceId(r.id); setEditAttendanceDate(r.session_date); setEditAttendanceSessionType(r.session_type || 'Training'); setEditAttendanceStatus(formatStatus(r.status) || 'Present'); }
-  function cancelAttendanceEdit() { setEditingAttendanceId(null); }
-  async function handleSaveAttendanceEdit(id: string) {
-    setSavingAttendanceEdit(true);
-    await supabase.from('attendance').update({ session_date: editAttendanceDate, session_type: editAttendanceSessionType, status: editAttendanceStatus }).eq('id', id);
-    showToast('Updated'); cancelAttendanceEdit(); await loadPageData(); setSavingAttendanceEdit(false);
-  }
-  async function handleDeleteAttendance(id: string) { if (!confirm('Delete?')) return; await supabase.from('attendance').delete().eq('id', id); await loadPageData(); }
-  function startPerformanceEdit(r: PerformanceRecord) { setEditingPerformanceId(r.id); setEditPerformanceDate(r.test_date); setEditPerformanceTestType(r.test_type); setEditPerformanceResult(r.value !== null ? String(r.value) : ''); setEditPerformanceUnit(r.unit); setEditPerformanceNotes(r.notes); }
-  function cancelPerformanceEdit() { setEditingPerformanceId(null); }
-  async function handleSavePerformanceEdit(id: string) {
-    const num = Number(editPerformanceResult); if (Number.isNaN(num)) { setError('Result must be a number.'); return; }
-    setSavingPerformanceEdit(true);
-    await supabase.from('performance_tests').update({ test_date: editPerformanceDate, test_type: editPerformanceTestType.trim(), value: num, unit: editPerformanceUnit.trim(), notes: editPerformanceNotes.trim() }).eq('id', id);
-    showToast('Updated'); cancelPerformanceEdit(); await loadPageData(); setSavingPerformanceEdit(false);
-  }
-  async function handleDeletePerformance(id: string) { if (!confirm('Delete?')) return; await supabase.from('performance_tests').delete().eq('id', id); await loadPageData(); }
-  async function handleAddNote(e: React.FormEvent) {
-    e.preventDefault(); if (!athlete || !newNote.trim()) return;
-    setSavingNote(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    await supabase.from('coach_notes').insert([{ athlete_id: athlete.id, note: newNote.trim(), author_email: session?.user?.email || 'Coach', is_feedback: false }]);
-    setNewNote(''); showToast('Note saved'); await loadPageData(); setSavingNote(false);
-  }
-  async function handleDeleteNote(id: string) { if (!confirm('Delete?')) return; await supabase.from('coach_notes').delete().eq('id', id); await loadPageData(); }
-  async function handleSaveFeedback() {
-    if (!athlete) return;
-    setSavingFeedback(true);
-    if (latestFeedback) await supabase.from('coach_notes').delete().eq('id', latestFeedback.id);
-    await supabase.from('coach_notes').insert([{ athlete_id: athlete.id, note: fbComment, strengths: fbStrengths, current_focus: fbFocus, coach_comment: fbComment, is_feedback: true, author_email: '' }]);
-    setEditingFeedback(false); setSavingFeedback(false); showToast('Feedback saved'); await loadPageData();
-  }
-
-  async function generateAiSummary() {
-    if (!athlete) return;
-    setGeneratingAiSummary(true);
-    setAiSummary('');
-    const pbs = personalBests.map((pb) => ({ testType: pb.testType, pb: pb.pb, unit: pb.unit }));
-    const tiers = performanceTrends.filter((t) => t.latest !== null).map((t) => {
-      const tier = getBenchmarkTier(t.testType, t.latest!, athlete.ageGroup);
-      return { test: t.testType, tier: tier?.label || 'Unknown' };
-    });
-    const payload = {
-      athlete: {
-        name: athlete.name,
-        team: athlete.team,
-        ageGroup: athlete.ageGroup,
-        position: positionInput || athlete.raw?.position || '',
-        availability,
-        attendanceRate: attendanceSummary.rate,
-        totalSessions: attendanceSummary.total,
-        absences: attendanceSummary.absent,
-        pbs,
-        tiers,
-      }
-    };
-    try {
-      const res = await fetch('/api/athlete-summary', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      setAiSummary(data.text || 'Could not generate summary.');
-    } catch {
-      setAiSummary('Connection error. Please try again.');
-    }
-    setGeneratingAiSummary(false);
-  }
-
-  // ── EARLY RETURNS ────────────────────────────────────────────
-  if (loading) return (
+  if(loading) return(
     <main className="flex min-h-screen items-center justify-center bg-slate-950">
-      <div className="flex items-center gap-3">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-        <p className="text-sm text-slate-400">Loading profile...</p>
-      </div>
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
     </main>
   );
-
-  if (!athlete) return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+  if(!rawAthlete) return(
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
       <div className="text-center">
-        <p className="text-lg font-black text-white">Athlete not found</p>
-        <Link href="/athletes" className="mt-3 inline-block text-sm text-sky-400">← Back</Link>
+        <p className="text-slate-400 mb-3">Athlete not found</p>
+        <Link href="/athletes" className="text-sky-400 text-sm">← Back to Athletes</Link>
       </div>
     </main>
   );
 
-  // ── RENDER ────────────────────────────────────────────────────
-  return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+  const name = fStr(rawAthlete.full_name,rawAthlete.name)||'Unknown';
+  const team = fStr(rawAthlete.team)||'Unassigned';
+  const ageGroup = fStr(rawAthlete.age_group)||'—';
+  const position = fStr(rawAthlete.position)||'—';
+  const playerCode = fStr(rawAthlete.player_code);
 
-      {/* HERO */}
-      <div className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 to-slate-950" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_50%,rgba(14,165,233,0.06),transparent)]" />
-        <div className="relative mx-auto max-w-6xl px-4 pt-6 pb-8 sm:px-6">
+  const present = attendance.filter(a=>['present','late'].includes(a.status?.toLowerCase()||'')).length;
+  const absent  = attendance.filter(a=>a.status?.toLowerCase()==='absent').length;
+  const excused = attendance.filter(a=>a.status?.toLowerCase()==='excused').length;
+  const attRate = attendance.length>0?Math.round((present/attendance.length)*100):null;
 
-          {/* Nav */}
-          <div className="mb-6 flex items-center justify-between">
-            <Link href="/athletes" className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition">← Athletes</Link>
-            {(previousAthlete || nextAthlete) && (
-              <div className="flex gap-2">
-                {previousAthlete && <Link href={`/athletes/${previousAthlete.id}`} className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-400 hover:text-white">← {previousAthlete.name}</Link>}
-                {nextAthlete && <Link href={`/athletes/${nextAthlete.id}`} className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs text-slate-400 hover:text-white">{nextAthlete.name} →</Link>}
-              </div>
-            )}
-          </div>
+  // Performance PBs and trends
+  const grouped = new Map<string,Row[]>();
+  performance.forEach(p=>{ if(!grouped.has(p.test_type)) grouped.set(p.test_type,[]); grouped.get(p.test_type)!.push(p); });
+  const pbs: {test:string;pb:number;unit:string;tier:typeof TIERS[0]|null;vals:number[]}[] = [];
+  grouped.forEach((entries,test)=>{
+    const valid=entries.filter(e=>e.value!==null).sort((a,b)=>new Date(a.test_date).getTime()-new Date(b.test_date).getTime());
+    if(!valid.length) return;
+    const lower=LOWER.some(t=>test.toLowerCase().includes(t.toLowerCase()));
+    const pb=lower?Math.min(...valid.map(e=>e.value)):Math.max(...valid.map(e=>e.value));
+    const unit=valid[0]?.unit||'';
+    const tier=getTier(test,pb,ageGroup);
+    const vals=valid.map(e=>e.value as number);
+    pbs.push({test,pb,unit,tier,vals});
+  });
 
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
-            {/* Identity */}
-            <div className="flex items-start gap-5">
-              <div className="relative shrink-0">
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-2xl font-black text-sky-300">{initials(athlete.name)}</div>
-                <div className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-slate-950 ${availability === 'Available' ? 'bg-emerald-500' : availability === 'Injured' ? 'bg-red-500' : availability === 'Modified' ? 'bg-amber-500' : 'bg-sky-500'}`}>
-                  {availability === 'Available' && <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="h-3 w-3"><path d="M5 13l4 4L19 7"/></svg>}
-                  {availability !== 'Available' && <span className="text-[8px] font-black text-white">{availability[0]}</span>}
-                </div>
-              </div>
+  const latestFeedback = notes.find(n=>n.is_feedback)||null;
+  const coachNotes = notes.filter(n=>!n.is_feedback);
+  const availStyle = AVAIL_STYLES[availability]||AVAIL_STYLES['Available'];
 
-              <div>
-                {isEditingAthlete ? (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <input value={athleteNameInput} onChange={(e) => setAthleteNameInput(e.target.value)} placeholder="Full name" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                      <input value={athleteTeamInput} onChange={(e) => setAthleteTeamInput(e.target.value)} placeholder="Team" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                      <input value={athleteAgeGroupInput} onChange={(e) => setAthleteAgeGroupInput(e.target.value)} placeholder="Age group" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500" />
-                    </div>
-                    <div className="flex gap-2">
-                      <button onClick={handleSaveAthleteProfile} disabled={savingAthlete} className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingAthlete ? 'Saving...' : 'Save'}</button>
-                      <button onClick={() => setIsEditingAthlete(false)} className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-300">Cancel</button>
-                      <button onClick={handleDeleteAthlete} className="ml-auto rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2 text-sm text-red-300">Delete</button>
-                    </div>
+  async function saveInfo() {
+    setSavingInfo(true);
+    await supabase.from('athletes').update({full_name:editName,team:editTeam,age_group:editAge,position:editPos}).eq('id',id);
+    setEditingInfo(false); showToast('Profile updated'); await load(); setSavingInfo(false);
+  }
+
+  async function setAvail(status:string) {
+    await supabase.from('athletes').update({availability:status}).eq('id',id);
+    setAvailability(status); showToast(`Status: ${status}`);
+  }
+
+  async function addAttendance(e:React.FormEvent) {
+    e.preventDefault(); setSavingAtt(true);
+    await supabase.from('attendance').insert([{athlete_id:id,session_date:attDate,session_type:attType,status:attStatus}]);
+    showToast('Session added'); await load(); setSavingAtt(false);
+  }
+
+  async function addPerformance(e:React.FormEvent) {
+    e.preventDefault();
+    const num=Number(perfVal); if(Number.isNaN(num)){showToast('Result must be a number','error');return;}
+    setSavingPerf(true);
+    await supabase.from('performance_tests').upsert([{athlete_id:id,test_date:perfDate,test_type:perfTest.trim(),value:num,unit:perfUnit.trim()}],{onConflict:'athlete_id,test_date,test_type'});
+    showToast('Result saved'); setPerfTest(''); setPerfVal(''); setPerfUnit(''); await load(); setSavingPerf(false);
+  }
+
+  async function addNote(e:React.FormEvent) {
+    e.preventDefault(); if(!newNote.trim()) return;
+    setSavingNote(true);
+    const {data:{session}} = await supabase.auth.getSession();
+    await supabase.from('coach_notes').insert([{athlete_id:id,note:newNote.trim(),author_email:session?.user?.email||'',is_feedback:false}]);
+    setNewNote(''); showToast('Note saved'); await load(); setSavingNote(false);
+  }
+
+  async function saveFeedback() {
+    setSavingFb(true);
+    if(latestFeedback) await supabase.from('coach_notes').delete().eq('id',latestFeedback.id);
+    await supabase.from('coach_notes').insert([{athlete_id:id,strengths:fbStr,current_focus:fbFoc,coach_comment:fbCom,is_feedback:true,author_email:''}]);
+    setEditFb(false); showToast('Feedback saved'); await load(); setSavingFb(false);
+  }
+
+  async function generateCode() {
+    setGenCode(true);
+    let code=''; let tries=0;
+    while(tries<8){ code=generatePlayerCode(); const {data:ex}=await supabase.from('athletes').select('id').eq('player_code',code).maybeSingle(); if(!ex) break; tries++; }
+    if(tries>=8){showToast('Could not generate unique code','error');setGenCode(false);return;}
+    await supabase.from('athletes').update({player_code:code}).eq('id',id);
+    showToast(`Code: ${code}`); await load(); setGenCode(false);
+  }
+
+  async function generateAI() {
+    setGenAI(true); setAiText('');
+    const firstName=name.split(' ')[0];
+    const perfLines=pbs.map(p=>`${p.test}: ${p.pb}${p.unit}${p.tier?` (${p.tier.label})`:''}`).join(', ')||'No data';
+    const prompt=`You are a high-performance hockey coach at St Benedict's College. Write a professional 3-4 sentence athlete summary for coach use.\n\nFirst name: ${firstName}\nTeam: ${team} | Age group: ${ageGroup} | Position: ${position}\nAvailability: ${availability}\nAttendance: ${attRate!==null?`${attRate}%`:'No data'} (${present} present, ${absent} absent of ${attendance.length} sessions)\nPersonal bests: ${perfLines}\n\nBe specific, constructive, professional. No medical claims.`;
+    try {
+      const res=await fetch('/api/athlete-summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({athlete:{name:firstName,team,ageGroup,position,availability,attendanceRate:attRate,totalSessions:attendance.length,absences:absent,pbs:pbs.map(p=>({testType:p.test,pb:p.pb,unit:p.unit})),tiers:pbs.filter(p=>p.tier).map(p=>({test:p.test,tier:p.tier!.label})),prompt}})});
+      const d=await res.json();
+      setAiText(d.text||'Could not generate.');
+    } catch{ setAiText('Failed. Please try again.'); }
+    setGenAI(false);
+  }
+
+  const TABS = [
+    {key:'overview',    label:'Overview'},
+    {key:'attendance',  label:`Attendance ${attendance.length>0?`(${attendance.length})`:''}` },
+    {key:'performance', label:`Performance ${pbs.length>0?`(${pbs.length})`:''}`},
+    {key:'notes',       label:`Notes ${coachNotes.length>0?`(${coachNotes.length})`:''}`},
+  ] as const;
+
+  return(
+    <main className="min-h-screen bg-slate-950 pb-24 text-white md:pb-0">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+
+        {/* Back */}
+        <Link href="/athletes" className="mb-6 inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Athletes
+        </Link>
+
+        {/* ── PROFILE HEADER ── */}
+        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+          {/* Top banner */}
+          <div className="px-5 pt-5 pb-4 flex items-start gap-4">
+            {/* Avatar */}
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 text-xl font-black text-sky-300 ring-1 ring-white/10">
+              {initials(name)}
+            </div>
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              {editingInfo ? (
+                <div className="space-y-2">
+                  <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="Full name"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500"/>
+                  <div className="grid grid-cols-3 gap-2">
+                    <input value={editTeam} onChange={e=>setEditTeam(e.target.value)} placeholder="Team"
+                      className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                    <input value={editAge} onChange={e=>setEditAge(e.target.value)} placeholder="Age group"
+                      className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                    <input value={editPos} onChange={e=>setEditPos(e.target.value)} placeholder="Position"
+                      className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
                   </div>
-                ) : (
-                  <>
-                    <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">Athlete Profile</p>
-                    <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white sm:text-4xl">{athlete.name}</h1>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-black text-sky-300">{athlete.team}</span>
-                      {athlete.ageGroup !== '—' && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-400">{athlete.ageGroup}</span>}
-                      {editingPosition ? (
-                        <div className="flex items-center gap-1.5">
-                          <input value={positionInput} onChange={(e) => setPositionInput(e.target.value)} placeholder="e.g. Midfielder" className="rounded-lg border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-white outline-none focus:border-sky-500 w-32" />
-                          <button onClick={handleSavePosition} className="rounded-lg border border-sky-500 bg-sky-500/15 px-2 py-1 text-[10px] font-black text-sky-300">Save</button>
-                          <button onClick={() => setEditingPosition(false)} className="text-[10px] text-slate-500">✕</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setEditingPosition(true)} className={`rounded-full px-3 py-1 text-xs font-semibold transition ${positionInput ? 'bg-violet-500/15 text-violet-300' : 'border border-dashed border-slate-700 text-slate-600 hover:text-slate-400'}`}>{positionInput || '+ Position'}</button>
-                      )}
-                      {['Available','Injured','Modified','Resting'].map((s) => {
-                        const isActive = availability === s;
-                        const col = s === 'Available' ? 'emerald' : s === 'Injured' ? 'red' : s === 'Modified' ? 'amber' : 'sky';
-                        const active = col === 'emerald' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : col === 'red' ? 'bg-red-500/20 text-red-300 border-red-500/40' : col === 'amber' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-sky-500/20 text-sky-300 border-sky-500/40';
-                        return <button key={s} onClick={() => handleSetAvailability(s)} disabled={savingAvailability} className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black transition ${isActive ? active : 'border-slate-700 bg-slate-800/40 text-slate-600 hover:text-slate-400'}`}>{s}</button>;
-                      })}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Attendance ring */}
-            {!isEditingAthlete && (
-              <div className="flex items-center gap-4 shrink-0">
-                <AttendanceRing rate={attendanceSummary.rate} />
-                <button onClick={() => setIsEditingAthlete(true)} className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 hover:text-white self-start">Edit</button>
-              </div>
-            )}
-          </div>
-
-          {/* KPIs */}
-          {!isEditingAthlete && (
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { label: 'Sessions', value: attendanceSummary.total, sub: `${attendanceSummary.present} present`, color: 'sky' },
-                { label: 'Absences', value: attendanceSummary.absent, sub: `${attendanceSummary.excused} excused`, color: attendanceSummary.absent > 3 ? 'red' : 'slate' },
-                { label: 'Test Records', value: performanceRecords.length, sub: `${performanceTrends.length} test types`, color: 'violet' },
-                { label: 'Personal Bests', value: personalBests.length, sub: 'across all tests', color: 'amber' },
-              ].map((kpi) => (
-                <div key={kpi.label} className={`rounded-2xl border bg-slate-900/80 p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'red' ? 'border-red-500/20' : kpi.color === 'violet' ? 'border-violet-500/20' : kpi.color === 'amber' ? 'border-amber-500/20' : 'border-slate-800'}`}>
-                  <p className={`text-3xl font-black ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'red' ? 'text-red-400' : kpi.color === 'violet' ? 'text-violet-400' : kpi.color === 'amber' ? 'text-amber-400' : 'text-white'}`}>{kpi.value}</p>
-                  <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-600">{kpi.sub}</p>
+                  <div className="flex gap-2">
+                    <button onClick={saveInfo} disabled={savingInfo}
+                      className="rounded-xl border border-sky-500/40 bg-sky-500/15 px-3 py-1.5 text-xs font-black text-sky-300 hover:bg-sky-500/25 transition disabled:opacity-50">
+                      {savingInfo?'Saving…':'Save'}
+                    </button>
+                    <button onClick={()=>setEditingInfo(false)}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-black text-slate-400 hover:text-white transition">
+                      Cancel
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* CONTENT */}
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        {error && <div className="mb-5 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
-
-        {/* Player Code */}
-        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Player Portal</p>
-              {playerCode ? (
-                <div className="mt-2 flex flex-wrap items-center gap-3">
-                  <p className="text-2xl font-black tracking-[0.3em] text-white">{playerCode}</p>
-                  <button onClick={() => { navigator.clipboard.writeText(playerCode); showToast('Code copied!'); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">Copy Code</button>
-                  <button onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/player`); showToast('Link copied!'); }} className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">Copy Link</button>
-                </div>
-              ) : <p className="mt-1 text-sm text-slate-500">No code yet — player can't access portal.</p>}
-            </div>
-            <button onClick={handleGenerateCode} disabled={generatingCode} className={`shrink-0 rounded-xl border px-4 py-2.5 text-xs font-black transition disabled:opacity-50 ${playerCode ? 'border-slate-700 bg-slate-800 text-slate-300' : 'border-sky-500 bg-sky-500/15 text-sky-300 hover:bg-sky-500/20'}`}>
-              {generatingCode ? '...' : playerCode ? 'Regenerate' : 'Generate Code'}
-            </button>
-          </div>
-        </div>
-
-        {/* AI Summary */}
-        <div className="mb-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">AI Intelligence</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Athlete Summary</h2>
-              <p className="text-xs text-slate-500">AI-generated from real performance data</p>
-            </div>
-            <button onClick={generateAiSummary} disabled={generatingAiSummary}
-              className="shrink-0 rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 disabled:opacity-50 transition flex items-center gap-2">
-              {generatingAiSummary ? (
-                <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" /> Generating...</>
               ) : (
-                <>{aiSummary ? 'Regenerate' : 'Generate Summary'}</>
+                <>
+                  <div className="flex items-start gap-2 flex-wrap">
+                    <h1 className="text-2xl font-black text-white leading-tight">{name}</h1>
+                    <button onClick={()=>setEditingInfo(true)}
+                      className="mt-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-black text-slate-500 hover:text-white transition">
+                      Edit
+                    </button>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">{team}</span>
+                    {ageGroup!=='—'&&<span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">{ageGroup}</span>}
+                    {position!=='—'&&<span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">{position}</span>}
+                  </div>
+                </>
               )}
-            </button>
+            </div>
+            {/* Attendance ring */}
+            <div className="shrink-0">
+              <AttRing rate={attRate}/>
+            </div>
           </div>
-          {aiSummary && (
-            <div className="mt-4 rounded-xl border border-violet-500/15 bg-slate-950/50 p-4">
-              <p className="text-sm leading-relaxed text-slate-200">{aiSummary}</p>
-              <button onClick={() => { navigator.clipboard.writeText(aiSummary); showToast('Summary copied!'); }}
-                className="mt-3 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">
-                Copy to Clipboard
+
+          {/* Availability strip */}
+          <div className="border-t border-slate-800 px-5 py-3 flex items-center gap-2 flex-wrap">
+            <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mr-1">Status:</p>
+            {Object.entries(AVAIL_STYLES).map(([key,s])=>(
+              <button key={key} onClick={()=>setAvail(key)}
+                className={`rounded-xl border px-3 py-1.5 text-[11px] font-black transition ${availability===key?`${s.bg} ${s.border} ${s.color}`:'border-slate-800 bg-slate-950 text-slate-600 hover:text-slate-400'}`}>
+                {s.label}
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-2">
+              {playerCode?(
+                <span className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] font-black font-mono text-slate-400">{playerCode}</span>
+              ):null}
+              <button onClick={generateCode} disabled={genCode}
+                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-[11px] font-black text-slate-400 hover:text-white transition disabled:opacity-50">
+                {genCode?'…':playerCode?'Regen Code':'Gen Code'}
               </button>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Empty state */}
-        {performanceTrends.length === 0 && attendanceRecords.length === 0 && (
-          <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-slate-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg></div>
-            <p className="text-lg font-black text-white">Season hasn't started yet</p>
-            <p className="mt-2 text-sm text-slate-500 max-w-sm mx-auto">Once attendance and testing data is logged, this athlete's full performance profile will appear here.</p>
-            <div className="mt-6 grid grid-cols-3 gap-3 text-left">
+        {/* ── TABS ── */}
+        <div className="mb-6 flex gap-1 rounded-2xl border border-slate-800 bg-slate-900 p-1">
+          {TABS.map(t=>(
+            <button key={t.key} onClick={()=>setActiveTab(t.key)}
+              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${activeTab===t.key?'bg-slate-700 text-white':'text-slate-500 hover:text-slate-300'}`}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ══ OVERVIEW TAB ══ */}
+        {activeTab==='overview'&&(
+          <div className="space-y-5">
+            {/* Stats strip */}
+            <div className="grid grid-cols-4 gap-3">
               {[
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, t: 'Attendance', d: 'Every session logged' },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, t: 'Benchmark testing', d: 'Sprint, jump, endurance' },
-                { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, t: 'Progress trends', d: 'Track improvement' },
-              ].map((item) => (
-                <div key={item.t} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                  <div className="text-sky-400 mb-1">{item.icon}</div>
-                  <p className="text-xs font-black text-white">{item.t}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-500">{item.d}</p>
+                {label:'Sessions',val:attendance.length,color:'text-white'},
+                {label:'Present',val:present,color:'text-emerald-400'},
+                {label:'Absent',val:absent,color:absent>0?'text-red-400':'text-slate-600'},
+                {label:'Excused',val:excused,color:'text-sky-400'},
+              ].map(s=>(
+                <div key={s.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+                  <p className={`text-2xl font-black ${s.color}`}>{s.val}</p>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mt-0.5">{s.label}</p>
                 </div>
               ))}
+            </div>
+
+            {/* Personal bests */}
+            {pbs.length>0&&(
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+                <div className="border-b border-slate-800 px-5 py-3">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">Personal Bests</p>
+                </div>
+                <div className="divide-y divide-slate-800/50">
+                  {pbs.map(p=>(
+                    <div key={p.test} className="flex items-center gap-4 px-5 py-3.5">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{p.test}</p>
+                        {p.tier&&(
+                          <span className="inline-block rounded-full px-2 py-0.5 text-[9px] font-black mt-0.5"
+                            style={{background:p.tier.bg,color:p.tier.color,border:`1px solid ${p.tier.border}`}}>
+                            {p.tier.label}
+                          </span>
+                        )}
+                      </div>
+                      <Spark vals={p.vals} lower={LOWER.some(t=>p.test.toLowerCase().includes(t.toLowerCase()))}/>
+                      <p className="text-base font-black text-white text-right">
+                        {p.pb}<span className="text-xs text-slate-500 ml-1">{p.unit}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Player feedback */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              <div className="border-b border-slate-800 px-5 py-3 flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-wide text-slate-500">Coach Feedback</p>
+                <button onClick={()=>{setEditFb(true);setFbStr(latestFeedback?.strengths||'');setFbFoc(latestFeedback?.current_focus||'');setFbCom(latestFeedback?.coach_comment||'');}}
+                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">
+                  {latestFeedback?'Edit':'Add'}
+                </button>
+              </div>
+              {editFb?(
+                <div className="p-5 space-y-3">
+                  <div>
+                    <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</label>
+                    <textarea value={fbStr} onChange={e=>setFbStr(e.target.value)} rows={2} placeholder="e.g. Excellent work ethic…"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 resize-none"/>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</label>
+                    <textarea value={fbFoc} onChange={e=>setFbFoc(e.target.value)} rows={2} placeholder="e.g. Improve acceleration…"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500 resize-none"/>
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</label>
+                    <textarea value={fbCom} onChange={e=>setFbCom(e.target.value)} rows={2} placeholder="General coach comment…"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 resize-none"/>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={saveFeedback} disabled={savingFb}
+                      className="rounded-xl border border-sky-500/40 bg-sky-500/15 px-4 py-2 text-xs font-black text-sky-300 hover:bg-sky-500/25 transition disabled:opacity-50">
+                      {savingFb?'Saving…':'Save Feedback'}
+                    </button>
+                    <button onClick={()=>setEditFb(false)}
+                      className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-black text-slate-400 hover:text-white transition">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ):latestFeedback?(
+                <div className="p-5 space-y-3">
+                  {latestFeedback.strengths&&<div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4"><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p><p className="text-sm text-slate-200 leading-relaxed">{latestFeedback.strengths}</p></div>}
+                  {latestFeedback.current_focus&&<div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4"><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p><p className="text-sm text-slate-200 leading-relaxed">{latestFeedback.current_focus}</p></div>}
+                  {latestFeedback.coach_comment&&<div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4"><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p><p className="text-sm text-slate-200 leading-relaxed italic">"{latestFeedback.coach_comment}"</p></div>}
+                </div>
+              ):(
+                <div className="px-5 py-8 text-center">
+                  <p className="text-sm text-slate-600">No feedback recorded yet.</p>
+                </div>
+              )}
+            </div>
+
+            {/* AI Summary */}
+            <div className="rounded-2xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
+              <div className="border-b border-violet-500/15 px-5 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 text-violet-400"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
+                  <p className="text-xs font-black text-white">AI Summary</p>
+                </div>
+                <button onClick={generateAI} disabled={genAI}
+                  className="rounded-xl border border-violet-500/40 bg-violet-500/15 px-3 py-1.5 text-[11px] font-black text-violet-300 hover:bg-violet-500/25 transition disabled:opacity-50 flex items-center gap-1.5">
+                  {genAI&&<div className="h-3 w-3 animate-spin rounded-full border border-violet-400 border-t-transparent"/>}
+                  {genAI?'Generating…':'Generate'}
+                </button>
+              </div>
+              <div className="px-5 py-4">
+                {aiText?(
+                  <div>
+                    <p className="text-sm text-slate-200 leading-relaxed">{aiText}</p>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={()=>navigator.clipboard.writeText(aiText)}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">Copy</button>
+                      <button onClick={()=>setAiText('')}
+                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">Clear</button>
+                    </div>
+                  </div>
+                ):<p className="text-sm text-slate-600">Click Generate to create an AI-assisted athlete summary for coach or parent use.</p>}
+              </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-
-          {/* LEFT */}
-          <div className="space-y-6 xl:col-span-2">
-
-            {/* Coach Feedback */}
+        {/* ══ ATTENDANCE TAB ══ */}
+        {activeTab==='attendance'&&(
+          <div className="space-y-5">
+            {/* Quick add */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">From the Coach</p>
-                  <h2 className="mt-0.5 text-lg font-black text-white">Latest Feedback</h2>
-                </div>
-                <button onClick={() => { setEditingFeedback(true); setFbStrengths(latestFeedback?.strengths || ''); setFbFocus(latestFeedback?.current_focus || ''); setFbComment(latestFeedback?.coach_comment || ''); }}
-                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white">
-                  {latestFeedback ? 'Update' : '+ Add'}
+              <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Add Session</p>
+              <form onSubmit={addAttendance} className="grid gap-3 sm:grid-cols-3">
+                <input type="date" value={attDate} onChange={e=>setAttDate(e.target.value)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500"/>
+                <select value={attType} onChange={e=>setAttType(e.target.value)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                  {['Training','Match','Gym','Fitness','Other'].map(t=><option key={t}>{t}</option>)}
+                </select>
+                <select value={attStatus} onChange={e=>setAttStatus(e.target.value)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                  {['Present','Late','Absent','Excused'].map(s=><option key={s}>{s}</option>)}
+                </select>
+                <button type="submit" disabled={savingAtt}
+                  className="sm:col-span-3 rounded-xl border border-sky-500/40 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 hover:bg-sky-500/25 transition disabled:opacity-50">
+                  {savingAtt?'Adding…':'Add Session'}
                 </button>
+              </form>
+            </div>
+            {/* History */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+              <div className="border-b border-slate-800 px-5 py-3 flex items-center justify-between">
+                <p className="text-xs font-black uppercase tracking-wide text-slate-500">History</p>
+                {attRate!==null&&<span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% rate</span>}
               </div>
-              {editingFeedback ? (
-                <div className="space-y-3">
-                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</label><textarea value={fbStrengths} onChange={(e) => setFbStrengths(e.target.value)} rows={2} placeholder="e.g. Excellent work ethic..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-emerald-500" /></div>
-                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</label><textarea value={fbFocus} onChange={(e) => setFbFocus(e.target.value)} rows={2} placeholder="e.g. Improve acceleration..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-amber-500" /></div>
-                  <div><label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-sky-400">Coach Comment</label><textarea value={fbComment} onChange={(e) => setFbComment(e.target.value)} rows={2} placeholder="e.g. Has shown great consistency..." className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500" /></div>
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveFeedback} disabled={savingFeedback} className="rounded-xl border border-sky-500 bg-sky-500/15 px-4 py-2 text-sm font-black text-sky-300 disabled:opacity-50">{savingFeedback ? 'Saving...' : 'Save'}</button>
-                    <button onClick={() => setEditingFeedback(false)} className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm text-slate-300">Cancel</button>
-                  </div>
-                </div>
-              ) : latestFeedback ? (
-                <div className="space-y-3">
-                  {latestFeedback.strengths && <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.strengths}</p></div>}
-                  {latestFeedback.current_focus && <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p><p className="text-sm leading-relaxed text-slate-200">{latestFeedback.current_focus}</p></div>}
-                  {latestFeedback.coach_comment && <div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4"><p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p><p className="text-sm leading-relaxed text-slate-200 italic">"{latestFeedback.coach_comment}"</p></div>}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-slate-700 p-6 text-center">
-                  <p className="text-sm text-slate-500">No feedback added yet.</p>
-                  <p className="mt-1 text-xs text-slate-600">Visible to player and parent via their portal.</p>
+              {attendance.length===0?(
+                <div className="py-10 text-center"><p className="text-sm text-slate-600">No sessions recorded.</p></div>
+              ):(
+                <div className="divide-y divide-slate-800/50 max-h-96 overflow-y-auto">
+                  {attendance.map(a=>{
+                    const s=a.status?.toLowerCase()||'';
+                    return(
+                      <div key={a.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white">{fDate(a.session_date)}</p>
+                          <p className="text-[11px] text-slate-500">{a.session_type||'—'}</p>
+                        </div>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${STATUS_STYLES[s]||'bg-slate-800 text-slate-300 border-slate-700'}`}>
+                          {a.status}
+                        </span>
+                        <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('attendance').delete().eq('id',a.id);await load();}}
+                          className="text-slate-700 hover:text-red-400 transition text-xs">✕</button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
+          </div>
+        )}
 
-            {/* PBs + Sparklines */}
-            {personalBests.length > 0 && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Records</p><h2 className="mt-0.5 text-lg font-black text-white">Personal Bests & Trends</h2></div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {personalBests.map((pb) => {
-                    const sparkData = sparklines.get(pb.testType) || [];
-                    const lower = LOWER_IS_BETTER.some((t) => pb.testType.toLowerCase().includes(t.toLowerCase()));
-                    const tier = getBenchmarkTier(pb.testType, pb.pb, athlete.ageGroup);
-                    const trend = performanceTrends.find((t) => t.testType === pb.testType);
-                    const improved = trend?.delta !== null && trend?.delta !== undefined && (lower ? trend.delta < 0 : trend.delta > 0);
-                    return (
-                      <div key={pb.testType} className={`rounded-xl border p-4 ${tier ? `${tier.bg} ${tier.border}` : 'border-slate-800 bg-slate-950/50'}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div><p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{pb.testType}</p>{TEST_DESCRIPTIONS[pb.testType] && <p className="mt-0.5 text-[9px] text-slate-600">{TEST_DESCRIPTIONS[pb.testType]}</p>}</div>
-                          {tier && <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>}
-                        </div>
-                        <div className="mt-3 flex items-end justify-between gap-3">
-                          <div>
-                            <p className="text-[10px] text-slate-600 uppercase tracking-wide">PB</p>
-                            <p className="text-2xl font-black text-white">{pb.pb}{pb.unit}</p>
-                            {trend?.delta !== null && trend?.delta !== undefined && <p className={`text-xs font-bold ${improved ? 'text-emerald-400' : 'text-red-400'}`}>{improved ? '↑' : '↓'} {Math.abs(trend.delta)}{pb.unit}</p>}
-                          </div>
-                          <Sparkline values={sparkData} lower={lower} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Benchmark bars */}
-            {performanceTrends.length > 0 && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                <div className="mb-5">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Fitness Profile</p>
-                  <h2 className="mt-0.5 text-lg font-black text-white">Benchmark Position</h2>
-                  <p className="mt-1 text-xs text-slate-500">vs St Benedict's standards for {athlete.ageGroup}</p>
-                  <div className="mt-3 flex flex-wrap gap-1.5">{TIERS.map((t) => <span key={t.label} className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${t.bg} ${t.border} ${t.color}`}>{t.label}</span>)}</div>
-                </div>
-                <div className="space-y-4">
-                  {performanceTrends.filter((t) => BENCHMARKS[t.testType] && t.latest !== null).map((trend) => {
-                    const tier = getBenchmarkTier(trend.testType, trend.latest!, athlete.ageGroup);
-                    const b = BENCHMARKS[trend.testType];
-                    const lower = LOWER_IS_BETTER.some((t) => trend.testType.toLowerCase().includes(t.toLowerCase()));
-                    const thr = athlete.ageGroup.includes('14') || athlete.ageGroup.includes('15') ? b.u1415 : b.u1618;
-                    const pct = lower ? Math.max(0, Math.min(100, ((thr[3] - trend.latest!) / (thr[3] - thr[0])) * 100)) : Math.max(0, Math.min(100, ((trend.latest! - thr[3]) / (thr[0] - thr[3])) * 100));
-                    const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-sky-500' : pct >= 40 ? 'bg-amber-500' : pct >= 20 ? 'bg-orange-500' : 'bg-red-500';
-                    return (
-                      <div key={trend.testType}>
-                        <div className="mb-1.5 flex items-center justify-between">
-                          <span className="text-xs font-semibold text-slate-300">{trend.testType}</span>
-                          <div className="flex items-center gap-2"><span className="text-xs font-black text-white">{trend.latest}{trend.unit}</span>{tier && <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>}</div>
-                        </div>
-                        <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
-                          <div className="absolute inset-0 flex">{['bg-red-500/15','bg-orange-500/15','bg-amber-500/15','bg-sky-500/15','bg-emerald-500/15'].map((c,i) => <div key={i} className={`h-full flex-1 ${c}`} />)}</div>
-                          <div className={`absolute top-0 h-full rounded-full ${barColor}`} style={{ width: `${Math.max(4, pct)}%` }} />
-                        </div>
-                        <div className="mt-0.5 flex justify-between text-[9px] text-slate-700"><span>Poor</span><span>Developing</span><span>Average</span><span>Good</span><span>Elite</span></div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {performanceRecords.length >= 2 && <PerformanceTrendChart records={performanceRecords} />}
-            {attendanceRecords.length >= 4 && <AttendanceChart records={attendanceRecords} />}
-
-            {/* Internal Notes */}
+        {/* ══ PERFORMANCE TAB ══ */}
+        {activeTab==='performance'&&(
+          <div className="space-y-5">
+            {/* Quick add */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Internal</p><h2 className="mt-0.5 text-lg font-black text-white">Coach Notes <span className="text-sm font-normal text-slate-600">(not visible to player)</span></h2></div>
-              <form onSubmit={handleAddNote} className="mb-5">
-                <textarea value={newNote} onChange={(e) => setNewNote(e.target.value)} placeholder="Internal notes, selection thoughts, concerns..." rows={3} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-amber-500" />
-                <button type="submit" disabled={savingNote || !newNote.trim()} className="mt-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 text-sm font-black text-amber-300 hover:bg-amber-500/20 disabled:opacity-50">{savingNote ? 'Saving...' : 'Save Note'}</button>
+              <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Add Result</p>
+              <form onSubmit={addPerformance} className="grid gap-3 sm:grid-cols-3">
+                <input type="date" value={perfDate} onChange={e=>setPerfDate(e.target.value)}
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                <input value={perfTest} onChange={e=>setPerfTest(e.target.value)} placeholder="Test type e.g. SBJ"
+                  list="test-suggestions"
+                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                <datalist id="test-suggestions">
+                  {['SBJ','10m Sprint','30m Sprint','505 Left','505 Right','Push-Ups','Pull-Ups','Yo-Yo IR1','Bronco','RSA Sdec%'].map(t=><option key={t} value={t}/>)}
+                </datalist>
+                <div className="flex gap-2">
+                  <input value={perfVal} onChange={e=>setPerfVal(e.target.value)} placeholder="Value" type="number" step="any"
+                    className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                  <input value={perfUnit} onChange={e=>setPerfUnit(e.target.value)} placeholder="Unit" style={{width:70}}
+                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                </div>
+                <button type="submit" disabled={savingPerf||!perfTest.trim()||!perfVal}
+                  className="sm:col-span-3 rounded-xl border border-violet-500/40 bg-violet-500/15 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 transition disabled:opacity-50">
+                  {savingPerf?'Saving…':'Save Result'}
+                </button>
               </form>
-              {notes.filter((n) => !n.is_feedback).length === 0 ? <p className="text-sm text-slate-500">No notes yet.</p> : (
-                <div className="space-y-3">
-                  {notes.filter((n) => !n.is_feedback).map((note) => (
-                    <div key={note.id} className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-4">
-                      <p className="text-sm leading-relaxed text-slate-200">{note.note}</p>
-                      <div className="mt-3 flex items-center justify-between">
-                        <p className="text-[10px] text-slate-600">{note.author_email && <span className="text-slate-500">{note.author_email} · </span>}{note.created_at ? new Date(note.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' }) : ''}</p>
-                        <button onClick={() => handleDeleteNote(note.id)} className="rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] text-red-300 hover:bg-red-500/20">✕</button>
+            </div>
+            {/* All results */}
+            {performance.length===0?(
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-10 text-center">
+                <p className="text-sm text-slate-600">No results recorded yet.</p>
+              </div>
+            ):(
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+                <div className="border-b border-slate-800 px-5 py-3">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">All Results</p>
+                </div>
+                <div className="divide-y divide-slate-800/50 max-h-[500px] overflow-y-auto">
+                  {performance.map(p=>{
+                    const tier=p.value!==null?getTier(p.test_type,p.value,ageGroup):null;
+                    return(
+                      <div key={p.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{p.test_type}</p>
+                          <p className="text-[11px] text-slate-500">{fDate(p.test_date)}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-white">{p.value}{p.unit&&<span className="text-slate-500 text-xs ml-1">{p.unit}</span>}</p>
+                          {tier&&<span className="text-[9px] font-black" style={{color:tier.color}}>{tier.label}</span>}
+                        </div>
+                        <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('performance_tests').delete().eq('id',p.id);await load();}}
+                          className="text-slate-700 hover:text-red-400 transition text-xs shrink-0">✕</button>
                       </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ NOTES TAB ══ */}
+        {activeTab==='notes'&&(
+          <div className="space-y-5">
+            {/* Add note */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <form onSubmit={addNote} className="space-y-3">
+                <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={3}
+                  placeholder="Add a coach note…"
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 resize-none"/>
+                <button type="submit" disabled={savingNote||!newNote.trim()}
+                  className="w-full rounded-xl border border-sky-500/40 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 hover:bg-sky-500/25 transition disabled:opacity-50">
+                  {savingNote?'Saving…':'Add Note'}
+                </button>
+              </form>
+            </div>
+            {/* Notes list */}
+            {coachNotes.length===0?(
+              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-10 text-center">
+                <p className="text-sm text-slate-600">No notes yet.</p>
+              </div>
+            ):(
+              <div className="space-y-3">
+                {coachNotes.map(n=>(
+                  <div key={n.id} className="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <p className="text-[10px] text-slate-600">{fDate(n.created_at)}{n.author_email&&` · ${n.author_email}`}</p>
+                      <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('coach_notes').delete().eq('id',n.id);await load();}}
+                        className="text-slate-700 hover:text-red-400 transition text-xs shrink-0">✕</button>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <p className="text-sm text-slate-200 leading-relaxed">{n.note}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+        )}
 
-          {/* RIGHT */}
-          <div className="space-y-6">
-
-            {/* Attendance */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Attendance</p><h2 className="mt-0.5 text-lg font-black text-white">Session History</h2></div>
-              {attendanceSummary.rate !== null && (
-                <div className="mb-4">
-                  <div className="mb-1.5 flex justify-between text-xs"><span className="text-slate-500">Rate</span><span className={`font-black ${attendanceSummary.rate >= 80 ? 'text-emerald-400' : attendanceSummary.rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{attendanceSummary.rate}%</span></div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800"><div className={`h-full rounded-full ${attendanceSummary.rate >= 80 ? 'bg-emerald-500' : attendanceSummary.rate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${attendanceSummary.rate}%` }} /></div>
-                </div>
-              )}
-              <form onSubmit={handleQuickAddAttendance} className="mb-4 space-y-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={quickAttendanceStatus} onChange={(e) => setQuickAttendanceStatus(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500">{['Present','Absent','Late','Excused'].map((s) => <option key={s}>{s}</option>)}</select>
-                  <select value={quickAttendanceSessionType} onChange={(e) => setQuickAttendanceSessionType(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500">{['Training','Match','Gym','Recovery','Testing'].map((s) => <option key={s}>{s}</option>)}</select>
-                </div>
-                <input type="date" value={quickAttendanceDate} onChange={(e) => setQuickAttendanceDate(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
-                <button type="submit" disabled={savingQuickAttendance} className="w-full rounded-xl border border-emerald-500 bg-emerald-500/15 py-2 text-xs font-black text-emerald-300 disabled:opacity-50">{savingQuickAttendance ? '...' : 'Add Record'}</button>
-              </form>
-              {attendanceRecords.length === 0 ? <p className="text-sm text-slate-500">No records yet.</p> : (
-                <div className="max-h-72 space-y-1.5 overflow-y-auto pr-1">
-                  {attendanceRecords.slice(0, 30).map((record) => {
-                    const isEditing = editingAttendanceId === record.id;
-                    return (
-                      <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-2.5">
-                        {isEditing ? (
-                          <div className="space-y-2">
-                            <div className="grid grid-cols-2 gap-1.5">
-                              <select value={editAttendanceStatus} onChange={(e) => setEditAttendanceStatus(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none">{['Present','Absent','Late','Excused'].map((s) => <option key={s}>{s}</option>)}</select>
-                              <select value={editAttendanceSessionType} onChange={(e) => setEditAttendanceSessionType(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none">{['Training','Match','Gym','Recovery','Testing'].map((s) => <option key={s}>{s}</option>)}</select>
-                              <input type="date" value={editAttendanceDate} onChange={(e) => setEditAttendanceDate(e.target.value)} className="col-span-2 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none" />
-                            </div>
-                            <div className="flex gap-1.5">
-                              <button onClick={() => handleSaveAttendanceEdit(record.id)} disabled={savingAttendanceEdit} className="rounded-lg border border-sky-500 bg-sky-500/15 px-3 py-1.5 text-xs font-black text-sky-300 disabled:opacity-50">{savingAttendanceEdit ? '...' : 'Save'}</button>
-                              <button onClick={cancelAttendanceEdit} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300">Cancel</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black ${getStatusClasses(record.status)}`}>{formatStatus(record.status)}</span>
-                            <div className="min-w-0 flex-1"><p className="text-xs text-slate-300 truncate">{record.session_type}</p><p className="text-[10px] text-slate-600">{formatDate(record.session_date)}</p></div>
-                            <div className="flex gap-1 shrink-0">
-                              <button onClick={() => startAttendanceEdit(record)} className="rounded-md border border-slate-700 bg-slate-800/60 px-1.5 py-1 text-[9px] text-slate-400 hover:text-white">Edit</button>
-                              <button onClick={() => handleDeleteAttendance(record.id)} className="rounded-md border border-red-500/20 bg-red-500/10 px-1.5 py-1 text-[9px] text-red-300">✕</button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {attendanceRecords.length > 30 && <p className="text-center text-[10px] text-slate-600 pt-1">+{attendanceRecords.length - 30} more</p>}
-                </div>
-              )}
-            </div>
-
-            {/* Performance records */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Testing</p><h2 className="mt-0.5 text-lg font-black text-white">All Records</h2></div>
-              <form onSubmit={handleQuickAddPerformance} className="mb-4 space-y-2 rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                <input value={quickPerformanceTestType} onChange={(e) => setQuickPerformanceTestType(e.target.value)} list="perf-tests" placeholder="Test type" className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none placeholder:text-slate-600 focus:border-sky-500" />
-                <datalist id="perf-tests">{['SBJ','10m Sprint','30m Sprint','505 Left','505 Right','Push-Ups','Pull-Ups','Yo-Yo IR1','RSA Sdec%'].map((t) => <option key={t} value={t} />)}</datalist>
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="number" step="any" value={quickPerformanceResult} onChange={(e) => setQuickPerformanceResult(e.target.value)} placeholder="Result" className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
-                  <input value={quickPerformanceUnit} onChange={(e) => setQuickPerformanceUnit(e.target.value)} placeholder="Unit" className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
-                </div>
-                <input type="date" value={quickPerformanceDate} onChange={(e) => setQuickPerformanceDate(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-white outline-none focus:border-sky-500" />
-                <button type="submit" disabled={savingQuickPerformance} className="w-full rounded-xl border border-violet-500 bg-violet-500/15 py-2 text-xs font-black text-violet-300 disabled:opacity-50">{savingQuickPerformance ? '...' : 'Add Result'}</button>
-              </form>
-              {performanceRecords.length === 0 ? <p className="text-sm text-slate-500">No records yet.</p> : (
-                <div className="max-h-72 space-y-1.5 overflow-y-auto pr-1">
-                  {performanceRecords.map((record) => {
-                    const isEditing = editingPerformanceId === record.id;
-                    return (
-                      <div key={record.id} className="rounded-xl border border-slate-800 bg-slate-950/40 p-2.5">
-                        {isEditing ? (
-                          <div className="space-y-2">
-                            <div className="flex flex-wrap gap-1.5">
-                              <input value={editPerformanceTestType} onChange={(e) => setEditPerformanceTestType(e.target.value)} placeholder="Test type" className="flex-1 min-w-24 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
-                              <input type="number" step="any" value={editPerformanceResult} onChange={(e) => setEditPerformanceResult(e.target.value)} placeholder="Result" className="w-20 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
-                              <input value={editPerformanceUnit} onChange={(e) => setEditPerformanceUnit(e.target.value)} placeholder="Unit" className="w-16 rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
-                              <input type="date" value={editPerformanceDate} onChange={(e) => setEditPerformanceDate(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-xs text-white outline-none focus:border-sky-500" />
-                            </div>
-                            <div className="flex gap-1.5">
-                              <button onClick={() => handleSavePerformanceEdit(record.id)} disabled={savingPerformanceEdit} className="rounded-lg border border-sky-500 bg-sky-500/15 px-3 py-1.5 text-xs font-black text-sky-300 disabled:opacity-50">{savingPerformanceEdit ? '...' : 'Save'}</button>
-                              <button onClick={cancelPerformanceEdit} className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300">Cancel</button>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className="shrink-0 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-black text-violet-300">{record.test_type}</span>
-                            <p className="flex-1 text-xs font-bold text-white">{formatResult(record.value, record.unit)}</p>
-                            <p className="shrink-0 text-[10px] text-slate-600">{formatDate(record.test_date)}</p>
-                            <div className="flex gap-1 shrink-0">
-                              <button onClick={() => startPerformanceEdit(record)} className="rounded-md border border-slate-700 bg-slate-800/60 px-1.5 py-1 text-[9px] text-slate-400 hover:text-white">Edit</button>
-                              <button onClick={() => handleDeletePerformance(record.id)} className="rounded-md border border-red-500/20 bg-red-500/10 px-1.5 py-1 text-[9px] text-red-300">✕</button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
+        {/* Danger zone */}
+        <div className="mt-8 pt-6 border-t border-slate-800">
+          <button onClick={async()=>{if(!confirm(`Delete ${name}? This cannot be undone.`))return;await supabase.from('athletes').delete().eq('id',id);router.push('/athletes');}}
+            className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2 text-xs font-black text-red-400 hover:bg-red-500/15 transition">
+            Delete Athlete
+          </button>
         </div>
+
       </div>
     </main>
   );
