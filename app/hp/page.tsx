@@ -114,7 +114,7 @@ export default function HPDashboard() {
         </div>
 
         {/* ── QUICK ACTIONS ── */}
-        <div className="mb-6 grid grid-cols-4 gap-2 sm:grid-cols-5">
+        <div className="mb-6 grid grid-cols-4 gap-2">
           {[
             { href:'/hp/attendance', label:'Register', color:'#10b981',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
@@ -124,8 +124,6 @@ export default function HPDashboard() {
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
             { href:'/hp/trends', label:'Trends', color:'#f59e0b',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
-            { href:'/hp/admin/rollover', label:'Year End', color:'#f87171',
-              icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> },
           ].map(a => (
             <Link key={a.href} href={a.href}
               className="group flex flex-col items-center gap-2 rounded-2xl border border-white/5 p-3 text-center transition hover:border-white/10 hover:-translate-y-0.5"
@@ -184,7 +182,7 @@ function ClassTile({ c, term }: { c: any; term: string }) {
   const noneTested = c.tested === 0;
 
   return (
-    <Link href={`/hp/students?class=${c.id}`}
+    <Link href={`/hp/class/${c.id}`}
       className="group relative rounded-2xl border border-white/5 p-4 overflow-hidden transition-all duration-200 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg"
       style={{background:'rgba(255,255,255,0.02)'}}>
 
@@ -225,11 +223,11 @@ function ClassTile({ c, term }: { c: any; term: string }) {
 
         {/* Quick action links */}
         <div className="mt-3 flex gap-1.5">
-          <Link href={`/hp/attendance?class=${c.id}`} onClick={e => e.stopPropagation()}
+          <Link href={`/hp/class/${c.id}?tab=attendance`} onClick={e => e.stopPropagation()}
             className="flex-1 flex items-center justify-center rounded-lg py-1.5 text-[9px] font-black text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/8 transition border border-white/5">
             Register
           </Link>
-          <Link href={`/hp/testing?class=${c.id}`} onClick={e => e.stopPropagation()}
+          <Link href={`/hp/class/${c.id}?tab=testing`} onClick={e => e.stopPropagation()}
             className="flex-1 flex items-center justify-center rounded-lg py-1.5 text-[9px] font-black text-slate-500 hover:text-violet-400 hover:bg-violet-500/8 transition border border-white/5">
             Test
           </Link>
