@@ -179,14 +179,12 @@ function MyTeamView({ teamName, athletes, attendance, fixtures, onRefresh }: {
           </div>
         </div>
 
-        {/* Squad - tap to cycle */}
+        {/* Squad with explicit status buttons */}
         <div className="divide-y divide-white/3">
           {squad.map(a => {
             const status = statuses[a.id] || 'Present';
-            const st = STATUS_STYLE[status];
             return (
-              <button key={a.id} onClick={() => cycle(a.id)}
-                className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-white/3 transition text-left">
+              <div key={a.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/2 transition">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black"
                   style={{background:`${accent}15`,color:accent}}>
                   {(a.full_name||'?').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
@@ -199,11 +197,30 @@ function MyTeamView({ teamName, athletes, attendance, fixtures, onRefresh }: {
                     </p>
                   )}
                 </div>
-                <span className="shrink-0 rounded-xl border px-3 py-1.5 text-[11px] font-black transition"
-                  style={{background:st.bg, color:st.color, border:`1px solid ${st.border}`}}>
-                  {status}
-                </span>
-              </button>
+                <div className="flex gap-1 shrink-0">
+                  {(['Present','Late','Absent','Excused'] as const).map(s => {
+                    const active = status === s;
+                    const colors: Record<string,{bg:string;color:string;border:string}> = {
+                      Present: {bg:'rgba(16,185,129,0.15)',color:'#6ee7b7',border:'rgba(16,185,129,0.3)'},
+                      Late:    {bg:'rgba(251,191,36,0.15)', color:'#fde68a',border:'rgba(251,191,36,0.3)'},
+                      Absent:  {bg:'rgba(248,113,113,0.15)',color:'#fca5a5',border:'rgba(248,113,113,0.3)'},
+                      Excused: {bg:'rgba(56,189,248,0.15)', color:'#7dd3fc',border:'rgba(56,189,248,0.3)'},
+                    };
+                    const c = colors[s];
+                    return (
+                      <button key={s}
+                        onClick={() => { setStatuses(prev => ({...prev,[a.id]:s})); setSessionSaved(false); }}
+                        className="rounded-lg border px-2 py-1.5 text-[10px] font-black transition"
+                        style={active
+                          ? {background:c.bg, color:c.color, border:`1px solid ${c.border}`}
+                          : {background:'rgba(255,255,255,0.03)', color:'#475569', border:'1px solid rgba(255,255,255,0.06)'}
+                        }>
+                        {s[0]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             );
           })}
         </div>

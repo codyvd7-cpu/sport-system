@@ -238,19 +238,17 @@ export default function AttendancePage() {
                   ))}
                 </div>
 
-                {/* Player cards - tap to cycle status */}
+                {/* Player cards with explicit status buttons */}
                 <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
                   <div className="border-b border-slate-800 px-5 py-3">
-                    <p className="text-xs font-black uppercase tracking-wide text-slate-500">{selTeam} · {squad.length} players · tap to change status</p>
+                    <p className="text-xs font-black uppercase tracking-wide text-slate-500">{selTeam} · {squad.length} players</p>
                   </div>
                   <div className="divide-y divide-slate-800/50">
                     {squad.map(a=>{
                       const status=statuses[a.id]||'Present';
-                      const st=STATUS_STYLES[status]||STATUS_STYLES['Present'];
                       const injured=a.availability==='Injured';
                       return(
-                        <button key={a.id} onClick={()=>cycleStatus(a.id)}
-                          className="w-full flex items-center gap-4 px-5 py-3.5 hover:bg-slate-800/30 transition text-left">
+                        <div key={a.id} className="flex items-center gap-3 px-4 py-3">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
                             {(a.full_name||'').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
                           </div>
@@ -258,10 +256,19 @@ export default function AttendancePage() {
                             <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
                             {injured&&<p className="text-[10px] text-red-400">Injured</p>}
                           </div>
-                          <span className={`shrink-0 rounded-xl border px-3 py-1.5 text-xs font-black transition ${st.bg} ${st.border} ${st.text}`}>
-                            {status}
-                          </span>
-                        </button>
+                          <div className="flex gap-1 shrink-0">
+                            {STATUS_OPTIONS.map(s=>{
+                              const st=STATUS_STYLES[s];
+                              const active=status===s;
+                              return(
+                                <button key={s} onClick={()=>setStatuses(prev=>({...prev,[a.id]:s}))}
+                                  className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-black transition ${active?`${st.bg} ${st.border} ${st.text}`:'border-slate-800 bg-slate-950 text-slate-600 hover:text-slate-300'}`}>
+                                  {s[0]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
