@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
+import { PageLoader } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
