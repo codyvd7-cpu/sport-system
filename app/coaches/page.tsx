@@ -55,7 +55,6 @@ export default function CoachesPage() {
     const { error: dbErr } = await supabase.from('staff_roles').upsert([{
       id: data.user?.id,
       email: inviteEmail.trim().toLowerCase(),
-      full_name: inviteName.trim(),
       role: inviteRole,
       teams: inviteRole === 'head_of_hockey' ? [] : inviteTeams,
       is_active: true,
