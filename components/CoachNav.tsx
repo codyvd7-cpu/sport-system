@@ -171,8 +171,8 @@ export default function CoachNav() {
       {menuOpen && (
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="absolute right-0 top-0 h-full w-72 bg-[#06071a] border-l border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex h-14 items-center justify-between px-4 border-b border-white/5">
+          <div className="absolute right-0 top-0 h-full w-72 bg-[#06071a] border-l border-white/10 shadow-2xl flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex h-14 shrink-0 items-center justify-between px-4 border-b border-white/5">
               <div>
                 <p className="text-sm font-black text-white">Menu</p>
                 {email && <p className="text-[10px] text-slate-500 truncate max-w-[160px]">{email}</p>}
@@ -181,7 +181,7 @@ export default function CoachNav() {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
-            <div className="overflow-y-auto py-4">
+            <div className="flex-1 overflow-y-auto overscroll-contain py-4 pb-24">
               {allNavItems.map((item) => {
                 const active = isActive(item.href);
                 return (
