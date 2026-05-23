@@ -473,36 +473,75 @@ export default function PortalPage() {
           <Label text="Rankings" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Leaderboards</h2>
           <p className="mt-2 text-sm text-slate-500">Top performers across the squad.</p>
-          <div className="mt-6 grid gap-6 xl:grid-cols-2">
+
+          <div className="mt-6 grid gap-8 xl:grid-cols-2">
             {[
-              { title: 'Gym & Attendance', data: gymLeaderboard, type: 'gym' },
-              { title: 'Performance Testing', data: performanceLeaderboard, type: 'perf' },
+              { title: 'Gym & Attendance', sub: 'Sessions attended this season', data: gymLeaderboard, type: 'gym', accent: '#38bdf8' },
+              { title: 'Performance Testing', sub: 'Fitness test scores', data: performanceLeaderboard, type: 'perf', accent: '#a78bfa' },
             ].map((board) => (
               <div key={board.title}>
-                <p className="mb-3 text-xs font-black uppercase tracking-[0.2em] text-slate-600">{board.title}</p>
+                {/* Board header */}
+                <div className="mb-4 flex items-end justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{color:board.accent}}>{board.title}</p>
+                    <p className="text-[11px] text-slate-600 mt-0.5">{board.sub}</p>
+                  </div>
+                </div>
+
                 {loadingLeaderboards ? <Skeleton /> : board.data.length === 0 ? <Empty text="No data yet." /> : (
                   <div className="space-y-2">
-                    {board.data.map((athlete: Row, i: number) => (
-                      <div key={athlete.id} className={`flex items-center gap-4 rounded-2xl border p-4 transition ${
-                        i === 0 ? 'border-amber-500/30 bg-gradient-to-r from-amber-500/10 to-transparent'
-                          : 'border-white/6 bg-white/3'
-                      }`}>
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/8 text-lg font-black text-slate-300">
-                          {MEDALS[i] || <span className="text-sm font-black text-slate-500">{i + 1}</span>}
+                    {/* Top 3 podium */}
+                    {board.data.slice(0,3).map((athlete: Row, i: number) => {
+                      const podiumColors = [
+                        {bg:'rgba(251,191,36,0.08)',border:'rgba(251,191,36,0.2)',rank:'#fbbf24',rankBg:'rgba(251,191,36,0.15)'},
+                        {bg:'rgba(148,163,184,0.06)',border:'rgba(148,163,184,0.15)',rank:'#94a3b8',rankBg:'rgba(148,163,184,0.1)'},
+                        {bg:'rgba(180,120,60,0.06)',border:'rgba(180,120,60,0.15)',rank:'#b45a1f',rankBg:'rgba(180,120,60,0.1)'},
+                      ];
+                      const p = podiumColors[i];
+                      const rankLabels = ['1st','2nd','3rd'];
+                      return(
+                        <div key={athlete.id} className="flex items-center gap-4 rounded-2xl border p-4 transition"
+                          style={{background:p.bg,borderColor:p.border}}>
+                          {/* Rank badge */}
+                          <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl"
+                            style={{background:p.rankBg}}>
+                            <span className="text-[9px] font-black uppercase" style={{color:p.rank}}>{rankLabels[i]}</span>
+                          </div>
+                          {/* Avatar */}
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/8 text-[11px] font-black text-white">
+                            {(athlete.name||'?').split(' ')[0]?.[0]?.toUpperCase()||'?'}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-black text-white">
+                              {(athlete.name||'').split(' ')[0]||'Athlete'}
+                            </p>
+                            <p className="text-[11px] text-slate-500">{athlete.team}</p>
+                          </div>
+                          <div className="shrink-0 text-right">
+                            <p className="text-xl font-black" style={{color:board.accent}}>{athlete.score}</p>
+                            <p className="text-[10px] text-slate-600">
+                              {board.type==='gym'?`${athlete.attendanceRate}% att`:athlete.days===null?'No tests':`${athlete.days}d ago`}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Positions 4-10 — compact */}
+                    {board.data.slice(3).map((athlete: Row, i: number) => (
+                      <div key={athlete.id} className="flex items-center gap-3 rounded-xl border border-white/4 px-4 py-3 transition hover:bg-white/3"
+                        style={{background:'rgba(255,255,255,0.02)'}}>
+                        <span className="w-5 shrink-0 text-center text-[11px] font-black text-slate-600">{i+4}</span>
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/5 text-[9px] font-black text-slate-400">
+                          {(athlete.name||'?').split(' ')[0]?.[0]?.toUpperCase()||'?'}
                         </div>
                         <div className="min-w-0 flex-1">
-                          {/* Show first name only + team to protect student privacy */}
-                          <p className="truncate text-sm font-black text-white">
-                            {(athlete.name || '').split(' ')[0] || 'Athlete'}
+                          <p className="truncate text-[13px] font-semibold text-white">
+                            {(athlete.name||'').split(' ')[0]||'Athlete'}
                           </p>
-                          <p className="truncate text-xs text-slate-500">{athlete.team}</p>
+                          <p className="text-[10px] text-slate-600">{athlete.team}</p>
                         </div>
-                        <div className="shrink-0 text-right">
-                          <p className="text-lg font-black text-white">{athlete.score}</p>
-                          <p className="text-[10px] text-slate-600">
-                            {board.type === 'gym' ? `${athlete.attendanceRate}% att` : athlete.days === null ? 'No tests' : `${athlete.days}d ago`}
-                          </p>
-                        </div>
+                        <p className="shrink-0 text-sm font-black text-slate-300">{athlete.score}</p>
                       </div>
                     ))}
                   </div>
