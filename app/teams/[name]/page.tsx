@@ -8,409 +8,441 @@ import { supabase } from '@/lib/supabase';
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ name: string }> };
 
-function initials(name: string) { return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(); }
-function formatDate(d?: string | null) { if (!d) return '—'; const date = new Date(d); if (Number.isNaN(date.getTime())) return '—'; return date.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short' }); }
+function initials(n: string) { return n.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(); }
+function fDate(d?: string|null) {
+  if(!d) return '—';
+  return new Date(d).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+}
+function today() { return new Date().toISOString().split('T')[0]; }
+function weekAgo() { return new Date(Date.now()-30*86400000).toISOString().split('T')[0]; }
 
-const LOWER_IS_BETTER = ['Bronco', '10m Sprint', '30m Sprint', '505', 'RSA'];
+const AVAIL_OPTIONS = ['Available','Modified','Injured','Resting'];
+const AVAIL_STYLE: Record<string,{color:string;bg:string;border:string}> = {
+  'Available': {color:'#6ee7b7',bg:'rgba(16,185,129,0.10)',  border:'rgba(16,185,129,0.25)'},
+  'Modified':  {color:'#fde68a',bg:'rgba(251,191,36,0.10)',  border:'rgba(251,191,36,0.25)'},
+  'Injured':   {color:'#fca5a5',bg:'rgba(248,113,113,0.10)', border:'rgba(248,113,113,0.25)'},
+  'Resting':   {color:'#7dd3fc',bg:'rgba(56,189,248,0.10)',  border:'rgba(56,189,248,0.25)'},
+};
 
-export default function TeamDashboardPage({ params }: PageProps) {
-  const resolvedParams = React.use(params);
-  const teamName = decodeURIComponent(resolvedParams.name);
+const TEAM_GROUPS = [
+  { group:'Senior', accent:'#a78bfa', teams:['1sts','2nds','3rds','4ths','5ths'] },
+  { group:'U16',    accent:'#38bdf8', teams:['U16A','U16B','U16C','U16D','U16E'] },
+  { group:'U15',    accent:'#10b981', teams:['U15A','U15B','U15C','U15D','U15E'] },
+  { group:'U14',    accent:'#f59e0b', teams:['U14A','U14B','U14C','U14D','U14E'] },
+];
+function getAccent(team: string) { return TEAM_GROUPS.find(g=>g.teams.includes(team))?.accent||'#94a3b8'; }
+
+export default function TeamPage({ params }: PageProps) {
+  const { name: encodedName } = React.use(params);
+  const teamName = decodeURIComponent(encodedName);
+  const accent = getAccent(teamName);
+  const { showToast } = useToast();
 
   const [athletes, setAthletes] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
-  const [performance, setPerformance] = React.useState<Row[]>([]);
+  const [fixtures, setFixtures] = React.useState<Row[]>([]);
+  const [results, setResults] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [aiReport, setAiReport] = React.useState('');
-  const [generatingReport, setGeneratingReport] = React.useState(false);
+  const [tab, setTab] = React.useState<'squad'|'attendance'|'results'>('squad');
 
-  React.useEffect(() => {
-    async function load() {
-      const athRes = await supabase.from('athletes').select('*').eq('team', teamName).order('full_name');
-      const squad = athRes.data || [];
-      setAthletes(squad);
-      if (squad.length === 0) { setLoading(false); return; }
-      const ids = squad.map((a) => a.id);
-      const [attRes, perfRes] = await Promise.all([
-        supabase.from('attendance').select('*').in('athlete_id', ids).order('session_date', { ascending: false }).limit(500),
-        supabase.from('performance_tests').select('*').in('athlete_id', ids).order('test_date', { ascending: false }),
-      ]);
-      setAttendance(attRes.data || []);
-      setPerformance(perfRes.data || []);
-      setLoading(false);
-    }
-    load();
-  }, [teamName]);
+  // Availability editing
+  const [updatingId, setUpdatingId] = React.useState<string|null>(null);
 
-  // ── COMPUTED ──────────────────────────────────────────────
-  const available = athletes.filter((a) => !a.availability || a.availability === 'Available');
-  const injured = athletes.filter((a) => a.availability === 'Injured');
-  const modified = athletes.filter((a) => a.availability === 'Modified');
-  const resting = athletes.filter((a) => a.availability === 'Resting');
+  // Log Result modal
+  const [showLogResult, setShowLogResult] = React.useState(false);
+  const [resultDate, setResultDate] = React.useState(today);
+  const [resultOpponent, setResultOpponent] = React.useState('');
+  const [resultScore, setResultScore] = React.useState('');
+  const [resultScorers, setResultScorers] = React.useState<string[]>([]);
+  const [savingResult, setSavingResult] = React.useState(false);
 
-  const athleteAttendance = React.useMemo(() => {
-    return athletes.map((a: Row) => {
-      const att = attendance.filter((r) => r.athlete_id === a.id);
-      const total = att.length;
-      const present = att.filter((r) => ['present', 'late'].includes(r.status?.toLowerCase() || '')).length;
-      const absent = att.filter((r) => r.status?.toLowerCase() === 'absent').length;
-      const rate = total > 0 ? Math.round((present / total) * 100) : null;
-      const lastSession = att[0]?.session_date || null;
-      return { id: a.id as string, full_name: (a.full_name || '') as string, availability: (a.availability || 'Available') as string, position: (a.position || '') as string, total, present, absent, rate, lastSession };
-    });
-  }, [athletes, attendance]);
-
-  const teamAttRate = React.useMemo(() => {
-    const rates = athleteAttendance.filter((a) => a.rate !== null).map((a) => a.rate as number);
-    return rates.length > 0 ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : null;
-  }, [athleteAttendance]);
-
-  const lowAttendance = athleteAttendance.filter((a) => a.rate !== null && a.rate < 70);
-  const noData = athletes.filter((a) => !attendance.find((r) => r.athlete_id === a.id));
-
-  const athletePBs = React.useMemo(() => {
-    return athletes.map((a) => {
-      const perf = performance.filter((r) => r.athlete_id === a.id && r.value !== null);
-      const testTypes = Array.from(new Set(perf.map((r) => r.test_type)));
-      const pbs: Record<string, { value: number; unit: string }> = {};
-      testTypes.forEach((t) => {
-        const vals = perf.filter((r) => r.test_type === t);
-        const lower = LOWER_IS_BETTER.some((lt) => t.toLowerCase().includes(lt.toLowerCase()));
-        const best = lower ? vals.reduce((a, b) => a.value < b.value ? a : b) : vals.reduce((a, b) => a.value > b.value ? a : b);
-        pbs[t] = { value: best.value, unit: best.unit || '' };
-      });
-      return { ...a, full_name: a.full_name || a.name || '', pbs, testCount: perf.length };
-    });
-  }, [athletes, performance]);
-
-  const topAttendance = [...athleteAttendance].filter((a) => a.rate !== null).sort((a, b) => (b.rate || 0) - (a.rate || 0)).slice(0, 5);
-
-  const testTypes = React.useMemo(() => Array.from(new Set(performance.map((r) => r.test_type))).sort(), [performance]);
-
-  const teamAvgByTest = React.useMemo(() => {
-    const avgs: Record<string, { avg: number; unit: string }> = {};
-    testTypes.forEach((t) => {
-      const vals = performance.filter((r) => r.test_type === t && r.value !== null);
-      if (!vals.length) return;
-      avgs[t] = { avg: Math.round((vals.reduce((s, r) => s + r.value, 0) / vals.length) * 100) / 100, unit: vals[0].unit || '' };
-    });
-    return avgs;
-  }, [performance, testTypes]);
-
-  async function generateTeamReport() {
-    setGeneratingReport(true);
-    setAiReport('');
-
-    const injuredAthletes = athletes.filter((a) => a.availability === 'Injured');
-    const modifiedAthletes = athletes.filter((a) => a.availability === 'Modified');
-
-    const attData = athleteAttendance.filter((a) => a.rate !== null)
-      .sort((a, b) => (b.rate || 0) - (a.rate || 0));
-    const topAtt = attData.slice(0, 3).map((a) => ({ name: a.full_name, rate: a.rate }));
-    const lowAtt = attData.filter((a) => (a.rate || 0) < 70).map((a) => ({ name: a.full_name, rate: a.rate }));
-
-    const testAvgs = Object.entries(teamAvgByTest).map(([test, data]) => ({
-      test, avg: data.avg, unit: data.unit
-    }));
-
-    const topPerformers = athletePBs
-      .filter((a) => Object.keys(a.pbs).length > 0)
-      .slice(0, 3)
-      .map((a) => ({
-        name: a.full_name,
-        highlights: Object.entries(a.pbs).slice(0, 2).map(([t, v]) => `${t}: ${(v as any).value}${(v as any).unit}`).join(', ')
-      }));
-
-    const payload = {
-      team: {
-        name: teamName,
-        playerCount: athletes.length,
-        available: available.length,
-        injured: injuredAthletes.length,
-        modified: modifiedAthletes.length,
-        injuredNames: injuredAthletes.map((a) => a.full_name || a.name || ''),
-        modifiedNames: modifiedAthletes.map((a) => a.full_name || a.name || ''),
-        attendanceRate: teamAttRate,
-        lowAttendance: lowAtt,
-        topAttendance: topAtt,
-        testAverages: testAvgs,
-        topPerformers,
-      }
-    };
-
-    try {
-      const res = await fetch('/api/team-report', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      setAiReport(data.text || 'Could not generate report.');
-    } catch {
-      setAiReport('Connection error. Please try again.');
-    }
-    setGeneratingReport(false);
+  async function load() {
+    const athRes = await supabase.from('athletes').select('*').eq('team', teamName).order('full_name');
+    const squad = athRes.data || [];
+    setAthletes(squad);
+    if (squad.length === 0) { setLoading(false); return; }
+    const ids = squad.map(a => a.id);
+    const [attRes, fixRes, resRes] = await Promise.all([
+      supabase.from('attendance').select('*').in('athlete_id', ids).gte('session_date', weekAgo()).order('session_date', { ascending: false }),
+      supabase.from('portal_fixtures').select('*').eq('team', teamName).order('fixture_date').limit(5),
+      supabase.from('portal_results').select('*').eq('team', teamName).order('result_date', { ascending: false }).limit(10),
+    ]);
+    setAttendance(attRes.data || []);
+    setFixtures(fixRes.data || []);
+    setResults(resRes.data || []);
+    setLoading(false);
   }
 
+  React.useEffect(() => { load(); }, [teamName]);
+
+  const squad = React.useMemo(() =>
+    [...athletes].sort((a,b) => (a.full_name||'').split(' ').pop()!.localeCompare((b.full_name||'').split(' ').pop()!))
+  , [athletes]);
+
+  const available = squad.filter(a => !a.availability || a.availability === 'Available');
+  const unavailable = squad.filter(a => a.availability && a.availability !== 'Available');
+
+  async function setAvailability(athleteId: string, status: string) {
+    setUpdatingId(athleteId);
+    await supabase.from('athletes').update({ availability: status }).eq('id', athleteId);
+    setAthletes(prev => prev.map(a => a.id === athleteId ? { ...a, availability: status } : a));
+    setUpdatingId(null);
+    showToast(`Updated to ${status}`);
+  }
+
+  function toggleScorer(id: string) {
+    setResultScorers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  async function saveResult() {
+    if (!resultOpponent.trim() || !resultScore.trim()) {
+      showToast('Opponent and score are required', 'error'); return;
+    }
+    setSavingResult(true);
+    const scorerNames = resultScorers.map(id => squad.find(a => a.id === id)?.full_name || '').filter(Boolean).join(', ');
+    const { error } = await supabase.from('portal_results').insert([{
+      team: teamName,
+      opponent: resultOpponent.trim(),
+      result_date: resultDate,
+      final_score: resultScore.trim(),
+      goal_scorers: scorerNames,
+      is_published: true,
+    }]);
+    if (error) { showToast(`Error: ${error.message}`, 'error'); setSavingResult(false); return; }
+    showToast('Result logged ✓');
+    setShowLogResult(false);
+    setResultOpponent(''); setResultScore(''); setResultScorers([]);
+    await load();
+    setSavingResult(false);
+  }
+
+  // Attendance sessions grouped by date
+  const sessions = React.useMemo(() => {
+    const dates = [...new Set(attendance.map(a => a.session_date))].sort().reverse();
+    return dates.slice(0, 8).map(date => {
+      const recs = attendance.filter(a => a.session_date === date);
+      const present = recs.filter(r => ['present','late'].includes(r.status?.toLowerCase()||'')).length;
+      return { date, recs, present, total: recs.length, type: recs[0]?.session_type||'' };
+    });
+  }, [attendance]);
+
+  // Per-athlete attendance rate
+  const attMap = React.useMemo(() => {
+    const m: Record<string,number|null> = {};
+    squad.forEach(a => {
+      const recs = attendance.filter(r => r.athlete_id === a.id);
+      if (!recs.length) { m[a.id] = null; return; }
+      const p = recs.filter(r => ['present','late'].includes(r.status?.toLowerCase()||'')).length;
+      m[a.id] = Math.round((p/recs.length)*100);
+    });
+    return m;
+  }, [squad, attendance]);
+
+  const nextFixture = fixtures.find(f => f.fixture_date >= today());
+
   if (loading) return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
-      <div className="flex items-center gap-3">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-        <p className="text-sm text-slate-400">Loading team dashboard...</p>
-      </div>
+    <main className="min-h-screen bg-[#060812] flex items-center justify-center">
+      <div className="h-7 w-7 rounded-full border-2 border-slate-800 border-t-sky-500 animate-spin"/>
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-32 -left-16 h-80 w-80 rounded-full blur-[100px]" style={{background:`${accent}0a`}}/>
+      </div>
+      <div className="relative mx-auto max-w-3xl px-5 py-8 sm:px-8">
 
-        {/* Header */}
-        <div className="mb-8">
-          <Link href="/teams" className="mb-4 inline-block text-xs font-semibold text-slate-500 hover:text-slate-300">← Teams</Link>
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Team Dashboard</p>
-              <h1 className="mt-1 text-4xl font-black tracking-tight text-white">{teamName}</h1>
-              <p className="mt-1 text-sm text-slate-500">{athletes.length} players · 2026 Season</p>
+        {/* ── HEADER ── */}
+        <div className="mb-6">
+          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-400 transition mb-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+            Dashboard
+          </Link>
+          <div className="rounded-2xl border border-white/6 p-6 relative overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="absolute inset-0" style={{background:`radial-gradient(ellipse at 0% 50%, ${accent}0e, transparent 60%)`}}/>
+            <div className="relative flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">Hockey</p>
+                <h1 className="text-5xl font-black tracking-tight leading-none" style={{color:accent}}>{teamName}</h1>
+                <p className="mt-2 text-sm text-slate-400">{squad.length} players · {available.length} available</p>
+              </div>
+              <div className="flex flex-col gap-2 items-end">
+                <Link href="/attendance"
+                  className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-black transition"
+                  style={{background:`${accent}15`,color:accent,border:`1px solid ${accent}30`}}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                  Take Register
+                </Link>
+                <button onClick={() => setShowLogResult(true)}
+                  className="flex items-center gap-2 rounded-xl border border-white/8 px-4 py-2.5 text-xs font-black text-slate-300 hover:bg-white/5 transition"
+                  style={{background:'rgba(255,255,255,0.03)'}}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M12 5v14M5 12h14"/></svg>
+                  Log Result
+                </button>
+              </div>
             </div>
-            <Link href={`/attendance`} className="shrink-0 rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm font-black text-sky-300 hover:bg-sky-500/20 transition">
-              Mark Attendance →
-            </Link>
+
+            {/* Next fixture strip */}
+            {nextFixture && (
+              <div className="relative mt-5 pt-5 border-t border-white/5 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">Next Match</p>
+                  <p className="text-sm font-black text-white mt-0.5">vs {nextFixture.opponent}</p>
+                  <p className="text-[11px] text-slate-500">{fDate(nextFixture.fixture_date)}{nextFixture.fixture_time && ` · ${nextFixture.fixture_time}`}{nextFixture.venue && ` · ${nextFixture.venue}`}</p>
+                </div>
+                <div className="text-3xl font-black" style={{color:accent}}>
+                  {Math.max(0, Math.ceil((new Date(nextFixture.fixture_date).getTime() - Date.now()) / 86400000))}
+                  <span className="text-base font-semibold text-slate-600">d</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {athletes.length === 0 ? (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-4xl mb-3"></p>
-            <p className="text-lg font-black text-white">No players assigned</p>
-            <p className="mt-2 text-sm text-slate-500">Go to the Squad Board to assign players to this team.</p>
-            <Link href="/squad" className="mt-4 inline-block rounded-xl border border-sky-500 bg-sky-500/15 px-5 py-2.5 text-sm font-black text-sky-300">Open Squad Board →</Link>
+        {/* ── TABS ── */}
+        <div className="mb-5 flex rounded-2xl border border-white/5 p-1" style={{background:'rgba(255,255,255,0.02)'}}>
+          {([['squad','Squad'],['attendance','Attendance'],['results','Results']] as const).map(([key,label]) => (
+            <button key={key} onClick={() => setTab(key)}
+              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${tab===key?'bg-white/8 text-white':'text-slate-500 hover:text-slate-300'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* ══ SQUAD TAB ══ */}
+        {tab === 'squad' && (
+          <div className="space-y-4">
+
+            {/* Available */}
+            <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+              <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Available</p>
+                <span className="text-[11px] font-semibold text-emerald-400">{available.length} players</span>
+              </div>
+              <div className="divide-y divide-white/3">
+                {available.map(a => (
+                  <div key={a.id} className="flex items-center gap-4 px-5 py-3.5 group hover:bg-white/2 transition">
+                    <Link href={`/athletes/${a.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black text-white/60"
+                        style={{background:`${accent}15`}}>
+                        {initials(a.full_name||'?')}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
+                        {a.position && <p className="text-[10px] text-slate-600">{a.position}</p>}
+                      </div>
+                    </Link>
+                    {attMap[a.id] !== null && attMap[a.id] !== undefined && (
+                      <span className="shrink-0 text-[11px] font-semibold" style={{color:attMap[a.id]!>=80?'#6ee7b7':attMap[a.id]!>=60?'#fde68a':'#fca5a5'}}>
+                        {attMap[a.id]}%
+                      </span>
+                    )}
+                    {/* Availability quick-change */}
+                    <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      {['Modified','Injured','Resting'].map(s => {
+                        const st = AVAIL_STYLE[s];
+                        return (
+                          <button key={s} onClick={() => setAvailability(a.id, s)}
+                            disabled={updatingId === a.id}
+                            className="rounded-lg px-2 py-1 text-[9px] font-black transition"
+                            style={{background:st.bg,color:st.color,border:`1px solid ${st.border}`}}>
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {available.length === 0 && (
+                  <p className="px-5 py-6 text-sm text-slate-600 text-center">No available players.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Unavailable */}
+            {unavailable.length > 0 && (
+              <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+                <div className="px-5 py-3 border-b border-white/5">
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Unavailable / Modified</p>
+                </div>
+                <div className="divide-y divide-white/3">
+                  {unavailable.map(a => {
+                    const st = AVAIL_STYLE[a.availability] || AVAIL_STYLE['Available'];
+                    return (
+                      <div key={a.id} className="flex items-center gap-4 px-5 py-3.5 group hover:bg-white/2 transition">
+                        <Link href={`/athletes/${a.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black"
+                            style={{background:st.bg,color:st.color}}>
+                            {initials(a.full_name||'?')}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
+                            <span className="text-[10px] font-semibold" style={{color:st.color}}>{a.availability}</span>
+                          </div>
+                        </Link>
+                        <button onClick={() => setAvailability(a.id, 'Available')} disabled={updatingId === a.id}
+                          className="shrink-0 rounded-xl border border-white/8 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition opacity-0 group-hover:opacity-100">
+                          Mark Available
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <>
-            {/* KPI row */}
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-              {[
-                { label: 'Squad Size', value: athletes.length, color: 'sky' },
-                { label: 'Available', value: available.length, color: 'emerald' },
-                { label: 'Injured', value: injured.length, color: 'red' },
-                { label: 'Modified', value: modified.length, color: 'amber' },
-                { label: 'Att Rate', value: teamAttRate !== null ? `${teamAttRate}%` : '—', color: teamAttRate === null ? 'slate' : teamAttRate >= 80 ? 'emerald' : teamAttRate >= 60 ? 'amber' : 'red' },
-                { label: 'Test Records', value: performance.length, color: 'violet' },
-              ].map((kpi) => (
-                <div key={kpi.label} className={`rounded-2xl border bg-slate-900 p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : kpi.color === 'amber' ? 'border-amber-500/20' : kpi.color === 'violet' ? 'border-violet-500/20' : 'border-slate-800'}`}>
-                  <p className={`text-2xl font-black sm:text-3xl ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : kpi.color === 'amber' ? 'text-amber-400' : kpi.color === 'violet' ? 'text-violet-400' : 'text-white'}`}>{kpi.value}</p>
-                  <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* AI Team Report */}
-            <div className="mb-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 p-5">
-              <div className="flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">AI Intelligence</p>
-                  <h2 className="mt-0.5 text-lg font-black text-white">Team Report</h2>
-                  <p className="text-xs text-slate-500">AI-generated from live squad data</p>
-                </div>
-                <button onClick={generateTeamReport} disabled={generatingReport}
-                  className="shrink-0 rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 disabled:opacity-50 transition flex items-center gap-2">
-                  {generatingReport ? (
-                    <><div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" /> Generating...</>
-                  ) : (
-                    <>{aiReport ? 'Regenerate Report' : 'Generate Team Report'}</>
-                  )}
-                </button>
-              </div>
-              {aiReport && (
-                <div className="mt-4 rounded-xl border border-violet-500/15 bg-slate-950/50 p-4 space-y-3">
-                  {aiReport.split('\n').filter(Boolean).map((line, i) => (
-                    <p key={i} className={`text-sm leading-relaxed ${line.match(/^[0-9]\.|^[A-Z\s]+:/) ? 'font-black text-violet-300 mt-2' : 'text-slate-200'}`}>
-                      {line}
-                    </p>
-                  ))}
-                  <button onClick={() => { navigator.clipboard.writeText(aiReport); }}
-                    className="mt-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">
-                    Copy Report
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-
-              {/* LEFT — Main content */}
-              <div className="space-y-6 xl:col-span-2">
-
-                {/* Availability Board */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                  <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Readiness</p><h2 className="mt-0.5 text-lg font-black text-white">Availability Board</h2></div>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Available', athletes: available, color: 'emerald',
-                        icon: <span className="inline-block h-2 w-2 rounded-full bg-emerald-400"/> },
-                      { label: 'Modified', athletes: modified, color: 'amber',
-                        icon: <span className="inline-block h-2 w-2 rounded-full bg-amber-400"/> },
-                      { label: 'Injured', athletes: injured, color: 'red',
-                        icon: <span className="inline-block h-2 w-2 rounded-full bg-red-400"/> },
-                      { label: 'Resting', athletes: resting, color: 'sky',
-                        icon: <span className="inline-block h-2 w-2 rounded-full bg-slate-400"/> },
-                    ].filter((g) => g.athletes.length > 0).map((group) => (
-                      <div key={group.label}>
-                        <p className={`mb-2 text-xs font-black uppercase tracking-wide ${group.color === 'emerald' ? 'text-emerald-400' : group.color === 'amber' ? 'text-amber-400' : group.color === 'red' ? 'text-red-400' : 'text-sky-400'}`}>
-                          {group.icon} {group.label} ({group.athletes.length})
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {group.athletes.map((a) => (
-                            <Link key={a.id} href={`/athletes/${a.id}`}
-                              className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-semibold transition hover:scale-[1.02] ${group.color === 'emerald' ? 'border-emerald-500/20 bg-emerald-500/5 text-emerald-300' : group.color === 'amber' ? 'border-amber-500/20 bg-amber-500/5 text-amber-300' : group.color === 'red' ? 'border-red-500/20 bg-red-500/5 text-red-300' : 'border-sky-500/20 bg-sky-500/5 text-sky-300'}`}>
-                              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || '?')}</span>
-                              {a.full_name}
-                            </Link>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Attendance Intelligence */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                  <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">Commitment</p><h2 className="mt-0.5 text-lg font-black text-white">Attendance Intelligence</h2></div>
-
-                  {/* Team rate bar */}
-                  {teamAttRate !== null && (
-                    <div className="mb-5 rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                      <div className="mb-1.5 flex justify-between text-sm">
-                        <span className="font-semibold text-slate-300">Team Attendance Rate</span>
-                        <span className={`font-black ${teamAttRate >= 80 ? 'text-emerald-400' : teamAttRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{teamAttRate}%</span>
-                      </div>
-                      <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
-                        <div className={`h-full rounded-full ${teamAttRate >= 80 ? 'bg-emerald-500' : teamAttRate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${teamAttRate}%` }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Alerts */}
-                  {lowAttendance.length > 0 && (
-                    <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 p-4">
-                      <p className="mb-2 text-xs font-black uppercase tracking-wide text-red-400">Attention Required</p>
-                      <div className="space-y-1.5">
-                        {lowAttendance.map((a) => (
-                          <div key={a.id} className="flex items-center justify-between">
-                            <Link href={`/athletes/${a.id}`} className="text-sm text-red-200 hover:text-white">{a.full_name}</Link>
-                            <span className="rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-black text-red-300">{a.rate ?? 0}%</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Individual attendance */}
-                  <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
-                    {athleteAttendance.sort((a, b) => (b.rate || 0) - (a.rate || 0)).map((a) => (
-                      <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-400">{initials(a.full_name || '?')}</div>
-                        <div className="min-w-0 flex-1">
-                          <Link href={`/athletes/${a.id}`} className="text-sm font-semibold text-white hover:text-sky-300 truncate block">{a.full_name}</Link>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {a.rate !== null ? (
-                              <div className="flex items-center gap-1.5 flex-1">
-                                <div className="h-1 flex-1 overflow-hidden rounded-full bg-slate-800 max-w-20">
-                                  <div className={`h-full rounded-full ${(a.rate ?? 0) >= 80 ? 'bg-emerald-500' : (a.rate ?? 0) >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${a.rate ?? 0}%` }} />
-                                </div>
-                                <span className={`text-[10px] font-black ${(a.rate ?? 0) >= 80 ? 'text-emerald-400' : (a.rate ?? 0) >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{a.rate ?? 0}%</span>
-                              </div>
-                            ) : <span className="text-[10px] text-slate-600">No data</span>}
-                          </div>
-                        </div>
-                        <span className="shrink-0 text-[10px] text-slate-600">{a.total} sessions</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Team Performance Averages */}
-                {Object.keys(teamAvgByTest).length > 0 && (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                    <div className="mb-5"><p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Team Performance</p><h2 className="mt-0.5 text-lg font-black text-white">Average Test Results</h2></div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {Object.entries(teamAvgByTest).map(([test, data]) => (
-                        <div key={test} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                          <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{test}</p>
-                          <p className="mt-1 text-2xl font-black text-white">{data.avg}{data.unit}</p>
-                          <p className="mt-0.5 text-[10px] text-slate-600">Team average</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT — Squad list + leaderboard */}
-              <div className="space-y-6">
-
-                {/* Full squad */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                  <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Squad</p><h2 className="mt-0.5 text-lg font-black text-white">{athletes.length} Players</h2></div>
-                  <div className="space-y-1.5 max-h-96 overflow-y-auto pr-1">
-                    {athletes.map((a) => {
-                      const avStatus = a.availability || 'Available';
-                      const dot = avStatus === 'Available' ? 'bg-emerald-500' : avStatus === 'Injured' ? 'bg-red-500' : avStatus === 'Modified' ? 'bg-amber-500' : 'bg-sky-500';
-                      return (
-                        <Link key={a.id} href={`/athletes/${a.id}`}
-                          className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 hover:border-slate-600 transition">
-                          <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
-                            {initials(a.full_name || '?')}
-                            <div className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border border-slate-950 ${dot}`} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-semibold text-white">{a.full_name}</p>
-                            <p className="text-[10px] text-slate-500">{a.position || a.age_group || '—'}</p>
-                          </div>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 shrink-0 text-slate-600"><path d="M9 18l6-6-6-6"/></svg>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Attendance leaderboard */}
-                {topAttendance.length > 0 && (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                    <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Leaderboard</p><h2 className="mt-0.5 text-lg font-black text-white">Top Attendance</h2></div>
-                    <div className="space-y-2">
-                      {topAttendance.map((a, i) => (
-                        <div key={a.id} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${i === 0 ? 'bg-amber-500/20 text-amber-300' : i === 1 ? 'bg-slate-700 text-slate-300' : i === 2 ? 'bg-orange-500/20 text-orange-300' : 'bg-slate-800 text-slate-500'}`}>{i + 1}</span>
-                          <Link href={`/athletes/${a.id}`} className="flex-1 text-sm font-semibold text-white hover:text-sky-300 truncate">{a.full_name}</Link>
-                          <span className={`text-sm font-black ${(a.rate ?? 0) >= 90 ? 'text-emerald-400' : (a.rate ?? 0) >= 80 ? 'text-sky-400' : 'text-amber-400'}`}>{a.rate ?? 0}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* No data alert */}
-                {noData.length > 0 && (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-                    <div className="mb-4"><p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Missing Data</p><h2 className="mt-0.5 text-lg font-black text-white">No Records Yet</h2></div>
-                    <div className="space-y-1.5">
-                      {noData.map((a) => (
-                        <Link key={a.id} href={`/athletes/${a.id}`} className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/40 p-2.5 hover:border-slate-600 transition">
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-500">{initials(a.full_name || '?')}</div>
-                          <p className="text-sm text-slate-400">{a.full_name}</p>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
         )}
+
+        {/* ══ ATTENDANCE TAB ══ */}
+        {tab === 'attendance' && (
+          <div className="space-y-3">
+            {sessions.length === 0 ? (
+              <div className="rounded-2xl border border-white/5 py-12 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
+                <p className="text-sm text-slate-600">No sessions recorded yet.</p>
+              </div>
+            ) : sessions.map(s => (
+              <div key={s.date} className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+                <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
+                  <div>
+                    <p className="text-sm font-black text-white">{fDate(s.date)}</p>
+                    {s.type && <p className="text-[10px] text-slate-600">{s.type}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {s.present < s.total && (
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{background:'rgba(248,113,113,0.08)',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.15)'}}>
+                        {s.total - s.present} absent
+                      </span>
+                    )}
+                    <span className="rounded-full px-2.5 py-0.5 text-[11px] font-black" style={{background:'rgba(16,185,129,0.08)',color:'#6ee7b7',border:'1px solid rgba(16,185,129,0.15)'}}>
+                      {s.present}/{s.total}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1.5 px-5 py-3">
+                  {s.recs.map(r => {
+                    const a = squad.find(x => x.id === r.athlete_id);
+                    const surname = (a?.full_name||'?').trim().split(' ').pop()||'?';
+                    const statusLow = r.status?.toLowerCase()||'';
+                    const statusColor = statusLow==='present'?'#6ee7b7':statusLow==='late'?'#fde68a':statusLow==='absent'?'#fca5a5':'#7dd3fc';
+                    const statusBg = statusLow==='present'?'rgba(16,185,129,0.08)':statusLow==='late'?'rgba(251,191,36,0.08)':statusLow==='absent'?'rgba(248,113,113,0.08)':'rgba(56,189,248,0.08)';
+                    return (
+                      <span key={r.id} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                        style={{background:statusBg,color:statusColor,border:`1px solid ${statusColor}30`}}>
+                        {surname}
+                        {r.status?.toLowerCase() !== 'present' && <span className="ml-1 opacity-60">· {r.status?.[0]?.toUpperCase()}</span>}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ══ RESULTS TAB ══ */}
+        {tab === 'results' && (
+          <div className="space-y-3">
+            <button onClick={() => setShowLogResult(true)}
+              className="w-full rounded-2xl border border-white/8 py-4 text-sm font-black text-white hover:bg-white/4 transition flex items-center justify-center gap-2"
+              style={{background:'rgba(255,255,255,0.02)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>
+              Log Match Result
+            </button>
+            {results.length === 0 ? (
+              <div className="rounded-2xl border border-white/5 py-10 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
+                <p className="text-sm text-slate-600">No results logged yet.</p>
+              </div>
+            ) : results.map(r => (
+              <div key={r.id} className="rounded-2xl border border-white/5 p-5" style={{background:'rgba(255,255,255,0.02)'}}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[10px] text-slate-600">{fDate(r.result_date)}</p>
+                    <p className="text-base font-black text-white mt-0.5">vs {r.opponent}</p>
+                    {r.goal_scorers && (
+                      <p className="text-[11px] text-slate-500 mt-1">Scorers: {r.goal_scorers}</p>
+                    )}
+                  </div>
+                  <p className="shrink-0 text-2xl font-black" style={{color:accent}}>{r.final_score}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
+
+      {/* ── LOG RESULT MODAL ── */}
+      {showLogResult && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4" onClick={() => setShowLogResult(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"/>
+          <div className="relative w-full max-w-md rounded-2xl border border-white/10 p-6 shadow-2xl z-10"
+            style={{background:'#0a0d1a'}}
+            onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-600">Match Result</p>
+                <h2 className="text-xl font-black text-white mt-0.5">{teamName}</h2>
+              </div>
+              <button onClick={() => setShowLogResult(false)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 text-slate-500 hover:text-white transition">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Date</label>
+                  <input type="date" value={resultDate} onChange={e => setResultDate(e.target.value)}
+                    className="w-full rounded-xl border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition"/>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Score</label>
+                  <input value={resultScore} onChange={e => setResultScore(e.target.value)} placeholder="e.g. 2-1"
+                    className="w-full rounded-xl border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition"/>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Opponent</label>
+                <input value={resultOpponent} onChange={e => setResultOpponent(e.target.value)} placeholder="e.g. St Stithians"
+                  className="w-full rounded-xl border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition"/>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-wide text-slate-600">Goal Scorers (tap to select)</label>
+                <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
+                  {squad.filter(a => !a.availability || a.availability === 'Available').map(a => {
+                    const sel = resultScorers.includes(a.id);
+                    return (
+                      <button key={a.id} onClick={() => toggleScorer(a.id)}
+                        className="rounded-xl border px-3 py-1.5 text-xs font-semibold transition"
+                        style={{
+                          background: sel ? `${accent}18` : 'rgba(255,255,255,0.03)',
+                          color: sel ? accent : '#64748b',
+                          border: `1px solid ${sel ? `${accent}40` : 'rgba(255,255,255,0.08)'}`,
+                        }}>
+                        {(a.full_name||'').split(' ').pop()}
+                      </button>
+                    );
+                  })}
+                </div>
+                {resultScorers.length > 0 && (
+                  <p className="mt-2 text-[11px]" style={{color:accent}}>
+                    {resultScorers.map(id => squad.find(a=>a.id===id)?.full_name?.split(' ').pop()).join(', ')}
+                  </p>
+                )}
+              </div>
+
+              <button onClick={saveResult} disabled={savingResult || !resultOpponent.trim() || !resultScore.trim()}
+                className="w-full rounded-xl py-3 text-sm font-black transition disabled:opacity-40"
+                style={{background:`${accent}18`,color:accent,border:`1px solid ${accent}30`}}>
+                {savingResult ? 'Saving…' : 'Save Result → appears on portal automatically'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
