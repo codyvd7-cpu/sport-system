@@ -490,7 +490,6 @@ export default function PortalPage() {
 
                 {loadingLeaderboards ? <Skeleton /> : board.data.length === 0 ? <Empty text="No data yet." /> : (
                   <div className="space-y-2">
-                    {/* Top 3 podium */}
                     {board.data.slice(0,3).map((athlete: Row, i: number) => {
                       const podiumColors = [
                         {bg:'rgba(251,191,36,0.08)',border:'rgba(251,191,36,0.2)',rank:'#fbbf24',rankBg:'rgba(251,191,36,0.15)'},
@@ -527,23 +526,6 @@ export default function PortalPage() {
                       );
                     })}
 
-                    {/* Positions 4-10 — compact */}
-                    {board.data.slice(3).map((athlete: Row, i: number) => (
-                      <div key={athlete.id} className="flex items-center gap-3 rounded-xl border border-white/4 px-4 py-3 transition hover:bg-white/3"
-                        style={{background:'rgba(255,255,255,0.02)'}}>
-                        <span className="w-5 shrink-0 text-center text-[11px] font-black text-slate-600">{i+4}</span>
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/5 text-[9px] font-black text-slate-400">
-                          {(athlete.name||'?').split(' ')[0]?.[0]?.toUpperCase()||'?'}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-semibold text-white">
-                            {(athlete.name||'').split(' ')[0]||'Athlete'}
-                          </p>
-                          <p className="text-[10px] text-slate-600">{athlete.team}</p>
-                        </div>
-                        <p className="shrink-0 text-sm font-black text-slate-300">{athlete.score}</p>
-                      </div>
-                    ))}
                   </div>
                 )}
               </div>
