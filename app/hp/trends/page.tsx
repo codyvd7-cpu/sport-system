@@ -139,19 +139,27 @@ export default function HPTrendsPage(){
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-fade-in">
 
         {/* ── HEADER ── */}
-        <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">High Performance</p>
-          <h1 className="mt-1 text-3xl font-black text-white">Trends</h1>
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-400">High Performance</p>
+            <h1 className="mt-0.5 text-3xl font-black text-white tracking-tight">Trends</h1>
+          </div>
         </div>
 
         {/* ── CONTROL BAR ── */}
         <div className="mb-6 flex flex-wrap gap-2">
-          {/* Year */}
-          <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
-            {[selYear-1,selYear].map(y=>(
-              <button key={y} onClick={()=>{setSelYear(y);setSelClass(null);setSelTest(null);}}
-                className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${selYear===y?'bg-slate-700 text-white':'text-slate-500 hover:text-white'}`}>{y}</button>
-            ))}
+          {/* Year navigator */}
+          <div className="flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900 p-1">
+            <button onClick={()=>{setSelYear(y=>y-1);setSelClass(null);setSelTest(null);}}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span className="px-2 text-sm font-black text-white">{selYear}</span>
+            <button onClick={()=>{setSelYear(y=>Math.min(y+1,new Date().getFullYear()));setSelClass(null);setSelTest(null);}}
+              disabled={selYear>=new Date().getFullYear()}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white transition disabled:opacity-30 disabled:cursor-not-allowed">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
           </div>
           {/* Grade */}
           <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
