@@ -322,14 +322,14 @@ export default function TeamPage({ params }: PageProps) {
                 <div className="flex flex-wrap gap-1.5 px-5 py-3">
                   {s.recs.map(r => {
                     const a = squad.find(x => x.id === r.athlete_id);
-                    const surname = (a?.full_name||'?').trim().split(' ').pop()||'?';
+                    const displayName = a?.full_name || '?';
                     const statusLow = r.status?.toLowerCase()||'';
                     const statusColor = statusLow==='present'?'#6ee7b7':statusLow==='late'?'#fde68a':statusLow==='absent'?'#fca5a5':'#7dd3fc';
                     const statusBg = statusLow==='present'?'rgba(16,185,129,0.08)':statusLow==='late'?'rgba(251,191,36,0.08)':statusLow==='absent'?'rgba(248,113,113,0.08)':'rgba(56,189,248,0.08)';
                     return (
                       <span key={r.id} className="rounded-full px-2.5 py-1 text-[10px] font-semibold"
                         style={{background:statusBg,color:statusColor,border:`1px solid ${statusColor}30`}}>
-                        {surname}
+                        {displayName}
                         {r.status?.toLowerCase() !== 'present' && <span className="ml-1 opacity-60">· {r.status?.[0]?.toUpperCase()}</span>}
                       </span>
                     );
@@ -422,14 +422,14 @@ export default function TeamPage({ params }: PageProps) {
                           color: sel ? accent : '#64748b',
                           border: `1px solid ${sel ? `${accent}40` : 'rgba(255,255,255,0.08)'}`,
                         }}>
-                        {(a.full_name||'').split(' ').pop()}
+                        {a.full_name}
                       </button>
                     );
                   })}
                 </div>
                 {resultScorers.length > 0 && (
                   <p className="mt-2 text-[11px]" style={{color:accent}}>
-                    {resultScorers.map(id => squad.find(a=>a.id===id)?.full_name?.split(' ').pop()).join(', ')}
+                    {resultScorers.map(id => squad.find(a=>a.id===id)?.full_name).join(', ')}
                   </p>
                 )}
               </div>
