@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     // Send invite email
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email.trim().toLowerCase(), {
       data: { role, full_name: name },
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sport-system-rosy.vercel.app'}/login`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://sport-system-rosy.vercel.app'}/set-password`,
     });
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
