@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
-import { generateSecurePassword } from '@/lib/uuid';
 import { useToast } from '@/components/Toast';
 
 type Coach = { id: string; email: string; full_name: string; role: string; teams?: string[]; is_active?: boolean };
@@ -40,32 +39,37 @@ export default function CoachesPage() {
     if (inviteRole === 'coach' && inviteTeams.length === 0) { showToast('Assign at least one team to this coach.', 'error'); return; }
     setInviting(true);
 
-    const { data, error } = await supabase.auth.signUp({
-      email: inviteEmail.trim().toLowerCase(),
-      password: generateSecurePassword(),
-      options: {
-        data: { role: inviteRole, full_name: inviteName.trim() },
-        emailRedirectTo: `${window.location.origin}/login`,
-      },
-    });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
 
-    if (error) { showToast(`Invite failed: ${error.message}`, 'error'); setInviting(false); return; }
+      const res = await fetch('/api/admin/invite-coach', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          email: inviteEmail.trim().toLowerCase(),
+          name: inviteName.trim(),
+          role: inviteRole,
+          teams: inviteRole === 'head_of_hockey' ? [] : inviteTeams,
+        }),
+      });
 
-    // Upsert into staff_roles with teams array
-    const { error: dbErr } = await supabase.from('staff_roles').upsert([{
-      id: data.user?.id,
-      email: inviteEmail.trim().toLowerCase(),
-      role: inviteRole,
-      teams: inviteRole === 'head_of_hockey' ? [] : inviteTeams,
-      is_active: true,
-    }], { onConflict: 'email' });
+      const result = await res.json();
+      if (!res.ok) {
+        showToast(`Failed: ${result.error}`, 'error');
+      } else {
+        showToast(`Invite sent to ${inviteEmail} ✓`);
+        setInviteEmail(''); setInviteName(''); setInviteTeams([]); setInviteRole('coach');
+        load();
+      }
+    } catch (e: any) {
+      showToast(`Error: ${e.message}`, 'error');
+    }
 
-    if (dbErr) showToast(`Invite sent but record failed: ${dbErr.message}`, 'error');
-    else showToast(`Invite sent to ${inviteEmail} ✓`);
-
-    setInviteEmail(''); setInviteName(''); setInviteTeams([]); setInviteRole('coach');
     setInviting(false);
-    load();
   }
 
   async function removeCoach(id: string, name: string) {
