@@ -27,6 +27,16 @@ function LoginForm() {
 
   useEffect(() => {
     async function checkExistingSession() {
+      // Check for invite token in URL hash
+      if (typeof window !== 'undefined' && window.location.hash) {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const type = params.get('type');
+        if (type === 'invite' || type === 'recovery') {
+          router.replace('/set-password');
+          return;
+        }
+      }
       const { data } = await supabase.auth.getSession();
       if (data.session) { window.location.href = redirectTo; return; }
       setCheckingSession(false);
