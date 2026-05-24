@@ -269,81 +269,130 @@ function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams }: {
     });
 
   const total = athletes.length;
-  const injured = athletes.filter(a => a.availability === 'Injured').length;
-  const modified = athletes.filter(a => a.availability === 'Modified').length;
+  const injured = athletes.filter(a => a.availability === 'Injured');
+  const modified = athletes.filter(a => a.availability === 'Modified');
+  const resting = athletes.filter(a => a.availability === 'Resting');
+  const unavailable = [...injured, ...modified, ...resting];
+
+  // Teams with low attendance
+  const lowAtt = teamCards.filter(t => t.rate !== null && t.rate < 70);
+
+  const today = new Date().toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long' });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
+
+      {/* Header */}
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">Overview</p>
-        <h1 className="text-4xl font-black text-white leading-none tracking-tight">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'})}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">Head of Hockey</p>
+        <h1 className="text-3xl font-black text-white leading-tight tracking-tight">Programme Overview</h1>
+        <p className="mt-1 text-sm text-slate-500">{today}</p>
       </div>
 
-      {/* Stat strip */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Top stats - what HOH needs at a glance */}
+      <div className="grid grid-cols-4 gap-2">
         {[
-          {label:'Squad',   val:total,    color:'#fff'},
-          {label:'Injured', val:injured,  color:injured>0?'#f87171':'#334155'},
-          {label:'Modified',val:modified, color:modified>0?'#fbbf24':'#334155'},
+          { label:'Total Squad',  val:total,              color:'#fff'    },
+          { label:'Injured',      val:injured.length,     color: injured.length>0?'#f87171':'#334155'  },
+          { label:'Modified',     val:modified.length,    color: modified.length>0?'#fbbf24':'#334155' },
+          { label:'Teams Active', val:teamCards.length,   color:'#38bdf8' },
         ].map(s => (
-          <div key={s.label} className="rounded-2xl border border-white/5 p-4 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
+          <div key={s.label} className="rounded-2xl border border-white/5 p-3 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
             <p className="text-2xl font-black" style={{color:s.color}}>{s.val}</p>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-600 mt-0.5">{s.label}</p>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-600 mt-0.5 leading-tight">{s.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Alerts */}
-      {(injured > 0 || modified > 0) && (
-        <div className="rounded-2xl border p-4 space-y-2" style={{borderColor:'rgba(248,113,113,0.15)',background:'rgba(248,113,113,0.04)'}}>
-          <div className="flex items-center gap-2">
+      {/* Unavailable players - most critical info */}
+      {unavailable.length > 0 && (
+        <div className="rounded-2xl border p-4" style={{borderColor:'rgba(248,113,113,0.15)',background:'rgba(248,113,113,0.04)'}}>
+          <div className="flex items-center gap-2 mb-3">
             <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse"/>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">Unavailable</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400">Unavailable Players</p>
+            <span className="ml-auto text-[10px] text-slate-600">{unavailable.length} total</span>
           </div>
           <div className="flex flex-wrap gap-2">
-            {athletes.filter(a => a.availability === 'Injured' || a.availability === 'Modified').map(a => (
-              <Link key={a.id} href={`/athletes/${a.id}`}
+            {unavailable.map(a => {
+              const isInj = a.availability === 'Injured';
+              const isMod = a.availability === 'Modified';
+              const color = isInj ? {bg:'rgba(248,113,113,0.08)',color:'#fca5a5',border:'rgba(248,113,113,0.2)'}
+                : isMod ? {bg:'rgba(251,191,36,0.08)',color:'#fde68a',border:'rgba(251,191,36,0.2)'}
+                : {bg:'rgba(56,189,248,0.08)',color:'#7dd3fc',border:'rgba(56,189,248,0.2)'};
+              return (
+                <Link key={a.id} href={`/athletes/${a.id}`}
+                  className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition hover:opacity-80"
+                  style={{background:color.bg,color:color.color,border:`1px solid ${color.border}`}}>
+                  {a.full_name?.split(' ').pop()} <span className="opacity-50">· {a.team} · {a.availability}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Low attendance warning */}
+      {lowAtt.length > 0 && (
+        <div className="rounded-2xl border p-4" style={{borderColor:'rgba(251,191,36,0.15)',background:'rgba(251,191,36,0.04)'}}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-amber-400"/>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">Low Attendance (7 days)</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {lowAtt.map(t => (
+              <Link key={t.team} href={`/teams/${t.team}`}
                 className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold"
-                style={{
-                  background: a.availability==='Injured'?'rgba(248,113,113,0.08)':'rgba(251,191,36,0.08)',
-                  color: a.availability==='Injured'?'#fca5a5':'#fde68a',
-                  border: `1px solid ${a.availability==='Injured'?'rgba(248,113,113,0.2)':'rgba(251,191,36,0.2)'}`,
-                }}>
-                {a.full_name?.split(' ').pop()} · {a.team}
+                style={{background:'rgba(251,191,36,0.08)',color:'#fde68a',border:'1px solid rgba(251,191,36,0.2)'}}>
+                {t.team} <span className="opacity-60">· {t.rate}%</span>
               </Link>
             ))}
           </div>
         </div>
       )}
 
-      {/* Team cards */}
+      {/* HOH quick actions */}
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        {[
+          {label:'Attendance', href:'/attendance',     color:'#10b981', icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
+          {label:'Performance',href:'/performance',    color:'#a78bfa', icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
+          {label:'Athletes',   href:'/athletes',       color:'#38bdf8', icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>},
+          {label:'Coaches',    href:'/coaches',        color:'#f59e0b', icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>},
+          {label:'Portal',     href:'/portal-admin',   color:'#f87171', icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>},
+          {label:'Export',     href:'/export/attendance', color:'#94a3b8', icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>},
+        ].map(a => (
+          <Link key={a.href} href={a.href}
+            className="group flex flex-col items-center gap-2 rounded-2xl border border-white/5 p-3 text-center transition hover:-translate-y-0.5 hover:border-white/10"
+            style={{background:'rgba(255,255,255,0.02)'}}>
+            <div style={{color:a.color}}>{a.icon}</div>
+            <p className="text-[10px] font-black text-slate-400 group-hover:text-white transition leading-tight">{a.label}</p>
+          </Link>
+        ))}
+      </div>
+
+      {/* Team cards - compact grid */}
       <div>
-        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-600">Teams</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-600">All Teams</p>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {teamCards.map(({ team, squad, rate, inj, mod, accent }) => (
             <Link key={team} href={`/teams/${team}`}
-              className="group relative rounded-2xl border border-white/5 p-5 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:border-white/10"
+              className="group relative rounded-2xl border border-white/5 p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-white/10"
               style={{background:'rgba(255,255,255,0.02)'}}>
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                style={{background:`radial-gradient(ellipse at 50% 0%, ${accent}10, transparent 70%)`}}/>
-              <div className="relative">
-                <div className="flex items-start justify-between mb-3">
-                  <div>
-                    <p className="text-2xl font-black tracking-tight" style={{color:accent}}>{team}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{squad} players</p>
-                  </div>
-                  {rate !== null && (
-                    <div className="text-right">
-                      <p className="text-xl font-black" style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>{rate}%</p>
-                      <p className="text-[10px] text-slate-600">7d att.</p>
-                    </div>
-                  )}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{background:`radial-gradient(ellipse at 50% 0%, ${accent}0c, transparent 70%)`}}/>
+              <div className="relative flex items-center justify-between">
+                <div>
+                  <p className="text-xl font-black tracking-tight" style={{color:accent}}>{team}</p>
+                  <p className="text-[10px] text-slate-600 mt-0.5">{squad} players</p>
                 </div>
-                <div className="flex gap-1.5 flex-wrap">
-                  {inj > 0 && <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{background:'rgba(248,113,113,0.08)',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.15)'}}>{inj} injured</span>}
-                  {mod > 0 && <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{background:'rgba(251,191,36,0.08)',color:'#fde68a',border:'1px solid rgba(251,191,36,0.15)'}}>{mod} modified</span>}
-                  {inj===0&&mod===0&&<span className="rounded-full px-2 py-0.5 text-[10px] font-semibold" style={{background:'rgba(16,185,129,0.06)',color:'#6ee7b7',border:'1px solid rgba(16,185,129,0.12)'}}>All clear</span>}
+                <div className="text-right">
+                  {rate !== null && (
+                    <p className="text-lg font-black" style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>{rate}%</p>
+                  )}
+                  <div className="flex gap-1 justify-end mt-0.5">
+                    {inj > 0 && <span className="text-[9px] font-black text-red-400">{inj} inj</span>}
+                    {mod > 0 && <span className="text-[9px] font-black text-amber-400">{mod} mod</span>}
+                    {inj===0&&mod===0&&<span className="text-[9px] text-emerald-500">✓</span>}
+                  </div>
                 </div>
               </div>
             </Link>
@@ -351,22 +400,6 @@ function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams }: {
         </div>
       </div>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          {label:'Attendance',href:'/attendance',color:'#10b981',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
-          {label:'Performance',href:'/performance',color:'#a78bfa',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-          {label:'Athletes',href:'/athletes',color:'#38bdf8',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>},
-          {label:'Portal Admin',href:'/portal-admin',color:'#f59e0b',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>},
-        ].map(a => (
-          <Link key={a.href} href={a.href}
-            className="group rounded-2xl border border-white/5 p-4 transition hover:-translate-y-0.5 hover:border-white/10"
-            style={{background:'rgba(255,255,255,0.02)'}}>
-            <div className="mb-2" style={{color:a.color}}>{a.icon}</div>
-            <p className="text-xs font-black text-white">{a.label}</p>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }
