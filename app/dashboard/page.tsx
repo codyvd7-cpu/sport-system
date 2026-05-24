@@ -252,10 +252,22 @@ function MyTeamView({ teamName, athletes, attendance, fixtures, onRefresh }: {
 }
 
 // ── HOH multi-team overview ───────────────────────────────────
-function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams }: {
-  athletes: Row[]; attendance: Row[]; myTeams: string[]; canSeeAllTeams: boolean;
+function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams, coaches }: {
+  athletes: Row[]; attendance: Row[]; myTeams: string[]; canSeeAllTeams: boolean; coaches: Row[];
 }) {
   const visibleTeams = canSeeAllTeams ? ALL_TEAMS : myTeams;
+
+  function getCoachForTeam(team: string): string {
+    const coach = coaches.find(c =>
+      c.role === 'coach' &&
+      Array.isArray(c.teams) &&
+      c.teams.includes(team)
+    );
+    if (!coach) return '';
+    // Show username part of email
+    return coach.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+  }
+
   const teamCards = visibleTeams
     .filter(t => athletes.some(a => a.team === t))
     .map(team => {
@@ -265,7 +277,8 @@ function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams }: {
       const rate = ta.length > 0 ? Math.round((tp / ta.length) * 100) : null;
       const inj = squad.filter(a => a.availability === 'Injured').length;
       const mod = squad.filter(a => a.availability === 'Modified').length;
-      return { team, squad: squad.length, rate, inj, mod, accent: getAccent(team) };
+      const coach = getCoachForTeam(team);
+      return { team, squad: squad.length, rate, inj, mod, accent: getAccent(team), coach };
     });
 
   const total = athletes.length;
@@ -285,7 +298,7 @@ function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams }: {
       {/* Header */}
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">Head of Hockey</p>
-        <h1 className="text-3xl font-black text-white leading-tight tracking-tight">Programme Overview</h1>
+        <h1 className="text-3xl font-black text-white leading-tight tracking-tight">Department Overview</h1>
         <p className="mt-1 text-sm text-slate-500">{today}</p>
       </div>
 
@@ -373,18 +386,23 @@ function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams }: {
       <div>
         <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-600">All Teams</p>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {teamCards.map(({ team, squad, rate, inj, mod, accent }) => (
+          {teamCards.map(({ team, squad, rate, inj, mod, accent, coach }) => (
             <Link key={team} href={`/teams/${team}`}
               className="group relative rounded-2xl border border-white/5 p-4 overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:border-white/10"
               style={{background:'rgba(255,255,255,0.02)'}}>
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{background:`radial-gradient(ellipse at 50% 0%, ${accent}0c, transparent 70%)`}}/>
               <div className="relative flex items-center justify-between">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xl font-black tracking-tight" style={{color:accent}}>{team}</p>
                   <p className="text-[10px] text-slate-600 mt-0.5">{squad} players</p>
+                  {coach && (
+                    <p className="text-[10px] text-slate-600 mt-0.5 truncate">
+                      <span className="text-slate-700">Coach · </span>{coach}
+                    </p>
+                  )}
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0 ml-3">
                   {rate !== null && (
                     <p className="text-lg font-black" style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>{rate}%</p>
                   )}
@@ -410,6 +428,7 @@ export default function DashboardPage() {
   const [athletes, setAthletes] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [fixtures, setFixtures] = React.useState<Row[]>([]);
+  const [coaches, setCoaches] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   async function load() {
@@ -417,14 +436,16 @@ export default function DashboardPage() {
     let q = supabase.from('athletes').select('id,full_name,team,availability,position,age_group');
     if (!canSeeAllTeams && myTeams.length > 0) q = q.in('team', myTeams);
 
-    const [aRes, attRes, fixRes] = await Promise.all([
+    const [aRes, attRes, fixRes, coachRes] = await Promise.all([
       q,
       supabase.from('attendance').select('id,athlete_id,status,session_date,session_type').gte('session_date', weekAgo()).order('session_date', { ascending: false }).limit(500),
       supabase.from('portal_fixtures').select('*').order('fixture_date').limit(20),
+      supabase.from('staff_roles').select('email,teams,role').eq('is_active', true),
     ]);
     setAthletes(aRes.data || []);
     setAttendance(attRes.data || []);
     setFixtures(fixRes.data || []);
+    setCoaches(coachRes.data || []);
     setLoading(false);
   }
 
@@ -466,6 +487,7 @@ export default function DashboardPage() {
             attendance={attendance}
             myTeams={myTeams}
             canSeeAllTeams={canSeeAllTeams}
+            coaches={coaches}
           />
         )}
       </div>
