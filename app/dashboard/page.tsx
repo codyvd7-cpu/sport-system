@@ -299,7 +299,8 @@ function OverviewView({ athletes, attendance, myTeams, canSeeAllTeams, coaches }
       c.teams.includes(team)
     );
     if (!coach) return '';
-    // Show username part of email
+    // Use full_name if available, otherwise parse email
+    if (coach.full_name) return coach.full_name;
     return coach.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
   }
 
@@ -475,7 +476,7 @@ export default function DashboardPage() {
       q,
       supabase.from('attendance').select('id,athlete_id,status,session_date,session_type').gte('session_date', weekAgo()).order('session_date', { ascending: false }).limit(500),
       supabase.from('portal_fixtures').select('*').order('fixture_date').limit(20),
-      supabase.from('staff_roles').select('email,teams,role').eq('is_active', true),
+      supabase.from('staff_roles').select('email,teams,role,full_name').eq('is_active', true),
     ]);
     setAthletes(aRes.data || []);
     setAttendance(attRes.data || []);

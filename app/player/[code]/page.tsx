@@ -95,19 +95,27 @@ export default function PlayerProfilePage({ params }: PageProps) {
   const [loading, setLoading] = React.useState(true);
   const [notFound, setNotFound] = React.useState(false);
 
+  const [coachName, setCoachName] = React.useState('');
+
   React.useEffect(() => {
     async function load() {
       const { data: ath, error } = await supabase.from('athletes').select('*').eq('player_code', code.toUpperCase()).single();
       if (error || !ath) { setNotFound(true); setLoading(false); return; }
       setAthlete(ath);
-      const [attRes, perfRes, notesRes] = await Promise.all([
+      const [attRes, perfRes, notesRes, coachRes] = await Promise.all([
         supabase.from('attendance').select('*').eq('athlete_id', ath.id).order('session_date', { ascending: false }),
         supabase.from('performance_tests').select('*').eq('athlete_id', ath.id).order('test_date', { ascending: false }),
         supabase.from('coach_notes').select('*').eq('athlete_id', ath.id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(1),
+        supabase.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
       ]);
       setAttendance(attRes.data || []);
       setPerformance(perfRes.data || []);
       setNotes(notesRes.data || []);
+      // Find coach for this athlete's team
+      const teamCoach = (coachRes.data || []).find(c => Array.isArray(c.teams) && c.teams.includes(ath.team));
+      if (teamCoach) {
+        setCoachName(teamCoach.full_name || teamCoach.email.split('@')[0].replace(/[._]/g, ' '));
+      }
       setLoading(false);
     }
     load();
@@ -217,6 +225,7 @@ export default function PlayerProfilePage({ params }: PageProps) {
                   {team && <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-black text-sky-300">{team}</span>}
                   {ageGroup && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-400">{ageGroup}</span>}
                   {position && <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">{position}</span>}
+                  {coachName && <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">Coach: {coachName}</span>}
                   <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${availability === 'Available' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : availability === 'Injured' ? 'bg-red-500/15 text-red-300 border-red-500/30' : availability === 'Modified' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-sky-500/15 text-sky-300 border-sky-500/30'}`}>{availability}</span>
                 </div>
               </div>
