@@ -26,9 +26,8 @@ export async function POST(req: NextRequest) {
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    // Insert into staff_roles
+    // Insert into staff_roles — upsert on email
     const { error: dbErr } = await admin.from('staff_roles').upsert([{
-      id: data.user?.id,
       email: email.trim().toLowerCase(),
       role,
       teams: role === 'head_of_hockey' ? [] : (teams || []),
