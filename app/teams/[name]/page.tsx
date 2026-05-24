@@ -222,35 +222,35 @@ export default function TeamPage({ params }: PageProps) {
               </div>
               <div className="divide-y divide-white/3">
                 {available.map(a => (
-                  <div key={a.id} className="flex items-center gap-4 px-5 py-3.5 group hover:bg-white/2 transition">
+                  <div key={a.id} className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/2">
                     <Link href={`/athletes/${a.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black text-white/60"
                         style={{background:`${accent}15`}}>
                         {initials(a.full_name||'?')}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-white">{a.full_name}</p>
                         {a.position && <p className="text-[10px] text-slate-600">{a.position}</p>}
                       </div>
                     </Link>
-                    {attMap[a.id] !== null && attMap[a.id] !== undefined && (
-                      <span className="shrink-0 text-[11px] font-semibold" style={{color:attMap[a.id]!>=80?'#6ee7b7':attMap[a.id]!>=60?'#fde68a':'#fca5a5'}}>
-                        {attMap[a.id]}%
-                      </span>
-                    )}
-                    {/* Availability quick-change */}
-                    <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                      {['Modified','Injured','Resting'].map(s => {
-                        const st = AVAIL_STYLE[s];
-                        return (
-                          <button key={s} onClick={() => setAvailability(a.id, s)}
-                            disabled={updatingId === a.id}
-                            className="rounded-lg px-2 py-1 text-[9px] font-black transition"
-                            style={{background:st.bg,color:st.color,border:`1px solid ${st.border}`}}>
-                            {s}
-                          </button>
-                        );
-                      })}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {attMap[a.id] !== null && attMap[a.id] !== undefined && (
+                        <span className="text-[11px] font-semibold" style={{color:attMap[a.id]!>=80?'#6ee7b7':attMap[a.id]!>=60?'#fde68a':'#fca5a5'}}>
+                          {attMap[a.id]}%
+                        </span>
+                      )}
+                      {/* Availability toggle - always visible, tap-friendly */}
+                      <select
+                        value="Available"
+                        onChange={e => setAvailability(a.id, e.target.value)}
+                        disabled={updatingId === a.id}
+                        className="rounded-lg border border-white/6 bg-white/3 px-2 py-1 text-[10px] font-black text-slate-500 outline-none"
+                        onClick={e => e.stopPropagation()}>
+                        <option value="Available">Available</option>
+                        <option value="Modified">Modified</option>
+                        <option value="Injured">Injured</option>
+                        <option value="Resting">Resting</option>
+                      </select>
                     </div>
                   </div>
                 ))}
@@ -270,21 +270,28 @@ export default function TeamPage({ params }: PageProps) {
                   {unavailable.map(a => {
                     const st = AVAIL_STYLE[a.availability] || AVAIL_STYLE['Available'];
                     return (
-                      <div key={a.id} className="flex items-center gap-4 px-5 py-3.5 group hover:bg-white/2 transition">
+                      <div key={a.id} className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/2">
                         <Link href={`/athletes/${a.id}`} className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black"
                             style={{background:st.bg,color:st.color}}>
                             {initials(a.full_name||'?')}
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-white">{a.full_name}</p>
                             <span className="text-[10px] font-semibold" style={{color:st.color}}>{a.availability}</span>
                           </div>
                         </Link>
-                        <button onClick={() => setAvailability(a.id, 'Available')} disabled={updatingId === a.id}
-                          className="shrink-0 rounded-xl border border-white/8 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition opacity-0 group-hover:opacity-100">
-                          Mark Available
-                        </button>
+                        <select
+                          value={a.availability}
+                          onChange={e => setAvailability(a.id, e.target.value)}
+                          disabled={updatingId === a.id}
+                          className="shrink-0 rounded-lg border border-white/6 bg-white/3 px-2 py-1 text-[10px] font-black text-slate-500 outline-none"
+                          onClick={e => e.stopPropagation()}>
+                          <option value="Available">Available</option>
+                          <option value="Modified">Modified</option>
+                          <option value="Injured">Injured</option>
+                          <option value="Resting">Resting</option>
+                        </select>
                       </div>
                     );
                   })}
