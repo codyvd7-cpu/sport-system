@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
+import { useToast } from '@/components/Toast';
 
 type Row = Record<string, any>;
 
@@ -28,11 +29,263 @@ function MyTeamView({ teamName, athletes, attendance, fixtures, onRefresh }: {
   onRefresh: () => void;
 }) {
   const accent = getAccent(teamName);
+  const { showToast } = useToast();
   const [sessionType, setSessionType] = React.useState('Training');
   const [statuses, setStatuses] = React.useState<Record<string,string>>({});
   const [saving, setSaving] = React.useState(false);
   const [sessionSaved, setSessionSaved] = React.useState(false);
-  const { showToast } = { showToast: (m: string) => {} }; // inline
+  const [activeTab, setActiveTab] = React.useState<'register'|'squad'>('register');
+
+  const squad = React.useMemo(() =>
+    [...athletes].sort((a,b) => (a.full_name||'').split(' ').pop()!.localeCompare((b.full_name||'').split(' ').pop()!))
+  , [athletes]);
+
+  React.useEffect(() => {
+    const init: Record<string,string> = {};
+    squad.forEach(a => {
+      const existing = attendance.find(r => r.athlete_id === a.id && r.session_date === today());
+      init[a.id] = existing?.status || 'Present';
+    });
+    setStatuses(init);
+    setSessionSaved(squad.some(a => !!attendance.find(r => r.athlete_id === a.id && r.session_date === today())));
+  }, [squad, attendance]);
+
+  async function saveAttendance() {
+    setSaving(true);
+    const ids = squad.map(a => a.id);
+    await supabase.from('attendance').delete().eq('session_date', today()).in('athlete_id', ids);
+    const { error } = await supabase.from('attendance').insert(squad.map(a => ({
+      athlete_id: a.id, session_date: today(), session_type: sessionType, status: statuses[a.id] || 'Present',
+    })));
+    if (error) { showToast(`Error: ${error.message}`, 'error'); }
+    else { setSessionSaved(true); showToast('Register saved ✓'); }
+    setSaving(false);
+    onRefresh();
+  }
+
+  const STATUS_COLORS: Record<string,{bg:string;color:string;border:string}> = {
+    Present: {bg:'rgba(16,185,129,0.12)',  color:'#6ee7b7', border:'rgba(16,185,129,0.25)'},
+    Late:    {bg:'rgba(251,191,36,0.12)',  color:'#fde68a', border:'rgba(251,191,36,0.25)'},
+    Absent:  {bg:'rgba(248,113,113,0.12)', color:'#fca5a5', border:'rgba(248,113,113,0.25)'},
+    Excused: {bg:'rgba(56,189,248,0.12)',  color:'#7dd3fc', border:'rgba(56,189,248,0.25)'},
+  };
+
+  const presentCount = squad.filter(a => (statuses[a.id]||'Present') === 'Present').length;
+  const absentCount  = squad.filter(a => statuses[a.id] === 'Absent').length;
+  const lateCount    = squad.filter(a => statuses[a.id] === 'Late').length;
+  const unavailable  = squad.filter(a => a.availability && a.availability !== 'Available');
+  const nextFixture  = fixtures.find(f => f.fixture_date >= today());
+  const daysToMatch  = nextFixture ? Math.ceil((new Date(nextFixture.fixture_date).getTime()-Date.now())/86400000) : null;
+
+  return (
+    <div className="space-y-4">
+
+      {/* ── HEADER ── */}
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">My Team</p>
+        <div className="flex items-end justify-between gap-2">
+          <h1 className="text-4xl font-black tracking-tight leading-none" style={{color:accent}}>{teamName}</h1>
+          <Link href={`/teams/${teamName}`}
+            className="text-[11px] font-semibold text-slate-600 hover:text-slate-300 transition mb-1">
+            Full page →
+          </Link>
+        </div>
+        <p className="mt-1.5 text-sm text-slate-500">
+          {new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'})} · {squad.length} players
+        </p>
+      </div>
+
+      {/* ── NEXT MATCH ── */}
+      {nextFixture && (
+        <div className="flex items-center gap-4 rounded-2xl border border-white/5 px-5 py-4"
+          style={{background:'rgba(255,255,255,0.02)'}}>
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">Next Match</p>
+            <p className="text-base font-black text-white mt-0.5">vs {nextFixture.opponent}</p>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              {new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'})}
+              {nextFixture.fixture_time && ` · ${nextFixture.fixture_time}`}
+              {nextFixture.venue && ` · ${nextFixture.venue}`}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-3xl font-black" style={{color:accent}}>{daysToMatch}</p>
+            <p className="text-[10px] text-slate-600">days</p>
+          </div>
+        </div>
+      )}
+
+      {/* ── UNAVAILABLE ALERT ── */}
+      {unavailable.length > 0 && (
+        <div className="rounded-2xl border px-4 py-3" style={{borderColor:'rgba(248,113,113,0.15)',background:'rgba(248,113,113,0.04)'}}>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-400 mb-2">Unavailable</p>
+          <div className="flex flex-wrap gap-2">
+            {unavailable.map(a => {
+              const isInj = a.availability === 'Injured';
+              return (
+                <Link key={a.id} href={`/athletes/${a.id}`}
+                  className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold"
+                  style={{
+                    background: isInj?'rgba(248,113,113,0.08)':'rgba(251,191,36,0.08)',
+                    color: isInj?'#fca5a5':'#fde68a',
+                    border: `1px solid ${isInj?'rgba(248,113,113,0.2)':'rgba(251,191,36,0.2)'}`,
+                  }}>
+                  {a.full_name?.split(' ').pop()} · {a.availability}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── TABS ── */}
+      <div className="flex rounded-2xl border border-white/5 p-1" style={{background:'rgba(255,255,255,0.02)'}}>
+        {([['register','Today\'s Register'],['squad','Squad']] as const).map(([key,label]) => (
+          <button key={key} onClick={() => setActiveTab(key)}
+            className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${activeTab===key?'bg-white/8 text-white':'text-slate-500 hover:text-slate-300'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── REGISTER TAB ── */}
+      {activeTab === 'register' && (
+        <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+          {/* Register header */}
+          <div className="px-5 py-3.5 border-b border-white/5 flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-black text-white">{presentCount} present</span>
+              {lateCount > 0 && <span className="text-[11px] text-amber-400">{lateCount} late</span>}
+              {absentCount > 0 && <span className="text-[11px] text-red-400">{absentCount} absent</span>}
+            </div>
+            <div className="flex items-center gap-2">
+              <select value={sessionType} onChange={e => setSessionType(e.target.value)}
+                className="rounded-xl border border-white/8 bg-white/4 px-3 py-1.5 text-xs font-semibold text-white outline-none transition">
+                {['Training','Match','Gym','Fitness','Extras','Other'].map(t => <option key={t}>{t}</option>)}
+              </select>
+              <button onClick={saveAttendance} disabled={saving}
+                className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-black transition disabled:opacity-50"
+                style={{
+                  background: sessionSaved?'rgba(16,185,129,0.12)':`${accent}15`,
+                  color: sessionSaved?'#6ee7b7':accent,
+                  border: `1px solid ${sessionSaved?'rgba(16,185,129,0.25)':`${accent}30`}`,
+                }}>
+                {saving
+                  ? <div className="h-3 w-3 rounded-full border border-current border-t-transparent animate-spin"/>
+                  : sessionSaved
+                  ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3"><polyline points="20 6 9 17 4 12"/></svg>
+                  : null}
+                {saving ? 'Saving…' : sessionSaved ? 'Saved' : 'Save'}
+              </button>
+            </div>
+          </div>
+
+          {/* Player rows with P/L/A/E buttons */}
+          <div className="divide-y divide-white/3">
+            {squad.map(a => {
+              const status = statuses[a.id] || 'Present';
+              const sc = STATUS_COLORS[status];
+              return (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black"
+                    style={{background:`${accent}12`,color:accent}}>
+                    {(a.full_name||'?').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
+                    {a.availability && a.availability !== 'Available' && (
+                      <p className="text-[10px]" style={{color:a.availability==='Injured'?'#fca5a5':a.availability==='Modified'?'#fde68a':'#7dd3fc'}}>
+                        {a.availability}
+                      </p>
+                    )}
+                  </div>
+                  {/* Current status shown prominently, tap others to change */}
+                  <div className="flex gap-1 shrink-0">
+                    {(['Present','Late','Absent','Excused'] as const).map(s => {
+                      const c = STATUS_COLORS[s];
+                      const active = status === s;
+                      return (
+                        <button key={s}
+                          onClick={() => { setStatuses(p => ({...p,[a.id]:s})); setSessionSaved(false); }}
+                          className="rounded-lg border px-2 py-1.5 text-[10px] font-black transition-all"
+                          style={active
+                            ? {background:c.bg, color:c.color, border:`1px solid ${c.border}`, transform:'scale(1.05)'}
+                            : {background:'rgba(255,255,255,0.02)', color:'#334155', border:'1px solid rgba(255,255,255,0.05)'}
+                          }>
+                          {s[0]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── SQUAD TAB ── */}
+      {activeTab === 'squad' && (
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="border-b border-white/5 px-5 py-3 flex items-center justify-between">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Full Squad</p>
+              <Link href={`/teams/${teamName}`}
+                className="text-[10px] font-semibold text-slate-600 hover:text-slate-300 transition">
+                Manage availability →
+              </Link>
+            </div>
+            <div className="divide-y divide-white/3">
+              {squad.map(a => {
+                const avail = a.availability || 'Available';
+                const avColor = avail==='Available'?'#6ee7b7':avail==='Modified'?'#fde68a':avail==='Injured'?'#fca5a5':'#7dd3fc';
+                return (
+                  <Link key={a.id} href={`/athletes/${a.id}`}
+                    className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/3 transition">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[10px] font-black"
+                      style={{background:`${accent}12`,color:accent}}>
+                      {(a.full_name||'?').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{a.full_name}</p>
+                      <p className="text-[10px] text-slate-600">{a.position || a.age_group || '—'}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+                      style={{background:`${avColor}12`,color:avColor,border:`1px solid ${avColor}30`}}>
+                      {avail}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+          {/* Log result + performance links */}
+          <div className="grid grid-cols-2 gap-2">
+            <Link href={`/teams/${teamName}`}
+              className="flex items-center gap-2 rounded-2xl border border-white/5 p-4 hover:bg-white/4 transition group"
+              style={{background:'rgba(255,255,255,0.02)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 shrink-0" style={{color:accent}}><path d="M12 5v14M5 12h14"/></svg>
+              <div>
+                <p className="text-xs font-black text-white">Log Result</p>
+                <p className="text-[10px] text-slate-600">Post match score</p>
+              </div>
+            </Link>
+            <Link href="/performance"
+              className="flex items-center gap-2 rounded-2xl border border-white/5 p-4 hover:bg-white/4 transition group"
+              style={{background:'rgba(255,255,255,0.02)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 shrink-0 text-violet-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <div>
+                <p className="text-xs font-black text-white">Testing</p>
+                <p className="text-[10px] text-slate-600">Enter test results</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
 
   const squad = React.useMemo(() =>
     athletes.sort((a,b) => (a.full_name||'').split(' ').pop()!.localeCompare((b.full_name||'').split(' ').pop()!))
