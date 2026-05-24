@@ -40,15 +40,9 @@ export default function CoachesPage() {
     setInviting(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
       const res = await fetch('/api/admin/invite-coach', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email: inviteEmail.trim().toLowerCase(),
           name: inviteName.trim(),
