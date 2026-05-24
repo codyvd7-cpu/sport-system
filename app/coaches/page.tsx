@@ -22,6 +22,12 @@ export default function CoachesPage() {
   const [inviteRole, setInviteRole] = React.useState<'coach'|'head_of_hockey'>('coach');
   const [inviting, setInviting] = React.useState(false);
 
+  // Edit state
+  const [editingId, setEditingId] = React.useState<string|null>(null);
+  const [editName, setEditName] = React.useState('');
+  const [editRole, setEditRole] = React.useState('coach');
+  const [saving, setSaving] = React.useState(false);
+
   function toggleTeam(t: string) {
     setInviteTeams(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
   }
@@ -77,6 +83,23 @@ export default function CoachesPage() {
     await supabase.from('staff_roles').update({ teams }).eq('id', id);
     showToast('Teams updated ✓');
     load();
+  }
+
+  function startEdit(c: Coach) {
+    setEditingId(c.id);
+    setEditName(c.full_name || '');
+    setEditRole(c.role);
+  }
+
+  async function saveEdit(c: Coach) {
+    setSaving(true);
+    const { error } = await supabase.from('staff_roles').update({
+      full_name: editName.trim(),
+      role: editRole,
+    }).eq('id', c.id);
+    if (error) { showToast(`Error: ${error.message}`, 'error'); }
+    else { showToast('Coach updated ✓'); setEditingId(null); load(); }
+    setSaving(false);
   }
 
   return (
@@ -167,51 +190,92 @@ export default function CoachesPage() {
             <div className="divide-y divide-slate-800">
               {coaches.filter(c => c.is_active !== false).map(c => (
                 <div key={c.id} className="px-5 py-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-black text-slate-300">
-                      {(c.full_name || c.email || '?').split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{c.full_name || c.email}</p>
-                      <p className="text-xs text-slate-500 truncate">{c.email}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${c.role === 'owner' ? 'bg-rose-500/15 text-rose-300' : c.role === 'head_of_hockey' ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>
-                        {c.role === 'head_of_hockey' ? 'HOH' : c.role === 'owner' ? 'Owner' : 'Coach'}
-                      </span>
-                      {c.role === 'coach' && (
-                        <button onClick={() => removeCoach(c.id, c.full_name || c.email)}
-                          className="rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-[10px] font-black text-red-400 hover:bg-red-500/15 transition">
-                          Remove
+                  {editingId === c.id ? (
+                    /* ── EDIT MODE ── */
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-600">Full Name</label>
+                          <input value={editName} onChange={e => setEditName(e.target.value)}
+                            placeholder="Full name"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500 transition"/>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-600">Role</label>
+                          <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500 transition">
+                            <option value="coach">Coach</option>
+                            <option value="head_of_hockey">Head of Hockey</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => saveEdit(c)} disabled={saving}
+                          className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-1.5 text-xs font-black text-sky-300 hover:bg-sky-500/20 transition disabled:opacity-50">
+                          {saving ? 'Saving…' : 'Save'}
                         </button>
-                      )}
-                    </div>
-                  </div>
-                  {/* Teams display + edit for coaches */}
-                  {c.role === 'coach' && (
-                    <div className="ml-12">
-                      <p className="text-[10px] text-slate-600 mb-1">Assigned teams:</p>
-                      <div className="flex flex-wrap gap-1">
-                        {TEAM_GROUPS.flatMap(g => g.teams).map(t => {
-                          const assigned = (c.teams || []).includes(t);
-                          return (
-                            <button key={t} onClick={async () => {
-                              const current = c.teams || [];
-                              const next = current.includes(t) ? current.filter(x => x !== t) : [...current, t];
-                              await updateTeams(c.id, next);
-                            }}
-                              className={`rounded-lg border px-2 py-0.5 text-[9px] font-black transition ${assigned ? 'border-sky-500/30 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950 text-slate-700 hover:text-slate-500'}`}>
-                              {t}
-                            </button>
-                          );
-                        })}
+                        <button onClick={() => setEditingId(null)}
+                          className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-1.5 text-xs font-black text-slate-400 hover:text-white transition">
+                          Cancel
+                        </button>
                       </div>
                     </div>
-                  )}
-                  {(c.role === 'head_of_hockey' || c.role === 'owner') && (
-                    <div className="ml-12">
-                      <span className="text-[10px] text-slate-600">Access to all teams</span>
-                    </div>
+                  ) : (
+                    /* ── VIEW MODE ── */
+                    <>
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-black text-slate-300">
+                          {(c.full_name || c.email || '?').split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white truncate">{c.full_name || c.email}</p>
+                          <p className="text-xs text-slate-500 truncate">{c.email}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${c.role === 'owner' ? 'bg-rose-500/15 text-rose-300' : c.role === 'head_of_hockey' ? 'bg-amber-500/15 text-amber-300' : 'bg-slate-800 text-slate-400'}`}>
+                            {c.role === 'head_of_hockey' ? 'HOH' : c.role === 'owner' ? 'Owner' : 'Coach'}
+                          </span>
+                          {c.role !== 'owner' && (
+                            <button onClick={() => startEdit(c)}
+                              className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-1 text-[10px] font-black text-slate-400 hover:text-white transition">
+                              Edit
+                            </button>
+                          )}
+                          {c.role === 'coach' && (
+                            <button onClick={() => removeCoach(c.id, c.full_name || c.email)}
+                              className="rounded-lg border border-red-500/20 bg-red-500/5 px-2 py-1 text-[10px] font-black text-red-400 hover:bg-red-500/15 transition">
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {/* Teams */}
+                      {c.role === 'coach' && (
+                        <div className="ml-12">
+                          <p className="text-[10px] text-slate-600 mb-1">Assigned teams:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {TEAM_GROUPS.flatMap(g => g.teams).map(t => {
+                              const assigned = (c.teams || []).includes(t);
+                              return (
+                                <button key={t} onClick={async () => {
+                                  const current = c.teams || [];
+                                  const next = current.includes(t) ? current.filter(x => x !== t) : [...current, t];
+                                  await updateTeams(c.id, next);
+                                }}
+                                  className={`rounded-lg border px-2 py-0.5 text-[9px] font-black transition ${assigned ? 'border-sky-500/30 bg-sky-500/10 text-sky-300' : 'border-slate-800 bg-slate-950 text-slate-700 hover:text-slate-500'}`}>
+                                  {t}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {(c.role === 'head_of_hockey' || c.role === 'owner') && (
+                        <div className="ml-12">
+                          <span className="text-[10px] text-slate-600">Access to all teams</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ))}
