@@ -10,7 +10,7 @@ type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
 const CLASS_OPTIONS = ['8B','8E','8F','8J','8M','9B','9E','9F','9J','9M'];
 
-export default function HPStudentsPage() {
+function HPStudentsInner() {
   const { showToast } = useToast();
   const [students, setStudents] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -189,5 +189,12 @@ export default function HPStudentsPage() {
         )}
       </div>
     </main>
+  );
+}
+export default function HPStudentsPage() {
+  return (
+    <React.Suspense fallback={<PageLoader label="Loading students"/>}>
+      <HPStudentsInner/>
+    </React.Suspense>
   );
 }
