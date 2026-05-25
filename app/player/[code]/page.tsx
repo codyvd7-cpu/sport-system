@@ -2,330 +2,329 @@
 
 import Link from 'next/link';
 import * as React from 'react';
-import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ code: string }> };
 
-// ── CONSTANTS ─────────────────────────────────────────────────
 const LOWER_IS_BETTER = ['Bronco', '10m Sprint', '30m Sprint', '505', 'RSA'];
 const BENCHMARKS: Record<string, { u1415: number[]; u1618: number[] }> = {
-  'SBJ':        { u1415: [195,175,155,135], u1618: [215,195,175,155] },
-  '10m Sprint': { u1415: [1.72,1.82,1.92,2.02], u1618: [1.65,1.75,1.85,1.95] },
-  '30m Sprint': { u1415: [4.25,4.45,4.65,4.85], u1618: [4.05,4.25,4.45,4.65] },
-  '505 Left':   { u1415: [2.35,2.50,2.65,2.80], u1618: [2.25,2.40,2.55,2.70] },
-  '505 Right':  { u1415: [2.35,2.50,2.65,2.80], u1618: [2.25,2.40,2.55,2.70] },
-  'Push-Ups':   { u1415: [40,30,20,10], u1618: [50,38,26,14] },
-  'Pull-Ups':   { u1415: [10,7,4,1], u1618: [10,7,4,1] },
-  'Yo-Yo IR1':  { u1415: [1200,900,700,500], u1618: [1600,1200,900,600] },
-  'RSA Sdec%':  { u1415: [3.0,5.0,7.0,10.0], u1618: [2.5,4.0,6.0,9.0] },
+  'SBJ':        { u1415:[195,175,155,135], u1618:[215,195,175,155] },
+  '10m Sprint': { u1415:[1.72,1.82,1.92,2.02], u1618:[1.65,1.75,1.85,1.95] },
+  '30m Sprint': { u1415:[4.25,4.45,4.65,4.85], u1618:[4.05,4.25,4.45,4.65] },
+  '505 Left':   { u1415:[2.35,2.50,2.65,2.80], u1618:[2.25,2.40,2.55,2.70] },
+  '505 Right':  { u1415:[2.35,2.50,2.65,2.80], u1618:[2.25,2.40,2.55,2.70] },
+  'Push-Ups':   { u1415:[40,30,20,10], u1618:[50,38,26,14] },
+  'Pull-Ups':   { u1415:[10,7,4,1], u1618:[10,7,4,1] },
+  'Yo-Yo IR1':  { u1415:[1200,900,700,500], u1618:[1600,1200,900,600] },
 };
-const TEST_DESCRIPTIONS: Record<string, string> = {
-  'SBJ': 'Lower body explosive power',
-  '10m Sprint': 'Acceleration speed',
-  '30m Sprint': 'Maximum speed',
-  '505 Left': 'Change of direction (left)',
-  '505 Right': 'Change of direction (right)',
-  'Push-Ups': 'Upper body muscular endurance',
-  'Pull-Ups': 'Upper body pulling strength',
-  'Yo-Yo IR1': 'Aerobic fitness',
-  'RSA Sdec%': 'Fatigue resistance under repeated sprints',
-  'Bronco': 'Aerobic capacity and running fitness',
-};
-const TIERS = [
-  { label: 'Elite',      color: 'text-emerald-300', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40' },
-  { label: 'Good',       color: 'text-sky-300',     bg: 'bg-sky-500/20',     border: 'border-sky-500/40' },
-  { label: 'Average',    color: 'text-amber-300',   bg: 'bg-amber-500/20',   border: 'border-amber-500/40' },
-  { label: 'Developing', color: 'text-orange-300',  bg: 'bg-orange-500/20',  border: 'border-orange-500/40' },
-  { label: 'Poor',       color: 'text-red-300',     bg: 'bg-red-500/20',     border: 'border-red-500/40' },
+const TIER_CONFIG = [
+  { label:'Outstanding', hex:'#10b981', bg:'rgba(16,185,129,0.12)',  border:'rgba(16,185,129,0.3)'  },
+  { label:'Strong',      hex:'#38bdf8', bg:'rgba(56,189,248,0.12)',  border:'rgba(56,189,248,0.3)'  },
+  { label:'On Track',    hex:'#a78bfa', bg:'rgba(167,139,250,0.12)', border:'rgba(167,139,250,0.3)' },
+  { label:'Developing',  hex:'#fbbf24', bg:'rgba(251,191,36,0.12)',  border:'rgba(251,191,36,0.3)'  },
+  { label:'Needs Work',  hex:'#94a3b8', bg:'rgba(148,163,184,0.10)', border:'rgba(148,163,184,0.25)'},
 ];
 
-// ── UTILS ──────────────────────────────────────────────────────
-function getBenchmarkTier(testKey: string, value: number, ag: string) {
-  const b = BENCHMARKS[testKey]; if (!b) return null;
-  const lower = LOWER_IS_BETTER.some((t) => testKey.toLowerCase().includes(t.toLowerCase()));
-  const t = ag.includes('14') || ag.includes('15') ? b.u1415 : b.u1618;
-  if (lower) { if (value < t[0]) return TIERS[0]; if (value < t[1]) return TIERS[1]; if (value < t[2]) return TIERS[2]; if (value < t[3]) return TIERS[3]; return TIERS[4]; }
-  else { if (value > t[0]) return TIERS[0]; if (value > t[1]) return TIERS[1]; if (value > t[2]) return TIERS[2]; if (value > t[3]) return TIERS[3]; return TIERS[4]; }
+function getTier(test: string, val: number, ag: string) {
+  const b = BENCHMARKS[test]; if (!b) return null;
+  const lower = LOWER_IS_BETTER.some(t => test.toLowerCase().includes(t.toLowerCase()));
+  const t = ag.includes('14')||ag.includes('15') ? b.u1415 : b.u1618;
+  if (lower) { if(val<t[0])return TIER_CONFIG[0];if(val<t[1])return TIER_CONFIG[1];if(val<t[2])return TIER_CONFIG[2];if(val<t[3])return TIER_CONFIG[3];return TIER_CONFIG[4]; }
+  else { if(val>t[0])return TIER_CONFIG[0];if(val>t[1])return TIER_CONFIG[1];if(val>t[2])return TIER_CONFIG[2];if(val>t[3])return TIER_CONFIG[3];return TIER_CONFIG[4]; }
 }
-function initials(name: string) { return name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase(); }
-function formatDate(d?: string | null) { if (!d) return '—'; const date = new Date(d); if (Number.isNaN(date.getTime())) return '—'; return date.toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }); }
+function initials(n:string) { return (n||'?').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(); }
+function fDate(d?:string|null) { if(!d) return '—'; const dt=new Date(d); return Number.isNaN(dt.getTime())?'—':dt.toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'}); }
 
-// ── SUB-COMPONENTS ────────────────────────────────────────────
-function AttendanceRing({ rate }: { rate: number | null }) {
-  const r = 36; const circ = 2 * Math.PI * r;
-  const pct = rate ?? 0; const dash = (pct / 100) * circ;
-  const color = pct >= 80 ? '#10b981' : pct >= 60 ? '#f59e0b' : '#ef4444';
+function AttRing({rate}:{rate:number|null}) {
+  const r=40,circ=2*Math.PI*r,pct=rate??0,dash=(pct/100)*circ;
+  const color=pct>=80?'#10b981':pct>=60?'#f59e0b':'#ef4444';
   return (
-    <div className="relative flex h-24 w-24 items-center justify-center">
-      <svg viewBox="0 0 80 80" className="absolute inset-0 w-full h-full -rotate-90">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#1e293b" strokeWidth="6" />
-        <circle cx="40" cy="40" r={r} fill="none" stroke={color} strokeWidth="6" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" />
+    <div className="relative flex h-28 w-28 items-center justify-center">
+      <svg viewBox="0 0 88 88" className="absolute inset-0 w-full h-full -rotate-90">
+        <circle cx="44" cy="44" r={r} fill="none" stroke="#1e293b" strokeWidth="6"/>
+        <circle cx="44" cy="44" r={r} fill="none" stroke={color} strokeWidth="6"
+          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"/>
       </svg>
       <div className="text-center">
-        <p className="text-lg font-black text-white leading-none">{rate !== null ? `${rate}%` : '—'}</p>
-        <p className="text-[9px] text-slate-500 uppercase tracking-wide">Att.</p>
+        {rate !== null ? (
+          <>
+            <p className="text-2xl font-black text-white leading-none">{rate}%</p>
+            <p className="text-[9px] text-slate-500 uppercase tracking-wider mt-0.5">Att.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-xl font-black text-slate-600">—</p>
+            <p className="text-[9px] text-slate-700 uppercase tracking-wider mt-0.5">Att.</p>
+          </>
+        )}
       </div>
     </div>
   );
 }
 
-function Sparkline({ values, lower }: { values: number[]; lower: boolean }) {
-  if (values.length < 2) return null;
-  const min = Math.min(...values); const max = Math.max(...values); const range = max - min || 1;
-  const W = 80; const H = 28;
-  const pts = values.map((v, i) => `${(i / (values.length - 1)) * W},${H - ((v - min) / range) * H}`).join(' ');
-  const improved = lower ? values[values.length-1] < values[0] : values[values.length-1] > values[0];
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-20 h-7" preserveAspectRatio="none">
-      <polyline points={pts} fill="none" stroke={improved ? '#10b981' : '#ef4444'} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+function Spark({vals,lower}:{vals:number[];lower:boolean}) {
+  if(vals.length<2) return null;
+  const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
+  const W=72,H=28;
+  const pts=vals.map((v,i)=>`${(i/(vals.length-1))*W},${H-((v-mn)/rng)*H}`).join(' ');
+  const improved=lower?vals[vals.length-1]<vals[0]:vals[vals.length-1]>vals[0];
+  return(
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-[72px] h-7">
+      <polyline points={pts} fill="none" stroke={improved?'#10b981':'#ef4444'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
 
-// ── MAIN ──────────────────────────────────────────────────────
-export default function PlayerProfilePage({ params }: PageProps) {
-  const resolvedParams = React.use(params);
-  const code = resolvedParams.code;
+export default function PlayerProfilePage({params}:PageProps) {
+  const {code} = React.use(params);
+  const [athlete,setAthlete] = React.useState<Row|null>(null);
+  const [attendance,setAttendance] = React.useState<Row[]>([]);
+  const [performance,setPerformance] = React.useState<Row[]>([]);
+  const [feedback,setFeedback] = React.useState<Row|null>(null);
+  const [coachName,setCoachName] = React.useState('');
+  const [loading,setLoading] = React.useState(true);
+  const [notFound,setNotFound] = React.useState(false);
 
-  const [athlete, setAthlete] = React.useState<Row | null>(null);
-  const [attendance, setAttendance] = React.useState<Row[]>([]);
-  const [performance, setPerformance] = React.useState<Row[]>([]);
-  const [notes, setNotes] = React.useState<Row[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [notFound, setNotFound] = React.useState(false);
-
-  const [coachName, setCoachName] = React.useState('');
-
-  React.useEffect(() => {
+  React.useEffect(()=>{
     async function load() {
       try {
         const res = await fetch(`/api/player/profile?code=${encodeURIComponent(code)}`);
-        if (!res.ok) { setNotFound(true); setLoading(false); return; }
+        if(!res.ok){setNotFound(true);setLoading(false);return;}
         const data = await res.json();
         setAthlete(data.athlete);
-        setAttendance(data.attendance || []);
-        setPerformance(data.performance || []);
-        setNotes(data.feedback ? [data.feedback] : []);
-        setCoachName(data.coachName || '');
-      } catch {
-        setNotFound(true);
-      }
+        setAttendance(data.attendance||[]);
+        setPerformance(data.performance||[]);
+        setFeedback(data.feedback||null);
+        setCoachName(data.coachName||'');
+      } catch { setNotFound(true); }
       setLoading(false);
     }
     load();
-  }, [code]);
+  },[code]);
 
-  const name = athlete ? (athlete.full_name || athlete.name || 'Athlete') : '';
-  const team = athlete ? (athlete.team || '') : '';
-  const ageGroup = athlete ? (athlete.age_group || '') : '';
-  const availability = athlete?.availability || 'Available';
-  const position = athlete?.position || '';
+  const name = athlete?.full_name || athlete?.name || 'Athlete';
+  const team = athlete?.team||'';
+  const ageGroup = athlete?.age_group||'';
+  const position = athlete?.position||'';
+  const avail = athlete?.availability||'Available';
 
-  const attendanceSummary = React.useMemo(() => {
-    const total = attendance.length;
-    const present = attendance.filter((r) => r.status?.toLowerCase() === 'present').length;
-    const late = attendance.filter((r) => r.status?.toLowerCase() === 'late').length;
-    const absent = attendance.filter((r) => r.status?.toLowerCase() === 'absent').length;
-    const rate = total > 0 ? Math.round(((present + late) / total) * 100) : null;
-    return { total, present, late, absent, rate };
-  }, [attendance]);
+  const present = attendance.filter(a=>['present','late'].includes(a.status?.toLowerCase()||'')).length;
+  const absent  = attendance.filter(a=>a.status?.toLowerCase()==='absent').length;
+  const attRate = attendance.length>0 ? Math.round((present/attendance.length)*100) : null;
 
-  const performanceTrends = React.useMemo(() => {
-    const grouped = new Map<string, Row[]>();
-    performance.forEach((r) => { if (!grouped.has(r.test_type)) grouped.set(r.test_type, []); grouped.get(r.test_type)!.push(r); });
-    const rows: any[] = [];
-    grouped.forEach((entries, testType) => {
-      const sorted = [...entries].filter((e) => e.value !== null).sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime());
-      if (!sorted.length) return;
-      const latest = sorted[0]; const prev = sorted[1];
-      const lower = LOWER_IS_BETTER.some((t) => testType.toLowerCase().includes(t.toLowerCase()));
-      const delta = latest.value !== null && prev?.value !== null && prev ? latest.value - prev.value : null;
-      const improved = delta !== null && (lower ? delta < 0 : delta > 0);
-      const tier = typeof latest.value === 'number' ? getBenchmarkTier(testType, latest.value, ageGroup) : null;
-      const allValues = sorted.map((e: Row) => e.value).reverse();
-      rows.push({ testType, latest: latest.value, previous: prev?.value ?? null, delta, unit: latest.unit || '', latestDate: latest.test_date, improved, tier, lower, allValues });
+  // Personal bests + trends
+  const pbMap = React.useMemo(()=>{
+    const m=new Map<string,{vals:number[];unit:string}>();
+    performance.forEach(p=>{
+      if(p.value===null||p.value===undefined) return;
+      if(!m.has(p.test_type)) m.set(p.test_type,{vals:[],unit:p.unit||''});
+      m.get(p.test_type)!.vals.push(p.value);
     });
-    return rows;
-  }, [performance, ageGroup]);
+    return m;
+  },[performance]);
 
-  const personalBests = React.useMemo(() => {
-    const grouped = new Map<string, number[]>();
-    performance.forEach((r) => { if (r.value === null) return; if (!grouped.has(r.test_type)) grouped.set(r.test_type, []); grouped.get(r.test_type)!.push(r.value); });
-    const pbs: { testType: string; pb: number; unit: string }[] = [];
-    grouped.forEach((values, testType) => {
-      const lower = LOWER_IS_BETTER.some((t) => testType.toLowerCase().includes(t.toLowerCase()));
-      const pb = lower ? Math.min(...values) : Math.max(...values);
-      const unit = performance.find((r) => r.test_type === testType)?.unit || '';
-      pbs.push({ testType, pb, unit });
+  const pbs = React.useMemo(()=>{
+    const result: {test:string;pb:number;unit:string;vals:number[];tier:typeof TIER_CONFIG[0]|null;lower:boolean}[]=[];
+    pbMap.forEach(({vals,unit},test)=>{
+      const lower=LOWER_IS_BETTER.some(t=>test.toLowerCase().includes(t.toLowerCase()));
+      const pb=lower?Math.min(...vals):Math.max(...vals);
+      const tier=getTier(test,pb,ageGroup);
+      result.push({test,pb,unit,vals,tier,lower});
     });
-    return pbs;
-  }, [performance]);
+    return result;
+  },[pbMap,ageGroup]);
 
-  const latestFeedback = notes[0] || null;
+  const availColor = avail==='Available'?'#10b981':avail==='Injured'?'#f87171':avail==='Modified'?'#fbbf24':'#38bdf8';
+  const hasData = attendance.length>0 || performance.length>0 || feedback;
 
-  if (loading) return (
-    <main className="flex min-h-screen items-center justify-center bg-[#06071a]">
-      <div className="flex items-center gap-3">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-        <p className="text-sm text-slate-400">Loading your profile...</p>
+  if(loading) return (
+    <main className="flex min-h-screen items-center justify-center bg-[#060812]">
+      <div className="text-center">
+        <div className="relative mx-auto mb-4 h-10 w-10">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-800 border-t-sky-500"/>
+          <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-b-violet-500/30" style={{animationDuration:'1.5s',animationDirection:'reverse'}}/>
+        </div>
+        <p className="text-sm text-slate-500">Loading your profile…</p>
       </div>
     </main>
   );
 
-  if (notFound) return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-[#06071a] px-4">
-      <span className="text-5xl"></span>
-      <p className="mt-4 text-lg font-black text-white">Code not found</p>
-      <p className="mt-2 text-sm text-slate-500">Check your code and try again.</p>
-      <Link href="/player" className="mt-6 rounded-xl border border-sky-500 bg-sky-500/15 px-5 py-2.5 text-sm font-black text-sky-300">Try Again</Link>
+  if(notFound) return (
+    <main className="flex min-h-screen flex-col items-center justify-center bg-[#060812] px-4 text-white">
+      <div className="text-center">
+        <p className="text-5xl mb-4">🔍</p>
+        <p className="text-xl font-black text-white">Code not found</p>
+        <p className="mt-2 text-sm text-slate-500">Check your code and try again.</p>
+        <Link href="/player" className="mt-6 inline-block rounded-2xl border border-sky-500/40 bg-sky-500/15 px-6 py-3 text-sm font-black text-sky-300">Try Again</Link>
+      </div>
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-[#06071a] text-white">
+    <main className="min-h-screen bg-[#060812] text-white">
 
-      {/* HERO */}
-      <div className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 to-[#06071a]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_0%_50%,rgba(14,165,233,0.06),transparent)]" />
+      {/* ── HERO ── */}
+      <div className="relative overflow-hidden" style={{background:'linear-gradient(180deg,rgba(14,20,50,0.95) 0%,#060812 100%)'}}>
+        <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 80% 60% at 50% -20%, rgba(56,189,248,0.08), transparent)'}}/>
 
-        <div className="relative mx-auto max-w-2xl px-4 py-8 sm:px-6">
-
-          {/* School header */}
+        <div className="relative mx-auto max-w-2xl px-5 pt-8 pb-6 sm:px-8">
+          {/* Header */}
           <div className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xl"></span>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.25em] text-sky-400">St Benedict's College</p>
-                <p className="text-[9px] uppercase tracking-widest text-slate-600">Hockey Department</p>
-              </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-400">St Benedict's College</p>
+              <p className="text-[9px] text-slate-600 tracking-widest uppercase mt-0.5">Hockey</p>
             </div>
-            <Link href="/portal" className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition">Team Portal →</Link>
+            <Link href="/portal" className="rounded-xl border border-white/8 bg-white/4 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white transition">
+              Portal →
+            </Link>
           </div>
 
-          {/* Profile */}
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="relative shrink-0">
-                <div className="flex h-18 w-18 h-[72px] w-[72px] items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/30 to-sky-500/10 text-xl font-black text-sky-300">{initials(name)}</div>
-                <div className={`absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#06071a] ${availability === 'Available' ? 'bg-emerald-500' : availability === 'Injured' ? 'bg-red-500' : availability === 'Modified' ? 'bg-amber-500' : 'bg-sky-500'}`}>
-                  {availability === 'Available' ? <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} className="h-3 w-3"><path d="M5 13l4 4L19 7"/></svg> : <span className="text-[8px] font-black text-white">{availability[0]}</span>}
+          {/* Player card */}
+          <div className="flex items-start gap-5">
+            <div className="flex-1 min-w-0">
+              {/* Avatar + name */}
+              <div className="flex items-center gap-4 mb-4">
+                <div className="relative shrink-0">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl text-xl font-black"
+                    style={{background:'rgba(56,189,248,0.12)',color:'#38bdf8',border:'1px solid rgba(56,189,248,0.2)'}}>
+                    {initials(name)}
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-[#060812]"
+                    style={{background:availColor}}/>
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">Player Profile</p>
+                  <h1 className="text-2xl font-black text-white leading-tight mt-0.5">{name}</h1>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {team&&<span className="rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:'rgba(56,189,248,0.12)',color:'#38bdf8',border:'1px solid rgba(56,189,248,0.2)'}}>{team}</span>}
+                    {ageGroup&&<span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-slate-400" style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)'}}>{ageGroup}</span>}
+                    {position&&<span className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold" style={{background:'rgba(167,139,250,0.12)',color:'#a78bfa',border:'1px solid rgba(167,139,250,0.2)'}}>{position}</span>}
+                    <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:`${availColor}18`,color:availColor,border:`1px solid ${availColor}40`}}>{avail}</span>
+                  </div>
                 </div>
               </div>
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">My Profile</p>
-                <h1 className="mt-0.5 text-2xl font-black tracking-tight text-white sm:text-3xl">{name}</h1>
-                <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                  {team && <span className="rounded-full bg-sky-500/15 px-3 py-1 text-xs font-black text-sky-300">{team}</span>}
-                  {ageGroup && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-semibold text-slate-400">{ageGroup}</span>}
-                  {position && <span className="rounded-full bg-violet-500/15 px-3 py-1 text-xs font-semibold text-violet-300">{position}</span>}
-                  {coachName && <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400">Coach: {coachName}</span>}
-                  <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${availability === 'Available' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : availability === 'Injured' ? 'bg-red-500/15 text-red-300 border-red-500/30' : availability === 'Modified' ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-sky-500/15 text-sky-300 border-sky-500/30'}`}>{availability}</span>
-                </div>
-              </div>
-            </div>
-            <AttendanceRing rate={attendanceSummary.rate} />
-          </div>
 
-          {/* KPI cards */}
-          <div className="mt-6 grid grid-cols-3 gap-3">
-            {[
-              { label: 'Sessions', value: attendanceSummary.total, sub: `${attendanceSummary.present} present`, color: attendanceSummary.rate !== null && attendanceSummary.rate >= 80 ? 'emerald' : 'sky' },
-              { label: 'Absences', value: attendanceSummary.absent, sub: 'this season', color: attendanceSummary.absent > 3 ? 'red' : 'slate' },
-              { label: 'Test Records', value: performance.length, sub: `${performanceTrends.length} tests`, color: 'violet' },
-            ].map((kpi) => (
-              <div key={kpi.label} className={`rounded-2xl border bg-slate-900/80 p-4 ${kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'red' ? 'border-red-500/20' : kpi.color === 'violet' ? 'border-violet-500/20' : 'border-slate-800'}`}>
-                <p className={`text-3xl font-black ${kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'red' ? 'text-red-400' : kpi.color === 'violet' ? 'text-violet-400' : 'text-white'}`}>{kpi.value}</p>
-                <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
-                <p className="mt-0.5 text-[10px] text-slate-600">{kpi.sub}</p>
+              {/* Stats strip */}
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  {label:'Sessions',val:attendance.length,color:'#fff'},
+                  {label:'Present',val:present,color:'#10b981'},
+                  {label:'Absent',val:absent,color:absent>3?'#f87171':'#334155'},
+                ].map(s=>(
+                  <div key={s.label} className="rounded-xl p-3 text-center" style={{background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.06)'}}>
+                    <p className="text-xl font-black" style={{color:s.color}}>{s.val}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-600 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
               </div>
-            ))}
+
+              {/* Coach */}
+              {coachName&&(
+                <p className="mt-3 text-[11px] text-slate-600">
+                  <span className="text-slate-700">Coach · </span>
+                  <span className="text-slate-400 font-semibold">{coachName}</span>
+                </p>
+              )}
+            </div>
+
+            {/* Attendance ring */}
+            <div className="shrink-0">
+              <AttRing rate={attRate}/>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* CONTENT */}
-      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-6">
+      {/* ── CONTENT ── */}
+      <div className="mx-auto max-w-2xl px-5 py-6 sm:px-8 space-y-5">
 
-        {/* Empty state */}
-        {performanceTrends.length === 0 && attendanceSummary.total === 0 && !latestFeedback && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center">
-            <p className="text-4xl mb-3"></p>
-            <p className="text-lg font-black text-white">Your season profile is being built</p>
-            <p className="mt-2 text-sm text-slate-500 max-w-xs mx-auto">As your coach logs attendance and testing data, your performance profile will appear here.</p>
-            <div className="mt-6 grid grid-cols-3 gap-3 text-left">
-              {[{ icon: '', t: 'Attendance', d: 'Every session' }, { icon: '', t: 'Testing', d: 'Benchmarks' }, { icon: '', t: 'Trends', d: 'Your progress' }].map((item) => (
-                <div key={item.t} className="rounded-xl border border-slate-800 bg-slate-950/50 p-3">
-                  <p className="text-xl mb-1">{item.icon}</p>
-                  <p className="text-xs font-black text-white">{item.t}</p>
-                  <p className="mt-0.5 text-[10px] text-slate-500">{item.d}</p>
+        {/* ── EMPTY STATE — looks premium, not dead ── */}
+        {!hasData&&(
+          <div className="rounded-2xl border border-white/5 p-8 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl" style={{background:'rgba(56,189,248,0.08)',border:'1px solid rgba(56,189,248,0.15)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth={1.5} className="h-7 w-7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <p className="text-lg font-black text-white mb-2">Your season profile is building</p>
+            <p className="text-sm text-slate-500 max-w-xs mx-auto leading-relaxed">
+              As your coach logs attendance and test data, your performance profile will come to life here.
+            </p>
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              {[
+                {label:'Attendance',sub:'Every session tracked',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,color:'#10b981'},
+                {label:'Testing',sub:'Benchmark scores',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,color:'#a78bfa'},
+                {label:'Progress',sub:'Trends over time',icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>,color:'#f59e0b'},
+              ].map(item=>(
+                <div key={item.label} className="rounded-xl p-3 text-center" style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.05)'}}>
+                  <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-lg" style={{background:`${item.color}12`,color:item.color}}>
+                    {item.icon}
+                  </div>
+                  <p className="text-[11px] font-black text-white">{item.label}</p>
+                  <p className="text-[9px] text-slate-600 mt-0.5">{item.sub}</p>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* Coach Feedback */}
-        {latestFeedback && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">From Your Coach</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Latest Feedback</h2>
+        {/* ── COACH FEEDBACK ── */}
+        {feedback&&(
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="px-5 py-4 border-b border-white/5" style={{background:'rgba(56,189,248,0.04)'}}>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">From Your Coach</p>
+              <p className="text-base font-black text-white mt-0.5">Latest Feedback</p>
             </div>
-            <div className="space-y-3">
-              {latestFeedback.strengths && (
-                <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p>
-                  <p className="text-sm leading-relaxed text-slate-200">{latestFeedback.strengths}</p>
+            <div className="p-5 space-y-3">
+              {feedback.strengths&&(
+                <div className="rounded-xl p-4" style={{background:'rgba(16,185,129,0.06)',border:'1px solid rgba(16,185,129,0.15)'}}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-emerald-400 mb-2">Strengths</p>
+                  <p className="text-sm text-slate-200 leading-relaxed">{feedback.strengths}</p>
                 </div>
               )}
-              {latestFeedback.current_focus && (
-                <div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p>
-                  <p className="text-sm leading-relaxed text-slate-200">{latestFeedback.current_focus}</p>
+              {feedback.current_focus&&(
+                <div className="rounded-xl p-4" style={{background:'rgba(251,191,36,0.06)',border:'1px solid rgba(251,191,36,0.15)'}}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-amber-400 mb-2">Focus Area</p>
+                  <p className="text-sm text-slate-200 leading-relaxed">{feedback.current_focus}</p>
                 </div>
               )}
-              {latestFeedback.coach_comment && (
-                <div className="rounded-xl border border-sky-500/15 bg-sky-500/5 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p>
-                  <p className="text-sm leading-relaxed text-slate-200 italic">"{latestFeedback.coach_comment}"</p>
+              {feedback.coach_comment&&(
+                <div className="rounded-xl p-4" style={{background:'rgba(56,189,248,0.05)',border:'1px solid rgba(56,189,248,0.12)'}}>
+                  <p className="text-[10px] font-black uppercase tracking-[0.15em] text-sky-400 mb-2">Comment</p>
+                  <p className="text-sm text-slate-200 leading-relaxed italic">"{feedback.coach_comment}"</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Personal Bests */}
-        {personalBests.length > 0 && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">My Records</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Personal Bests</h2>
+        {/* ── PERSONAL BESTS ── */}
+        {pbs.length>0&&(
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="px-5 py-4 border-b border-white/5">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">My Records</p>
+              <p className="text-base font-black text-white mt-0.5">Personal Bests</p>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {personalBests.map((pb) => {
-                const trend = performanceTrends.find((t) => t.testType === pb.testType);
-                const tier = getBenchmarkTier(pb.testType, pb.pb, ageGroup);
-                const lower = LOWER_IS_BETTER.some((t) => pb.testType.toLowerCase().includes(t.toLowerCase()));
-                return (
-                  <div key={pb.testType} className={`rounded-xl border p-4 ${tier ? `${tier.bg} ${tier.border}` : 'border-slate-800 bg-slate-950/50'}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-[10px] font-black uppercase tracking-wide text-slate-400">{pb.testType}</p>
-                        {TEST_DESCRIPTIONS[pb.testType] && <p className="mt-0.5 text-[9px] text-slate-600">{TEST_DESCRIPTIONS[pb.testType]}</p>}
-                      </div>
-                      {tier && <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>}
+            <div className="p-4 grid gap-3 sm:grid-cols-2">
+              {pbs.map(pb=>{
+                const improved = pb.lower ? pb.vals[pb.vals.length-1]<pb.vals[0] : pb.vals[pb.vals.length-1]>pb.vals[0];
+                return(
+                  <div key={pb.test} className="rounded-xl p-4" style={{
+                    background: pb.tier ? pb.tier.bg : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${pb.tier ? pb.tier.border : 'rgba(255,255,255,0.06)'}`,
+                  }}>
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-[11px] font-black uppercase tracking-wide text-slate-400">{pb.test}</p>
+                      {pb.tier&&<span className="rounded-full px-2 py-0.5 text-[9px] font-black" style={{background:pb.tier.bg,color:pb.tier.hex,border:`1px solid ${pb.tier.border}`}}>{pb.tier.label}</span>}
                     </div>
-                    <div className="mt-3 flex items-end justify-between gap-3">
+                    <div className="flex items-end justify-between gap-3">
                       <div>
-                        <p className="text-[10px] text-slate-600 uppercase tracking-wide">PB</p>
-                        <p className="text-2xl font-black text-white">{pb.pb}{pb.unit}</p>
-                        {trend?.delta !== null && trend?.delta !== undefined && (
-                          <p className={`text-xs font-bold ${trend.improved ? 'text-emerald-400' : 'text-red-400'}`}>{trend.improved ? '↑' : '↓'} {Math.abs(trend.delta)}{pb.unit}</p>
+                        <p className="text-3xl font-black text-white leading-none">{pb.pb}<span className="text-base text-slate-500 ml-1">{pb.unit}</span></p>
+                        {pb.vals.length>1&&(
+                          <p className="text-[11px] mt-1 font-semibold" style={{color:improved?'#10b981':'#f87171'}}>
+                            {improved?'↑ Improving':'↓ Declining'}
+                          </p>
                         )}
                       </div>
-                      {trend && <Sparkline values={trend.allValues} lower={lower} />}
+                      <Spark vals={pb.vals} lower={pb.lower}/>
                     </div>
                   </div>
                 );
@@ -334,88 +333,59 @@ export default function PlayerProfilePage({ params }: PageProps) {
           </div>
         )}
 
-        {/* Benchmark Position */}
-        {performanceTrends.filter((t) => BENCHMARKS[t.testType]).length > 0 && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">How I Compare</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Benchmark Position</h2>
-              <p className="mt-1 text-xs text-slate-500">vs St Benedict's standards for {ageGroup}</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">{TIERS.map((t) => <span key={t.label} className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${t.bg} ${t.border} ${t.color}`}>{t.label}</span>)}</div>
+        {/* ── ATTENDANCE ── */}
+        {attendance.length>0&&(
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Commitment</p>
+                <p className="text-base font-black text-white mt-0.5">Attendance</p>
+              </div>
+              {attRate!==null&&(
+                <span className="text-2xl font-black" style={{color:attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171'}}>
+                  {attRate}%
+                </span>
+              )}
             </div>
-            <div className="space-y-4">
-              {performanceTrends.filter((t) => BENCHMARKS[t.testType] && t.latest !== null).map((trend) => {
-                const tier = getBenchmarkTier(trend.testType, trend.latest!, ageGroup);
-                const b = BENCHMARKS[trend.testType];
-                const lower = trend.lower;
-                const thr = ageGroup.includes('14') || ageGroup.includes('15') ? b.u1415 : b.u1618;
-                const pct = lower ? Math.max(0, Math.min(100, ((thr[3] - trend.latest!) / (thr[3] - thr[0])) * 100)) : Math.max(0, Math.min(100, ((trend.latest! - thr[3]) / (thr[0] - thr[3])) * 100));
-                const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 60 ? 'bg-sky-500' : pct >= 40 ? 'bg-amber-500' : pct >= 20 ? 'bg-orange-500' : 'bg-red-500';
-                return (
-                  <div key={trend.testType}>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-300">{trend.testType}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-white">{trend.latest}{trend.unit}</span>
-                        {tier && <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.border} ${tier.color}`}>{tier.label}</span>}
-                      </div>
-                    </div>
-                    <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
-                      <div className="absolute inset-0 flex">{['bg-red-500/15','bg-orange-500/15','bg-amber-500/15','bg-sky-500/15','bg-emerald-500/15'].map((c,i) => <div key={i} className={`h-full flex-1 ${c}`} />)}</div>
-                      <div className={`absolute top-0 h-full rounded-full ${barColor}`} style={{ width: `${Math.max(4, pct)}%` }} />
-                    </div>
-                    <div className="mt-0.5 flex justify-between text-[9px] text-slate-700"><span>Poor</span><span>Developing</span><span>Average</span><span>Good</span><span>Elite</span></div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Attendance */}
-        {attendanceSummary.total > 0 && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <div className="mb-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-400">My Commitment</p>
-              <h2 className="mt-0.5 text-lg font-black text-white">Attendance</h2>
-            </div>
-            {attendanceSummary.rate !== null && (
-              <div className="mb-5">
-                <div className="mb-1.5 flex justify-between text-xs">
-                  <span className="text-slate-500">Attendance rate</span>
-                  <span className={`font-black ${attendanceSummary.rate >= 80 ? 'text-emerald-400' : attendanceSummary.rate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{attendanceSummary.rate}%</span>
-                </div>
-                <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-800">
-                  <div className={`h-full rounded-full ${attendanceSummary.rate >= 80 ? 'bg-emerald-500' : attendanceSummary.rate >= 60 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${attendanceSummary.rate}%` }} />
-                </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-xl bg-emerald-500/10 p-2"><p className="text-lg font-black text-emerald-400">{attendanceSummary.present}</p><p className="text-[10px] text-slate-500">Present</p></div>
-                  <div className="rounded-xl bg-red-500/10 p-2"><p className="text-lg font-black text-red-400">{attendanceSummary.absent}</p><p className="text-[10px] text-slate-500">Absent</p></div>
-                  <div className="rounded-xl bg-slate-800 p-2"><p className="text-lg font-black text-white">{attendanceSummary.total}</p><p className="text-[10px] text-slate-500">Total</p></div>
+            {attRate!==null&&(
+              <div className="px-5 py-3 border-b border-white/5">
+                <div className="h-2 w-full overflow-hidden rounded-full" style={{background:'rgba(255,255,255,0.06)'}}>
+                  <div className="h-full rounded-full transition-all" style={{
+                    width:`${attRate}%`,
+                    background:attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171',
+                  }}/>
                 </div>
               </div>
             )}
-            <div className="space-y-1.5">
-              {attendance.slice(0, 10).map((record, i) => {
-                const s = record.status?.toLowerCase() || '';
-                const cls = s === 'present' ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20' : s === 'late' ? 'bg-amber-500/15 text-amber-300 border-amber-500/20' : s === 'absent' ? 'bg-red-500/15 text-red-300 border-red-500/20' : 'bg-sky-500/15 text-sky-300 border-sky-500/20';
-                return (
-                  <div key={i} className="flex items-center gap-3 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
-                    <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-black ${cls}`}>{record.status}</span>
-                    <p className="flex-1 text-sm text-slate-300">{record.session_type}</p>
-                    <p className="text-xs text-slate-500">{formatDate(record.session_date)}</p>
+            <div className="divide-y divide-white/3 max-h-64 overflow-y-auto">
+              {attendance.slice(0,15).map((r,i)=>{
+                const s=r.status?.toLowerCase()||'';
+                const c=s==='present'?{bg:'rgba(16,185,129,0.1)',color:'#6ee7b7',border:'rgba(16,185,129,0.2)'}
+                  :s==='late'?{bg:'rgba(251,191,36,0.1)',color:'#fde68a',border:'rgba(251,191,36,0.2)'}
+                  :s==='absent'?{bg:'rgba(248,113,113,0.1)',color:'#fca5a5',border:'rgba(248,113,113,0.2)'}
+                  :{bg:'rgba(56,189,248,0.1)',color:'#7dd3fc',border:'rgba(56,189,248,0.2)'};
+                return(
+                  <div key={i} className="flex items-center gap-3 px-5 py-3">
+                    <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black"
+                      style={{background:c.bg,color:c.color,border:`1px solid ${c.border}`}}>
+                      {r.status}
+                    </span>
+                    <p className="flex-1 text-sm text-slate-300">{r.session_type||'—'}</p>
+                    <p className="text-[11px] text-slate-600 shrink-0">{fDate(r.session_date)}</p>
                   </div>
                 );
               })}
-              {attendance.length > 10 && <p className="text-center text-xs text-slate-600">+{attendance.length - 10} more sessions</p>}
+              {attendance.length>15&&(
+                <p className="px-5 py-3 text-center text-[11px] text-slate-600">+{attendance.length-15} more sessions</p>
+              )}
             </div>
           </div>
         )}
 
         {/* Footer */}
-        <div className="pb-6 text-center space-y-2">
-          <p className="text-xs text-slate-700">St Benedict's College Hockey · Player Portal</p>
-          <Link href="/player" className="inline-block text-xs text-slate-600 hover:text-slate-400">← Back to code entry</Link>
+        <div className="py-4 text-center space-y-2">
+          <p className="text-[10px] text-slate-700 font-semibold uppercase tracking-widest">St Benedict's College · Hockey</p>
+          <Link href="/player" className="text-[11px] text-slate-600 hover:text-slate-400 transition">← Back to code entry</Link>
         </div>
       </div>
     </main>
