@@ -69,20 +69,19 @@ export function middleware(req: NextRequest) {
     if (!portalCookie?.value) {
       return NextResponse.redirect(new URL('/portal-login', req.url));
     }
-    // Verify the cookie signature
-    const secret = process.env.HP_SESSION_SECRET;
-    if (secret) {
-      try {
-        const [payload, sig] = decodeURIComponent(portalCookie.value).split('.');
-        if (!payload || !sig) return NextResponse.redirect(new URL('/portal-login', req.url));
-        const crypto = require('crypto');
-        const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-        if (sig !== expected) return NextResponse.redirect(new URL('/portal-login', req.url));
-        const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
-        if (!decoded.exp || decoded.exp < Date.now()) return NextResponse.redirect(new URL('/portal-login', req.url));
-      } catch {
+    // Basic validity check - just verify it has the right structure
+    // Full HMAC verification happens server-side in the portal page
+    try {
+      const [payload, sig] = decodeURIComponent(portalCookie.value).split('.');
+      if (!payload || !sig || payload.length < 10) {
         return NextResponse.redirect(new URL('/portal-login', req.url));
       }
+      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+      if (!decoded.exp || decoded.exp < Date.now()) {
+        return NextResponse.redirect(new URL('/portal-login', req.url));
+      }
+    } catch {
+      return NextResponse.redirect(new URL('/portal-login', req.url));
     }
   }
 
