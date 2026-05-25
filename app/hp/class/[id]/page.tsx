@@ -99,8 +99,6 @@ export default function ClassProfilePage({params}:PageProps) {
         student_id:s.id, session_date:attDate, status:attStatuses[s.id]||'Present',
       }))})
     });
-      student_id:s.id, session_date:attDate, status:attStatuses[s.id]||'Present',
-    })));
     showToast(`Register saved for ${attDate} ✓`);
     await load();
     setSavingAtt(false);
