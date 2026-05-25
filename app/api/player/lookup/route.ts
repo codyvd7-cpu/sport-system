@@ -19,10 +19,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid code format.' }, { status: 400 });
     }
 
-    // Use anon client — RLS protects data
+    // Use service role to bypass RLS for player code lookup
+    // Only returns id — no sensitive data exposed
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
     const { data, error } = await supabase

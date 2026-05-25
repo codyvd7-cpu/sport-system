@@ -99,22 +99,17 @@ export default function PlayerProfilePage({ params }: PageProps) {
 
   React.useEffect(() => {
     async function load() {
-      const { data: ath, error } = await supabase.from('athletes').select('*').eq('player_code', code.toUpperCase()).single();
-      if (error || !ath) { setNotFound(true); setLoading(false); return; }
-      setAthlete(ath);
-      const [attRes, perfRes, notesRes, coachRes] = await Promise.all([
-        supabase.from('attendance').select('*').eq('athlete_id', ath.id).order('session_date', { ascending: false }),
-        supabase.from('performance_tests').select('*').eq('athlete_id', ath.id).order('test_date', { ascending: false }),
-        supabase.from('coach_notes').select('*').eq('athlete_id', ath.id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(1),
-        supabase.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
-      ]);
-      setAttendance(attRes.data || []);
-      setPerformance(perfRes.data || []);
-      setNotes(notesRes.data || []);
-      // Find coach for this athlete's team
-      const teamCoach = (coachRes.data || []).find(c => Array.isArray(c.teams) && c.teams.includes(ath.team));
-      if (teamCoach) {
-        setCoachName(teamCoach.full_name || teamCoach.email.split('@')[0].replace(/[._]/g, ' '));
+      try {
+        const res = await fetch(`/api/player/profile?code=${encodeURIComponent(code)}`);
+        if (!res.ok) { setNotFound(true); setLoading(false); return; }
+        const data = await res.json();
+        setAthlete(data.athlete);
+        setAttendance(data.attendance || []);
+        setPerformance(data.performance || []);
+        setNotes(data.feedback ? [data.feedback] : []);
+        setCoachName(data.coachName || '');
+      } catch {
+        setNotFound(true);
       }
       setLoading(false);
     }
