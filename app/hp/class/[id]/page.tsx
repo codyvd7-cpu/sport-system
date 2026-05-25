@@ -66,23 +66,18 @@ export default function ClassProfilePage({params}:PageProps) {
   const [savingAtt,setSavingAtt] = React.useState(false);
 
   async function load() {
-    const sRes = await supabase.from('hp_students').select('*').eq('grade',grade).eq('class_group',cls).eq('is_active',true).order('full_name');
-    const squad = sRes.data||[];
+    const res = await fetch(`/api/hp/data?type=class&grade=${encodeURIComponent(grade)}&cls=${cls}&year=${year}`, { credentials: 'include' });
+    if (!res.ok) { setLoading(false); return; }
+    const d = await res.json();
+    const squad = d.students || [];
     setStudents(squad);
-    if(!squad.length){setLoading(false);return;}
-    const ids = squad.map(s=>s.id);
-    const [aRes,tRes] = await Promise.all([
-      supabase.from('hp_attendance').select('*').in('student_id',ids).order('session_date',{ascending:false}).limit(500),
-      supabase.from('hp_test_results').select('*').in('student_id',ids).eq('year',year),
-    ]);
-    setAttendance(aRes.data||[]);
-    setTestResults(tRes.data||[]);
-
-    // Pre-populate today's attendance
-    const init:Record<string,string>={};
-    squad.forEach(s=>{
-      const existing=(aRes.data||[]).find(r=>r.student_id===s.id&&r.session_date===new Date().toISOString().split('T')[0]);
-      init[s.id]=existing?.status||'Present';
+    setAttendance(d.attendance || []);
+    setTestResults(d.tests || []);
+    if (!squad.length) { setLoading(false); return; }
+    const init: Record<string,string> = {};
+    squad.forEach((s: any) => {
+      const existing = (d.attendance || []).find((r: any) => r.student_id === s.id && r.session_date === new Date().toISOString().split('T')[0]);
+      init[s.id] = existing?.status || 'Present';
     });
     setAttStatuses(init);
     setLoading(false);
@@ -99,9 +94,11 @@ export default function ClassProfilePage({params}:PageProps) {
 
   async function saveAttendance() {
     setSavingAtt(true);
-    const ids = students.map(s=>s.id);
-    await supabase.from('hp_attendance').delete().eq('session_date',attDate).in('student_id',ids);
-    await supabase.from('hp_attendance').insert(students.map(s=>({
+    await fetch('/api/hp/data', { method:'POST', credentials:'include', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'save_attendance', date:attDate, records: students.map(s=>({
+        student_id:s.id, session_date:attDate, status:attStatuses[s.id]||'Present',
+      }))})
+    });
       student_id:s.id, session_date:attDate, status:attStatuses[s.id]||'Present',
     })));
     showToast(`Register saved for ${attDate} ✓`);

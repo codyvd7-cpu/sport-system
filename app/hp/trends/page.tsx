@@ -85,17 +85,17 @@ export default function HPTrendsPage(){
   const[selTest,setSelTest]=React.useState<string|null>(null);
 
   React.useEffect(()=>{
-    Promise.all([
-      supabase.from('hp_students').select('*').eq('is_active',true),
-      supabase.from('hp_test_results').select('*').order('year').order('term'),
-    ]).then(([s,r])=>{
-      const sorted=(s.data||[]).sort((a:Row,b:Row)=>{
-        const sA=a.full_name.trim().split(' ').pop()?.toLowerCase()||'';
-        const sB=b.full_name.trim().split(' ').pop()?.toLowerCase()||'';
-        return sA.localeCompare(sB);
-      });
-      setStudents(sorted);setResults(r.data||[]);setLoading(false);
-    });
+    fetch('/api/hp/data?type=trends', { credentials:'include' })
+      .then(r=>r.json())
+      .then(d=>{
+        const sorted=(d.students||[]).sort((a:Row,b:Row)=>{
+          const sA=a.full_name.trim().split(' ').pop()?.toLowerCase()||'';
+          const sB=b.full_name.trim().split(' ').pop()?.toLowerCase()||'';
+          return sA.localeCompare(sB);
+        });
+        setStudents(sorted);setResults(d.tests||[]);setLoading(false);
+      })
+      .catch(()=>setLoading(false));
   },[]);
 
   const tests=TESTS.filter(t=>t.grade===grade.split(' ')[1]||t.grade==='both');

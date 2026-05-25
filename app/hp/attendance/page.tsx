@@ -28,11 +28,10 @@ export default function HPAttendancePage() {
 
   React.useEffect(() => {
     async function load() {
-      const [sRes, aRes] = await Promise.all([
-        supabase.from('hp_students').select('*').eq('is_active', true),
-        supabase.from('hp_attendance').select('*').order('session_date', { ascending: false }).limit(500),
-      ]);
-      const s = (sRes.data || []).sort((a: Row, b: Row) => {
+      const res = await fetch('/api/hp/data?type=attendance', { credentials: 'include' });
+      if (!res.ok) return;
+      const d = await res.json();
+      const s = (d.students || []).sort((a: Row, b: Row) => {
         const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
         const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
         return sA.localeCompare(sB);
@@ -41,7 +40,7 @@ export default function HPAttendancePage() {
       const init: Record<string, string> = {};
       s.forEach((st: Row) => { init[st.id] = 'Present'; });
       setStatuses(init);
-      setHistory(aRes.data || []);
+      setHistory(d.attendance || []);
     }
     load();
   }, []);
@@ -62,19 +61,15 @@ export default function HPAttendancePage() {
       session_type: sessionType,
       status: statuses[s.id] || 'Present',
     }));
-    const { error: delError } = await supabase.from('hp_attendance').delete()
-      .eq('session_date', sessionDate)
-      .in('student_id', classStudents.map(s => s.id));
-    if (delError) { showToast(`Error: ${delError.message}`); setSaving(false); return; }
-    const { error: insError } = await supabase.from('hp_attendance').insert(records);
-    if (insError) { showToast(`Error: ${insError.message}`); setSaving(false); return; }
+    const res = await fetch('/api/hp/data', { method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'save_attendance', date:sessionDate, records })
+    });
+    if (!res.ok) { const d=await res.json(); showToast(`Error: ${d.error}`); setSaving(false); return; }
     showToast(`Attendance saved — ${classStudents.length} students ✓`);
-    // Reload history filtered to current class
-    const studentIds = classStudents.map(s => s.id);
-    const { data } = await supabase.from('hp_attendance').select('*')
-      .in('student_id', studentIds)
-      .order('session_date', { ascending: false }).limit(150);
-    setHistory(data || []);
+    // Reload attendance
+    const r2 = await fetch('/api/hp/data?type=attendance', { credentials:'include' });
+    if (r2.ok) { const d2=await r2.json(); setHistory(d2.attendance||[]); }
     setSaving(false);
   }
 

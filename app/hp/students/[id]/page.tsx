@@ -120,17 +120,13 @@ export default function HPStudentProfile({ params }: PageProps) {
 
   React.useEffect(() => {
     async function load() {
-      const [sRes, aRes, rRes] = await Promise.all([
-        supabase.from('hp_students').select('*').eq('id', id).single(),
-        supabase.from('hp_attendance').select('*').eq('student_id', id).order('session_date', { ascending: false }),
-        supabase.from('hp_test_results').select('*').eq('student_id', id).order('year').order('term'),
-      ]);
-      if (sRes.error) { setLoadError(`Could not load student: ${sRes.error.message}`); setLoading(false); return; }
-      if (aRes.error) setLoadError(`Attendance error: ${aRes.error.message}`);
-      if (rRes.error) setLoadError(`Results error: ${rRes.error.message}`);
-      setStudent(sRes.data);
-      setAttendance(aRes.data || []);
-      setResults(rRes.data || []);
+      const res = await fetch(`/api/hp/data?type=student&id=${id}&year=${new Date().getFullYear()}`, { credentials: 'include' });
+      if (!res.ok) { setLoadError('Could not load student.'); setLoading(false); return; }
+      const d = await res.json();
+      if (!d.student) { setLoadError('Student not found.'); setLoading(false); return; }
+      setStudent(d.student);
+      setAttendance(d.attendance || []);
+      setResults(d.tests || []);
       setLoading(false);
     }
     load();
