@@ -23,11 +23,13 @@ export async function GET(req: NextRequest) {
 
   if (error || !athlete) return NextResponse.json({ error: 'Player not found.' }, { status: 404 });
 
-  const [attRes, perfRes, notesRes, coachRes] = await Promise.all([
+  const [attRes, perfRes, notesRes, coachRes, fixRes, resRes] = await Promise.all([
     supabase.from('attendance').select('*').eq('athlete_id', athlete.id).order('session_date', { ascending: false }),
     supabase.from('performance_tests').select('*').eq('athlete_id', athlete.id).order('test_date', { ascending: false }),
     supabase.from('coach_notes').select('*').eq('athlete_id', athlete.id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(1),
     supabase.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
+    supabase.from('portal_fixtures').select('*').eq('team', athlete.team).gte('fixture_date', new Date().toISOString().split('T')[0]).order('fixture_date').limit(1),
+    supabase.from('portal_results').select('*').eq('team', athlete.team).order('result_date', { ascending: false }).limit(5),
   ]);
 
   const teamCoach = (coachRes.data || []).find((c: any) =>
@@ -43,5 +45,7 @@ export async function GET(req: NextRequest) {
     performance: perfRes.data || [],
     feedback: notesRes.data?.[0] || null,
     coachName,
+    nextFixture: fixRes.data?.[0] || null,
+    recentResults: resRes.data || [],
   });
 }
