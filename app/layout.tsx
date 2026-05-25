@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-slate-950 text-white antialiased" suppressHydrationWarning>
+      <body className="min-h-screen text-white antialiased" style={{background:'var(--bg)',fontFamily:'var(--font-sans)'}} suppressHydrationWarning>
 
         <ToastProvider>
           <RootLayoutClient>{children}</RootLayoutClient>

@@ -6,7 +6,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <AuthGuard>
       <CoachNav />
-      <div className="pb-20 md:pb-0">{children}</div>
+      <div className="pb-20 md:pb-0 md:ml-[220px]">{children}</div>
     </AuthGuard>
   );
 }
