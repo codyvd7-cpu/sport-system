@@ -26,20 +26,25 @@ function HPStudentsInner() {
   const [saving, setSaving] = React.useState(false);
 
   async function load() {
-    const { data, error } = await supabase.from('hp_students').select('*').eq('is_active', true);
-    if (error) {
-      console.error('HP Students load error:', error.message, error.code);
-      showToast(`Error loading students: ${error.message}`, 'error');
-      setLoading(false);
-      return;
+    try {
+      const res = await fetch('/api/hp/students', { credentials: 'include' });
+      if (!res.ok) {
+        const d = await res.json();
+        showToast(`Error: ${d.error}`, 'error');
+        setLoading(false);
+        return;
+      }
+      const { students: data } = await res.json();
+      const sorted = (data || []).sort((a: Row, b: Row) => {
+        const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+        const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+        if (sA !== sB) return sA.localeCompare(sB);
+        return a.grade.localeCompare(b.grade);
+      });
+      setStudents(sorted);
+    } catch (e: any) {
+      showToast(`Error: ${e.message}`, 'error');
     }
-    const sorted = (data || []).sort((a, b) => {
-      const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-      const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-      if (sA !== sB) return sA.localeCompare(sB);
-      return a.grade.localeCompare(b.grade);
-    });
-    setStudents(sorted);
     setLoading(false);
   }
 
@@ -49,18 +54,25 @@ function HPStudentsInner() {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
-    const { error } = await supabase.from('hp_students').insert([{ full_name: name.trim(), grade, class_group: hpClass }]);
-    if (error) { showToast(`Error: ${error.message}`); setSaving(false); return; }
-    setName('');
-    setShowAdd(false);
+    const res = await fetch('/api/hp/students', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', full_name: name.trim(), grade, class_group: hpClass }),
+    });
+    const d = await res.json();
+    if (!res.ok) { showToast(`Error: ${d.error}`, 'error'); setSaving(false); return; }
+    setName(''); setShowAdd(false);
     showToast(`${name.trim()} added ✓`);
-    await load();
-    setSaving(false);
+    await load(); setSaving(false);
   }
 
   async function removeStudent(id: string, n: string) {
     if (!confirm(`Remove ${n}?`)) return;
-    await supabase.from('hp_students').update({ is_active: false }).eq('id', id);
+    await fetch('/api/hp/students', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', id }),
+    });
     showToast('Student removed');
     await load();
   }
