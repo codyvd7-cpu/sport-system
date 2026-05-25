@@ -180,7 +180,7 @@ export default function AthletesPage() {
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-sky-600/8 blur-[120px]"/>
       </div>
-      <div className="relative mx-auto max-w-5xl px-5 py-8 sm:px-8">
+      <div className="relative mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
@@ -204,7 +204,7 @@ export default function AthletesPage() {
         {showAddForm && (
           <div className="mb-8 rounded-2xl border border-white/8 p-6" style={{background:'rgba(255,255,255,0.03)'}}>
             <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">New Athlete</p>
-            <form onSubmit={handleAddAthlete} className="grid gap-3 sm:grid-cols-3">
+            <form onSubmit={handleAddAthlete} className="grid gap-3 sm:grid-cols-2">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
                 className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500/50 transition"/>
               <input value={team} onChange={e => setTeam(e.target.value)} list="team-opts" placeholder="Team e.g. 1sts"
@@ -244,7 +244,7 @@ export default function AthletesPage() {
 
         {/* Athletes grid */}
         {loading ? (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             {Array.from({length:9}).map((_,i) => (
               <div key={i} className="h-[72px] rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
                 <div className="h-full w-full" style={{background:'linear-gradient(90deg,rgba(255,255,255,0.02) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0.02) 100%)',backgroundSize:'200% 100%',animation:'shimmer 1.8s infinite'}}/>
@@ -256,7 +256,7 @@ export default function AthletesPage() {
             <p className="text-sm text-slate-500">No athletes found.</p>
           </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             {filteredAthletes.map(athlete => {
               const isEditing = editingId === athlete.id;
               const avail = athlete.raw?.availability || 'Available';
@@ -266,7 +266,7 @@ export default function AthletesPage() {
                   style={{background:'rgba(255,255,255,0.02)'}}>
                   {isEditing ? (
                     <div className="p-4 space-y-3">
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Name"
                           className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:border-sky-500/50"/>
                         <input value={editTeam} onChange={e => setEditTeam(e.target.value)} list="team-opts-edit" placeholder="Team"
