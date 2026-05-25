@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export async function POST(req: NextRequest) {
+  // Must be HOH or owner
+  const auth = await authenticateRequest(req, ['owner', 'head_of_hockey']);
+  if (!auth.ok) return NextResponse.json({ error: auth.reason }, { status: 401 });
+
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) return NextResponse.json({ error: 'Service key not configured.' }, { status: 500 });
 

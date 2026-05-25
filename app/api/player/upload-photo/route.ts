@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
+  // Rate limit uploads
+  const ip = getClientId(req);
+  const rl = rateLimit(`photo-upload:${ip}`, { max: 5, windowMs: 60_000 });
+  if (!rl.ok) return NextResponse.json({ error: 'Too many uploads.' }, { status: 429 });
+
   try {
     const formData = await req.formData();
     const file = formData.get('photo') as File;
@@ -9,6 +15,22 @@ export async function POST(req: NextRequest) {
 
     if (!file || !athleteId) {
       return NextResponse.json({ error: 'Missing photo or athlete ID.' }, { status: 400 });
+    }
+
+    // Validate athleteId is a UUID to prevent path traversal
+    if (!/^[0-9a-f-]{36}$/.test(athleteId)) {
+      return NextResponse.json({ error: 'Invalid athlete ID.' }, { status: 400 });
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      return NextResponse.json({ error: 'Only JPEG, PNG and WebP images are allowed.' }, { status: 400 });
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Image must be under 5MB.' }, { status: 400 });
     }
 
     const supabase = createClient(

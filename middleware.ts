@@ -64,12 +64,25 @@ export function middleware(req: NextRequest) {
   }
 
   // ── 4. Redirect /portal to /portal-login if not authenticated ────────────
-  // The portal shows athlete names and leaderboards — needs gating.
-  // We use a simple cookie check here; the portal-login page sets it.
   if (pathname === '/portal' || pathname.startsWith('/portal#')) {
-    const portalAccess = req.cookies.get('portal_access');
-    if (!portalAccess?.value) {
+    const portalCookie = req.cookies.get('portal_access');
+    if (!portalCookie?.value) {
       return NextResponse.redirect(new URL('/portal-login', req.url));
+    }
+    // Verify the cookie signature
+    const secret = process.env.HP_SESSION_SECRET;
+    if (secret) {
+      try {
+        const [payload, sig] = decodeURIComponent(portalCookie.value).split('.');
+        if (!payload || !sig) return NextResponse.redirect(new URL('/portal-login', req.url));
+        const crypto = require('crypto');
+        const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+        if (sig !== expected) return NextResponse.redirect(new URL('/portal-login', req.url));
+        const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+        if (!decoded.exp || decoded.exp < Date.now()) return NextResponse.redirect(new URL('/portal-login', req.url));
+      } catch {
+        return NextResponse.redirect(new URL('/portal-login', req.url));
+      }
     }
   }
 
