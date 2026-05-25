@@ -176,7 +176,7 @@ export default function AthletesPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0">
+    <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0 overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-sky-600/8 blur-[120px]"/>
       </div>
@@ -262,7 +262,7 @@ export default function AthletesPage() {
               const avail = athlete.raw?.availability || 'Available';
               const color = AVAIL_COLOR[avail] || '#94a3b8';
               return (
-                <div key={athlete.id} className="group rounded-2xl border border-white/5 transition-all duration-200 hover:border-white/10 hover:-translate-y-0.5"
+                <div key={athlete.id} className="group rounded-2xl border border-white/5 transition-all duration-200 hover:border-white/10"
                   style={{background:'rgba(255,255,255,0.02)'}}>
                   {isEditing ? (
                     <div className="p-4 space-y-3">
@@ -299,7 +299,7 @@ export default function AthletesPage() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-bold text-white leading-snug">{athlete.name}</p>
-                          <div className="mt-0.5 flex items-center gap-1.5">
+                          <div className="mt-0.5 flex items-center gap-1.5 flex-wrap">
                             {athlete.team && athlete.team !== '—' && (
                               <span className="text-[10px] font-semibold" style={{color:`${color}cc`}}>{athlete.team}</span>
                             )}
@@ -309,7 +309,7 @@ export default function AthletesPage() {
                           </div>
                         </div>
                       </Link>
-                      <div className="flex shrink-0 gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex shrink-0 gap-1">
                         <button onClick={e => { e.stopPropagation(); startEdit(athlete); }}
                           className="rounded-xl border border-white/8 p-2 text-slate-500 hover:text-white transition">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-3.5 w-3.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
