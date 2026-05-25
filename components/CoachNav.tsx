@@ -20,6 +20,8 @@ const I = {
   star:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
   export:  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
   squad:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  brain:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>,
+  chat:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
   menu:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
   close:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M18 6L6 18M6 6l12 12"/></svg>,
   logout:  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
@@ -42,6 +44,8 @@ const HOH_NAV: NavItem[] = [
   { href:'/squad',           label:'Squad',       icon:I.squad  },
   { href:'/portal-admin',    label:'Portal',      icon:I.globe  },
   { href:'/coaches',         label:'Coaches',     icon:I.star   },
+  { href:'/assistant',       label:'AI Assistant',icon:I.chat   },
+  { href:'/ai-tools',        label:'AI Tools',    icon:I.brain  },
   { href:'/export/attendance',label:'Export',     icon:I.export },
 ];
 
@@ -76,6 +80,12 @@ export default function CoachNav() {
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname === href || pathname.startsWith(href + '/');
+
+  // Show back button when on a detail page (has dynamic segment)
+  const ROOT_PAGES = ['/dashboard','/athletes','/attendance','/performance','/teams','/squad','/coaches','/portal-admin','/assistant','/ai-tools','/export'];
+  const isDeepPage = !ROOT_PAGES.some(p => pathname === p || (p !== '/dashboard' && pathname === p))
+    && pathname !== '/dashboard'
+    && ROOT_PAGES.every(p => pathname !== p);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -157,13 +167,28 @@ export default function CoachNav() {
       {/* ── MOBILE TOP BAR ──────────────────────── */}
       <header className="md:hidden sticky top-0 z-50 flex h-14 items-center justify-between px-4 border-b"
         style={{background:'rgba(4,6,14,0.98)',borderColor:'rgba(255,255,255,0.06)',backdropFilter:'blur(20px)'}}>
-        <Link href="/" className="flex items-center gap-2.5">
-          <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5"/>
-          <div>
-            <p className="text-[11px] font-bold text-white leading-none">St Benedict's</p>
-            <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:'var(--sky)'}}>Hockey</p>
-          </div>
-        </Link>
+
+        {/* Left — back button or logo */}
+        {isDeepPage ? (
+          <button onClick={() => window.history.back()}
+            className="flex items-center gap-2 text-sm font-semibold transition"
+            style={{color:'rgba(255,255,255,0.6)'}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-4 w-4">
+              <path d="M19 12H5M12 5l-7 7 7 7"/>
+            </svg>
+            Back
+          </button>
+        ) : (
+          <Link href="/dashboard" className="flex items-center gap-2.5">
+            <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5"/>
+            <div>
+              <p className="text-[11px] font-bold text-white leading-none">St Benedict's</p>
+              <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:'var(--sky)'}}>Hockey</p>
+            </div>
+          </Link>
+        )}
+
+        {/* Right — role badge + menu */}
         <div className="flex items-center gap-2">
           {!roleLoading && (
             <span className="rounded-md px-2 py-1 text-[9px] font-bold tracking-wide"
