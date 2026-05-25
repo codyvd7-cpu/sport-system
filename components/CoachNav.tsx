@@ -65,10 +65,14 @@ export default function CoachNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { isHOH, email } = useRole();
+  const { isHOH, isOwner, email, loading: roleLoading } = useRole();
 
   const navItems = isHOH ? HOH_NAV : COACH_NAV;
   const tabs     = isHOH ? HOH_TABS : COACH_TABS;
+
+  const roleBadge = isOwner ? { label:'Owner', color:'#f87171', bg:'rgba(248,113,113,0.1)' }
+    : isHOH ? { label:'Head of Hockey', color:'#fbbf24', bg:'rgba(251,191,36,0.1)' }
+    : { label:'Coach', color:'rgba(255,255,255,0.35)', bg:'rgba(255,255,255,0.05)' };
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname === href || pathname.startsWith(href + '/');
@@ -131,7 +135,13 @@ export default function CoachNav() {
               style={{background:'rgba(56,189,248,0.12)',color:'#38bdf8'}}>
               {initials(email||'')}
             </div>
-            <p className="flex-1 min-w-0 text-[11px] font-medium truncate" style={{color:'rgba(255,255,255,0.4)'}}>{email}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium truncate" style={{color:'rgba(255,255,255,0.4)'}}>{email}</p>
+              <span className="inline-block rounded-md px-1.5 py-0.5 text-[9px] font-bold tracking-wide mt-0.5"
+                style={{background:roleBadge.bg, color:roleBadge.color}}>
+                {roleBadge.label}
+              </span>
+            </div>
           </div>
           <button onClick={logout}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition"
@@ -154,11 +164,19 @@ export default function CoachNav() {
             <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:'var(--sky)'}}>Hockey</p>
           </div>
         </Link>
-        <button onClick={() => setOpen(v => !v)}
-          className="flex h-9 w-9 items-center justify-center rounded-xl transition"
-          style={{background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)'}}>
-          {open ? I.close : I.menu}
-        </button>
+        <div className="flex items-center gap-2">
+          {!roleLoading && (
+            <span className="rounded-md px-2 py-1 text-[9px] font-bold tracking-wide"
+              style={{background:roleBadge.bg, color:roleBadge.color}}>
+              {roleBadge.label}
+            </span>
+          )}
+          <button onClick={() => setOpen(v => !v)}
+            className="flex h-9 w-9 items-center justify-center rounded-xl transition"
+            style={{background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)'}}>
+            {open ? I.close : I.menu}
+          </button>
+        </div>
       </header>
 
       {/* ── MOBILE DRAWER ───────────────────────── */}
@@ -219,6 +237,7 @@ export default function CoachNav() {
       )}
 
       {/* ── MOBILE BOTTOM TABS ──────────────────── */}
+      {!roleLoading && (
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
         style={{
           background:'rgba(4,6,14,0.98)',
@@ -255,6 +274,7 @@ export default function CoachNav() {
           })}
         </div>
       </nav>
+      )}
 
       {/* Desktop spacer */}
       <div className="hidden md:block md:w-[220px] shrink-0"/>
