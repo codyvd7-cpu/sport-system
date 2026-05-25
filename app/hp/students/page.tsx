@@ -26,7 +26,13 @@ function HPStudentsInner() {
   const [saving, setSaving] = React.useState(false);
 
   async function load() {
-    const { data } = await supabase.from('hp_students').select('*').eq('is_active', true);
+    const { data, error } = await supabase.from('hp_students').select('*').eq('is_active', true);
+    if (error) {
+      console.error('HP Students load error:', error.message, error.code);
+      showToast(`Error loading students: ${error.message}`, 'error');
+      setLoading(false);
+      return;
+    }
     const sorted = (data || []).sort((a, b) => {
       const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
       const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
