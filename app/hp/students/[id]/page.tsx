@@ -171,9 +171,7 @@ export default function HPStudentProfile({ params }: PageProps) {
       return `${t.label}: ${termVals.join(' | ')}${deltaStr}`;
     }).filter(Boolean).join('\n');
 
-    const prompt = `You are an HP (high performance) sport coach at St Benedict's College in South Africa writing an end-of-${aiTerm} athlete report.
-
-Write 4-5 sentences. You MUST quote specific numbers and percentages from the data below. Mention which tests improved and by how much. Mention any declines honestly but constructively. Reference the attendance rate. End with a forward-looking development focus sentence. Do not use bullet points. Use the student's first name throughout.
+    const prompt = `You are an HP (high performance) sport coach at St Benedict\u2019s College in South Africa writing an end-of-${aiTerm} athlete report.\n\nWrite 4-5 sentences. You MUST quote specific numbers and percentages from the data below. Mention which tests improved and by how much. Mention any declines honestly but constructively. Reference the attendance rate. End with a forward-looking development focus sentence. Do not use bullet points. Use the student\u2019s first name throughout.
 
 Student First Name: ${student.full_name.trim().split(' ')[0] || 'The student'}
 Grade: ${student.grade}
@@ -390,20 +388,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
             </div>
           )}
         </div>
-                    {latestVal !== undefined
-                      ? <p className={`text-2xl font-black ${tier?.color||'text-white'}`}>{fmt(t.key, latestVal)}<span className="text-sm ml-1 opacity-40">{t.unit}</span></p>
-                      : <p className="text-2xl font-black text-slate-700">—</p>
-                    }
-                    {/* Term breakdown */}
-                    <div className="mt-2 flex items-center justify-between">
-                      <div className="flex gap-2">
-                        {TERMS.map((term, i) => (
-                          <div key={term} className="text-center">
-                            <p className="text-[8px] text-white/25">{term.replace('Term ','T')}</p>
-                            <p className="text-[10px] font-black text-white">{termVals[i] !== null ? fmt(t.key, termVals[i]!) : '—'}</p>
-                          </div>
-                        ))}
-                      </div>
+
         {/* ── ATTENDANCE ── */}
         <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
