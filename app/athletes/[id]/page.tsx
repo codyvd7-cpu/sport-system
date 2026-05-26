@@ -408,11 +408,11 @@ export default function AthleteProfile({params}:PageProps) {
 
             {/* Personal bests */}
             {pbs.length>0&&(
-              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"}}>
                 <div className="border-b border-white/7 px-5 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Personal Bests</p>
                 </div>
-                <div className="divide-y divide-white/5/50">
+                <div className="divide-y divide-white/5">
                   {pbs.map(p=>(
                     <div key={p.test} className="flex items-center gap-4 px-5 py-3.5">
                       <div className="flex-1 min-w-0">
@@ -435,7 +435,7 @@ export default function AthleteProfile({params}:PageProps) {
             )}
 
             {/* Player feedback */}
-            <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+            <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"}}>
               <div className="border-b border-white/7 px-5 py-3 flex items-center justify-between">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Coach Feedback</p>
                 <button onClick={()=>{setEditFb(true);setFbStr(latestFeedback?.strengths||'');setFbFoc(latestFeedback?.current_focus||'');setFbCom(latestFeedback?.coach_comment||'');}}
@@ -538,7 +538,7 @@ export default function AthleteProfile({params}:PageProps) {
               </form>
             </div>
             {/* History */}
-            <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+            <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"}}>
               <div className="border-b border-white/7 px-5 py-3 flex items-center justify-between">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">History</p>
                 {attRate!==null&&<span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% rate</span>}
@@ -546,7 +546,7 @@ export default function AthleteProfile({params}:PageProps) {
               {attendance.length===0?(
                 <div className="py-10 text-center"><p className="text-sm text-white/25">No sessions recorded.</p></div>
               ):(
-                <div className="divide-y divide-white/5/50 max-h-96 overflow-y-auto">
+                <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
                   {attendance.map(a=>{
                     const s=a.status?.toLowerCase()||'';
                     return(
@@ -602,11 +602,11 @@ export default function AthleteProfile({params}:PageProps) {
                 <p className="text-sm text-white/25">No results recorded yet.</p>
               </div>
             ):(
-              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"}}>
                 <div className="border-b border-white/7 px-5 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">All Results</p>
                 </div>
-                <div className="divide-y divide-white/5/50 max-h-[500px] overflow-y-auto">
+                <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto">
                   {performance.map(p=>{
                     const tier=p.value!==null?getTier(p.test_type,p.value,ageGroup):null;
                     return(
