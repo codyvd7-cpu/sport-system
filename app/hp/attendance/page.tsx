@@ -13,6 +13,14 @@ const CLASS_OPTIONS = [
 ];
 
 export default function HPAttendancePage() {
+  return (
+    <React.Suspense fallback={<PageLoader label="Loading attendance"/>}>
+      <HPAttendanceInner/>
+    </React.Suspense>
+  );
+}
+
+function HPAttendanceInner() {
   const { showToast } = useToast();
   const searchParams = useSearchParams();
   const urlClass = searchParams.get('class');

@@ -88,6 +88,14 @@ function assignGroups(students: Row[], results: Record<string, Row>, numGroups: 
 }
 
 export default function HPTestingPage() {
+  return (
+    <React.Suspense fallback={<PageLoader label="Loading tests"/>}>
+      <HPTestingInner/>
+    </React.Suspense>
+  );
+}
+
+function HPTestingInner() {
   const { showToast } = useToast();
   const searchParams = useSearchParams();
   const urlClass = searchParams.get('class');
