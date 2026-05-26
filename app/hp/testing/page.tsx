@@ -216,40 +216,40 @@ export default function HPTestingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
-        <Link href="/hp" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← High Performance</Link>
+    <main className="min-h-screen bg-[rgba(255,255,255,0.02)] pb-20 text-white md:pb-0">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+        <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
         <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-400">High Performance</p>
-          <h1 className="mt-1 text-3xl font-black text-white">Testing</h1>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{color:"rgba(167,139,250,0.7)"">High Performance</p>
+          <h1 className="text-4xl font-black text-white tracking-tight leading-none">Testing</h1>
         </div>
 
         {/* Step 1 */}
-        <div className="mb-5 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-          <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Step 1 — Session Setup</p>
+        <div className="mb-5 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
+          <p className="mb-4 text-xs font-black uppercase tracking-wide text-white/35">Step 1 — Session Setup</p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <select value={term} onChange={e => setTerm(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
+            <select value={term} onChange={e => setTerm(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
               {['Term 1','Term 2','Term 3'].map(t => <option key={t}>{t}</option>)}
             </select>
-            <select value={year} onChange={e => setYear(Number(e.target.value))} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
+            <select value={year} onChange={e => setYear(Number(e.target.value))} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
               {[2025,2026,2027].map(y => <option key={y}>{y}</option>)}
             </select>
-            <input type="date" value={testDate} onChange={e => setTestDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
+            <input type="date" value={testDate} onChange={e => setTestDate(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
           </div>
 
           {/* Class selector */}
           <div className="mt-4 space-y-3">
-            <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">Select Class</p>
+            <p className="text-[10px] font-black uppercase tracking-wide text-white/35">Select Class</p>
             <div className="grid grid-cols-3 gap-2">
-              <button onClick={() => setSelectedClass(null)} className={`rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>All</button>
-              <button onClick={() => setSelectedClass('Grade 8')} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === 'Grade 8' ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>Grade 8</button>
-              <button onClick={() => setSelectedClass('Grade 9')} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === 'Grade 9' ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>Grade 9</button>
+              <button onClick={() => setSelectedClass(null)} className={`rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>All</button>
+              <button onClick={() => setSelectedClass('Grade 8')} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === 'Grade 8' ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>Grade 8</button>
+              <button onClick={() => setSelectedClass('Grade 9')} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === 'Grade 9' ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>Grade 9</button>
             </div>
             <div>
               <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-sky-400">Grade 8</p>
               <div className="grid grid-cols-5 gap-2">
                 {HP_CLASSES.map(c => { const key = `8${c}`; return (
-                  <button key={key} onClick={() => setSelectedClass(key)} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === key ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>{c}</button>
+                  <button key={key} onClick={() => setSelectedClass(key)} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === key ? 'border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>{c}</button>
                 );})}
               </div>
             </div>
@@ -257,15 +257,15 @@ export default function HPTestingPage() {
               <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-violet-400">Grade 9</p>
               <div className="grid grid-cols-5 gap-2">
                 {HP_CLASSES.map(c => { const key = `9${c}`; return (
-                  <button key={key} onClick={() => setSelectedClass(key)} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === key ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>{c}</button>
+                  <button key={key} onClick={() => setSelectedClass(key)} className={`rounded-xl border py-2.5 text-sm font-black transition ${selectedClass === key ? 'border-violet-500/40 bg-violet-500/15 text-violet-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>{c}</button>
                 );})}
               </div>
             </div>
           </div>
 
           {grade && !mixedGrades && (
-            <div className="mt-3 rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-2.5">
-              <p className="text-xs text-slate-400">
+            <div className="mt-3 rounded-xl border border-white/8 bg-white/5/50 px-4 py-2.5">
+              <p className="text-xs text-white/50">
                 <span className="font-black text-white">{grade} tests:</span>{' '}
                 {tests.map(t => `${t.label} (${t.unit})`).join(' · ')}
               </p>
@@ -283,12 +283,12 @@ export default function HPTestingPage() {
         )}
 
         {/* Step 2: Enter results */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-black uppercase tracking-wide text-slate-500">Step 2 — Enter Results</p>
-            <span className="text-xs text-slate-500">{completed}/{classStudents.length} complete</span>
+            <p className="text-xs font-black uppercase tracking-wide text-white/35">Step 2 — Enter Results</p>
+            <span className="text-xs text-white/35">{completed}/{classStudents.length} complete</span>
           </div>
-          <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-white/5">
             <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${classStudents.length > 0 ? (completed/classStudents.length)*100 : 0}%` }} />
           </div>
 
@@ -299,24 +299,24 @@ export default function HPTestingPage() {
               const studentTests = s.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
               const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
               return (
-                <div key={s.id} className={`rounded-2xl border transition ${isDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800 bg-slate-900/50'}`}>
+                <div key={s.id} className={`rounded-2xl border transition ${isDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-white/6 bg-[rgba(255,255,255,0.025)]/50'}`}>
                   <button onClick={() => setActiveStudent(isOpen ? null : s.id)} className="flex w-full items-center gap-3 px-4 py-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-black text-white/70">
                       {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-sm font-bold text-white">{s.full_name}</p>
-                      <p className="text-[10px] text-slate-500">{s.grade}{s.class_group ? ` · Class ${s.class_group}` : ''}</p>
+                      <p className="text-[10px] text-white/35">{s.grade}{s.class_group ? ` · Class ${s.class_group}` : ''}</p>
                     </div>
                     {isDone && <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black text-emerald-300">Saved ✓</span>}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-4 w-4 text-slate-500 transition ${isOpen ? 'rotate-90' : ''}`}><path d="M9 18l6-6-6-6"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-4 w-4 text-white/35 transition ${isOpen ? 'rotate-90' : ''}`}><path d="M9 18l6-6-6-6"/></svg>
                   </button>
                   {isOpen && (
-                    <div className="border-t border-slate-800 px-4 pb-4 pt-3">
+                    <div className="border-t border-white/6 px-4 pb-4 pt-3">
                       {/* Previous term reference */}
                       {prevTerm && prevResults[s.id] && (
-                        <div className="mb-3 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-2">
-                          <p className="mb-1.5 text-[9px] font-black uppercase tracking-wide text-slate-500">{prevTerm} Reference</p>
+                        <div className="mb-3 rounded-xl border border-white/8 bg-white/5/50 px-3 py-2">
+                          <p className="mb-1.5 text-[9px] font-black uppercase tracking-wide text-white/35">{prevTerm} Reference</p>
                           <div className="flex flex-wrap gap-x-4 gap-y-1">
                             {studentTests.map(t => {
                               const prev = prevResults[s.id];
@@ -324,8 +324,8 @@ export default function HPTestingPage() {
                               const display = t.key === 'run_500m' && raw ? secondsToMmss(raw as number) : (isNaN(raw as number) ? null : raw);
                               return display != null ? (
                                 <span key={t.key} className="text-[10px]">
-                                  <span className="text-slate-600">{t.label}: </span>
-                                  <span className="font-black text-slate-300">{display}{t.unit !== 'mm:ss' ? t.unit : ''}</span>
+                                  <span className="text-white/25">{t.label}: </span>
+                                  <span className="font-black text-white/70">{display}{t.unit !== 'mm:ss' ? t.unit : ''}</span>
                                 </span>
                               ) : null;
                             })}
@@ -335,7 +335,7 @@ export default function HPTestingPage() {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                         {studentTests.map(t => (
                           <div key={t.key}>
-                            <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-slate-500">{t.label} ({t.unit})</label>
+                            <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-white/35">{t.label} ({t.unit})</label>
                             <input
                               type={t.unit === 'mm:ss' ? 'text' : 'number'}
                               step="any"
@@ -343,7 +343,7 @@ export default function HPTestingPage() {
                               value={results[s.id]?.[t.key] || ''}
                               onChange={e => setResults(p => ({ ...p, [s.id]: { ...(p[s.id] || {}), [t.key]: e.target.value } }))}
                               placeholder={t.unit === 'mm:ss' ? '2:05' : '—'}
-                              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-violet-500"
+                              className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-white outline-none focus:border-violet-500"
                             />
                           </div>
                         ))}
@@ -362,15 +362,15 @@ export default function HPTestingPage() {
 
         {/* Step 3: Assign Training Groups */}
         {classStudents.length > 0 && !mixedGrades && (
-          <div className="mt-5 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-            <p className="mb-1 text-xs font-black uppercase tracking-wide text-slate-500">Step 3 — Assign Training Groups</p>
-            <p className="mb-4 text-[11px] text-slate-600">Ranked from <span className="text-white font-black">latest available results</span> per student — Term 2 if done, Term 1 fallback. Students without results are left ungrouped.</p>
+          <div className="mt-5 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
+            <p className="mb-1 text-xs font-black uppercase tracking-wide text-white/35">Step 3 — Assign Training Groups</p>
+            <p className="mb-4 text-[11px] text-white/25">Ranked from <span className="text-white font-black">latest available results</span> per student — Term 2 if done, Term 1 fallback. Students without results are left ungrouped.</p>
             <div className="mb-4 flex items-center gap-3">
-              <p className="text-xs font-black text-slate-400">Number of Groups</p>
+              <p className="text-xs font-black text-white/50">Number of Groups</p>
               <div className="flex gap-1.5">
                 {[2, 3, 4, 5].map(n => (
                   <button key={n} onClick={() => setNumGroups(n)}
-                    className={`h-8 w-8 rounded-xl text-sm font-black transition ${numGroups === n ? 'border border-violet-500/40 bg-violet-500/20 text-violet-300' : 'border border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
+                    className={`h-8 w-8 rounded-xl text-sm font-black transition ${numGroups === n ? 'border border-violet-500/40 bg-violet-500/20 text-violet-300' : 'border border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>
                     {n}
                   </button>
                 ))}
@@ -405,7 +405,7 @@ export default function HPTestingPage() {
                     );
                   })}
                   {ungrouped.length > 0 && (
-                    <p className="text-[11px] text-slate-600">{ungrouped.length} student{ungrouped.length > 1 ? 's' : ''} not yet tested — will not be assigned</p>
+                    <p className="text-[11px] text-white/25">{ungrouped.length} student{ungrouped.length > 1 ? 's' : ''} not yet tested — will not be assigned</p>
                   )}
                 </div>
               );

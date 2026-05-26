@@ -109,11 +109,11 @@ export default function ClassProfilePage({params}:PageProps) {
   if(loading) return <PageLoader label="Loading Class"/>;
 
   return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+    <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Back */}
-        <Link href="/hp" className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-400 transition mb-4">
+        <Link href="/hp" className="inline-flex items-center gap-1.5 text-[11px] text-white/25 hover:text-white/50 transition mb-4">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           HP Dashboard
         </Link>
@@ -123,15 +123,15 @@ export default function ClassProfilePage({params}:PageProps) {
           <div className="absolute inset-0" style={{background:`radial-gradient(ellipse at 0% 50%, ${accent}0e, transparent 60%)`}}/>
           <div className="relative flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-0.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/25 mb-0.5">
                 {grade} · Class {cls}
               </p>
               <h1 className="text-4xl font-black tracking-tight" style={{color:accent}}>{id}</h1>
-              <p className="mt-1 text-sm text-slate-400">{students.length} students · {term} · {year}</p>
+              <p className="mt-1 text-sm text-white/50">{students.length} students · {term} · {year}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
               <a href={`/hp/export/class/${id}`} target="_blank"
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 px-3 py-2 text-xs font-black text-slate-400 hover:text-white transition"
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 px-3 py-2 text-xs font-black text-white/50 hover:text-white transition"
                 style={{background:'rgba(255,255,255,0.03)'}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Export PDF
@@ -149,17 +149,17 @@ export default function ClassProfilePage({params}:PageProps) {
           <div className="relative mt-4 grid grid-cols-3 gap-3">
             <div className="rounded-xl border border-white/5 p-3 text-center" style={{background:'rgba(255,255,255,0.03)'}}>
               <p className="text-xl font-black text-white">{students.length}</p>
-              <p className="text-[9px] font-black uppercase tracking-wide text-slate-600 mt-0.5">Students</p>
+              <p className="text-[9px] font-black uppercase tracking-wide text-white/25 mt-0.5">Students</p>
             </div>
             <div className="rounded-xl border border-white/5 p-3 text-center" style={{background:'rgba(255,255,255,0.03)'}}>
               <p className="text-xl font-black" style={{color:tested===students.length?'#10b981':accent}}>{tested}/{students.length}</p>
-              <p className="text-[9px] font-black uppercase tracking-wide text-slate-600 mt-0.5">Tested</p>
+              <p className="text-[9px] font-black uppercase tracking-wide text-white/25 mt-0.5">Tested</p>
             </div>
             <div className="rounded-xl border border-white/5 p-3 text-center" style={{background:'rgba(255,255,255,0.03)'}}>
               <p className="text-xl font-black" style={{color:attRate===null?'#475569':attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171'}}>
                 {attRate!==null?`${attRate}%`:'—'}
               </p>
-              <p className="text-[9px] font-black uppercase tracking-wide text-slate-600 mt-0.5">Attendance</p>
+              <p className="text-[9px] font-black uppercase tracking-wide text-white/25 mt-0.5">Attendance</p>
             </div>
           </div>
         </div>
@@ -168,7 +168,7 @@ export default function ClassProfilePage({params}:PageProps) {
         <div className="mb-4 flex rounded-2xl border border-white/5 p-1" style={{background:'rgba(255,255,255,0.02)'}}>
           {([['students','Students'],['attendance','Register'],['testing','Testing']] as const).map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
-              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${tab===key?'bg-white/8 text-white':'text-slate-500 hover:text-slate-300'}`}>
+              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${tab===key?'bg-white/8 text-white':'text-white/35 hover:text-white/70'}`}>
               {label}
             </button>
           ))}
@@ -192,7 +192,7 @@ export default function ClassProfilePage({params}:PageProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-white truncate">{s.full_name}</p>
-                      <p className="text-[10px] text-slate-600">Group {s.training_group||'—'}</p>
+                      <p className="text-[10px] text-white/25">Group {s.training_group||'—'}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {sRate!==null&&(
@@ -200,7 +200,7 @@ export default function ClassProfilePage({params}:PageProps) {
                           {sRate}%
                         </span>
                       )}
-                      <span className={`rounded-lg px-2 py-0.5 text-[9px] font-black ${isTested?'bg-emerald-500/10 text-emerald-400':'bg-slate-800 text-slate-600'}`}>
+                      <span className={`rounded-lg px-2 py-0.5 text-[9px] font-black ${isTested?'bg-emerald-500/10 text-emerald-400':'bg-white/5 text-white/25'}`}>
                         {isTested?'Tested':'Untested'}
                       </span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5 text-slate-700"><path d="M9 18l6-6-6-6"/></svg>
@@ -219,7 +219,7 @@ export default function ClassProfilePage({params}:PageProps) {
             <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
               <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between gap-3 flex-wrap">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mb-0.5">Take Register</p>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-white/25 mb-0.5">Take Register</p>
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-black text-white">
                       {students.filter(s=>(attStatuses[s.id]||'Present')==='Present').length} present
@@ -278,7 +278,7 @@ export default function ClassProfilePage({params}:PageProps) {
             {/* History */}
             {sessions.length>0&&(
               <div className="space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Session History</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25">Session History</p>
                 {sessions.map(date=>{
                   const recs=attendance.filter(a=>a.session_date===date);
                   const p=recs.filter(r=>r.status==='Present').length;
@@ -318,7 +318,7 @@ export default function ClassProfilePage({params}:PageProps) {
         {tab==='testing'&&(
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <p className="text-[10px] font-black uppercase tracking-wide text-slate-600">{term} Results</p>
+              <p className="text-[10px] font-black uppercase tracking-wide text-white/25">{term} Results</p>
               <Link href={`/hp/testing?class=${id}`}
                 className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition"
                 style={{background:`${accent}12`,color:accent,border:`1px solid ${accent}25`}}>
@@ -338,7 +338,7 @@ export default function ClassProfilePage({params}:PageProps) {
                         {initials(s.full_name||'?')}
                       </div>
                       <p className="flex-1 text-sm font-semibold text-white truncate">{s.full_name}</p>
-                      <span className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-black ${isTested?'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20':'bg-slate-800 text-slate-600 border border-slate-700'}`}>
+                      <span className={`shrink-0 rounded-lg px-2.5 py-1 text-[10px] font-black ${isTested?'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20':'bg-white/5 text-white/25 border border-white/8'}`}>
                         {isTested?'Tested ✓':'Not tested'}
                       </span>
                     </Link>

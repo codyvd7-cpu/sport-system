@@ -38,7 +38,7 @@ const TIERS = [
   { label: 'Strong',      color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/30',     bar: 'bg-sky-500'     },
   { label: 'On Track',    color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/30',  bar: 'bg-violet-500'  },
   { label: 'Developing',  color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   bar: 'bg-amber-500'   },
-  { label: 'Needs Work',  color: 'text-slate-400',   bg: 'bg-slate-500/15',   border: 'border-slate-500/30',   bar: 'bg-slate-500'   },
+  { label: 'Needs Work',  color: 'text-white/50',   bg: 'bg-slate-500/15',   border: 'border-slate-500/30',   bar: 'bg-slate-500'   },
 ];
 
 function getTier(key: string, val: number, lower: boolean) {
@@ -201,12 +201,12 @@ ${testBreakdown || 'No results recorded yet.'}`;
   }
 
   if (loading) return (
-    <main className="flex min-h-screen items-center justify-center bg-[#030810]">
+    <main className="flex min-h-screen items-center justify-center" style={{background:'#030810'}}>
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
   );
   if (!student) return (
-    <main className="flex min-h-screen items-center justify-center bg-[#030810] text-white">
+    <main className="flex min-h-screen items-center justify-center  text-white" style={{background:'#030810'}}>
       <p>Student not found</p>
     </main>
   );
@@ -231,93 +231,165 @@ ${testBreakdown || 'No results recorded yet.'}`;
   }
 
   return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 animate-fade-in">
-        <Link href="/hp/students" className="mb-6 inline-block text-xs text-slate-500 hover:text-slate-300">← Students</Link>
+    <main className="min-h-screen pb-24 text-white md:pb-0" style={{background:'#030810'}}>
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+
+        {/* Back */}
+        <Link href="/hp/students"
+          className="mb-5 inline-flex items-center gap-1.5 text-[11px] font-medium transition"
+          style={{color:'rgba(255,255,255,0.3)'}}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+          Students
+        </Link>
 
         {loadError && (
-          <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            {loadError}
-          </div>
+          <div className="mb-4 rounded-2xl border border-red-500/20 bg-red-500/6 px-4 py-3 text-sm text-red-400">{loadError}</div>
         )}
 
-        {/* Hero */}
-        <div className="mb-8 flex items-center gap-5">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/30 to-emerald-500/10 text-xl font-black text-emerald-300">
-            {student.full_name.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">High Performance</p>
-            <h1 className="mt-0.5 text-3xl font-black text-white truncate">{student.full_name}</h1>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">{student.grade}</span>
-              {student.class_group && <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-black text-slate-300">Class {student.class_group}</span>}
-              {student.training_group && <span className={`rounded-full px-3 py-1 text-xs font-black ${student.training_group===1?'bg-sky-500/15 text-sky-300':student.training_group===2?'bg-violet-500/15 text-violet-300':student.training_group===3?'bg-amber-500/15 text-amber-300':'bg-emerald-500/15 text-emerald-300'}`}>Group {student.training_group}</span>}
-              {attRate !== null && <span className={`rounded-full px-3 py-1 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% attendance</span>}
+        {/* ── HERO ── */}
+        <div className="mb-5 relative overflow-hidden rounded-3xl"
+          style={{background:'linear-gradient(135deg,rgba(16,185,129,0.08) 0%,rgba(255,255,255,0.015) 100%)',border:'1px solid rgba(255,255,255,0.07)'}}>
+          <div className="absolute top-0 left-0 right-0 h-px"
+            style={{background:'linear-gradient(90deg,transparent,rgba(16,185,129,0.6),rgba(56,189,248,0.3),transparent)'}}/>
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full blur-[50px] pointer-events-none"
+            style={{background:'rgba(16,185,129,0.1)'}}/>
+
+          <div className="relative p-5 sm:p-6">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-black"
+                style={{background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.2)'}}>
+                {student.full_name.split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] mb-1" style={{color:'rgba(16,185,129,0.7)'}}>High Performance</p>
+                <h1 className="text-2xl font-black text-white leading-tight">{student.full_name}</h1>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {[
+                    {label:student.grade, color:'#38bdf8'},
+                    student.class_group&&{label:`Class ${student.class_group}`, color:'rgba(255,255,255,0.5)'},
+                    student.training_group&&{label:`Group ${student.training_group}`, color:student.training_group===1?'#a78bfa':student.training_group===2?'#38bdf8':student.training_group===3?'#fbbf24':'#10b981'},
+                    attRate!==null&&{label:`${attRate}% attendance`, color:attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171'},
+                  ].filter(Boolean).map((b:any)=>(
+                    <span key={b.label} className="rounded-full px-2.5 py-0.5 text-[10px] font-semibold"
+                      style={{background:`${b.color}12`,color:b.color,border:`1px solid ${b.color}25`}}>
+                      {b.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <a href={`/hp/export/student/${id}`} target="_blank"
+                className="shrink-0 flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold transition hover:text-white"
+                style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.4)'}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                PDF
+              </a>
             </div>
+
+            {/* Tier summary */}
+            {latest && Object.values(tierCounts).some(v=>v>0) && (
+              <div className="mt-4 pt-4 border-t flex flex-wrap gap-2" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+                {Object.entries(tierCounts).map(([tier,count])=>{
+                  if(!count) return null;
+                  const t=TIERS.find(x=>x.label===tier)!;
+                  return(
+                    <div key={tier} className={`flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border ${t.bg} ${t.border}`}>
+                      <span className={`text-[15px] font-black ${t.color}`}>{count}</span>
+                      <span className="text-[10px] font-semibold text-white/40">{tier}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <a href={`/hp/export/student/${id}`} target="_blank"
-            className="shrink-0 flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-black text-slate-300 hover:text-white hover:border-slate-500 transition">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export PDF
-          </a>
         </div>
 
-        {/* Summary strip */}
-        {latest && (
-          <div className="mb-6 grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {Object.entries(tierCounts).map(([tier, count]) => {
-              const t = TIERS.find(x => x.label === tier)!;
-              return count > 0 ? (
-                <div key={tier} className={`rounded-2xl border p-3 text-center ${t.bg} ${t.border}`}>
-                  <p className={`text-2xl font-black ${t.color}`}>{count}</p>
-                  <p className="text-[10px] font-semibold text-white/50 mt-0.5">{tier}</p>
-                </div>
-              ) : null;
-            }).filter(Boolean)}
-          </div>
-        )}
-
-        {/* Test results */}
-        <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="border-b border-slate-800 px-5 py-4 flex items-center justify-between flex-wrap gap-2">
+        {/* ── TEST RESULTS ── */}
+        <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
             <div>
-              <h2 className="text-lg font-black text-white">Test Results</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{student.grade} battery · {yearResults.length} term{yearResults.length !== 1 ? 's' : ''} recorded</p>
+              <p className="text-[15px] font-black text-white">Test Results</p>
+              <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{student.grade} battery · {yearResults.length} term{yearResults.length!==1?'s':''} recorded</p>
             </div>
-            <div className="flex gap-1.5">
-              {[2025, 2026, 2027].map(y => (
-                <button key={y} onClick={() => setSelectedYear(y)}
-                  className={`rounded-xl px-3 py-1.5 text-xs font-black transition ${selectedYear === y ? 'bg-violet-500/20 text-violet-300' : 'bg-slate-800 text-slate-500 hover:text-slate-300'}`}>
+            <div className="flex gap-1">
+              {[2025,2026,2027].map(y=>(
+                <button key={y} onClick={()=>setSelectedYear(y)}
+                  className="rounded-xl px-3 py-1.5 text-[11px] font-bold transition"
+                  style={{
+                    background:selectedYear===y?'rgba(167,139,250,0.15)':'rgba(255,255,255,0.04)',
+                    color:selectedYear===y?'#a78bfa':'rgba(255,255,255,0.3)',
+                    border:`1px solid ${selectedYear===y?'rgba(167,139,250,0.3)':'rgba(255,255,255,0.06)'}`,
+                  }}>
                   {y}
                 </button>
               ))}
             </div>
           </div>
 
-          {yearResults.length === 0 ? (
-            <div className="p-8 text-center">
-              <p className="text-3xl mb-2"></p>
-              <p className="text-slate-500 text-sm">No test results recorded for {selectedYear}.</p>
+          {yearResults.length===0 ? (
+            <div className="p-10 text-center">
+              <p className="text-3xl mb-2">📋</p>
+              <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No results for {selectedYear} yet.</p>
+              <Link href={`/hp/testing`}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[11px] font-semibold transition"
+                style={{background:'rgba(167,139,250,0.1)',color:'#a78bfa',border:'1px solid rgba(167,139,250,0.2)'}}>
+                Enter Tests →
+              </Link>
             </div>
           ) : (
-            <div className="grid gap-4 p-5 sm:grid-cols-2 lg:grid-cols-3">
-              {tests.map(t => {
-                const termVals = TERMS.map(term => {
-                  const r = yearResults.find(r => r.term === term);
-                  const v = r ? parseFloat(r[t.key]) : NaN;
-                  return isNaN(v) ? null : v;
+            <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+              {tests.map(t=>{
+                const termVals=TERMS.map(term=>{
+                  const r=yearResults.find(r=>r.term===term);
+                  const v=r?parseFloat(r[t.key]):NaN;
+                  return isNaN(v)?null:v;
                 });
-                const latestVal = termVals.filter((v): v is number => v !== null).pop();
-                const tier = latestVal !== undefined ? getTier(t.key, latestVal, t.lower) : null;
+                const latestVal=termVals.filter((v):v is number=>v!==null).pop();
+                const tier=latestVal!==undefined?getTier(t.key,latestVal,t.lower):null;
+                const tierStyle = tier ? {
+                  background:`${['#10b981','#38bdf8','#a78bfa','#fbbf24','#94a3b8'][TIERS.findIndex(x=>x.label===tier.label)]}0a`,
+                  border:`1px solid ${['#10b981','#38bdf8','#a78bfa','#fbbf24','#94a3b8'][TIERS.findIndex(x=>x.label===tier.label)]}20`,
+                } : {background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'};
 
-                return (
-                  <div key={t.key} className={`rounded-2xl border p-4 ${tier ? `${tier.bg} ${tier.border}` : 'border-slate-800 bg-slate-950/40'}`}>
-                    <div className="flex items-start justify-between mb-1">
-                      <p className="text-[10px] font-black uppercase tracking-wide text-slate-500">{t.label}</p>
-                      {tier && <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${tier.bg} ${tier.color}`}>{tier.label}</span>}
+                return(
+                  <div key={t.key} className="rounded-2xl p-4" style={tierStyle}>
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{color:'rgba(255,255,255,0.4)'}}>{t.label}</p>
+                      {tier&&(
+                        <span className="rounded-full px-2 py-0.5 text-[9px] font-black"
+                          style={{
+                            background:`${['#10b981','#38bdf8','#a78bfa','#fbbf24','#94a3b8'][TIERS.findIndex(x=>x.label===tier.label)]}15`,
+                            color:['#10b981','#38bdf8','#a78bfa','#fbbf24','#94a3b8'][TIERS.findIndex(x=>x.label===tier.label)],
+                          }}>
+                          {tier.label}
+                        </span>
+                      )}
                     </div>
+                    {latestVal!==undefined&&(
+                      <p className="text-2xl font-black text-white leading-none mb-1">
+                        {fmt(t.key,latestVal)}<span className="text-[11px] ml-1" style={{color:'rgba(255,255,255,0.3)'}}>{t.unit}</span>
+                      </p>
+                    )}
+                    <BenchBar k={t.key} val={latestVal??0} lower={t.lower}/>
+                    <div className="mt-3 flex justify-between items-center">
+                      <div className="flex gap-2">
+                        {TERMS.map((term,i)=>{
+                          const v=termVals[i];
+                          return v!==null?(
+                            <div key={term} className="text-center">
+                              <p className="text-[9px]" style={{color:'rgba(255,255,255,0.3)'}}>{term.split(' ')[1]}</p>
+                              <p className="text-[11px] font-bold text-white">{fmt(t.key,v)}</p>
+                            </div>
+                          ):null;
+                        })}
+                      </div>
+                      <Sparkline vals={termVals} lower={t.lower}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
                     {latestVal !== undefined
                       ? <p className={`text-2xl font-black ${tier?.color||'text-white'}`}>{fmt(t.key, latestVal)}<span className="text-sm ml-1 opacity-40">{t.unit}</span></p>
                       : <p className="text-2xl font-black text-slate-700">—</p>
@@ -327,139 +399,143 @@ ${testBreakdown || 'No results recorded yet.'}`;
                       <div className="flex gap-2">
                         {TERMS.map((term, i) => (
                           <div key={term} className="text-center">
-                            <p className="text-[8px] text-slate-600">{term.replace('Term ','T')}</p>
+                            <p className="text-[8px] text-white/25">{term.replace('Term ','T')}</p>
                             <p className="text-[10px] font-black text-white">{termVals[i] !== null ? fmt(t.key, termVals[i]!) : '—'}</p>
                           </div>
                         ))}
                       </div>
-                      <Sparkline vals={termVals} lower={t.lower} />
-                    </div>
-                    {latestVal !== undefined && <BenchBar k={t.key} val={latestVal} lower={t.lower} />}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Attendance */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-          <div className="border-b border-slate-800 px-5 py-4 flex items-center justify-between">
+        {/* ── ATTENDANCE ── */}
+        <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
             <div>
-              <h2 className="text-lg font-black text-white">Attendance</h2>
-              <p className="text-xs text-slate-500 mt-0.5">{attendance.length} sessions · {present} present</p>
+              <p className="text-[15px] font-black text-white">Attendance</p>
+              <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{attendance.length} sessions · {present} present</p>
             </div>
-            <div className="flex gap-1 rounded-xl border border-slate-700 bg-slate-800 p-0.5">
-              {(['summary','history'] as const).map(tab => (
-                <button key={tab} onClick={() => setAttTab(tab)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-black capitalize transition ${attTab===tab ? 'bg-slate-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>
+            <div className="flex gap-1 rounded-xl p-0.5" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
+              {(['summary','history'] as const).map(tab=>(
+                <button key={tab} onClick={()=>setAttTab(tab)}
+                  className="rounded-lg px-3 py-1.5 text-[11px] font-semibold capitalize transition"
+                  style={{
+                    background:attTab===tab?'rgba(255,255,255,0.08)':'transparent',
+                    color:attTab===tab?'white':'rgba(255,255,255,0.35)',
+                  }}>
                   {tab}
                 </button>
               ))}
             </div>
           </div>
 
-          {attTab === 'summary' ? (
+          {attTab==='summary'?(
             <div className="p-5">
-              {attendance.length === 0 ? (
-                <p className="text-sm text-slate-500">No attendance recorded yet.</p>
-              ) : (
-                <>
-                  {/* Attendance ring */}
-                  <div className="flex items-center gap-6 mb-5">
-                    <div className="relative h-20 w-20 shrink-0">
-                      <svg viewBox="0 0 36 36" className="h-20 w-20 -rotate-90">
-                        <circle cx="18" cy="18" r="15.9" fill="none" stroke="#1e293b" strokeWidth="3"/>
-                        <circle cx="18" cy="18" r="15.9" fill="none"
-                          stroke={attRate!==null&&attRate>=80?'#10b981':attRate!==null&&attRate>=60?'#f59e0b':'#ef4444'}
-                          strokeWidth="3" strokeLinecap="round"
-                          strokeDasharray={`${attRate||0} ${100-(attRate||0)}`}/>
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <p className={`text-lg font-black ${attRate!==null&&attRate>=80?'text-emerald-400':attRate!==null&&attRate>=60?'text-amber-400':'text-red-400'}`}>{attRate}%</p>
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      {[
-                        { label: 'Present', val: attendance.filter(a=>a.status==='Present').length, color: 'text-emerald-400' },
-                        { label: 'Late',    val: attendance.filter(a=>a.status==='Late').length,    color: 'text-amber-400' },
-                        { label: 'Absent',  val: attendance.filter(a=>a.status==='Absent').length,  color: 'text-red-400' },
-                        { label: 'Excused', val: attendance.filter(a=>a.status==='Excused').length, color: 'text-sky-400' },
-                      ].filter(x => x.val > 0).map(x => (
-                        <div key={x.label} className="flex items-center gap-3">
-                          <span className={`text-sm font-black ${x.color} w-8 text-right`}>{x.val}</span>
-                          <span className="text-xs text-slate-500">{x.label}</span>
-                        </div>
-                      ))}
+              {attendance.length===0?(
+                <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No attendance recorded yet.</p>
+              ):(
+                <div className="flex items-center gap-6">
+                  {/* Ring */}
+                  <div className="relative h-20 w-20 shrink-0">
+                    <svg viewBox="0 0 36 36" className="h-20 w-20 -rotate-90">
+                      <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3"/>
+                      <circle cx="18" cy="18" r="15.9" fill="none"
+                        stroke={attRate!==null&&attRate>=80?'#10b981':attRate!==null&&attRate>=60?'#f59e0b':'#ef4444'}
+                        strokeWidth="3" strokeLinecap="round"
+                        strokeDasharray={`${attRate||0} ${100-(attRate||0)}`}/>
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <p className="text-lg font-black" style={{color:attRate!==null&&attRate>=80?'#10b981':attRate!==null&&attRate>=60?'#fbbf24':'#f87171'}}>{attRate}%</p>
                     </div>
                   </div>
-                </>
+                  <div className="space-y-2">
+                    {[
+                      {label:'Present',val:attendance.filter(a=>a.status==='Present').length,color:'#6ee7b7'},
+                      {label:'Late',   val:attendance.filter(a=>a.status==='Late').length,   color:'#fde68a'},
+                      {label:'Absent', val:attendance.filter(a=>a.status==='Absent').length, color:'#fca5a5'},
+                      {label:'Excused',val:attendance.filter(a=>a.status==='Excused').length,color:'#7dd3fc'},
+                    ].filter(x=>x.val>0).map(x=>(
+                      <div key={x.label} className="flex items-center gap-3">
+                        <span className="text-sm font-black w-7 text-right" style={{color:x.color}}>{x.val}</span>
+                        <span className="text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{x.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-          ) : (
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-800/50">
-              {attendance.length === 0 ? (
-                <p className="p-5 text-sm text-slate-500">No attendance recorded yet.</p>
-              ) : attendance.map(a => {
-                const cls = a.status==='Present'?'bg-emerald-500/15 text-emerald-300':a.status==='Late'?'bg-amber-500/15 text-amber-300':a.status==='Absent'?'bg-red-500/15 text-red-300':'bg-sky-500/15 text-sky-300';
+          ):(
+            <div className="max-h-72 overflow-y-auto divide-y" style={{divideColor:'rgba(255,255,255,0.05)'}}>
+              {attendance.length===0?(
+                <p className="p-5 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No attendance recorded yet.</p>
+              ):attendance.map(a=>{
+                const sc = a.status==='Present'?{bg:'rgba(16,185,129,0.1)',color:'#6ee7b7'}
+                  :a.status==='Late'?{bg:'rgba(251,191,36,0.1)',color:'#fde68a'}
+                  :a.status==='Absent'?{bg:'rgba(248,113,113,0.1)',color:'#fca5a5'}
+                  :{bg:'rgba(56,189,248,0.1)',color:'#7dd3fc'};
                 return (
-                  <div key={a.id} className="flex items-center gap-3 px-5 py-2.5">
-                    <span className={`shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-black ${cls}`}>{a.status}</span>
-                    <p className="flex-1 text-xs text-slate-400">{a.session_type}</p>
-                    <p className="text-[10px] text-slate-600">{new Date(a.session_date).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</p>
+                  <div key={a.id} className="flex items-center gap-3 px-5 py-2.5 border-b" style={{borderColor:'rgba(255,255,255,0.04)'}}>
+                    <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                      style={{background:sc.bg,color:sc.color}}>{a.status}</span>
+                    <p className="flex-1 text-[12px]" style={{color:'rgba(255,255,255,0.4)'}}>{a.session_type}</p>
+                    <p className="text-[10px]" style={{color:'rgba(255,255,255,0.2)'}}>{new Date(a.session_date).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</p>
                   </div>
                 );
               })}
             </div>
           )}
         </div>
-        {/* AI Term Summary */}
-        <div className="mt-6 rounded-2xl border border-violet-500/20 bg-violet-500/5 overflow-hidden">
-          <div className="border-b border-violet-500/15 px-5 py-4 flex items-center justify-between flex-wrap gap-3">
+
+        {/* ── AI SUMMARY ── */}
+        <div className="overflow-hidden rounded-2xl" style={{background:'rgba(167,139,250,0.04)',border:'1px solid rgba(167,139,250,0.15)'}}>
+          <div className="flex items-center justify-between flex-wrap gap-3 px-5 py-4 border-b" style={{borderColor:'rgba(167,139,250,0.1)'}}>
             <div>
-              <h2 className="text-base font-black text-white flex items-center gap-2">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4 text-violet-400"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
+              <p className="text-[14px] font-black text-white flex items-center gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth={1.75} className="h-4 w-4"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
                 AI Performance Summary
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">Generate a coach-ready summary for any term</p>
+              </p>
+              <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>Generate a coach-ready report for any term</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex rounded-xl border border-slate-700 bg-slate-900 p-0.5">
-                {(['Term 1','Term 2','Term 3','Full Year'] as const).map(t => (
-                  <button key={t} onClick={() => setAiTerm(t)}
-                    className={`rounded-lg px-2.5 py-1.5 text-[10px] font-black transition ${aiTerm === t ? 'bg-violet-500/30 text-violet-300' : 'text-slate-500 hover:text-white'}`}>
+              <div className="flex rounded-xl p-0.5" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
+                {(['Term 1','Term 2','Term 3','Full Year'] as const).map(t=>(
+                  <button key={t} onClick={()=>setAiTerm(t)}
+                    className="rounded-lg px-2.5 py-1.5 text-[10px] font-semibold transition"
+                    style={{
+                      background:aiTerm===t?'rgba(167,139,250,0.2)':'transparent',
+                      color:aiTerm===t?'#a78bfa':'rgba(255,255,255,0.3)',
+                    }}>
                     {t}
                   </button>
                 ))}
               </div>
               <button onClick={generateAiSummary} disabled={aiLoading}
-                className="rounded-xl border border-violet-500/40 bg-violet-500/15 px-4 py-2 text-xs font-black text-violet-300 hover:bg-violet-500/25 transition disabled:opacity-50 flex items-center gap-2">
-                {aiLoading ? (
-                  <><div className="h-3 w-3 animate-spin rounded-full border-2 border-violet-400 border-t-transparent"/>Generating...</>
-                ) : (
-                  <>Generate {aiTerm} Summary</>
+                className="flex items-center gap-2 rounded-xl px-4 py-2 text-[11px] font-bold transition disabled:opacity-50"
+                style={{background:'rgba(167,139,250,0.12)',color:'#a78bfa',border:'1px solid rgba(167,139,250,0.25)'}}>
+                {aiLoading?(
+                  <><div className="h-3 w-3 animate-spin rounded-full border-2 border-violet-400 border-t-transparent"/>Generating…</>
+                ):(
+                  <>Generate {aiTerm}</>
                 )}
               </button>
             </div>
           </div>
           <div className="px-5 py-4">
-            {aiSummary ? (
+            {aiSummary?(
               <div>
-                <p className="text-sm leading-relaxed text-slate-200">{aiSummary}</p>
+                <p className="text-[13px] leading-relaxed" style={{color:'rgba(255,255,255,0.8)'}}>{aiSummary}</p>
                 <div className="mt-3 flex gap-2">
-                  <button onClick={() => { navigator.clipboard.writeText(aiSummary); }}
-                    className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">
+                  <button onClick={()=>navigator.clipboard.writeText(aiSummary)}
+                    className="rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition hover:text-white"
+                    style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.35)'}}>
                     Copy
                   </button>
-                  <button onClick={() => setAiSummary(null)}
-                    className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">
+                  <button onClick={()=>setAiSummary(null)}
+                    className="rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition hover:text-white"
+                    style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.35)'}}>
                     Clear
                   </button>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm text-slate-600">
-                Select a term above and hit Generate — the AI will produce a short, personalised summary covering test results, attendance, improvements and areas to focus on.
+            ):(
+              <p className="text-[12px] leading-relaxed" style={{color:'rgba(255,255,255,0.3)'}}>
+                Select a term above and hit Generate — the AI will produce a personalised report covering test results, attendance, improvements and development focus.
               </p>
             )}
           </div>

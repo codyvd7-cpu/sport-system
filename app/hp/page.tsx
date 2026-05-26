@@ -1,170 +1,203 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { PageLoader } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 
 const CLASSES = [
-  { id:'8B', grade:'Grade 8', cls:'B' },
-  { id:'8E', grade:'Grade 8', cls:'E' },
-  { id:'8F', grade:'Grade 8', cls:'F' },
-  { id:'8J', grade:'Grade 8', cls:'J' },
-  { id:'8M', grade:'Grade 8', cls:'M' },
-  { id:'9B', grade:'Grade 9', cls:'B' },
-  { id:'9E', grade:'Grade 9', cls:'E' },
-  { id:'9F', grade:'Grade 9', cls:'F' },
-  { id:'9J', grade:'Grade 9', cls:'J' },
-  { id:'9M', grade:'Grade 9', cls:'M' },
+  { id:'8B', grade:'Grade 8', cls:'B' },{ id:'8E', grade:'Grade 8', cls:'E' },
+  { id:'8F', grade:'Grade 8', cls:'F' },{ id:'8J', grade:'Grade 8', cls:'J' },
+  { id:'8M', grade:'Grade 8', cls:'M' },{ id:'9B', grade:'Grade 9', cls:'B' },
+  { id:'9E', grade:'Grade 9', cls:'E' },{ id:'9F', grade:'Grade 9', cls:'F' },
+  { id:'9J', grade:'Grade 9', cls:'J' },{ id:'9M', grade:'Grade 9', cls:'M' },
 ];
 
-function getCurrentTerm(): string {
-  const m = new Date().getMonth() + 1;
-  if (m <= 3) return 'Term 1';
-  if (m <= 6) return 'Term 2';
-  if (m <= 9) return 'Term 3';
-  return 'Term 4';
+function getTerm() {
+  const m = new Date().getMonth()+1;
+  if(m<=3)return'Term 1'; if(m<=6)return'Term 2'; if(m<=9)return'Term 3'; return'Term 4';
 }
 
-function fDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { day:'numeric', month:'short' });
-}
+const ACTIONS = [
+  { href:'/hp/attendance', label:'Take Register',  sub:'Mark class attendance',    color:'#10b981',
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
+  { href:'/hp/testing',    label:'Enter Tests',    sub:'Record fitness scores',    color:'#a78bfa',
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+  { href:'/hp/students',   label:'All Students',   sub:'Browse full roster',       color:'#38bdf8',
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/></svg> },
+  { href:'/hp/trends',     label:'Trends',         sub:'Performance over time',    color:'#f59e0b',
+    icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
+];
 
 export default function HPDashboard() {
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [testResults, setTestResults] = React.useState<Row[]>([]);
-  const [attendance, setAttendance] = React.useState<Row[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const term = getCurrentTerm();
+  const [tests, setTests]       = React.useState<Row[]>([]);
+  const [attendance, setAtt]    = React.useState<Row[]>([]);
+  const [loading, setLoading]   = React.useState(true);
+  const [mounted, setMounted]   = React.useState(false);
+  const term = getTerm();
   const year = new Date().getFullYear();
 
-  React.useEffect(() => {
-    async function load() {
-      const res = await fetch(`/api/hp/data?type=dashboard&year=${year}`, { credentials: 'include' });
-      if (!res.ok) { setLoading(false); return; }
-      const d = await res.json();
-      setStudents(d.students || []);
-      setTestResults(d.tests || []);
-      setAttendance(d.attendance || []);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  React.useEffect(()=>{setTimeout(()=>setMounted(true),60);},[]);
 
-  const classStats = CLASSES.map(c => {
-    const cs = students.filter(s => s.grade === c.grade && s.class_group === c.cls);
-    const total = cs.length;
-    const testedIds = new Set(testResults.filter(r => r.term === term).map(r => r.student_id));
-    const tested = cs.filter(s => testedIds.has(s.id)).length;
-    const classAtt = attendance.filter(a => cs.some(s => s.id === a.student_id));
-    const lastSession = classAtt[0]?.session_date || null;
-    const recentDates = [...new Set(classAtt.map(a => a.session_date))].slice(0, 8);
-    const present = classAtt.filter(a => recentDates.includes(a.session_date) && a.status === 'Present').length;
-    const possible = recentDates.length * total;
-    const attRate = possible > 0 ? Math.round((present / possible) * 100) : null;
-    const pct = total > 0 ? Math.round((tested / total) * 100) : 0;
-    return { ...c, total, tested, lastSession, attRate, pct };
-  }).filter(c => c.total > 0);
+  React.useEffect(()=>{
+    fetch(`/api/hp/data?type=dashboard&year=${year}`,{credentials:'include'})
+      .then(r=>r.json()).then(d=>{
+        setStudents(d.students||[]);setTests(d.tests||[]);setAtt(d.attendance||[]);setLoading(false);
+      }).catch(()=>setLoading(false));
+  },[]);
 
-  const grade8 = classStats.filter(c => c.grade === 'Grade 8');
-  const grade9 = classStats.filter(c => c.grade === 'Grade 9');
+  if(loading) return <PageLoader label="High Performance"/>;
+
+  const testedIds = new Set(tests.filter(r=>r.term===term).map(r=>r.student_id));
   const totalStudents = students.length;
-  const totalTested = new Set(testResults.filter(r => r.term === term).map(r => r.student_id)).size;
+  const totalTested   = testedIds.size;
   const totalUntested = totalStudents - totalTested;
+  const overallAtt = (() => {
+    const recs = attendance;
+    if(!recs.length) return null;
+    const present = recs.filter(a=>a.status==='Present').length;
+    return Math.round((present/recs.length)*100);
+  })();
 
-  if (loading) return <PageLoader label="Loading HP"/>;
+  const classStats = CLASSES.map(c=>{
+    const cs = students.filter(s=>s.grade===c.grade&&s.class_group===c.cls);
+    const total = cs.length; if(!total) return null;
+    const tested = cs.filter(s=>testedIds.has(s.id)).length;
+    const pct = Math.round((tested/total)*100);
+    const classAtt = attendance.filter(a=>cs.some(s=>s.id===a.student_id));
+    const dates = [...new Set(classAtt.map(a=>a.session_date))].slice(0,8);
+    const present = classAtt.filter(a=>dates.includes(a.session_date)&&a.status==='Present').length;
+    const possible = dates.length*total;
+    const attRate = possible>0?Math.round((present/possible)*100):null;
+    return {...c,total,tested,pct,attRate};
+  }).filter(Boolean) as any[];
 
-  return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+  const grade8 = classStats.filter(c=>c.grade==='Grade 8');
+  const grade9 = classStats.filter(c=>c.grade==='Grade 9');
+  const allDone8 = grade8.every(c=>c.pct===100);
+  const allDone9 = grade9.every(c=>c.pct===100);
+
+  const fade=(d:number)=>({
+    opacity:mounted?1:0,
+    transform:mounted?'translateY(0)':'translateY(14px)',
+    transition:`opacity 0.5s ease ${d}ms,transform 0.5s ease ${d}ms`,
+  });
+
+  return(
+    <main className="min-h-screen pb-24 text-white md:pb-8" style={{background:'#030810'}}>
+      {/* Ambient */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 left-1/3 h-64 w-64 rounded-full blur-[80px]" style={{background:'rgba(16,185,129,0.06)'}}/>
+        <div className="absolute top-32 right-0 h-48 w-48 rounded-full blur-[60px]" style={{background:'rgba(167,139,250,0.05)'}}/>
+      </div>
+
+      <div className="relative mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-6">
 
         {/* ── HEADER ── */}
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict's · HP</p>
-            <h1 className="mt-0.5 text-2xl font-black tracking-tight text-white">High Performance</h1>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-black text-emerald-300">
-              {term} · {year}
-            </span>
+        <div style={fade(0)}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(16,185,129,0.7)'}}>
+            St Benedict's College
+          </p>
+          <div className="flex items-end justify-between gap-4">
+            <h1 className="text-4xl font-black tracking-tight leading-none">
+              High<br/>
+              <span style={{background:'linear-gradient(135deg,#10b981,#38bdf8)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+                Performance
+              </span>
+            </h1>
+            <div className="text-right">
+              <p className="text-xs font-bold text-white/40">{term} · {year}</p>
+              {overallAtt!==null&&(
+                <p className="text-[11px] mt-0.5" style={{color:overallAtt>=80?'#10b981':overallAtt>=60?'#fbbf24':'#f87171'}}>
+                  {overallAtt}% avg attendance
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* ── STAT STRIP ── */}
-        <div className="mb-5 grid grid-cols-3 gap-3">
-          <Link href="/hp/students"
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center hover:border-slate-600 hover:-translate-y-0.5 transition-all">
-            <p className="text-2xl font-black text-white">{totalStudents}</p>
-            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600">Students</p>
-          </Link>
-          <Link href={`/hp/students?tested=true`}
-            className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center hover:border-emerald-500/40 hover:-translate-y-0.5 transition-all">
-            <p className="text-2xl font-black text-emerald-400">{totalTested}</p>
-            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600">Tested</p>
-          </Link>
-          <Link href={`/hp/students?tested=false`}
-            className={`rounded-2xl border p-4 text-center hover:-translate-y-0.5 transition-all ${totalUntested > 0 ? 'border-amber-500/20 bg-amber-500/5 hover:border-amber-500/40' : 'border-slate-800 bg-slate-900 hover:border-slate-600'}`}>
-            <p className={`text-2xl font-black ${totalUntested > 0 ? 'text-amber-400' : 'text-slate-600'}`}>{totalUntested}</p>
-            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-600">Untested</p>
-          </Link>
+        {/* ── PROGRAMME STATS ── */}
+        <div style={fade(60)}>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              {label:'Enrolled',  val:totalStudents, color:'white',    href:'/hp/students',       glow:'transparent'},
+              {label:'Tested',    val:totalTested,   color:'#10b981',  href:'/hp/students?tested=true',  glow:'rgba(16,185,129,0.08)'},
+              {label:'Remaining', val:totalUntested, color:totalUntested>0?'#fbbf24':'rgba(255,255,255,0.15)', href:'/hp/students?tested=false', glow:totalUntested>0?'rgba(251,191,36,0.06)':'transparent'},
+            ].map(s=>(
+              <Link key={s.label} href={s.href}
+                className="relative overflow-hidden rounded-2xl border p-4 text-center transition hover:-translate-y-0.5"
+                style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.07)',boxShadow:`0 0 40px ${s.glow}`}}>
+                <p className="text-3xl font-black leading-none" style={{color:s.color}}>{s.val}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] mt-1.5" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* ── QUICK ACTIONS ── */}
-        <div className="mb-6 grid grid-cols-4 gap-2">
-          {[
-            { href:'/hp/attendance', label:'Register', color:'#10b981',
-              icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> },
-            { href:'/hp/testing', label:'Testing', color:'#a78bfa',
-              icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
-            { href:'/hp/students', label:'Students', color:'#38bdf8',
-              icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/></svg> },
-            { href:'/hp/trends', label:'Trends', color:'#f59e0b',
-              icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> },
-          ].map(a => (
-            <Link key={a.href} href={a.href}
-              className="group flex flex-col items-center gap-2 rounded-2xl border border-white/5 p-3 text-center transition hover:border-white/10 hover:-translate-y-0.5"
-              style={{background:'rgba(255,255,255,0.02)'}}>
-              <div style={{color:a.color}}>{a.icon}</div>
-              <p className="text-[11px] font-black text-slate-400 group-hover:text-white transition">{a.label}</p>
-            </Link>
-          ))}
+        <div style={fade(100)}>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {ACTIONS.map((a,i)=>(
+              <Link key={a.href} href={a.href}
+                className="group relative overflow-hidden rounded-2xl border p-4 transition hover:-translate-y-0.5"
+                style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)',animationDelay:`${i*40}ms`}}>
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{background:`radial-gradient(ellipse at 0% 0%,${a.color}12,transparent 70%)`}}/>
+                <div className="relative">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl transition group-hover:scale-110"
+                    style={{background:`${a.color}12`,color:a.color}}>
+                    {a.icon}
+                  </div>
+                  <p className="text-[13px] font-black text-white">{a.label}</p>
+                  <p className="text-[10px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{a.sub}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
 
         {/* ── GRADE 8 ── */}
-        <div className="mb-5">
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="h-px w-6 bg-sky-500/40"/>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-400">Grade 8</p>
+        <div style={fade(140)}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-1 rounded-full" style={{background:'rgba(56,189,248,0.5)'}}/>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{color:'#38bdf8'}}>Grade 8</p>
+                {allDone8&&<p className="text-[9px]" style={{color:'rgba(16,185,129,0.7)'}}>All classes tested ✓</p>}
+              </div>
             </div>
             <a href="/hp/export/grade/8" target="_blank"
-              className="flex items-center gap-1 text-[10px] font-black text-slate-600 hover:text-sky-400 transition">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Grade
+              className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition hover:text-white"
+              style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.03)',color:'rgba(255,255,255,0.3)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+              Export
             </a>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            {grade8.map(c => <ClassTile key={c.id} c={c} term={term}/>)}
+            {grade8.map((c:any)=><ClassCard key={c.id} c={c} accent="#38bdf8"/>)}
           </div>
         </div>
 
         {/* ── GRADE 9 ── */}
-        <div>
-          <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="h-px w-6 bg-violet-500/40"/>
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-violet-400">Grade 9</p>
+        <div style={fade(180)}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-1 rounded-full" style={{background:'rgba(167,139,250,0.5)'}}/>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{color:'#a78bfa'}}>Grade 9</p>
+                {allDone9&&<p className="text-[9px]" style={{color:'rgba(16,185,129,0.7)'}}>All classes tested ✓</p>}
+              </div>
             </div>
             <a href="/hp/export/grade/9" target="_blank"
-              className="flex items-center gap-1 text-[10px] font-black text-slate-600 hover:text-violet-400 transition">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Grade
+              className="flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[10px] font-semibold transition hover:text-white"
+              style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.03)',color:'rgba(255,255,255,0.3)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
+              Export
             </a>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            {grade9.map(c => <ClassTile key={c.id} c={c} term={term}/>)}
+            {grade9.map((c:any)=><ClassCard key={c.id} c={c} accent="#a78bfa"/>)}
           </div>
         </div>
 
@@ -173,66 +206,80 @@ export default function HPDashboard() {
   );
 }
 
-function ClassTile({ c, term }: { c: any; term: string }) {
-  const is8 = c.grade === 'Grade 8';
-  const accent = is8 ? '#38bdf8' : '#a78bfa';
-  const allTested = c.tested === c.total && c.total > 0;
-  const noneTested = c.tested === 0;
+function ClassCard({c,accent}:{c:any;accent:string}) {
+  const done = c.pct===100;
+  const none = c.tested===0;
 
-  return (
+  return(
     <Link href={`/hp/class/${c.id}`}
-      className="group relative rounded-2xl border border-white/5 p-4 overflow-hidden transition-all duration-200 hover:border-white/10 hover:-translate-y-0.5 hover:shadow-lg"
-      style={{background:'rgba(255,255,255,0.02)'}}>
-
-      {/* Accent glow on hover */}
+      className="group relative overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
+      style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+      {/* Top accent */}
+      <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{background:`linear-gradient(90deg,transparent,${accent}70,transparent)`}}/>
+      {/* Hover glow */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-        style={{background:`radial-gradient(ellipse at 50% 0%, ${accent}12, transparent 70%)`}}/>
+        style={{background:`radial-gradient(ellipse at 50% 0%,${accent}0e,transparent 70%)`}}/>
 
-      <div className="relative">
+      <div className="relative p-4">
         {/* Class label */}
-        <p className="text-2xl font-black leading-none" style={{color:accent}}>
-          {is8 ? '8' : '9'}{c.cls}
+        <p className="text-3xl font-black leading-none tracking-tight" style={{color:accent}}>
+          {c.id}
         </p>
-        <p className="text-[10px] text-slate-600 mt-0.5">{c.total} students</p>
+        <p className="text-[10px] mt-1" style={{color:'rgba(255,255,255,0.3)'}}>{c.total} students</p>
 
-        {/* Progress bar */}
-        <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-slate-800">
-          <div className="h-full rounded-full transition-all"
-            style={{width:`${c.pct}%`, background:allTested?'#10b981':accent}}/>
+        {/* Testing progress bar */}
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[9px] font-semibold uppercase tracking-wide" style={{color:'rgba(255,255,255,0.2)'}}>Tested</span>
+            <span className="text-[9px] font-black" style={{color:done?'#10b981':accent}}>{c.pct}%</span>
+          </div>
+          <div className="h-1 w-full overflow-hidden rounded-full" style={{background:'rgba(255,255,255,0.06)'}}>
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{width:`${c.pct}%`,background:done?'#10b981':accent}}/>
+          </div>
         </div>
 
         {/* Status */}
-        <div className="mt-2">
-          {allTested
-            ? <span className="text-[10px] font-black text-emerald-400">All tested ✓</span>
-            : noneTested
-            ? <span className="text-[10px] text-slate-600">Not started</span>
-            : <span className="text-[10px] font-black text-amber-400">{c.total - c.tested} untested</span>
-          }
+        <div className="mt-2.5">
+          {done ? (
+            <span className="text-[10px] font-black" style={{color:'#10b981'}}>All tested ✓</span>
+          ) : none ? (
+            <span className="text-[10px]" style={{color:'rgba(255,255,255,0.2)'}}>Not started</span>
+          ) : (
+            <span className="text-[10px] font-semibold" style={{color:'#fbbf24'}}>{c.total-c.tested} left</span>
+          )}
         </div>
 
         {/* Attendance */}
-        {c.attRate !== null && (
-          <p className="mt-1 text-[10px]">
-            <span className="text-slate-600">Att </span>
-            <span className={`font-black ${c.attRate >= 80 ? 'text-emerald-400' : c.attRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{c.attRate}%</span>
-          </p>
+        {c.attRate!==null&&(
+          <div className="mt-1 flex items-center gap-1">
+            <span className="text-[9px]" style={{color:'rgba(255,255,255,0.2)'}}>Att</span>
+            <span className="text-[10px] font-bold" style={{color:c.attRate>=80?'#10b981':c.attRate>=60?'#fbbf24':'#f87171'}}>{c.attRate}%</span>
+          </div>
         )}
 
-        {/* Quick action links */}
-        <div className="mt-3 flex gap-1.5">
-          <Link href={`/hp/class/${c.id}?tab=attendance`} onClick={e => e.stopPropagation()}
-            className="flex-1 flex items-center justify-center rounded-lg py-1.5 text-[9px] font-black text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/8 transition border border-white/5">
-            Register
-          </Link>
-          <Link href={`/hp/class/${c.id}?tab=testing`} onClick={e => e.stopPropagation()}
-            className="flex-1 flex items-center justify-center rounded-lg py-1.5 text-[9px] font-black text-slate-500 hover:text-violet-400 hover:bg-violet-500/8 transition border border-white/5">
-            Test
-          </Link>
-          <a href={`/hp/export/class/${c.id}`} target="_blank" onClick={e => e.stopPropagation()}
-            className="flex items-center justify-center rounded-lg px-2 py-1.5 text-[9px] font-black text-slate-600 hover:text-slate-300 hover:bg-white/5 transition border border-white/5">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>
-          </a>
+        {/* Quick actions */}
+        <div className="mt-3 grid grid-cols-3 gap-1">
+          {[
+            {href:`/hp/class/${c.id}?tab=attendance`,label:'Reg',color:'#10b981'},
+            {href:`/hp/class/${c.id}?tab=testing`,   label:'Test',color:'#a78bfa'},
+            {href:`/hp/export/class/${c.id}`,         label:'PDF', color:'rgba(255,255,255,0.3)', external:true},
+          ].map(btn=>(
+            btn.external ? (
+              <a key={btn.label} href={btn.href} target="_blank" onClick={e=>e.stopPropagation()}
+                className="flex items-center justify-center rounded-lg py-1.5 text-[9px] font-bold transition"
+                style={{background:'rgba(255,255,255,0.04)',color:btn.color,border:'1px solid rgba(255,255,255,0.06)'}}>
+                {btn.label}
+              </a>
+            ) : (
+              <Link key={btn.label} href={btn.href} onClick={e=>e.stopPropagation()}
+                className="flex items-center justify-center rounded-lg py-1.5 text-[9px] font-bold transition hover:opacity-80"
+                style={{background:`${btn.color}10`,color:btn.color,border:`1px solid ${btn.color}20`}}>
+                {btn.label}
+              </Link>
+            )
+          ))}
         </div>
       </div>
     </Link>

@@ -92,15 +92,15 @@ function HPStudentsInner() {
   const g9 = students.filter(s => s.grade === 'Grade 9').length;
 
   return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">High Performance</p>
-            <h1 className="mt-1 text-3xl font-black text-white">Students</h1>
-            <p className="mt-1 text-sm text-slate-500">{students.length} athletes · {g8} Grade 8 · {g9} Grade 9</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(16,185,129,0.7)"}}>High Performance</p>
+            <h1 className="text-4xl font-black text-white tracking-tight leading-none">Students</h1>
+            <p className="mt-1 text-sm text-white/35">{students.length} athletes · {g8} Grade 8 · {g9} Grade 9</p>
           </div>
           <button onClick={() => setShowAdd(v => !v)}
             className="shrink-0 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-black text-emerald-300 hover:bg-emerald-500/20 transition">
@@ -114,14 +114,14 @@ function HPStudentsInner() {
             <p className="mb-4 text-xs font-black uppercase tracking-wide text-emerald-400">New Student</p>
             <form onSubmit={addStudent} className="grid gap-3 sm:grid-cols-4">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
-                className="sm:col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                className="sm:col-span-2 rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
               <select value={grade} onChange={e => setGrade(e.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
                 <option>Grade 8</option>
                 <option>Grade 9</option>
               </select>
               <select value={hpClass} onChange={e => setHpClass(e.target.value)}
-                className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
                 {HP_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
               </select>
               <button type="submit" disabled={saving || !name.trim()}
@@ -135,16 +135,16 @@ function HPStudentsInner() {
         {/* Filters + search */}
         <div className="mb-4 flex flex-wrap gap-2">
           <div className="relative flex-1 min-w-[160px]">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search students..."
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-emerald-500" />
+              className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.025)] pl-9 pr-3 py-2 text-sm text-white outline-none focus:border-emerald-500" />
           </div>
           <div className="flex gap-1.5 flex-wrap">
             {['All','Grade 8','Grade 9'].map(f => (
               <button key={f} onClick={() => { setGradeFilter(f); setClassFilter('All'); }}
-                className={`rounded-xl px-3 py-2 text-xs font-black transition ${gradeFilter === f && classFilter === 'All' ? 'border border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border border-slate-700 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                className={`rounded-xl px-3 py-2 text-xs font-black transition ${gradeFilter === f && classFilter === 'All' ? 'border border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white'}`}>
                 {f}
               </button>
             ))}
@@ -152,7 +152,7 @@ function HPStudentsInner() {
           <div className="flex gap-1 flex-wrap">
             {CLASS_OPTIONS.map(c => (
               <button key={c} onClick={() => { setClassFilter(c); setGradeFilter('All'); }}
-                className={`rounded-xl px-2.5 py-2 text-xs font-black transition ${classFilter === c ? 'border border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                className={`rounded-xl px-2.5 py-2 text-xs font-black transition ${classFilter === c ? 'border border-sky-500/40 bg-sky-500/15 text-sky-300' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white'}`}>
                 {c}
               </button>
             ))}
@@ -160,13 +160,13 @@ function HPStudentsInner() {
         </div>
 
         {/* Count */}
-        <p className="mb-3 text-xs text-slate-600">{filtered.length} student{filtered.length !== 1 ? 's' : ''}</p>
+        <p className="mb-3 text-xs text-white/25">{filtered.length} student{filtered.length !== 1 ? 's' : ''}</p>
 
         {/* Student list */}
         {loading ? (
           <div className="space-y-2">
             {[1,2,3,4,5].map(i => (
-              <div key={i} className="h-14 w-full overflow-hidden rounded-2xl bg-slate-900">
+              <div key={i} className="h-14 w-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.025)]">
                 <div className="h-full w-full" style={{background:'linear-gradient(90deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)',backgroundSize:'200% 100%',animation:'shimmer 1.8s infinite'}}/>
               </div>
             ))}
@@ -174,22 +174,22 @@ function HPStudentsInner() {
         ) : filtered.length === 0 ? (
           <EmptyState icon={<IconUsers className="h-8 w-8"/>} title="No students found" sub="Try adjusting your search or filters"/>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {filtered.map(s => {
               const grpColors: Record<number,string> = {1:'bg-sky-500/15 text-sky-300',2:'bg-violet-500/15 text-violet-300',3:'bg-amber-500/15 text-amber-300',4:'bg-emerald-500/15 text-emerald-300'};
               return (
-                <div key={s.id} className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 hover:border-slate-700 transition">
+                <div key={s.id} className="flex items-center gap-3 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] px-4 py-3 hover:border-white/8 transition">
                   <Link href={`/hp/students/${s.id}`} className="flex flex-1 min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/12 text-[10px] font-black" style={{color:"#10b981"">
                       {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-white">{s.full_name}</p>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] text-slate-500">{s.grade}</span>
-                        {s.class_group && <span className="text-[10px] text-slate-600">· Class {s.class_group}</span>}
+                        <span className="text-[10px] text-white/35">{s.grade}</span>
+                        {s.class_group && <span className="text-[10px] text-white/25">· Class {s.class_group}</span>}
                         {s.training_group && (
-                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${grpColors[s.training_group] || 'bg-slate-700 text-slate-300'}`}>
+                          <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-black ${grpColors[s.training_group] || 'bg-slate-700 text-white/70'}`}>
                             G{s.training_group}
                           </span>
                         )}
