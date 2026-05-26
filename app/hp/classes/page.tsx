@@ -67,19 +67,17 @@ export default function HPClassesPage() {
 
   async function load() {
     const year = new Date().getFullYear();
-    const [sRes, tRes] = await Promise.all([
-      supabase.from('hp_students').select('*').eq('is_active', true),
-      supabase.from('hp_test_results').select('*').eq('year', year).order('term', { ascending: true }),
-    ]);
-    const sorted = (sRes.data || []).sort((a: Row, b: Row) => {
+    const res = await fetch(`/api/hp/data?type=trends`, { credentials: 'include' });
+    if (!res.ok) { setLoading(false); return; }
+    const d = await res.json();
+    const sorted = (d.students || []).sort((a: Row, b: Row) => {
       const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
       const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
       return sA.localeCompare(sB);
     });
     setStudents(sorted);
-    // Latest result per student (last term wins since ordered asc)
     const latMap: Record<string, Row> = {};
-    (tRes.data || []).forEach((r: Row) => { latMap[r.student_id] = r; });
+    (d.tests || []).filter((r: Row) => r.year === year).forEach((r: Row) => { latMap[r.student_id] = r; });
     setLatestResults(latMap);
     setLoading(false);
   }
@@ -100,10 +98,13 @@ export default function HPClassesPage() {
 
   async function saveGroups() {
     setSaving(true);
-    const updates = Object.entries(computedGroups).map(([id, group]) =>
-      supabase.from('hp_students').update({ training_group: group }).eq('id', id)
-    );
-    await Promise.all(updates);
+    await Promise.all(Object.entries(computedGroups).map(([id, group]) =>
+      fetch('/api/hp/data', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', table: 'hp_students', data: { training_group: group }, matchCol: 'id', matchVal: id }),
+      })
+    ));
     setStudents(prev => prev.map(s => ({ ...s, training_group: computedGroups[s.id] ?? s.training_group })));
     showToast(`${numGroups} groups saved ✓`);
     setSaving(false);
