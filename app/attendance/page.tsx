@@ -142,28 +142,28 @@ export default function AttendancePage() {
   const histDates=[...new Set(histFiltered.map(h=>h.session_date))].slice(0,10);
 
   if(loading) return(
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+    <main className="flex min-h-screen items-center justify-center bg-[#04060e]">
       <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
   );
 
   return(
-    <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0">
+    <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:"var(--bg)"">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
         {/* Header */}
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">Hockey</p>
-            <h1 className="mt-1 text-3xl font-black text-white">Attendance</h1>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(255,255,255,0.25)"}}>Hockey</p>
+            <h1 className="text-4xl font-black text-white tracking-tight leading-none">Attendance</h1>
           </div>
-          <div className="flex rounded-xl border border-slate-800 bg-slate-900 p-0.5">
+          <div className="flex rounded-xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-0.5">
             <button onClick={()=>setView('mark')}
-              className={`rounded-lg px-4 py-2 text-xs font-black transition ${view==='mark'?'bg-slate-700 text-white':'text-slate-500 hover:text-white'}`}>
+              className={`rounded-lg px-4 py-2 text-xs font-black transition ${view==='mark'?'bg-white/8 text-white':'text-white/35 hover:text-white'}`}>
               Mark Register
             </button>
             <button onClick={()=>setView('history')}
-              className={`rounded-lg px-4 py-2 text-xs font-black transition ${view==='history'?'bg-slate-700 text-white':'text-slate-500 hover:text-white'}`}>
+              className={`rounded-lg px-4 py-2 text-xs font-black transition ${view==='history'?'bg-white/8 text-white':'text-white/35 hover:text-white'}`}>
               History
             </button>
           </div>
@@ -174,25 +174,25 @@ export default function AttendancePage() {
           <div className="space-y-5">
 
             {/* Session setup */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Session Setup</p>
+            <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-5">
+              <p className="mb-4 text-xs font-black uppercase tracking-wide text-white/35">Session Setup</p>
               <div className="grid gap-3 sm:grid-cols-3 mb-4">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Date</label>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/25">Date</label>
                   <input type="date" value={sessionDate} onChange={e=>setSessionDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500"/>
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500"/>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Type</label>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/25">Type</label>
                   <select value={sessionType} onChange={e=>setSessionType(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
                     {SESSION_TYPES.map(t=><option key={t}>{t}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Team</label>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/25">Team</label>
                   <select value={selTeam} onChange={e=>setSelTeam(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
                     <option value="">Select team…</option>
                     {TEAM_GROUPS.map(g=>{
                       const vt=g.teams.filter(t=>visibleTeams.includes(t));
@@ -206,7 +206,7 @@ export default function AttendancePage() {
               {/* Quick mark all */}
               {selTeam&&squad.length>0&&(
                 <div className="flex flex-wrap gap-2">
-                  <p className="self-center text-[10px] font-black uppercase tracking-wide text-slate-600 mr-1">Mark all:</p>
+                  <p className="self-center text-[10px] font-black uppercase tracking-wide text-white/25 mr-1">Mark all:</p>
                   {STATUS_OPTIONS.map(s=>{
                     const st=STATUS_STYLES[s];
                     return(
@@ -228,28 +228,28 @@ export default function AttendancePage() {
                   {[
                     {label:'Present',val:presentCount,color:'text-emerald-400'},
                     {label:'Late',val:lateCount,color:'text-amber-400'},
-                    {label:'Absent',val:absentCount,color:absentCount>0?'text-red-400':'text-slate-600'},
+                    {label:'Absent',val:absentCount,color:absentCount>0?'text-red-400':'text-white/25'},
                     {label:'Excused',val:excusedCount,color:'text-sky-400'},
                   ].map(s=>(
-                    <div key={s.label} className="rounded-2xl border border-slate-800 bg-slate-900 p-3 text-center">
+                    <div key={s.label} className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-3 text-center">
                       <p className={`text-xl font-black ${s.color}`}>{s.val}</p>
-                      <p className="text-[9px] font-black uppercase tracking-wide text-slate-600 mt-0.5">{s.label}</p>
+                      <p className="text-[9px] font-black uppercase tracking-wide text-white/25 mt-0.5">{s.label}</p>
                     </div>
                   ))}
                 </div>
 
                 {/* Player cards with explicit status buttons */}
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-                  <div className="border-b border-slate-800 px-5 py-3">
-                    <p className="text-xs font-black uppercase tracking-wide text-slate-500">{selTeam} · {squad.length} players</p>
+                <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] overflow-hidden">
+                  <div className="border-b border-white/7 px-5 py-3">
+                    <p className="text-xs font-black uppercase tracking-wide text-white/35">{selTeam} · {squad.length} players</p>
                   </div>
-                  <div className="divide-y divide-slate-800/50">
+                  <div className="divide-y divide-white/5">
                     {squad.map(a=>{
                       const status=statuses[a.id]||'Present';
                       const injured=a.availability==='Injured';
                       return(
                         <div key={a.id} className="flex items-center gap-3 px-4 py-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-black text-white/65">
                             {(a.full_name||'').split(' ').map((n:string)=>n[0]).join('').slice(0,2).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
@@ -262,7 +262,7 @@ export default function AttendancePage() {
                               const active=status===s;
                               return(
                                 <button key={s} onClick={()=>setStatuses(prev=>({...prev,[a.id]:s}))}
-                                  className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-black transition ${active?`${st.bg} ${st.border} ${st.text}`:'border-slate-800 bg-slate-950 text-slate-600 hover:text-slate-300'}`}>
+                                  className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-black transition ${active?`${st.bg} ${st.border} ${st.text}`:'border-white/7 bg-[#04060e] text-white/25 hover:text-white/65'}`}>
                                   {s[0]}
                                 </button>
                               );
@@ -282,12 +282,12 @@ export default function AttendancePage() {
                 </button>
               </>
             ):selTeam?(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-12 text-center">
-                <p className="text-sm text-slate-600">No players in {selTeam}.</p>
+              <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] py-12 text-center">
+                <p className="text-sm text-white/25">No players in {selTeam}.</p>
               </div>
             ):(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-12 text-center">
-                <p className="text-slate-500 text-sm">Select a team above to start marking</p>
+              <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] py-12 text-center">
+                <p className="text-white/35 text-sm">Select a team above to start marking</p>
               </div>
             )}
           </div>
@@ -299,20 +299,20 @@ export default function AttendancePage() {
             {/* Team filter */}
             <div className="flex flex-wrap gap-2">
               <button onClick={()=>setHistTeam('All')}
-                className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${histTeam==='All'?'border-slate-500 bg-slate-700 text-white':'border-slate-800 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${histTeam==='All'?'border-slate-500 bg-slate-700 text-white':'border-white/7 bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white'}`}>
                 All Teams
               </button>
               {visibleTeams.map(t=>(
                 <button key={t} onClick={()=>setHistTeam(t)}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${histTeam===t?'border-emerald-500/40 bg-emerald-500/15 text-emerald-300':'border-slate-800 bg-slate-900 text-slate-500 hover:text-white'}`}>
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${histTeam===t?'border-emerald-500/40 bg-emerald-500/15 text-emerald-300':'border-white/7 bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white'}`}>
                   {t}
                 </button>
               ))}
             </div>
 
             {histDates.length===0?(
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 py-12 text-center">
-                <p className="text-sm text-slate-600">No attendance recorded yet.</p>
+              <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] py-12 text-center">
+                <p className="text-sm text-white/25">No attendance recorded yet.</p>
               </div>
             ):(
               <div className="space-y-3">
@@ -322,12 +322,12 @@ export default function AttendancePage() {
                   const absent=sess.filter(h=>h.status?.toLowerCase()==='absent').length;
                   const sessType=sess[0]?.session_type||'';
                   return(
-                    <div key={date} className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+                    <div key={date} className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] overflow-hidden">
                       {/* Session header */}
-                      <div className="flex items-center justify-between px-5 py-3 border-b border-slate-800">
+                      <div className="flex items-center justify-between px-5 py-3 border-b border-white/7">
                         <div>
                           <p className="text-sm font-black text-white">{fDate(date)}</p>
-                          <p className="text-[11px] text-slate-500">{sessType}</p>
+                          <p className="text-[11px] text-white/35">{sessType}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {absent>0&&<span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-black text-red-400">{absent} absent</span>}
@@ -338,7 +338,7 @@ export default function AttendancePage() {
                       <div className="flex flex-wrap gap-1.5 px-5 py-3">
                         {sess.map(h=>{
                           const s=h.status||'—';
-                          const st=STATUS_STYLES[s]||{bg:'bg-slate-800',text:'text-slate-400',border:'border-slate-700'};
+                          const st=STATUS_STYLES[s]||{bg:'bg-white/5',text:'text-white/50',border:'border-white/8'};
                           const n=(h.athletes as any)?.full_name||'Unknown';
                           return(
                             <span key={h.id} className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${st.bg} ${st.border} ${st.text}`}>

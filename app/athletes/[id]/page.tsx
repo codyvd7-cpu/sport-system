@@ -68,7 +68,7 @@ function AttRing({rate}:{rate:number|null}) {
       </svg>
       <div className="text-center">
         <p className="text-base font-black text-white leading-none">{rate!==null?`${rate}%`:'—'}</p>
-        <p className="text-[8px] text-slate-500 uppercase tracking-wide mt-0.5">Att.</p>
+        <p className="text-[8px] text-white/35 uppercase tracking-wide mt-0.5">Att.</p>
       </div>
     </div>
   );
@@ -76,7 +76,7 @@ function AttRing({rate}:{rate:number|null}) {
 
 // ── Sparkline ────────────────────────────────────────────────
 function Spark({vals,lower}:{vals:number[];lower:boolean}) {
-  if(vals.length<2) return <span className="text-[10px] text-slate-700">—</span>;
+  if(vals.length<2) return <span className="text-[10px] text-white/15">—</span>;
   const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
   const W=56,H=24;
   const pts=vals.map((v,i)=>`${(i/(vals.length-1))*W},${H-((v-mn)/rng)*H}`).join(' ');
@@ -168,14 +168,14 @@ export default function AthleteProfile({params}:PageProps) {
   React.useEffect(()=>{ load(); },[id]);
 
   if(loading) return(
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+    <main className="flex min-h-screen items-center justify-center bg-[#04060e]">
       <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
     </main>
   );
   if(!rawAthlete) return(
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
+    <main className="flex min-h-screen items-center justify-center bg-[#04060e] text-white">
       <div className="text-center">
-        <p className="text-slate-400 mb-3">Athlete not found</p>
+        <p className="text-white/50 mb-3">Athlete not found</p>
         <Link href="/athletes" className="text-sky-400 text-sm">← Back to Athletes</Link>
       </div>
     </main>
@@ -281,21 +281,32 @@ export default function AthleteProfile({params}:PageProps) {
   ] as const;
 
   return(
-    <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+    <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Back */}
-        <Link href="/athletes" className="mb-6 inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        <Link href="/athletes" className="mb-5 inline-flex items-center gap-1.5 text-[11px] font-medium text-white/30 hover:text-white/60 transition">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Athletes
         </Link>
 
         {/* ── PROFILE HEADER ── */}
-        <div className="mb-6 rounded-2xl border border-white/6 overflow-hidden">
+        <div className="mb-5 rounded-3xl overflow-hidden relative" style={{
+          background:'linear-gradient(135deg,rgba(56,189,248,0.07) 0%,rgba(255,255,255,0.015) 100%)',
+          border:'1px solid rgba(255,255,255,0.07)',
+        }}>
+          {/* Top accent */}
+          <div className="absolute top-0 left-0 right-0 h-px"
+            style={{background:'linear-gradient(90deg,transparent,rgba(56,189,248,0.6),rgba(167,139,250,0.4),transparent)'}}/>
+          {/* Glow */}
+          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full blur-[50px] pointer-events-none"
+            style={{background:'rgba(56,189,248,0.12)'}}/>
+
           {/* Top banner */}
-          <div className="px-5 pt-5 pb-4 flex items-start gap-4">
+          <div className="relative px-5 pt-5 pb-4 flex items-start gap-4">
             {/* Avatar */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 text-xl font-black text-sky-300 ring-1 ring-white/10">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-sky-300"
+              style={{background:'linear-gradient(135deg,rgba(56,189,248,0.2),rgba(167,139,250,0.15))',border:'1px solid rgba(56,189,248,0.2)'}}>
               {initials(name)}
             </div>
             {/* Info */}
@@ -303,14 +314,14 @@ export default function AthleteProfile({params}:PageProps) {
               {editingInfo ? (
                 <div className="space-y-2">
                   <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="Full name"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white outline-none focus:border-sky-500"/>
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2 text-sm text-white outline-none focus:border-sky-500"/>
                   <div className="grid grid-cols-3 gap-2">
                     <input value={editTeam} onChange={e=>setEditTeam(e.target.value)} placeholder="Team"
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
                     <input value={editAge} onChange={e=>setEditAge(e.target.value)} placeholder="Age group"
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
                     <input value={editPos} onChange={e=>setEditPos(e.target.value)} placeholder="Position"
-                      className="rounded-xl border border-slate-700 bg-slate-950 px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={saveInfo} disabled={savingInfo}
@@ -318,7 +329,7 @@ export default function AthleteProfile({params}:PageProps) {
                       {savingInfo?'Saving…':'Save'}
                     </button>
                     <button onClick={()=>setEditingInfo(false)}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-black text-slate-400 hover:text-white transition">
+                      className="rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/50 hover:text-white transition">
                       Cancel
                     </button>
                   </div>
@@ -328,14 +339,14 @@ export default function AthleteProfile({params}:PageProps) {
                   <div className="flex items-start gap-2 flex-wrap">
                     <h1 className="text-2xl font-black text-white leading-tight">{name}</h1>
                     <button onClick={()=>setEditingInfo(true)}
-                      className="mt-1 rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-black text-slate-500 hover:text-white transition">
+                      className="mt-1 rounded-lg border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/35 hover:text-white transition">
                       Edit
                     </button>
                   </div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">{team}</span>
-                    {ageGroup!=='—'&&<span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">{ageGroup}</span>}
-                    {position!=='—'&&<span className="rounded-full bg-slate-800 px-2.5 py-0.5 text-[11px] font-semibold text-slate-300">{position}</span>}
+                    <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{team}</span>
+                    {ageGroup!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{ageGroup}</span>}
+                    {position!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{position}</span>}
                   </div>
                 </>
               )}
@@ -347,20 +358,20 @@ export default function AthleteProfile({params}:PageProps) {
           </div>
 
           {/* Availability strip */}
-          <div className="border-t border-slate-800 px-5 py-3 flex items-center gap-2 flex-wrap">
-            <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mr-1">Status:</p>
+          <div className="border-t border-white/7 px-5 py-3 flex items-center gap-2 flex-wrap">
+            <p className="text-[10px] font-black uppercase tracking-wide text-white/25 mr-1">Status:</p>
             {Object.entries(AVAIL_STYLES).map(([key,s])=>(
               <button key={key} onClick={()=>setAvail(key)}
-                className={`rounded-xl border px-3 py-1.5 text-[11px] font-black transition ${availability===key?`${s.bg} ${s.border} ${s.color}`:'border-slate-800 bg-slate-950 text-slate-600 hover:text-slate-400'}`}>
+                className={`rounded-xl border px-3 py-1.5 text-[11px] font-black transition ${availability===key?`${s.bg} ${s.border} ${s.color}`:'border-white/7 bg-[#04060e] text-white/25 hover:text-white/50'}`}>
                 {s.label}
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2">
               {playerCode?(
-                <span className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] font-black font-mono text-slate-400">{playerCode}</span>
+                <span className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-1.5 text-[11px] font-black font-mono text-white/50">{playerCode}</span>
               ):null}
               <button onClick={generateCode} disabled={genCode}
-                className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-[11px] font-black text-slate-400 hover:text-white transition disabled:opacity-50">
+                className="rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-[11px] font-black text-white/50 hover:text-white transition disabled:opacity-50">
                 {genCode?'…':playerCode?'Regen Code':'Gen Code'}
               </button>
             </div>
@@ -371,7 +382,7 @@ export default function AthleteProfile({params}:PageProps) {
         <div className="mb-6 flex gap-1 rounded-2xl border border-white/5 p-1">
           {TABS.map(t=>(
             <button key={t.key} onClick={()=>setActiveTab(t.key)}
-              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${activeTab===t.key?'bg-slate-700 text-white':'text-slate-500 hover:text-slate-300'}`}>
+              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${activeTab===t.key?'bg-white/8 text-white':'text-white/35 hover:text-white/65'}`}>
               {t.label}
             </button>
           ))}
@@ -385,23 +396,23 @@ export default function AthleteProfile({params}:PageProps) {
               {[
                 {label:'Sessions',val:attendance.length,color:'text-white'},
                 {label:'Present',val:present,color:'text-emerald-400'},
-                {label:'Absent',val:absent,color:absent>0?'text-red-400':'text-slate-600'},
+                {label:'Absent',val:absent,color:absent>0?'text-red-400':'text-white/25'},
                 {label:'Excused',val:excused,color:'text-sky-400'},
               ].map(s=>(
                 <div key={s.label} className="rounded-2xl border border-white/5 p-4 text-center">
                   <p className={`text-2xl font-black ${s.color}`}>{s.val}</p>
-                  <p className="text-[10px] font-black uppercase tracking-wide text-slate-600 mt-0.5">{s.label}</p>
+                  <p className="text-[10px] font-black uppercase tracking-wide text-white/25 mt-0.5">{s.label}</p>
                 </div>
               ))}
             </div>
 
             {/* Personal bests */}
             {pbs.length>0&&(
-              <div className="rounded-2xl border border-white/6 overflow-hidden">
-                <div className="border-b border-slate-800 px-5 py-3">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">Personal Bests</p>
+              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+                <div className="border-b border-white/7 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Personal Bests</p>
                 </div>
-                <div className="divide-y divide-slate-800/50">
+                <div className="divide-y divide-white/5/50">
                   {pbs.map(p=>(
                     <div key={p.test} className="flex items-center gap-4 px-5 py-3.5">
                       <div className="flex-1 min-w-0">
@@ -415,7 +426,7 @@ export default function AthleteProfile({params}:PageProps) {
                       </div>
                       <Spark vals={p.vals} lower={LOWER.some(t=>p.test.toLowerCase().includes(t.toLowerCase()))}/>
                       <p className="text-base font-black text-white text-right">
-                        {p.pb}<span className="text-xs text-slate-500 ml-1">{p.unit}</span>
+                        {p.pb}<span className="text-xs text-white/35 ml-1">{p.unit}</span>
                       </p>
                     </div>
                   ))}
@@ -424,11 +435,11 @@ export default function AthleteProfile({params}:PageProps) {
             )}
 
             {/* Player feedback */}
-            <div className="rounded-2xl border border-white/6 overflow-hidden">
-              <div className="border-b border-slate-800 px-5 py-3 flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-wide text-slate-500">Coach Feedback</p>
+            <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+              <div className="border-b border-white/7 px-5 py-3 flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Coach Feedback</p>
                 <button onClick={()=>{setEditFb(true);setFbStr(latestFeedback?.strengths||'');setFbFoc(latestFeedback?.current_focus||'');setFbCom(latestFeedback?.coach_comment||'');}}
-                  className="rounded-xl border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">
+                  className="rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition">
                   {latestFeedback?'Edit':'Add'}
                 </button>
               </div>
@@ -437,17 +448,17 @@ export default function AthleteProfile({params}:PageProps) {
                   <div>
                     <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</label>
                     <textarea value={fbStr} onChange={e=>setFbStr(e.target.value)} rows={2} placeholder="e.g. Excellent work ethic…"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 resize-none"/>
+                      className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 resize-none"/>
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</label>
                     <textarea value={fbFoc} onChange={e=>setFbFoc(e.target.value)} rows={2} placeholder="e.g. Improve acceleration…"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500 resize-none"/>
+                      className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500 resize-none"/>
                   </div>
                   <div>
                     <label className="mb-1 block text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</label>
                     <textarea value={fbCom} onChange={e=>setFbCom(e.target.value)} rows={2} placeholder="General coach comment…"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 resize-none"/>
+                      className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 resize-none"/>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={saveFeedback} disabled={savingFb}
@@ -455,7 +466,7 @@ export default function AthleteProfile({params}:PageProps) {
                       {savingFb?'Saving…':'Save Feedback'}
                     </button>
                     <button onClick={()=>setEditFb(false)}
-                      className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-black text-slate-400 hover:text-white transition">
+                      className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-xs font-black text-white/50 hover:text-white transition">
                       Cancel
                     </button>
                   </div>
@@ -468,7 +479,7 @@ export default function AthleteProfile({params}:PageProps) {
                 </div>
               ):(
                 <div className="px-5 py-8 text-center">
-                  <p className="text-sm text-slate-600">No feedback recorded yet.</p>
+                  <p className="text-sm text-white/25">No feedback recorded yet.</p>
                 </div>
               )}
             </div>
@@ -492,12 +503,12 @@ export default function AthleteProfile({params}:PageProps) {
                     <p className="text-sm text-slate-200 leading-relaxed">{aiText}</p>
                     <div className="mt-3 flex gap-2">
                       <button onClick={()=>navigator.clipboard.writeText(aiText)}
-                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">Copy</button>
+                        className="rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition">Copy</button>
                       <button onClick={()=>setAiText('')}
-                        className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-[10px] font-black text-slate-400 hover:text-white transition">Clear</button>
+                        className="rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition">Clear</button>
                     </div>
                   </div>
-                ):<p className="text-sm text-slate-600">Click Generate to create an AI-assisted athlete summary for coach or parent use.</p>}
+                ):<p className="text-sm text-white/25">Click Generate to create an AI-assisted athlete summary for coach or parent use.</p>}
               </div>
             </div>
           </div>
@@ -508,16 +519,16 @@ export default function AthleteProfile({params}:PageProps) {
           <div className="space-y-5">
             {/* Quick add */}
             <div className="rounded-2xl border border-white/6 p-5">
-              <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Add Session</p>
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Add Session</p>
               <form onSubmit={addAttendance} className="grid gap-3 sm:grid-cols-3">
                 <input type="date" value={attDate} onChange={e=>setAttDate(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500"/>
+                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500"/>
                 <select value={attType} onChange={e=>setAttType(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
                   {['Training','Match','Gym','Fitness','Other'].map(t=><option key={t}>{t}</option>)}
                 </select>
                 <select value={attStatus} onChange={e=>setAttStatus(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
                   {['Present','Late','Absent','Excused'].map(s=><option key={s}>{s}</option>)}
                 </select>
                 <button type="submit" disabled={savingAtt}
@@ -527,28 +538,28 @@ export default function AthleteProfile({params}:PageProps) {
               </form>
             </div>
             {/* History */}
-            <div className="rounded-2xl border border-white/6 overflow-hidden">
-              <div className="border-b border-slate-800 px-5 py-3 flex items-center justify-between">
-                <p className="text-xs font-black uppercase tracking-wide text-slate-500">History</p>
+            <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+              <div className="border-b border-white/7 px-5 py-3 flex items-center justify-between">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">History</p>
                 {attRate!==null&&<span className={`rounded-full px-2.5 py-0.5 text-xs font-black ${attRate>=80?'bg-emerald-500/15 text-emerald-300':attRate>=60?'bg-amber-500/15 text-amber-300':'bg-red-500/15 text-red-300'}`}>{attRate}% rate</span>}
               </div>
               {attendance.length===0?(
-                <div className="py-10 text-center"><p className="text-sm text-slate-600">No sessions recorded.</p></div>
+                <div className="py-10 text-center"><p className="text-sm text-white/25">No sessions recorded.</p></div>
               ):(
-                <div className="divide-y divide-slate-800/50 max-h-96 overflow-y-auto">
+                <div className="divide-y divide-white/5/50 max-h-96 overflow-y-auto">
                   {attendance.map(a=>{
                     const s=a.status?.toLowerCase()||'';
                     return(
                       <div key={a.id} className="flex items-center gap-3 px-5 py-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white">{fDate(a.session_date)}</p>
-                          <p className="text-[11px] text-slate-500">{a.session_type||'—'}</p>
+                          <p className="text-[11px] text-white/35">{a.session_type||'—'}</p>
                         </div>
-                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${STATUS_STYLES[s]||'bg-slate-800 text-slate-300 border-slate-700'}`}>
+                        <span className={`rounded-full border px-2.5 py-0.5 text-[10px] font-black ${STATUS_STYLES[s]||'bg-white/5 text-white/65 border-white/8'}`}>
                           {a.status}
                         </span>
                         <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('attendance').delete().eq('id',a.id);await load();}}
-                          className="text-slate-700 hover:text-red-400 transition text-xs">✕</button>
+                          className="text-white/15 hover:text-red-400 transition text-xs">✕</button>
                       </div>
                     );
                   })}
@@ -563,21 +574,21 @@ export default function AthleteProfile({params}:PageProps) {
           <div className="space-y-5">
             {/* Quick add */}
             <div className="rounded-2xl border border-white/6 p-5">
-              <p className="mb-4 text-xs font-black uppercase tracking-wide text-slate-500">Add Result</p>
+              <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Add Result</p>
               <form onSubmit={addPerformance} className="grid gap-3 sm:grid-cols-3">
                 <input type="date" value={perfDate} onChange={e=>setPerfDate(e.target.value)}
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
                 <input value={perfTest} onChange={e=>setPerfTest(e.target.value)} placeholder="Test type e.g. SBJ"
                   list="test-suggestions"
-                  className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
                 <datalist id="test-suggestions">
                   {['SBJ','10m Sprint','30m Sprint','505 Left','505 Right','Push-Ups','Pull-Ups','Yo-Yo IR1','Bronco','RSA Sdec%'].map(t=><option key={t} value={t}/>)}
                 </datalist>
                 <div className="flex gap-2">
                   <input value={perfVal} onChange={e=>setPerfVal(e.target.value)} placeholder="Value" type="number" step="any"
-                    className="flex-1 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                    className="flex-1 rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
                   <input value={perfUnit} onChange={e=>setPerfUnit(e.target.value)} placeholder="Unit" style={{width:70}}
-                    className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                    className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
                 </div>
                 <button type="submit" disabled={savingPerf||!perfTest.trim()||!perfVal}
                   className="sm:col-span-3 rounded-xl border border-violet-500/40 bg-violet-500/15 py-2.5 text-sm font-black text-violet-300 hover:bg-violet-500/25 transition disabled:opacity-50">
@@ -588,28 +599,28 @@ export default function AthleteProfile({params}:PageProps) {
             {/* All results */}
             {performance.length===0?(
               <div className="rounded-2xl border border-white/5 py-10 text-center">
-                <p className="text-sm text-slate-600">No results recorded yet.</p>
+                <p className="text-sm text-white/25">No results recorded yet.</p>
               </div>
             ):(
-              <div className="rounded-2xl border border-white/6 overflow-hidden">
-                <div className="border-b border-slate-800 px-5 py-3">
-                  <p className="text-xs font-black uppercase tracking-wide text-slate-500">All Results</p>
+              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"">
+                <div className="border-b border-white/7 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">All Results</p>
                 </div>
-                <div className="divide-y divide-slate-800/50 max-h-[500px] overflow-y-auto">
+                <div className="divide-y divide-white/5/50 max-h-[500px] overflow-y-auto">
                   {performance.map(p=>{
                     const tier=p.value!==null?getTier(p.test_type,p.value,ageGroup):null;
                     return(
                       <div key={p.id} className="flex items-center gap-3 px-5 py-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-white truncate">{p.test_type}</p>
-                          <p className="text-[11px] text-slate-500">{fDate(p.test_date)}</p>
+                          <p className="text-[11px] text-white/35">{fDate(p.test_date)}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-sm font-black text-white">{p.value}{p.unit&&<span className="text-slate-500 text-xs ml-1">{p.unit}</span>}</p>
+                          <p className="text-sm font-black text-white">{p.value}{p.unit&&<span className="text-white/35 text-xs ml-1">{p.unit}</span>}</p>
                           {tier&&<span className="text-[9px] font-black" style={{color:tier.color}}>{tier.label}</span>}
                         </div>
                         <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('performance_tests').delete().eq('id',p.id);await load();}}
-                          className="text-slate-700 hover:text-red-400 transition text-xs shrink-0">✕</button>
+                          className="text-white/15 hover:text-red-400 transition text-xs shrink-0">✕</button>
                       </div>
                     );
                   })}
@@ -627,7 +638,7 @@ export default function AthleteProfile({params}:PageProps) {
               <form onSubmit={addNote} className="space-y-3">
                 <textarea value={newNote} onChange={e=>setNewNote(e.target.value)} rows={3}
                   placeholder="Add a coach note…"
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 resize-none"/>
+                  className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500 resize-none"/>
                 <button type="submit" disabled={savingNote||!newNote.trim()}
                   className="w-full rounded-xl border border-sky-500/40 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 hover:bg-sky-500/25 transition disabled:opacity-50">
                   {savingNote?'Saving…':'Add Note'}
@@ -637,16 +648,16 @@ export default function AthleteProfile({params}:PageProps) {
             {/* Notes list */}
             {coachNotes.length===0?(
               <div className="rounded-2xl border border-white/5 py-10 text-center">
-                <p className="text-sm text-slate-600">No notes yet.</p>
+                <p className="text-sm text-white/25">No notes yet.</p>
               </div>
             ):(
               <div className="space-y-3">
                 {coachNotes.map(n=>(
                   <div key={n.id} className="rounded-2xl border border-white/5 p-4">
                     <div className="flex items-start justify-between gap-3 mb-2">
-                      <p className="text-[10px] text-slate-600">{fDate(n.created_at)}{n.author_email&&` · ${n.author_email}`}</p>
+                      <p className="text-[10px] text-white/25">{fDate(n.created_at)}{n.author_email&&` · ${n.author_email}`}</p>
                       <button onClick={async()=>{if(!confirm('Delete?'))return;await supabase.from('coach_notes').delete().eq('id',n.id);await load();}}
-                        className="text-slate-700 hover:text-red-400 transition text-xs shrink-0">✕</button>
+                        className="text-white/15 hover:text-red-400 transition text-xs shrink-0">✕</button>
                     </div>
                     <p className="text-sm text-slate-200 leading-relaxed">{n.note}</p>
                   </div>
@@ -657,7 +668,7 @@ export default function AthleteProfile({params}:PageProps) {
         )}
 
         {/* Danger zone */}
-        <div className="mt-8 pt-6 border-t border-slate-800">
+        <div className="mt-8 pt-6 border-t border-white/7">
           <button onClick={async()=>{if(!confirm(`Delete ${name}? This cannot be undone.`))return;await supabase.from('athletes').delete().eq('id',id);router.push('/athletes');}}
             className="rounded-xl border border-red-500/20 bg-red-500/5 px-4 py-2 text-xs font-black text-red-400 hover:bg-red-500/15 transition">
             Delete Athlete

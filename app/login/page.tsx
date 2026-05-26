@@ -51,46 +51,46 @@ function LoginForm() {
   }
 
   if (checkingSession) return (
-    <main className="flex min-h-screen items-center justify-center bg-[#020617] px-4 text-white">
-      <div className="rounded-[2rem] border border-slate-800 bg-slate-950 p-6 text-center shadow-2xl">
+    <main className="flex min-h-screen items-center justify-center bg-[#04060e] px-4 text-white">
+      <div className="rounded-[2rem] border border-white/7 bg-[#04060e] p-6 text-center shadow-2xl">
         <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-400">St Benedict&apos;s Hockey</p>
         <h1 className="mt-3 text-2xl font-black">Checking session...</h1>
-        <p className="mt-4 text-[10px] text-slate-700">
-          <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+        <p className="mt-4 text-[10px] text-white/15">
+          <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
           <span className="mx-2">·</span>
-          <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+          <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
         </p>
       </div>
     </main>
   );
 
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#020617] px-4 py-8 text-white">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#04060e] px-4 py-8 text-white">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(14,165,233,0.15),transparent)]" />
       <div className="absolute left-[-5%] top-[-5%] h-96 w-96 animate-pulse rounded-full bg-sky-500/25 blur-3xl" />
       <div className="absolute bottom-[-10%] right-[-5%] h-96 w-96 animate-pulse rounded-full bg-sky-400/15 blur-3xl" />
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-[0.03]" />
 
-      <section className="relative z-10 w-full max-w-md rounded-[2rem] border border-slate-700/50 bg-slate-950/95 p-6 shadow-2xl shadow-sky-500/5 backdrop-blur-xl ring-1 ring-white/5 sm:p-8">
+      <section className="relative z-10 w-full max-w-md rounded-[2rem] border border-white/8/50 bg-[#04060e]/95 p-6 shadow-2xl shadow-sky-500/5 backdrop-blur-xl ring-1 ring-white/5 sm:p-8">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-2xl bg-white p-2 shadow-2xl shadow-sky-500/20 ring-1 ring-sky-500/20">
             <Image src="/st-benedicts-logo.png" alt="St Benedict's College" width={96} height={96} className="h-full w-full object-contain" priority />
           </div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">St Benedict&apos;s College</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-white">Coach Login</h1>
-          <p className="mt-3 text-sm leading-6 text-slate-400">Secure staff access · Hockey Department</p>
+          <p className="mt-3 text-sm leading-6 text-white/50">Secure staff access · Hockey Department</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-400">Email</label>
+            <label className="mb-2 block text-xs font-black uppercase tracking-wide text-white/50">Email</label>
             <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="coach@stbenedicts.co.za"
-              className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-sky-500" />
+              className="w-full rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-sky-500" />
           </div>
           <div>
-            <label className="mb-2 block text-xs font-black uppercase tracking-wide text-slate-400">Password</label>
+            <label className="mb-2 block text-xs font-black uppercase tracking-wide text-white/50">Password</label>
             <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••"
-              className="w-full rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-sky-500" />
+              className="w-full rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-sky-500" />
           </div>
           {status && <div className="rounded-2xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-sm text-sky-200">{status}</div>}
           {errorMessage && <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">{errorMessage}</div>}
@@ -100,16 +100,16 @@ function LoginForm() {
           </button>
         </form>
 
-        <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
-          <a href="/portal" className="font-bold text-slate-400 transition hover:text-white">Back to Portal</a>
+        <div className="mt-6 flex items-center justify-between text-xs text-white/35">
+          <a href="/portal" className="font-bold text-white/50 transition hover:text-white">Back to Portal</a>
           <span>Coach Access Only</span>
         </div>
 
-        <div className="mt-4 border-t border-slate-800 pt-4 text-center">
-          <p className="text-[10px] text-slate-700">
-            <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+        <div className="mt-4 border-t border-white/7 pt-4 text-center">
+          <p className="text-[10px] text-white/15">
+            <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
             <span className="mx-2">·</span>
-            <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+            <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
           </p>
         </div>
       </section>
@@ -120,13 +120,13 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <main className="flex min-h-screen items-center justify-center bg-[#020617] text-white">
+      <main className="flex min-h-screen items-center justify-center bg-[#04060e] text-white">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
         <footer className="py-4 text-center">
-    <p className="text-[10px] text-slate-700">
-      <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+    <p className="text-[10px] text-white/15">
+      <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
       <span className="mx-2">·</span>
-      <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+      <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
     </p>
   </footer>
 </main>

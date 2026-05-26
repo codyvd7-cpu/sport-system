@@ -81,14 +81,14 @@ export default function TeamsPage() {
   const assignedAthletes = athletes.filter((a) => a.team && allTeams.includes(a.team)).length;
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen overflow-x-hidden" style={{background:"var(--bg)" pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Squad Management</p>
           <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Teams</h1>
-          <p className="mt-1 text-sm text-slate-500">{assignedAthletes} players assigned across {allTeams.filter((t) => (teamStats[t]?.count || 0) > 0).length} active teams</p>
+          <p className="mt-1 text-sm text-white/35">{assignedAthletes} players assigned across {allTeams.filter((t) => (teamStats[t]?.count || 0) > 0).length} active teams</p>
         </div>
 
         {/* Department overview */}
@@ -99,16 +99,16 @@ export default function TeamsPage() {
             { label: 'Injured', value: totalInjured, color: 'red' },
             { label: 'Modified', value: totalModified, color: 'amber' },
           ].map((kpi) => (
-            <div key={kpi.label} className={`rounded-2xl border bg-slate-900 p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : 'border-amber-500/20'}`}>
+            <div key={kpi.label} className={`rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : 'border-amber-500/20'}`}>
               <p className={`text-3xl font-black ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : 'text-amber-400'}`}>{kpi.value}</p>
-              <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{kpi.label}</p>
+              <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{kpi.label}</p>
             </div>
           ))}
         </div>
 
         {/* Team groups */}
         {loading ? (
-          <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" /><p className="text-sm text-slate-400">Loading...</p></div>
+          <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" /><p className="text-sm text-white/50">Loading...</p></div>
         ) : (
           <div className="space-y-8">
             {visibleTeamGroups.map((group) => {
@@ -120,12 +120,12 @@ export default function TeamsPage() {
                     {group.teams.map((team) => {
                       const s = teamStats[team];
                       if (!s || s.count === 0) return (
-                        <div key={team} className="rounded-2xl border border-slate-800/60 bg-slate-950/40 p-4 opacity-50">
+                        <div key={team} className="rounded-2xl border border-white/7/60 bg-[#04060e]/40 p-4 opacity-50">
                           <div className="flex items-center justify-between mb-2">
                             <span className={`rounded-full px-2.5 py-1 text-xs font-black ${col.badge}`}>{team}</span>
-                            <p className="text-lg font-black text-slate-700">0</p>
+                            <p className="text-lg font-black text-white/15">0</p>
                           </div>
-                          <p className="text-xs text-slate-700">No players assigned</p>
+                          <p className="text-xs text-white/15">No players assigned</p>
                         </div>
                       );
                       return (

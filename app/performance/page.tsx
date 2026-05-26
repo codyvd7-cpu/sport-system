@@ -57,7 +57,7 @@ const BENCHMARKS: Record<string, { u1415: number[]; u1618: number[] }> = {
 };
 
 function getTierColor(testName: string, value: number, ageGroup: string) {
-  const b = BENCHMARKS[testName]; if (!b) return 'border-slate-700 bg-slate-800/40';
+  const b = BENCHMARKS[testName]; if (!b) return 'border-white/8 bg-white/5/40';
   const lower = TEST_LIBRARY.find((t) => t.name === testName)?.lower ?? false;
   const t = ageGroup.includes('14') || ageGroup.includes('15') ? b.u1415 : b.u1618;
   let tier: number;
@@ -185,7 +185,7 @@ export default function PerformancePage() {
 
   // ── RENDER ────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen overflow-x-hidden" style={{background:"var(--bg)" pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 
         {/* Header */}
@@ -194,7 +194,7 @@ export default function PerformancePage() {
           <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Performance Testing</h1>
           {step === 'capture' && (
             <div className="mt-2 flex items-center gap-3">
-              <button onClick={() => setStep('setup')} className="text-xs text-slate-500 hover:text-slate-300">← Back to setup</button>
+              <button onClick={() => setStep('setup')} className="text-xs text-white/35 hover:text-white/65">← Back to setup</button>
             </div>
           )}
         </div>
@@ -205,13 +205,13 @@ export default function PerformancePage() {
           <div className="space-y-6">
 
             {/* Team + Date */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-sky-400">Step 1 — Session Details</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-2 block text-xs font-black text-slate-400">Team</label>
+                  <label className="mb-2 block text-xs font-black text-white/50">Team</label>
                   <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-sky-500">
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-3 text-sm text-white outline-none focus:border-sky-500">
                     <option value="">Select team...</option>
                     {TEAM_GROUPS.map((g) => {
                       const visibleTeams = g.teams.filter(t => canSeeAllTeams || myTeams.includes(t));
@@ -225,24 +225,24 @@ export default function PerformancePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-xs font-black text-slate-400">Date</label>
+                  <label className="mb-2 block text-xs font-black text-white/50">Date</label>
                   <input type="date" value={sessionDate} onChange={(e) => setSessionDate(e.target.value)}
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white outline-none focus:border-sky-500" />
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-3 text-sm text-white outline-none focus:border-sky-500" />
                 </div>
               </div>
             </div>
 
             {/* Test selection */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-violet-400">Step 2 — Select Tests</p>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {TEST_LIBRARY.map((test) => {
                   const isSelected = selectedTests.includes(test.name);
                   return (
                     <button key={test.name} onClick={() => toggleTest(test.name)}
-                      className={`rounded-xl border p-3 text-left transition ${isSelected ? 'border-violet-500/50 bg-violet-500/15' : 'border-slate-700 bg-slate-800/60 hover:border-slate-600'}`}>
+                      className={`rounded-xl border p-3 text-left transition ${isSelected ? 'border-violet-500/50 bg-violet-500/15' : 'border-white/8 bg-white/5/60 hover:border-slate-600'}`}>
                       <p className={`text-sm font-black ${isSelected ? 'text-violet-300' : 'text-white'}`}>{test.name}</p>
-                      <p className="text-[10px] text-slate-500">{test.desc} · {test.unit}</p>
+                      <p className="text-[10px] text-white/35">{test.desc} · {test.unit}</p>
                       {isSelected && <p className="mt-1 text-[9px] font-black text-violet-400">✓ Selected</p>}
                     </button>
                   );
@@ -254,10 +254,10 @@ export default function PerformancePage() {
                 <div className="flex gap-2">
                   <input value={customTest} onChange={(e) => setCustomTest(e.target.value)} placeholder="Custom test name..."
                     onKeyDown={(e) => e.key === 'Enter' && addCustomTest()}
-                    className="flex-1 min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500" />
+                    className="flex-1 min-w-0 rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-violet-500" />
                   <input value={customUnit} onChange={(e) => setCustomUnit(e.target.value)} placeholder="Unit"
-                    className="w-16 shrink-0 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
-                  <button onClick={addCustomTest} className="shrink-0 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-sm font-black text-slate-300 hover:text-white">Add</button>
+                    className="w-16 shrink-0 rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
+                  <button onClick={addCustomTest} className="shrink-0 rounded-xl border border-white/8 bg-white/5 px-3 py-2.5 text-sm font-black text-white/65 hover:text-white">Add</button>
                 </div>
               </div>
 
@@ -285,33 +285,33 @@ export default function PerformancePage() {
         {step === 'capture' && (
           <div>
             {/* Session info + progress */}
-            <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="mb-6 rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.18em] text-violet-400">Live Session</p>
                   <h2 className="mt-0.5 text-2xl font-black text-white">{selectedTeam}</h2>
-                  <p className="text-sm text-slate-500">{new Date(sessionDate).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })} · {selectedTests.join(', ')}</p>
+                  <p className="text-sm text-white/35">{new Date(sessionDate).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })} · {selectedTests.join(', ')}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-black text-white">{completedCount}<span className="text-lg text-slate-500">/{athletes.length}</span></p>
-                  <p className="text-xs text-slate-500">completed</p>
+                  <p className="text-3xl font-black text-white">{completedCount}<span className="text-lg text-white/35">/{athletes.length}</span></p>
+                  <p className="text-xs text-white/35">completed</p>
                   {partialCount > 0 && <p className="text-[10px] text-amber-400">{partialCount} partial</p>}
                 </div>
               </div>
               {/* Progress bar */}
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/5">
                 <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${athletes.length > 0 ? (completedCount / athletes.length) * 100 : 0}%` }} />
               </div>
             </div>
 
             {/* If single test — compact list */}
             {selectedTests.length === 1 ? (
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
-                <div className="border-b border-slate-800 bg-slate-900/80 px-5 py-3 flex items-center justify-between">
+              <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] overflow-hidden">
+                <div className="border-b border-white/7 bg-[rgba(255,255,255,0.025)]/80 px-5 py-3 flex items-center justify-between">
                   <p className="text-sm font-black text-white">{selectedTests[0]}</p>
-                  <p className="text-xs text-slate-500">{TEST_LIBRARY.find((t) => t.name === selectedTests[0])?.unit}</p>
+                  <p className="text-xs text-white/35">{TEST_LIBRARY.find((t) => t.name === selectedTests[0])?.unit}</p>
                 </div>
-                <div className="divide-y divide-slate-800/50">
+                <div className="divide-y divide-white/5/50">
                   {athletes.map((athlete, idx) => {
                     const testName = selectedTests[0];
                     const val = results[athlete.id]?.[testName] || '';
@@ -322,8 +322,8 @@ export default function PerformancePage() {
                     const name = athlete.full_name || 'Unknown';
                     const ageGroup = athlete.age_group || '';
                     return (
-                      <div key={athlete.id} className={`flex items-center gap-3 px-4 py-3 transition ${activeAthlete === athlete.id ? 'bg-slate-800/40' : ''}`}>
-                        <span className="w-5 shrink-0 text-center text-[10px] font-black text-slate-600">{idx + 1}</span>
+                      <div key={athlete.id} className={`flex items-center gap-3 px-4 py-3 transition ${activeAthlete === athlete.id ? 'bg-white/5/40' : ''}`}>
+                        <span className="w-5 shrink-0 text-center text-[10px] font-black text-white/25">{idx + 1}</span>
                         <p className="flex-1 text-sm font-semibold text-white truncate">{name}</p>
                         <div className="flex items-center gap-2 shrink-0">
                           <input
@@ -337,7 +337,7 @@ export default function PerformancePage() {
                             onFocus={() => setActiveAthlete(athlete.id)}
                             onKeyDown={(e) => handleKeyDown(e, athlete.id, testName, val)}
                             placeholder="—"
-                            className={`w-24 rounded-xl border px-3 py-2 text-right text-sm font-black outline-none transition ${showColor ? getTierColor(testName, num, ageGroup) + ' ' + getTierTextColor(testName, num, ageGroup) : 'border-slate-700 bg-slate-800 text-white focus:border-violet-500'}`}
+                            className={`w-24 rounded-xl border px-3 py-2 text-right text-sm font-black outline-none transition ${showColor ? getTierColor(testName, num, ageGroup) + ' ' + getTierTextColor(testName, num, ageGroup) : 'border-white/8 bg-white/5 text-white focus:border-violet-500'}`}
                           />
                           <div className="w-4">
                             {isSaving ? <div className="h-3 w-3 animate-spin rounded-full border border-violet-400 border-t-transparent" /> : isSaved ? <span className="text-emerald-400 text-sm">✓</span> : null}
@@ -357,26 +357,26 @@ export default function PerformancePage() {
                   const allDone = selectedTests.every((t) => saved[athlete.id]?.[t]);
                   const isOpen = activeAthlete === athlete.id;
                   return (
-                    <div key={athlete.id} className={`rounded-2xl border transition ${allDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-slate-800 bg-slate-900'}`}>
+                    <div key={athlete.id} className={`rounded-2xl border transition ${allDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-white/7 bg-[rgba(255,255,255,0.025)]'}`}>
                       <button onClick={() => setActiveAthlete(isOpen ? null : athlete.id)}
                         className="flex w-full items-center gap-3 px-5 py-4">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-black text-white/65">
                           {(athlete.full_name || '?').split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
                         <div className="flex-1 text-left">
                           <p className="text-sm font-bold text-white">{name}</p>
-                          <p className="text-[10px] text-slate-500">
+                          <p className="text-[10px] text-white/35">
                             {selectedTests.filter((t) => saved[athlete.id]?.[t]).length}/{selectedTests.length} tests done
                           </p>
                         </div>
                         {allDone
                           ? <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-black text-emerald-300">Complete ✓</span>
-                          : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-4 w-4 text-slate-500 transition ${isOpen ? 'rotate-90' : ''}`}><path d="M9 18l6-6-6-6"/></svg>
+                          : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className={`h-4 w-4 text-white/35 transition ${isOpen ? 'rotate-90' : ''}`}><path d="M9 18l6-6-6-6"/></svg>
                         }
                       </button>
 
                       {isOpen && (
-                        <div className="border-t border-slate-800 px-5 pb-4 pt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        <div className="border-t border-white/7 px-5 pb-4 pt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
                           {selectedTests.map((testName) => {
                             const val = results[athlete.id]?.[testName] || '';
                             const isSaved = saved[athlete.id]?.[testName];
@@ -387,7 +387,7 @@ export default function PerformancePage() {
                             return (
                               <div key={testName}>
                                 <div className="mb-1 flex items-center justify-between">
-                                  <label className="text-[10px] font-black uppercase tracking-wide text-slate-500">{testName}</label>
+                                  <label className="text-[10px] font-black uppercase tracking-wide text-white/35">{testName}</label>
                                   {isSaving ? <div className="h-2.5 w-2.5 animate-spin rounded-full border border-violet-400 border-t-transparent" /> : isSaved ? <span className="text-[10px] text-emerald-400">✓</span> : null}
                                 </div>
                                 <div className="relative">
@@ -401,9 +401,9 @@ export default function PerformancePage() {
                                     onBlur={(e) => handleInputBlur(athlete.id, testName, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(e, athlete.id, testName, val)}
                                     placeholder="—"
-                                    className={`w-full rounded-xl border px-3 py-2.5 text-sm font-black outline-none transition ${showColor ? getTierColor(testName, num, ageGroup) + ' ' + getTierTextColor(testName, num, ageGroup) : 'border-slate-700 bg-slate-800 text-white focus:border-violet-500'}`}
+                                    className={`w-full rounded-xl border px-3 py-2.5 text-sm font-black outline-none transition ${showColor ? getTierColor(testName, num, ageGroup) + ' ' + getTierTextColor(testName, num, ageGroup) : 'border-white/8 bg-white/5 text-white focus:border-violet-500'}`}
                                   />
-                                  {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 pointer-events-none">{unit}</span>}
+                                  {unit && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-white/35 pointer-events-none">{unit}</span>}
                                 </div>
                               </div>
                             );
@@ -427,16 +427,16 @@ export default function PerformancePage() {
         {/* ── DONE STEP ──────────────────────────────────── */}
         {step === 'done' && (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-700 bg-slate-800 text-slate-500"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/8 bg-white/5 text-white/35"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-7 w-7"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
             <h2 className="text-2xl font-black text-white">Session Complete</h2>
-            <p className="mt-2 text-slate-400">{completedCount} of {athletes.length} players tested · {selectedTests.join(', ')}</p>
+            <p className="mt-2 text-white/50">{completedCount} of {athletes.length} players tested · {selectedTests.join(', ')}</p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button onClick={() => { setStep('setup'); setSelectedTeam(''); setSelectedTests([]); setAthletes([]); setResults({}); setSaved({}); }}
                 className="rounded-xl border border-violet-500 bg-violet-500/15 px-6 py-3 font-black text-violet-300 hover:bg-violet-500/25">
                 New Session
               </button>
               <button onClick={() => { setStep('capture'); }}
-                className="rounded-xl border border-slate-700 bg-slate-800 px-6 py-3 font-black text-slate-300 hover:text-white">
+                className="rounded-xl border border-white/8 bg-white/5 px-6 py-3 font-black text-white/65 hover:text-white">
                 Back to Session
               </button>
             </div>
