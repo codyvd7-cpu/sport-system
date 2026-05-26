@@ -86,7 +86,7 @@ export default function HPAttendancePage() {
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{color:"rgba(16,185,129,0.7)"">High Performance</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{color:"rgba(16,185,129,0.7)"}}>High Performance</p>
           <h1 className="text-4xl font-black text-white tracking-tight leading-none">Attendance</h1>
         </div>
 

@@ -461,7 +461,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
               )}
             </div>
           ):(
-            <div className="max-h-72 overflow-y-auto divide-y" style={{divideColor:'rgba(255,255,255,0.05)'}}>
+            <div className="max-h-72 overflow-y-auto divide-y divide-white/5">
               {attendance.length===0?(
                 <p className="p-5 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No attendance recorded yet.</p>
               ):attendance.map(a=>{

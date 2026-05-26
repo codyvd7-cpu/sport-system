@@ -180,7 +180,7 @@ function HPStudentsInner() {
               return (
                 <div key={s.id} className="flex items-center gap-3 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] px-4 py-3 hover:border-white/8 transition">
                   <Link href={`/hp/students/${s.id}`} className="flex flex-1 min-w-0 items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/12 text-[10px] font-black" style={{color:"#10b981"">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/12 text-[10px] font-black" style={{color:"#10b981"}}>
                       {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
                     </div>
                     <div className="min-w-0 flex-1">
