@@ -74,8 +74,7 @@ function ClassProfileInner({params}:PageProps) {
   const [savingAtt,setSavingAtt] = React.useState(false);
 
   async function load() {
-    const url = `/api/hp/data?type=class&grade=${encodeURIComponent(grade)}&cls=${cls}&year=${year}`;
-    console.log('HP Class load:', url, 'grade:', grade, 'cls:', cls);
+    const url = `/api/hp/data?type=class&id=${encodeURIComponent(id)}&year=${year}`;
     const res = await fetch(url, { credentials: 'include' });
     if (!res.ok) {
       const err = await res.json().catch(()=>({error:'unknown'}));

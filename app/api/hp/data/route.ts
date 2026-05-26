@@ -45,8 +45,17 @@ export async function GET(req: NextRequest) {
     if (type === 'class') {
       const grade = searchParams.get('grade');
       const cls = searchParams.get('cls');
+      const classId = searchParams.get('id'); // e.g. "8B"
       const year = searchParams.get('year') || new Date().getFullYear().toString();
-      const sRes = await admin.from('hp_students').select('*').eq('grade', grade).eq('class_group', cls).eq('is_active', true).order('full_name');
+
+      // Derive grade/cls from id if not provided directly
+      const resolvedGrade = grade || (classId ? (classId[0]==='8'?'Grade 8':'Grade 9') : null);
+      const resolvedCls   = cls   || (classId ? classId[1] : null);
+
+      if (!resolvedGrade || !resolvedCls) return NextResponse.json({ students:[], attendance:[], tests:[] });
+
+      const sRes = await admin.from('hp_students').select('*')
+        .eq('grade', resolvedGrade).eq('class_group', resolvedCls).eq('is_active', true).order('full_name');
       const ids = (sRes.data || []).map((s: any) => s.id);
       if (!ids.length) return NextResponse.json({ students: [], attendance: [], tests: [] });
       const [aRes, tRes] = await Promise.all([

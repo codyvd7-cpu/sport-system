@@ -229,11 +229,11 @@ export default function LandingPage() {
               style={{animationDelay:'440ms'}}>
               Select Department
             </p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 items-stretch">
               {DEPARTMENTS.map((dept, i) => {
                 const inner = (
                   <div
-                    className={`dept-card ${dept.available ? 'available' : ''} rounded-2xl p-4 sm:p-5 flex flex-col items-center gap-3 text-center backdrop-blur-sm border h-full min-h-[160px] justify-between`}
+                    className={`dept-card ${dept.available ? 'available' : ''} rounded-2xl p-4 sm:p-5 flex flex-col items-center gap-3 text-center backdrop-blur-sm border h-full justify-between`}
                     style={{
                       '--glow': dept.glow,
                       '--border-col': dept.border,
@@ -288,10 +288,10 @@ export default function LandingPage() {
 
                 return (
                   <div key={dept.id}
-                    className={`${mounted ? 'card-in' : 'opacity-0'}`}
+                    className={`h-full ${mounted ? 'card-in' : 'opacity-0'}`}
                     style={{animationDelay:`${500 + i * 80}ms`}}>
                     {dept.available
-                      ? <Link href={dept.href} className="block">{inner}</Link>
+                      ? <Link href={dept.href} className="block h-full">{inner}</Link>
                       : inner
                     }
                   </div>
