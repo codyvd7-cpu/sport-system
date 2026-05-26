@@ -111,12 +111,12 @@ export default function HPTestingPage() {
   const [numGroups, setNumGroups] = React.useState(3);
 
   React.useEffect(() => {
-    supabase.from('hp_students').select('*').eq('is_active', true)
-      .then(({ data }) => {
-        const sorted = (data || []).sort((a, b) => {
-          const surnameA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-          const surnameB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-          if (surnameA !== surnameB) return surnameA.localeCompare(surnameB);
+    fetch('/api/hp/data?type=students', { credentials: 'include' })
+      .then(r => r.json()).then(d => {
+        const sorted = (d.data || []).sort((a: Row, b: Row) => {
+          const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          if (sA !== sB) return sA.localeCompare(sB);
           return a.grade.localeCompare(b.grade);
         });
         setStudents(sorted);
@@ -128,12 +128,11 @@ export default function HPTestingPage() {
     setLoadError(null);
     const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
 
-    supabase.from('hp_test_results').select('*').eq('term', term).eq('year', year)
-      .then(({ data, error }) => {
-        if (error) { setLoadError(`Could not load results: ${error.message}`); return; }
+    fetch(`/api/hp/data?type=testing&term=${encodeURIComponent(term)}&year=${year}`, { credentials: 'include' })
+      .then(r => r.json()).then(d => {
         const pre: Record<string, Row> = {};
         const preSaved: Record<string, boolean> = {};
-        (data || []).forEach(r => {
+        (d.tests || []).forEach((r: Row) => {
           pre[r.student_id] = r;
           if (r.run_500m) pre[r.student_id].run_500m = secondsToMmss(r.run_500m);
           if (r.chin_up_hang) pre[r.student_id].chin_up_hang = secondsToMmss(r.chin_up_hang);
@@ -141,13 +140,13 @@ export default function HPTestingPage() {
         });
         setResults(pre);
         setSaved(preSaved);
-      });
+      }).catch(e => setLoadError(`Could not load results: ${e.message}`));
 
     if (prevTerm) {
-      supabase.from('hp_test_results').select('*').eq('term', prevTerm).eq('year', year)
-        .then(({ data }) => {
+      fetch(`/api/hp/data?type=testing&term=${encodeURIComponent(prevTerm)}&year=${year}`, { credentials: 'include' })
+        .then(r => r.json()).then(d => {
           const prevPre: Record<string, Row> = {};
-          (data || []).forEach(r => { prevPre[r.student_id] = r; });
+          (d.tests || []).forEach((r: Row) => { prevPre[r.student_id] = r; });
           setPrevResults(prevPre);
         });
     } else {
@@ -184,10 +183,12 @@ export default function HPTestingPage() {
         payload[t.key] = vals[t.key] ? parseFloat(vals[t.key]) : null;
       }
     });
-    const { error: delError } = await supabase.from('hp_test_results').delete().eq('student_id', studentId).eq('term', term).eq('year', year);
-    if (delError) { showToast(`Delete error: ${delError.message}`); setSaving(p => ({ ...p, [studentId]: false })); return; }
-    const { error: insError } = await supabase.from('hp_test_results').insert([payload]);
-    if (insError) { showToast(`Save error: ${insError.message}`); setSaving(p => ({ ...p, [studentId]: false })); return; }
+    const res = await fetch('/api/hp/data', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'save_test_result', student_id: studentId, term, year, ...payload }),
+    });
+    if (!res.ok) { const d = await res.json(); showToast(`Save error: ${d.error}`); setSaving(p => ({ ...p, [studentId]: false })); return; }
     setSaved(p => ({ ...p, [studentId]: true }));
     setSaving(p => ({ ...p, [studentId]: false }));
     setActiveStudent(null);
@@ -195,19 +196,22 @@ export default function HPTestingPage() {
   }
 
   async function saveGroups() {
-    const { data: allResults } = await supabase
-      .from('hp_test_results').select('*').eq('year', year).order('term', { ascending: true });
+    const res = await fetch(`/api/hp/data?type=testing&year=${year}`, { credentials: 'include' });
+    const d = await res.json();
     const latestMap: Record<string, Row> = {};
-    (allResults || []).forEach(r => {
+    (d.tests || []).forEach((r: Row) => {
       const converted = { ...r };
       if (converted.run_500m) converted.run_500m = secondsToMmss(converted.run_500m);
       latestMap[r.student_id] = converted;
     });
     const grouped = assignGroups(classStudents, latestMap, numGroups, tests);
-    const updates = grouped.filter(s => s._group !== null).map(s =>
-      supabase.from('hp_students').update({ training_group: s._group }).eq('id', s.id)
-    );
-    await Promise.all(updates);
+    await Promise.all(grouped.filter(s => s._group !== null).map(s =>
+      fetch('/api/hp/data', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', table: 'hp_students', data: { training_group: s._group }, matchCol: 'id', matchVal: s.id }),
+      })
+    ));
     setStudents(prev => prev.map(s => {
       const g = grouped.find(gs => gs.id === s.id);
       return g ? { ...s, training_group: g._group } : s;
@@ -216,7 +220,7 @@ export default function HPTestingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[rgba(255,255,255,0.02)] pb-20 text-white md:pb-0">
+    <main className="min-h-screen pb-20 text-white md:pb-0" style={{background:'#030810'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
         <div className="mb-8">
