@@ -185,7 +185,7 @@ export default function PerformancePage() {
 
   // ── RENDER ────────────────────────────────────────────────
   return (
-    <main className="min-h-screen overflow-x-hidden" style={{background:"var(--bg)" pb-20 text-white md:pb-0">
+    <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 
         {/* Header */}

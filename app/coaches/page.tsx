@@ -103,7 +103,7 @@ export default function CoachesPage() {
   const activeCoaches = coaches.filter(c => c.is_active !== false);
 
   return (
-    <main className="min-h-screen overflow-x-hidden" style={{background:"var(--bg)" pb-24 text-white md:pb-0">
+    <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
         {/* Header */}

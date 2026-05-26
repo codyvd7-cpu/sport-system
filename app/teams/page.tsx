@@ -81,7 +81,7 @@ export default function TeamsPage() {
   const assignedAthletes = athletes.filter((a) => a.team && allTeams.includes(a.team)).length;
 
   return (
-    <main className="min-h-screen overflow-x-hidden" style={{background:"var(--bg)" pb-20 text-white md:pb-0">
+    <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
         {/* Header */}
