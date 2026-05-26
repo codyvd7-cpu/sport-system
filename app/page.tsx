@@ -233,7 +233,7 @@ export default function LandingPage() {
               {DEPARTMENTS.map((dept, i) => {
                 const inner = (
                   <div
-                    className={`dept-card ${dept.available ? 'available' : ''} rounded-2xl p-4 sm:p-5 flex flex-col items-center gap-3 text-center backdrop-blur-sm border`}
+                    className={`dept-card ${dept.available ? 'available' : ''} rounded-2xl p-4 sm:p-5 flex flex-col items-center gap-3 text-center backdrop-blur-sm border h-full min-h-[160px] justify-between`}
                     style={{
                       '--glow': dept.glow,
                       '--border-col': dept.border,
