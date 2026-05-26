@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
+import { PageLoader } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
