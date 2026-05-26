@@ -41,6 +41,14 @@ function getGradeAndClass(id:string) {
 }
 
 export default function ClassProfilePage({params}:PageProps) {
+  return (
+    <React.Suspense fallback={<PageLoader label="Loading class"/>}>
+      <ClassProfileInner params={params}/>
+    </React.Suspense>
+  );
+}
+
+function ClassProfileInner({params}:PageProps) {
   const {id} = React.use(params);
   const {grade,cls} = getGradeAndClass(id);
   const is8 = grade==='Grade 8';
