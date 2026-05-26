@@ -81,9 +81,12 @@ export default function PortalPage() {
       const programsData = await safeQuery<Row[]>(
         supabase.from('portal_programs').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
       );
-      const athletes = await safeQuery<Row[]>(supabase.from('athletes').select('id,full_name,team').limit(300), []);
-      const attendance = await safeQuery<Row[]>(supabase.from('attendance').select('athlete_id,status,session_type').limit(1000), []);
-      const performance = await safeQuery<Row[]>(supabase.from('performance_tests').select('athlete_id,test_date').limit(1000), []);
+      // Fetch leaderboard data via API route (bypasses RLS)
+      const lbRes = await fetch('/api/portal/leaderboard');
+      const lbData = lbRes.ok ? await lbRes.json() : { athletes: [], attendance: [], performance: [] };
+      const athletes: Row[] = lbData.athletes || [];
+      const attendance: Row[] = lbData.attendance || [];
+      const performance: Row[] = lbData.performance || [];
 
       const gym = athletes.map((athlete) => {
         const records = attendance.filter((r) => r.athlete_id === athlete.id);
