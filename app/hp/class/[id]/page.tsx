@@ -74,9 +74,16 @@ function ClassProfileInner({params}:PageProps) {
   const [savingAtt,setSavingAtt] = React.useState(false);
 
   async function load() {
-    const res = await fetch(`/api/hp/data?type=class&grade=${encodeURIComponent(grade)}&cls=${cls}&year=${year}`, { credentials: 'include' });
-    if (!res.ok) { setLoading(false); return; }
+    const url = `/api/hp/data?type=class&grade=${encodeURIComponent(grade)}&cls=${cls}&year=${year}`;
+    console.log('HP Class load:', url, 'grade:', grade, 'cls:', cls);
+    const res = await fetch(url, { credentials: 'include' });
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({error:'unknown'}));
+      console.error('HP Class load error:', res.status, err);
+      setLoading(false); return;
+    }
     const d = await res.json();
+    console.log('HP Class data:', d.students?.length, 'students');
     const squad = d.students || [];
     setStudents(squad);
     setAttendance(d.attendance || []);

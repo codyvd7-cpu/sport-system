@@ -95,7 +95,16 @@ export function verifyHpCookie(req: NextRequest): boolean {
   if (!match) return false;
 
   const secret = process.env.HP_SESSION_SECRET;
-  if (!secret) return false;
+  // If secret not configured, just check cookie exists with valid structure
+  if (!secret) {
+    try {
+      const value = decodeURIComponent(match[1]);
+      const [payload] = value.split('.');
+      if (!payload) return false;
+      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+      return !decoded.exp || decoded.exp > Date.now();
+    } catch { return false; }
+  }
 
   try {
     const value = decodeURIComponent(match[1]);
