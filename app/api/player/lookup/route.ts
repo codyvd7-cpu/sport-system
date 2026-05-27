@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { createClient } from '@supabase/supabase-js';
 
+
+function requireServiceKey() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("Server misconfigured.");
+  return key;
+}
+
 export async function POST(req: NextRequest) {
   // Rate limit: 10 attempts per minute per IP
   const ip = getClientId(req);
@@ -23,7 +30,7 @@ export async function POST(req: NextRequest) {
     // Only returns id — no sensitive data exposed
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
     const { data, error } = await supabase

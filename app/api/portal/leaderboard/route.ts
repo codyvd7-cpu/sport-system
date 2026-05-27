@@ -4,10 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 // Portal data is public-facing — no auth needed, but we use service role to bypass RLS
 // Data is already privacy-filtered (first names only, top 3 only) in the portal page
 
+
+function requireServiceKey() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error("Server misconfigured.");
+  return key;
+}
+
 export async function GET(req: NextRequest) {
   const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   try {

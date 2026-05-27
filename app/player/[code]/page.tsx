@@ -114,9 +114,10 @@ export default function PlayerProfilePage({params}:PageProps){
     reader.readAsDataURL(file);
     // Upload to server
     try{
-      const fd=new FormData();
-      fd.append('photo',file);
-      fd.append('athleteId',athlete.id);
+      const fd = new FormData();
+      fd.append('photo', file);
+      fd.append('athleteId', athlete.id);
+      fd.append('playerCode', code.toUpperCase());
       const res=await fetch('/api/player/upload-photo',{method:'POST',body:fd});
       const data=await res.json();
       if(data.url)setPhoto(data.url);

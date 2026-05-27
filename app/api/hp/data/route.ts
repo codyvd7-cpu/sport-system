@@ -2,19 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyHpCookie } from '@/lib/serverAuth';
 import { createClient } from '@supabase/supabase-js';
 
-function getAdmin(): any {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+// Whitelisted tables for HP writes — no arbitrary table injection
+const ALLOWED_HP_TABLES = ['hp_students', 'hp_attendance', 'hp_test_results'] as const;
+type AllowedTable = typeof ALLOWED_HP_TABLES[number];
+
+function getAdmin() {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) throw new Error('Server misconfigured: missing service role key.');
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key);
+}
+
+function requireHpAuth(req: NextRequest) {
+  if (!verifyHpCookie(req)) {
+    return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  }
+  return null;
 }
 
 export async function GET(req: NextRequest) {
-
+  const authErr = requireHpAuth(req);
+  if (authErr) return authErr;
 
   const { searchParams } = req.nextUrl;
   const type = searchParams.get('type');
-  const admin = getAdmin();
+
+  let admin: any;
+  try { admin = getAdmin(); } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 
   try {
     if (type === 'testing') {
@@ -35,6 +50,7 @@ export async function GET(req: NextRequest) {
     }
     if (type === 'student') {
       const id = searchParams.get('id');
+      if (!id) return NextResponse.json({ error: 'Missing id.' }, { status: 400 });
       const [sRes, aRes, tRes] = await Promise.all([
         admin.from('hp_students').select('*').eq('id', id).single(),
         admin.from('hp_attendance').select('*').eq('student_id', id).order('session_date', { ascending: false }),
@@ -45,15 +61,11 @@ export async function GET(req: NextRequest) {
     if (type === 'class') {
       const grade = searchParams.get('grade');
       const cls = searchParams.get('cls');
-      const classId = searchParams.get('id'); // e.g. "8B"
+      const classId = searchParams.get('id');
       const year = searchParams.get('year') || new Date().getFullYear().toString();
-
-      // Derive grade/cls from id if not provided directly
-      const resolvedGrade = grade || (classId ? (classId[0]==='8'?'Grade 8':'Grade 9') : null);
+      const resolvedGrade = grade || (classId ? (classId[0] === '8' ? 'Grade 8' : 'Grade 9') : null);
       const resolvedCls   = cls   || (classId ? classId[1] : null);
-
-      if (!resolvedGrade || !resolvedCls) return NextResponse.json({ students:[], attendance:[], tests:[] });
-
+      if (!resolvedGrade || !resolvedCls) return NextResponse.json({ students: [], attendance: [], tests: [] });
       const sRes = await admin.from('hp_students').select('*')
         .eq('grade', resolvedGrade).eq('class_group', resolvedCls).eq('is_active', true).order('full_name');
       const ids = (sRes.data || []).map((s: any) => s.id);
@@ -87,22 +99,33 @@ export async function GET(req: NextRequest) {
       ]);
       return NextResponse.json({ students: sRes.data || [], attendance: aRes.data || [] });
     }
-    return NextResponse.json({ error: 'Unknown type' }, { status: 400 });
+    return NextResponse.json({ error: 'Unknown type.' }, { status: 400 });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
+  const authErr = requireHpAuth(req);
+  if (authErr) return authErr;
 
+  let admin: any;
+  try { admin = getAdmin(); } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
 
-  const admin = getAdmin();
   const body = await req.json();
   const { action, table, ...payload } = body;
+
+  // Whitelist table names — never allow arbitrary tables from request body
+  if (table && !ALLOWED_HP_TABLES.includes(table as AllowedTable)) {
+    return NextResponse.json({ error: 'Invalid table.' }, { status: 400 });
+  }
 
   try {
     if (action === 'save_test_result') {
       const { student_id, term, year, ...testData } = payload;
+      if (!student_id || !term || !year) return NextResponse.json({ error: 'Missing fields.' }, { status: 400 });
       await admin.from('hp_test_results').delete().eq('student_id', student_id).eq('term', term).eq('year', year);
       const { error } = await admin.from('hp_test_results').insert([{ student_id, term, year, ...testData }]);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -110,43 +133,26 @@ export async function POST(req: NextRequest) {
     }
     if (action === 'save_attendance') {
       const { date, records } = payload;
+      if (!date || !Array.isArray(records)) return NextResponse.json({ error: 'Missing fields.' }, { status: 400 });
       const ids = records.map((r: any) => r.student_id);
       await admin.from('hp_attendance').delete().eq('session_date', date).in('student_id', ids);
       const { error } = await admin.from('hp_attendance').insert(records);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
-    if (action === 'insert') {
-      const { error } = await admin.from(table).insert([payload.data]);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
-    }
-    if (action === 'upsert') {
-      const { error } = await admin.from(table).upsert(payload.data, { onConflict: payload.onConflict });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
-    }
     if (action === 'update') {
+      if (!ALLOWED_HP_TABLES.includes(table as AllowedTable)) return NextResponse.json({ error: 'Invalid table.' }, { status: 400 });
       const { error } = await admin.from(table).update(payload.data).eq(payload.matchCol, payload.matchVal);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
-    if (action === 'delete') {
-      const { error } = await admin.from(table).delete().eq(payload.matchCol, payload.matchVal);
+    if (action === 'insert') {
+      if (!ALLOWED_HP_TABLES.includes(table as AllowedTable)) return NextResponse.json({ error: 'Invalid table.' }, { status: 400 });
+      const { error } = await admin.from(table).insert([payload.data]);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
-    if (action === 'delete_many') {
-      const { error } = await admin.from(table).delete().in(payload.matchCol, payload.matchVals);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
-    }
-    if (action === 'insert_many') {
-      const { error } = await admin.from(table).insert(payload.data);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
-    }
-    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
+    return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
