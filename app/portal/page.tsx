@@ -103,7 +103,7 @@ export default function PortalPage() {
         const latest = [...records].sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
         const days = latest ? daysSince(latest.test_date) : null;
         const recency = days === null ? 0 : days <= 7 ? 40 : days <= 14 ? 30 : days <= 30 ? 20 : 5;
-        return { ...athlete, testCount: records.length, days, score: records.length * 10 + recency };
+        return { ...athlete, name: athlete.firstName || 'Athlete', testCount: records.length, days, score: records.length * 10 + recency };
       }).filter((a) => a.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
 
       setSponsors(sponsorsData);
