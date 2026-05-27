@@ -95,7 +95,7 @@ export default function PortalPage() {
         const gymSessions = records.filter((r) => String(r.session_type).toLowerCase() === 'gym').length;
         const attendanceRate = total ? Math.round((positive / total) * 100) : 0;
         const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
-        return { ...athlete, name: athlete.full_name || 'Unknown', attendanceRate, gymSessions, score };
+        return { ...athlete, name: athlete.firstName || 'Athlete', attendanceRate, gymSessions, score };
       }).filter((a) => a.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
 
       const perf = athletes.map((athlete) => {

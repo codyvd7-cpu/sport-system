@@ -1,31 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-// Portal data is public-facing — no auth needed, but we use service role to bypass RLS
-// Data is already privacy-filtered (first names only, top 3 only) in the portal page
-
-
-function requireServiceKey() {
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new Error("Server misconfigured.");
-  return key;
-}
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 export async function GET(req: NextRequest) {
-  const admin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const ip = getClientId(req);
+  const rl = rateLimit(`portal-leaderboard:${ip}`, { max: 30, windowMs: 60_000 });
+  if (!rl.ok) return NextResponse.json({ error: 'Rate limit exceeded.' }, { status: 429 });
+
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceKey) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   try {
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
+
     const [athletesRes, attendanceRes, performanceRes] = await Promise.all([
+      // Only fetch first name + team — never full name for public leaderboard
       admin.from('athletes').select('id,full_name,team').limit(500),
       admin.from('attendance').select('athlete_id,status,session_type').limit(2000),
       admin.from('performance_tests').select('athlete_id,test_date').limit(2000),
     ]);
 
+    // Strip to first name only before returning — privacy protection
+    const athletes = (athletesRes.data || []).map((a: any) => ({
+      id:        a.id,
+      firstName: (a.full_name || '').split(' ')[0],
+      team:      a.team,
+    }));
+
     return NextResponse.json({
-      athletes:    athletesRes.data    || [],
+      athletes,
       attendance:  attendanceRes.data  || [],
       performance: performanceRes.data || [],
     });
