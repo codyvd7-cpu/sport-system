@@ -328,7 +328,7 @@ export default function CoachProfilePage({ params }: PageProps) {
                     <p className="text-[14px] font-black text-white mt-0.5">{uniqueSessions.length} Sessions</p>
                   </div>
                 </div>
-                <div className="divide-y max-h-96 overflow-y-auto" style={{divideColor:'rgba(255,255,255,0.04)'}}>
+                <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
                   {uniqueSessions.map((s, i) => (
                     <div key={i} className="flex items-center gap-3 px-5 py-3">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[10px] font-bold"
