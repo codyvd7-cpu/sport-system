@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 
@@ -184,13 +185,16 @@ export default function CoachesPage() {
               const assignedTeams = c.teams || [];
               return (
                 <button key={c.id} onClick={() => openEdit(c)}
-                  className="group w-full text-left rounded-2xl border border-white/5 p-4 transition hover:border-white/15 hover:-translate-y-0.5 hover:shadow-lg"
+                  className="group w-full text-left rounded-2xl border border-white/5 p-4 transition hover:border-white/15"
                   style={{background:'rgba(255,255,255,0.02)'}}>
                   <div className="flex items-start gap-3">
-                    {/* Avatar */}
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black text-white/70"
-                      style={{background:'rgba(255,255,255,0.06)'}}>
-                      {initials(c.full_name || c.email)}
+                    {/* Avatar / Photo */}
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-black overflow-hidden"
+                      style={{background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.7)'}}>
+                      {(c as any).photo_url
+                        ? <img src={(c as any).photo_url} alt={c.full_name} className="h-full w-full object-cover"/>
+                        : initials(c.full_name || c.email)
+                      }
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -198,7 +202,6 @@ export default function CoachesPage() {
                         <span className={`rounded-full px-2 py-0.5 text-[9px] font-black ${rs.bg} ${rs.color}`}>{rs.label}</span>
                       </div>
                       <p className="text-[11px] text-white/25 truncate mt-0.5">{c.email}</p>
-                      {/* Teams */}
                       {assignedTeams.length > 0 ? (
                         <div className="flex flex-wrap gap-1 mt-2">
                           {assignedTeams.map(t => (
@@ -211,9 +214,21 @@ export default function CoachesPage() {
                         <p className="mt-1.5 text-[10px] text-white/15">All teams</p>
                       )}
                     </div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 text-white/15 shrink-0 group-hover:text-white/50 transition mt-0.5">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                    </svg>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <Link href={`/coaches/${c.id}`} onClick={e => e.stopPropagation()}
+                        className="flex items-center justify-center h-7 w-7 rounded-lg border border-white/8 text-white/30 hover:text-white transition"
+                        style={{background:'rgba(255,255,255,0.04)'}}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      </Link>
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/8 text-white/20 group-hover:text-white/50 transition"
+                        style={{background:'rgba(255,255,255,0.03)'}}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </button>
               );
