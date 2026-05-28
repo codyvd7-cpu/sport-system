@@ -254,14 +254,20 @@ export default function PlayerProfilePage({params}:PageProps){
             </div>
 
             {/* Stats */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginTop:20}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginTop:20}}>
               {[
-                {label:'Sessions',val:attendance.length,color:attendance.length>0?'#fff':'#1e293b'},
-                {label:'Present', val:present,          color:present>0?'#10b981':'#1e293b'},
-                {label:'Absent',  val:absent,           color:absent>3?'#f87171':absent>0?'#fbbf24':'#1e293b'},
+                {label:'Sessions',val:attendance.length,          color:attendance.length>0?'#fff':'#1e293b'},
+                {label:'Present', val:present,                    color:present>0?'#10b981':'#1e293b'},
+                {label:'Absent',  val:absent,                     color:absent>3?'#f87171':absent>0?'#fbbf24':'#1e293b'},
+                {label:'Goals',   val:recentResults.filter(r=>{
+                  const scorers=(r.goal_scorers||'').toLowerCase();
+                  const first=name.split(' ')[0].toLowerCase();
+                  const last=name.split(' ').pop()?.toLowerCase()||'';
+                  return scorers.includes(first)||scorers.includes(last);
+                }).length, color:'#fbbf24'},
               ].map(s=>(
                 <div key={s.label} style={{background:'rgba(0,0,0,0.3)',borderRadius:14,padding:'12px 8px',textAlign:'center',border:'1px solid rgba(255,255,255,0.04)'}}>
-                  <p style={{margin:0,fontSize:24,fontWeight:900,color:s.color,lineHeight:1}}>{s.val}</p>
+                  <p style={{margin:0,fontSize:22,fontWeight:900,color:s.color,lineHeight:1}}>{s.val}</p>
                   <p style={{margin:'4px 0 0',fontSize:9,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.15em',color:'#334155'}}>{s.label}</p>
                 </div>
               ))}

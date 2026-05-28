@@ -1,0 +1,235 @@
+'use client';
+import * as React from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { useRole } from '@/lib/useRole';
+
+type Result = {
+  id: string; team: string; opponent: string;
+  result_date: string; final_score: string;
+  goal_scorers: string; is_published: boolean;
+};
+
+const TEAM_GROUPS = [
+  { group:'Senior', accent:'#a78bfa', teams:['1sts','2nds','3rds','4ths','5ths'] },
+  { group:'U16',    accent:'#38bdf8', teams:['U16A','U16B','U16C','U16D','U16E'] },
+  { group:'U15',    accent:'#10b981', teams:['U15A','U15B','U15C','U15D','U15E'] },
+  { group:'U14',    accent:'#f59e0b', teams:['U14A','U14B','U14C','U14D','U14E'] },
+];
+const ALL_TEAMS = TEAM_GROUPS.flatMap(g => g.teams);
+function getAccent(t: string) { return TEAM_GROUPS.find(g => g.teams.includes(t))?.accent || '#94a3b8'; }
+function fDate(d: string) {
+  return new Date(d).toLocaleDateString('en-ZA', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+}
+function parseScore(s: string) {
+  const parts = s.split(/[-–]/);
+  if (parts.length !== 2) return null;
+  const a = parseInt(parts[0]), b = parseInt(parts[1]);
+  if (isNaN(a) || isNaN(b)) return null;
+  return { for: a, against: b, win: a > b, draw: a === b, loss: a < b };
+}
+
+export default function MatchHistoryPage() {
+  const { teams: myTeams, canSeeAllTeams } = useRole();
+  const [results, setResults]     = React.useState<Result[]>([]);
+  const [loading, setLoading]     = React.useState(true);
+  const [teamFilter, setTeamFilter] = React.useState('All');
+  const [mounted, setMounted]     = React.useState(false);
+
+  React.useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
+
+  React.useEffect(() => {
+    async function load() {
+      let q = supabase.from('portal_results').select('*').order('result_date', { ascending: false });
+      const { data } = await q;
+      setResults(data || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const visibleTeams = canSeeAllTeams ? ALL_TEAMS : myTeams;
+  const filtered = results.filter(r =>
+    visibleTeams.includes(r.team) &&
+    (teamFilter === 'All' || r.team === teamFilter)
+  );
+
+  // Stats
+  const stats = React.useMemo(() => {
+    const base = { played: 0, won: 0, drew: 0, lost: 0, gf: 0, ga: 0 };
+    filtered.forEach(r => {
+      const s = parseScore(r.final_score);
+      if (!s) return;
+      base.played++;
+      base.gf += s.for; base.ga += s.against;
+      if (s.win) base.won++;
+      else if (s.draw) base.drew++;
+      else base.lost++;
+    });
+    return base;
+  }, [filtered]);
+
+  const fade = (d: number) => ({
+    opacity: mounted ? 1 : 0,
+    transform: mounted ? 'translateY(0)' : 'translateY(14px)',
+    transition: `opacity 0.5s ease ${d}ms, transform 0.5s ease ${d}ms`,
+  });
+
+  return (
+    <main className="min-h-screen pb-24 text-white md:pb-8 overflow-x-hidden" style={{background:'var(--bg)'}}>
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-20 left-1/3 h-64 w-64 rounded-full blur-[80px]" style={{background:'rgba(56,189,248,0.05)'}}/>
+        <div className="absolute top-32 right-0 h-48 w-48 rounded-full blur-[60px]" style={{background:'rgba(167,139,250,0.04)'}}/>
+      </div>
+
+      <div className="relative mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-5">
+
+        {/* Header */}
+        <div style={fade(0)}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(255,255,255,0.25)'}}>
+            St Benedict's College
+          </p>
+          <h1 className="text-4xl font-black tracking-tight leading-none">
+            Match<br/>
+            <span style={{background:'linear-gradient(135deg,#38bdf8,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+              History
+            </span>
+          </h1>
+        </div>
+
+        {/* Season stats */}
+        {!loading && filtered.length > 0 && (
+          <div style={fade(60)}>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {[
+                { label:'Played', val:stats.played,  color:'white' },
+                { label:'Won',    val:stats.won,     color:'#10b981' },
+                { label:'Drew',   val:stats.drew,    color:'#fbbf24' },
+                { label:'Lost',   val:stats.lost,    color:'#f87171' },
+                { label:'GF',     val:stats.gf,      color:'#38bdf8' },
+                { label:'GA',     val:stats.ga,      color:'rgba(255,255,255,0.3)' },
+              ].map(s => (
+                <div key={s.label} className="rounded-2xl border p-3 text-center"
+                  style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+                  <p className="text-2xl font-black leading-none" style={{color:s.color}}>{s.val}</p>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Team filter */}
+        <div style={fade(100)}>
+          <div className="flex flex-wrap gap-1.5">
+            <button onClick={() => setTeamFilter('All')}
+              className="rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition"
+              style={{
+                borderColor: teamFilter === 'All' ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.07)',
+                background:  teamFilter === 'All' ? 'rgba(56,189,248,0.08)' : 'rgba(255,255,255,0.02)',
+                color:       teamFilter === 'All' ? '#38bdf8' : 'rgba(255,255,255,0.4)',
+              }}>
+              All Teams
+            </button>
+            {TEAM_GROUPS.map(g => (
+              <React.Fragment key={g.group}>
+                {g.teams.filter(t => visibleTeams.includes(t)).map(t => (
+                  <button key={t} onClick={() => setTeamFilter(t)}
+                    className="rounded-xl border px-3 py-1.5 text-[11px] font-bold transition"
+                    style={{
+                      borderColor: teamFilter === t ? `${g.accent}40` : 'rgba(255,255,255,0.06)',
+                      background:  teamFilter === t ? `${g.accent}10` : 'rgba(255,255,255,0.02)',
+                      color:       teamFilter === t ? g.accent : 'rgba(255,255,255,0.35)',
+                    }}>
+                    {t}
+                  </button>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Results */}
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div style={fade(140)} className="rounded-2xl border py-16 text-center"
+            style2={{background:'rgba(255,255,255,0.01)',borderColor:'rgba(255,255,255,0.05)'}}>
+            <p className="text-3xl mb-3">🏑</p>
+            <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No results yet.</p>
+            <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.2)'}}>
+              Log results from the team page or portal admin.
+            </p>
+          </div>
+        ) : (
+          <div style={fade(140)} className="space-y-2">
+            {filtered.map((r, i) => {
+              const accent = getAccent(r.team);
+              const score  = parseScore(r.final_score);
+              const resultColor = !score ? '#94a3b8' : score.win ? '#10b981' : score.draw ? '#fbbf24' : '#f87171';
+              const resultLabel = !score ? '—' : score.win ? 'W' : score.draw ? 'D' : 'L';
+              const scorers = r.goal_scorers?.split(',').map(s => s.trim()).filter(Boolean) || [];
+
+              return (
+                <div key={r.id}
+                  className="relative overflow-hidden rounded-2xl border transition"
+                  style={{
+                    background:'rgba(255,255,255,0.02)',
+                    borderColor:`rgba(255,255,255,0.06)`,
+                    animationDelay:`${i*20}ms`,
+                  }}>
+                  {/* Left accent by result */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
+                    style={{background:resultColor}}/>
+
+                  <div className="pl-5 pr-4 py-4">
+                    <div className="flex items-start gap-3">
+                      {/* Result badge */}
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black"
+                        style={{background:`${resultColor}15`,color:resultColor}}>
+                        {resultLabel}
+                      </div>
+
+                      {/* Match info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black"
+                            style={{background:`${accent}12`,color:accent,border:`1px solid ${accent}25`}}>
+                            {r.team}
+                          </span>
+                          <p className="text-[13px] font-black text-white">vs {r.opponent}</p>
+                        </div>
+                        <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.3)'}}>
+                          {fDate(r.result_date)}
+                        </p>
+                        {scorers.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            <span className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>⚽</span>
+                            {scorers.map((s, i) => (
+                              <span key={i} className="text-[10px] font-semibold" style={{color:'rgba(255,255,255,0.5)'}}>
+                                {s}{i < scorers.length - 1 ? ',' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Score */}
+                      <div className="text-right shrink-0">
+                        <p className="text-2xl font-black" style={{color:resultColor}}>
+                          {r.final_score}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </main>
+  );
+}
