@@ -155,6 +155,7 @@ export default function CoachNav() {
                 {roleBadge.label}
               </span>
             </div>
+            <NotificationBell/>
           </div>
           <button onClick={logout}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-[13px] font-medium transition"
