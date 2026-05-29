@@ -32,37 +32,38 @@ export default function NotificationBell() {
     setLoading(true);
     try {
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-      if (!vapidKey) {
-        showToast('VAPID key not configured.', 'error');
-        setLoading(false); return;
-      }
-      if (!('Notification' in window)) {
-        showToast('Notifications not supported.', 'error');
-        setLoading(false); return;
-      }
+      console.log('[Push] vapidKey:', vapidKey ? 'found' : 'MISSING');
+      
+      if (!vapidKey) { showToast('VAPID key not configured.', 'error'); setLoading(false); return; }
+      if (!('Notification' in window)) { showToast('Notifications not supported.', 'error'); setLoading(false); return; }
 
+      console.log('[Push] Requesting permission...');
       const permission = await Notification.requestPermission();
+      console.log('[Push] Permission:', permission);
       setStatus(permission as any);
-      if (permission !== 'granted') {
-        showToast('Allow notifications in browser settings.', 'error');
-        setLoading(false); return;
-      }
+      if (permission !== 'granted') { showToast('Allow notifications in browser settings.', 'error'); setLoading(false); return; }
 
+      console.log('[Push] Getting SW registration...');
       const reg = await navigator.serviceWorker.ready;
+      console.log('[Push] SW ready, subscribing...');
+      
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
+      console.log('[Push] Subscribed, saving...');
 
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: sub.toJSON() }),
       });
+      console.log('[Push] Save response:', res.status);
 
       if (res.ok) { setSubscribed(true); showToast('Notifications enabled ✓'); }
       else { const d = await res.json(); showToast(`Failed: ${d.error}`, 'error'); }
     } catch (e: any) {
+      console.error('[Push] Error:', e);
       showToast(`Error: ${e.message}`, 'error');
     }
     setLoading(false);
