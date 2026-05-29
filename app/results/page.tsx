@@ -155,8 +155,7 @@ export default function MatchHistoryPage() {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={fade(140)} className="rounded-2xl border py-16 text-center"
-            style2={{background:'rgba(255,255,255,0.01)',borderColor:'rgba(255,255,255,0.05)'}}>
+          <div style={{...fade(140),background:'rgba(255,255,255,0.01)',borderColor:'rgba(255,255,255,0.05)'}} className="rounded-2xl border py-16 text-center">
             <p className="text-3xl mb-3">🏑</p>
             <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No results yet.</p>
             <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.2)'}}>
