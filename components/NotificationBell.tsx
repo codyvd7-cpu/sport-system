@@ -35,18 +35,43 @@ export default function NotificationBell() {
   }, []);
 
   async function subscribe() {
-    if (!VAPID_PUBLIC_KEY) { showToast('Notifications not configured.', 'error'); return; }
     setLoading(true);
     try {
+      if (!VAPID_PUBLIC_KEY) {
+        showToast('Notifications not configured — VAPID key missing.', 'error');
+        setLoading(false); return;
+      }
+
+      if (!('serviceWorker' in navigator)) {
+        showToast('Service worker not supported.', 'error');
+        setLoading(false); return;
+      }
+
       const permission = await Notification.requestPermission();
       setStatus(permission as any);
-      if (permission !== 'granted') { showToast('Permission denied.', 'error'); setLoading(false); return; }
+      if (permission !== 'granted') {
+        showToast('Please allow notifications in your browser settings.', 'error');
+        setLoading(false); return;
+      }
 
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-      });
+      let reg;
+      try {
+        reg = await navigator.serviceWorker.ready;
+      } catch (e: any) {
+        showToast(`Service worker error: ${e.message}`, 'error');
+        setLoading(false); return;
+      }
+
+      let sub;
+      try {
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      } catch (e: any) {
+        showToast(`Push subscribe error: ${e.message}`, 'error');
+        setLoading(false); return;
+      }
 
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
@@ -58,7 +83,8 @@ export default function NotificationBell() {
         setSubscribed(true);
         showToast('Notifications enabled ✓');
       } else {
-        showToast('Failed to save subscription.', 'error');
+        const d = await res.json();
+        showToast(`Failed: ${d.error || 'Unknown error'}`, 'error');
       }
     } catch (e: any) {
       showToast(`Error: ${e.message}`, 'error');
