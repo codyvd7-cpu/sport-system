@@ -149,83 +149,79 @@ export default function MatchHistoryPage() {
           </div>
         </div>
 
-        {/* Results */}
+        {/* Results Table */}
         {loading ? (
           <div className="flex justify-center py-16">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{...fade(140),background:'rgba(255,255,255,0.01)',borderColor:'rgba(255,255,255,0.05)'}} className="rounded-2xl border py-16 text-center">
+          <div style={{...fade(140),background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.05)'}} className="rounded-2xl py-16 text-center">
             <p className="text-3xl mb-3">🏑</p>
             <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No results yet.</p>
-            <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.2)'}}>
-              Log results from the team page or portal admin.
-            </p>
+            <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.2)'}}>Log results from the team page or portal admin.</p>
           </div>
         ) : (
-          <div style={fade(140)} className="space-y-2">
-            {filtered.map((r, i) => {
-              const accent = getAccent(r.team);
-              const score  = parseScore(r.final_score);
-              const resultColor = !score ? '#94a3b8' : score.win ? '#10b981' : score.draw ? '#fbbf24' : '#f87171';
-              const resultLabel = !score ? '—' : score.win ? 'W' : score.draw ? 'D' : 'L';
-              const scorers = r.goal_scorers?.split(',').map(s => s.trim()).filter(Boolean) || [];
+          <div style={{...fade(140),border:'1px solid rgba(255,255,255,0.07)'}} className="rounded-2xl overflow-hidden">
+            {/* Table header */}
+            <div className="grid grid-cols-[auto_1fr_auto_auto_1fr] gap-0 px-4 py-2.5 border-b"
+              style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.06)'}}>
+              {['Result','Opponent','Team','Score','Scorers'].map(h => (
+                <p key={h} className="text-[9px] font-black uppercase tracking-[0.2em]"
+                  style={{color:'rgba(255,255,255,0.25)'}}>{h}</p>
+              ))}
+            </div>
 
-              return (
-                <div key={r.id}
-                  className="relative overflow-hidden rounded-2xl border transition"
-                  style={{
-                    background:'rgba(255,255,255,0.02)',
-                    borderColor:`rgba(255,255,255,0.06)`,
-                    animationDelay:`${i*20}ms`,
-                  }}>
-                  {/* Left accent by result */}
-                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl"
-                    style={{background:resultColor}}/>
+            {/* Rows */}
+            <div className="divide-y divide-white/5">
+              {filtered.map((r, i) => {
+                const accent      = getAccent(r.team);
+                const score       = parseScore(r.final_score);
+                const resultColor = !score ? '#94a3b8' : score.win ? '#10b981' : score.draw ? '#fbbf24' : '#f87171';
+                const resultLabel = !score ? '—' : score.win ? 'W' : score.draw ? 'D' : 'L';
+                const scorers     = r.goal_scorers?.split(',').map((s:string) => s.trim()).filter(Boolean) || [];
 
-                  <div className="pl-5 pr-4 py-4">
-                    <div className="flex items-start gap-3">
-                      {/* Result badge */}
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black"
-                        style={{background:`${resultColor}15`,color:resultColor}}>
-                        {resultLabel}
-                      </div>
+                return (
+                  <div key={r.id}
+                    className="grid grid-cols-[auto_1fr_auto_auto_1fr] items-center gap-3 px-4 py-3 transition hover:bg-white/2"
+                    style={{borderLeft:`3px solid ${resultColor}`}}>
 
-                      {/* Match info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black"
-                            style={{background:`${accent}12`,color:accent,border:`1px solid ${accent}25`}}>
-                            {r.team}
-                          </span>
-                          <p className="text-[13px] font-black text-white">vs {r.opponent}</p>
-                        </div>
-                        <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.3)'}}>
-                          {fDate(r.result_date)}
-                        </p>
-                        {scorers.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-2">
-                            <span className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>⚽</span>
-                            {scorers.map((s, i) => (
-                              <span key={i} className="text-[10px] font-semibold" style={{color:'rgba(255,255,255,0.5)'}}>
-                                {s}{i < scorers.length - 1 ? ',' : ''}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Score */}
-                      <div className="text-right shrink-0">
-                        <p className="text-2xl font-black" style={{color:resultColor}}>
-                          {r.final_score}
-                        </p>
-                      </div>
+                    {/* Result */}
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-black"
+                      style={{background:`${resultColor}15`,color:resultColor}}>
+                      {resultLabel}
                     </div>
+
+                    {/* Opponent + date */}
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-white truncate">vs {r.opponent}</p>
+                      <p className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>{fDate(r.result_date)}</p>
+                    </div>
+
+                    {/* Team */}
+                    <span className="rounded-full px-2 py-0.5 text-[9px] font-black whitespace-nowrap"
+                      style={{background:`${accent}12`,color:accent,border:`1px solid ${accent}25`}}>
+                      {r.team}
+                    </span>
+
+                    {/* Score */}
+                    <p className="text-[15px] font-black tabular-nums whitespace-nowrap"
+                      style={{color:resultColor}}>
+                      {r.final_score}
+                    </p>
+
+                    {/* Scorers */}
+                    <p className="text-[10px] truncate" style={{color:'rgba(255,255,255,0.35)'}}>
+                      {scorers.length > 0 ? `⚽ ${scorers.join(', ')}` : '—'}
+                    </p>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-2.5 border-t" style={{borderColor:'rgba(255,255,255,0.05)',background:'rgba(255,255,255,0.02)'}}>
+              <p className="text-[10px]" style={{color:'rgba(255,255,255,0.2)'}}>{filtered.length} result{filtered.length !== 1 ? 's' : ''}</p>
+            </div>
           </div>
         )}
       </div>
