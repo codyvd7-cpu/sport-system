@@ -19,10 +19,7 @@ async function sendPushNotification(subscription: any, payload: any, vapidKeys: 
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req, ['owner', 'head_of_hockey']);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
-
-  const vapidPublic  = process.env.VAPID_PUBLIC_KEY;
+  const vapidPublic  = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
   const serviceKey   = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -43,7 +40,7 @@ export async function POST(req: NextRequest) {
   if (!subs?.length) return NextResponse.json({ ok: true, sent: 0 });
 
   const payload = { title, body, url: url || '/dashboard', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' };
-  const vapidKeys = { publicKey: vapidPublic, privateKey: vapidPrivate, email: auth.email };
+  const vapidKeys = { publicKey: vapidPublic, privateKey: vapidPrivate, email: 'cody@kinetiqsport.co.za' };
 
   let sent = 0, failed = 0;
   const staleEndpoints: string[] = [];
