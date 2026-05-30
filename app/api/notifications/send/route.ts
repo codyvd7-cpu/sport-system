@@ -48,11 +48,13 @@ export async function POST(req: NextRequest) {
 
   await Promise.allSettled(subs.map(async (sub) => {
     try {
+      console.log('[Send] Sending to endpoint:', sub.endpoint.slice(0, 50));
       await sendPushNotification(sub, payload, vapidKeys);
       sent++;
+      console.log('[Send] Success');
     } catch (e: any) {
       failed++;
-      // 410 Gone = subscription expired, clean it up
+      console.log('[Send] Failed:', e.statusCode, e.message);
       if (e.statusCode === 410 || e.statusCode === 404) {
         staleEndpoints.push(sub.endpoint);
       }
