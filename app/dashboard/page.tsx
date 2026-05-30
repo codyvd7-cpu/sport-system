@@ -679,6 +679,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
 
     </div>
   );
+}
 
 // ── Main ─────────────────────────────────────────────────────
 export default function DashboardPage() {

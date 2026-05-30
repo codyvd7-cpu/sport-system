@@ -324,8 +324,8 @@ export default function AthletesPage() {
                     </div>
                   )}
                 </div>
-              );
                 </StaggerItem>
+              );
             })}
           </StaggerList>
         )}

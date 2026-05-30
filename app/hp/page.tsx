@@ -215,7 +215,7 @@ export default function HPDashboard() {
       </div>
     </main>
   );
-
+}
 
 function ClassCard({c,accent}:{c:any;accent:string}) {
   const done = c.pct===100;
