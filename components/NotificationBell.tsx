@@ -3,12 +3,16 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 
 function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
-  return outputArray;
+  // Convert URL-safe base64 to regular base64
+  const b64 = base64String
+    .replace(/-/g, '+')
+    .replace(/_/g, '/')
+    .padEnd(base64String.length + (4 - base64String.length % 4) % 4, '=');
+  
+  const str = atob(b64);
+  const arr = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) arr[i] = str.charCodeAt(i);
+  return arr;
 }
 
 export default function NotificationBell() {
