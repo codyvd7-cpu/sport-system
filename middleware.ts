@@ -25,7 +25,8 @@ export function middleware(req: NextRequest) {
   const host = req.headers.get('host') || '';
   const isPreview =
     host.includes('.vercel.app') &&
-    !host.startsWith('sport-system-rosy.vercel.app') && // your production domain
+    !host.startsWith('sport-system-rosy.vercel.app') &&
+    !host.startsWith('kinetiqsport') &&
     process.env.NODE_ENV === 'production';
 
   if (isPreview) {
@@ -33,7 +34,7 @@ export function middleware(req: NextRequest) {
       `<html><body style="font-family:sans-serif;padding:40px;background:#030810;color:#94a3b8">
         <h1 style="color:#f87171">Preview Access Restricted</h1>
         <p>This preview deployment does not serve real data.</p>
-        <p>Visit the <a href="https://sport-system-rosy.vercel.app" style="color:#38bdf8">live site</a>.</p>
+        <p>Visit the <a href="https://kinetiqsport.co.za" style="color:#38bdf8">live site</a>.</p>
        </body></html>`,
       { status: 403, headers: { 'Content-Type': 'text/html' } }
     );
