@@ -2,30 +2,31 @@ import type { Metadata } from 'next';
 import './globals.css';
 import RootLayoutClient from '@/components/RootLayoutClient';
 import { ToastProvider } from '@/components/Toast';
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 
 export const metadata: Metadata = {
-  title: "St Benedict's College — High Performance",
+  title: "Kinetiq Sport",
   description: 'High-performance sport operations platform for St Benedict\'s College.',
   manifest: '/manifest.json',
   openGraph: {
-    title: "St Benedict's College — High Performance",
+    title: "Kinetiq Sport",
     description: 'High-performance sport operations platform for St Benedict\'s College.',
-    url: 'https://sport-system-rosy.vercel.app',
-    siteName: "SBC High Performance",
+    url: 'https://kinetiqsport.co.za',
+    siteName: "Kinetiq Sport",
     images: [{ url: '/sbc-photo-1.jpg', width: 1200, height: 630, alt: "St Benedict's College" }],
     locale: 'en_ZA',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "St Benedict's College — High Performance",
+    title: "Kinetiq Sport",
     description: 'High-performance sport operations platform for St Benedict\'s College.',
     images: ['/sbc-photo-1.jpg'],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: "SBC Hockey",
+    title: "Kinetiq Sport",
   },
   other: {
     'mobile-web-app-capable': 'yes',
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en">
       <body className="min-h-screen text-white antialiased" style={{background:'var(--bg)',fontFamily:'var(--font-sans)'}} suppressHydrationWarning>
-
+        <ServiceWorkerRegistrar/>
         <ToastProvider>
           <RootLayoutClient>{children}</RootLayoutClient>
         </ToastProvider>
