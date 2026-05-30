@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { safeUUID } from '@/lib/uuid';
 import { useRole } from '@/lib/useRole';
+import { StaggerList, StaggerItem, HoverCard } from '@/components/Motion';
 
 type GenericRow = Record<string, any>;
 
@@ -256,13 +257,14 @@ export default function AthletesPage() {
             <p className="text-sm text-slate-500">No athletes found.</p>
           </div>
         ) : (
-          <div className="grid gap-2 sm:grid-cols-2">
+          <StaggerList className="grid gap-2 sm:grid-cols-2" stagger={20}>
             {filteredAthletes.map(athlete => {
               const isEditing = editingId === athlete.id;
               const avail = athlete.raw?.availability || 'Available';
               const color = AVAIL_COLOR[avail] || '#94a3b8';
               return (
-                <div key={athlete.id} className="group rounded-2xl border border-white/5 transition-all duration-200 hover:border-white/10"
+                <StaggerItem key={athlete.id}>
+                <div className="group rounded-2xl border border-white/5 transition-all duration-200 hover:border-white/10"
                   style={{background:'rgba(255,255,255,0.02)'}}>
                   {isEditing ? (
                     <div className="p-4 space-y-3">
@@ -323,8 +325,9 @@ export default function AthletesPage() {
                   )}
                 </div>
               );
+                </StaggerItem>
             })}
-          </div>
+          </StaggerList>
         )}
 
       </div>

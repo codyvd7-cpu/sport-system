@@ -5,6 +5,7 @@ import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell,
@@ -99,7 +100,7 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
     <div className="space-y-4">
 
       {/* ── HERO HEADER ── */}
-      <div style={fade(0)}>
+      <FadeUp delay={0}>
         <div className="relative overflow-hidden rounded-3xl border"
           style={{background:`linear-gradient(135deg,${dimBg} 0%,rgba(255,255,255,0.015) 100%)`,borderColor:'rgba(255,255,255,0.07)'}}>
           {/* Top accent bar */}
@@ -152,11 +153,11 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
             )}
           </div>
         </div>
-      </div>
+      </FadeUp>
 
       {/* ── NEXT MATCH CARD ── */}
       {next&&(
-        <div style={fade(60)}>
+        <FadeUp delay={60}>
           <div className="relative overflow-hidden rounded-2xl border"
             style={{background:'rgba(167,139,250,0.04)',borderColor:'rgba(167,139,250,0.15)'}}>
             <div className="absolute top-0 left-0 right-0 h-px"
@@ -177,11 +178,11 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
               </div>
             </div>
           </div>
-        </div>
+        </FadeUp>
       )}
 
       {/* ── TABS ── */}
-      <div style={fade(90)}>
+      <FadeUp delay={90}>
         <div className="flex gap-1 rounded-2xl p-1 border"
           style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
           {(['register','squad'] as const).map(t=>(
@@ -195,11 +196,11 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
             </button>
           ))}
         </div>
-      </div>
+      </FadeUp>
 
       {/* ── REGISTER TAB ── */}
       {tab==='register'&&(
-        <div style={fade(110)}>
+        <FadeUp delay={110}>
           <div className="overflow-hidden rounded-2xl border"
             style={{background:'rgba(255,255,255,0.015)',borderColor:'rgba(255,255,255,0.06)'}}>
 
@@ -282,7 +283,7 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
               })}
             </div>
           </div>
-        </div>
+        </FadeUp>
       )}
 
       {/* ── SQUAD TAB ── */}
@@ -493,17 +494,11 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
   const lowAtt=cards.filter(t=>t.rate!==null&&t.rate<70);
   const dateStr=new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'});
 
-  const fade=(d:number)=>({
-    opacity:mounted?1:0,
-    transform:mounted?'translateY(0)':'translateY(14px)',
-    transition:`opacity 0.55s ease ${d}ms, transform 0.55s ease ${d}ms`,
-  });
-
   return (
     <div className="space-y-5">
 
       {/* ── HEADER ── */}
-      <div style={fade(0)}>
+      <FadeUp delay={0}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-2"
           style={{color:'rgba(255,255,255,0.25)'}}>Head of Hockey</p>
         <h1 className="text-4xl font-black tracking-tight text-white leading-none">
@@ -514,30 +509,30 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
           }}>Overview</span>
         </h1>
         <p className="mt-2 text-[13px] font-medium" style={{color:'rgba(255,255,255,0.3)'}}>{dateStr}</p>
-      </div>
+      </FadeUp>
 
       {/* ── STAT STRIP ── */}
-      <div style={fade(80)}>
+      <FadeUp delay={80}>
         <div className="grid grid-cols-4 gap-2">
           {[
-            {label:'Squad',   val:total,          sub:'athletes', color:'white', glow:'rgba(255,255,255,0.04)'},
-            {label:'Injured', val:injured.length, sub:'players',  color:injured.length>0?'#f87171':'rgba(255,255,255,0.15)', glow:injured.length>0?'rgba(248,113,113,0.06)':'transparent'},
-            {label:'Modified',val:modified.length,sub:'players',  color:modified.length>0?'#fbbf24':'rgba(255,255,255,0.15)', glow:modified.length>0?'rgba(251,191,36,0.06)':'transparent'},
-            {label:'Teams',   val:cards.length,   sub:'active',   color:'#38bdf8', glow:'rgba(56,189,248,0.06)'},
+            {label:'Squad',   val:total,          color:'white',   glow:'rgba(255,255,255,0.04)'},
+            {label:'Injured', val:injured.length, color:injured.length>0?'#f87171':'rgba(255,255,255,0.15)', glow:injured.length>0?'rgba(248,113,113,0.06)':'transparent'},
+            {label:'Modified',val:modified.length,color:modified.length>0?'#fbbf24':'rgba(255,255,255,0.15)', glow:modified.length>0?'rgba(251,191,36,0.06)':'transparent'},
+            {label:'Teams',   val:cards.length,   color:'#38bdf8', glow:'rgba(56,189,248,0.06)'},
           ].map(s=>(
             <div key={s.label} className="relative overflow-hidden rounded-2xl border p-3 text-center"
               style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)',boxShadow:`0 0 30px ${s.glow}`}}>
-              <p className="text-[22px] font-black leading-none" style={{color:s.color}}>{s.val}</p>
+              <CountUp value={s.val} className="text-[22px] font-black leading-none block" style={{color:s.color}}/>
               <p className="text-[9px] font-semibold uppercase tracking-[0.15em] mt-1 leading-tight"
                 style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
             </div>
           ))}
         </div>
-      </div>
+      </FadeUp>
 
       {/* ── ALERTS ── */}
       {unavail.length>0&&(
-        <div style={fade(120)}>
+        <FadeUp delay={120}>
           <div className="overflow-hidden rounded-2xl border"
             style={{background:'rgba(248,113,113,0.04)',borderColor:'rgba(248,113,113,0.15)'}}>
             <div className="flex items-center gap-2.5 px-4 py-3 border-b"
@@ -565,11 +560,11 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
               })}
             </div>
           </div>
-        </div>
+        </FadeUp>
       )}
 
       {lowAtt.length>0&&(
-        <div style={fade(140)}>
+        <FadeUp delay={140}>
           <div className="overflow-hidden rounded-2xl border"
             style={{background:'rgba(251,191,36,0.03)',borderColor:'rgba(251,191,36,0.12)'}}>
             <div className="flex items-center gap-2.5 px-4 py-3 border-b"
@@ -590,14 +585,14 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
               ))}
             </div>
           </div>
-        </div>
+        </FadeUp>
       )}
 
       {/* ── QUICK ACTIONS ── */}
-      <div style={fade(160)}>
+      <FadeUp delay={160}>
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>Quick Actions</p>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <StaggerList className="grid grid-cols-3 gap-2 sm:grid-cols-6" stagger={40}>
           {[
             {label:'Attendance',href:'/attendance',color:'#10b981',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
@@ -611,93 +606,79 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/></svg>},
             {label:'Export',href:'/export/attendance',color:'#94a3b8',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>},
-          ].map((a,i)=>(
-            <Link key={a.href} href={a.href}
-              className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                background:'rgba(255,255,255,0.02)',
-                borderColor:'rgba(255,255,255,0.06)',
-                animationDelay:`${i*40}ms`,
-              }}>
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-all group-hover:scale-110"
-                style={{background:`${a.color}12`,color:a.color}}>
-                {a.icon}
-              </div>
-              <p className="text-[9px] font-bold uppercase tracking-[0.1em] leading-tight transition"
-                style={{color:'rgba(255,255,255,0.35)'}}>
-                {a.label}
-              </p>
-            </Link>
+          ].map((a)=>(
+            <StaggerItem key={a.href}>
+              <HoverCard>
+                <Link href={a.href}
+                  className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center block"
+                  style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-all group-hover:scale-110"
+                    style={{background:`${a.color}12`,color:a.color}}>
+                    {a.icon}
+                  </div>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.1em] leading-tight"
+                    style={{color:'rgba(255,255,255,0.35)'}}>
+                    {a.label}
+                  </p>
+                </Link>
+              </HoverCard>
+            </StaggerItem>
           ))}
-        </div>
-      </div>
+        </StaggerList>
+      </FadeUp>
 
       {/* ── TEAM GRID ── */}
-      <div style={fade(200)}>
+      <FadeUp delay={200}>
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>All Teams</p>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {cards.map(({team,count,rate,inj,mod,accent,dim,coach},i)=>(
-            <Link key={team} href={`/teams/${team}`}
-              className="group relative overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
-              style={{
-                background:'rgba(255,255,255,0.015)',
-                borderColor:'rgba(255,255,255,0.06)',
-                animationDelay:`${i*30}ms`,
-              }}>
-              {/* Hover glow */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{background:`radial-gradient(ellipse at 50% 0%,${dim},transparent 70%)`}}/>
-              {/* Top accent */}
-              <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{background:`linear-gradient(90deg,transparent,${accent}60,transparent)`}}/>
-
-              <div className="relative flex items-center justify-between p-4">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[22px] font-black tracking-tight leading-none" style={{color:accent}}>{team}</p>
-                  <p className="text-[10px] font-medium mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{count} players</p>
-                  {coach&&(
-                    <p className="text-[10px] mt-0.5 truncate" style={{color:'rgba(255,255,255,0.2)'}}>
-                      {coach}
-                    </p>
-                  )}
-                  <div className="flex gap-1.5 mt-2 flex-wrap">
-                    {inj>0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold"
-                      style={{background:'rgba(248,113,113,0.1)',color:'#fca5a5'}}>{inj} inj</span>}
-                    {mod>0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold"
-                      style={{background:'rgba(251,191,36,0.1)',color:'#fde68a'}}>{mod} mod</span>}
-                    {inj===0&&mod===0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold"
-                      style={{background:'rgba(16,185,129,0.08)',color:'#6ee7b7'}}>✓ clear</span>}
+        <StaggerList className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" stagger={30}>
+          {cards.map(({team,count,rate,inj,mod,accent,dim,coach})=>(
+            <StaggerItem key={team}>
+              <HoverCard>
+                <Link href={`/teams/${team}`}
+                  className="group relative overflow-hidden rounded-2xl border block"
+                  style={{background:'rgba(255,255,255,0.015)',borderColor:'rgba(255,255,255,0.06)'}}>
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{background:`radial-gradient(ellipse at 50% 0%,${dim},transparent 70%)`}}/>
+                  <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity"
+                    style={{background:`linear-gradient(90deg,transparent,${accent}60,transparent)`}}/>
+                  <div className="relative flex items-center justify-between p-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[22px] font-black tracking-tight leading-none" style={{color:accent}}>{team}</p>
+                      <p className="text-[10px] font-medium mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{count} players</p>
+                      {coach&&<p className="text-[10px] mt-0.5 truncate" style={{color:'rgba(255,255,255,0.2)'}}>{coach}</p>}
+                      <div className="flex gap-1.5 mt-2 flex-wrap">
+                        {inj>0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{background:'rgba(248,113,113,0.1)',color:'#fca5a5'}}>{inj} inj</span>}
+                        {mod>0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{background:'rgba(251,191,36,0.1)',color:'#fde68a'}}>{mod} mod</span>}
+                        {inj===0&&mod===0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{background:'rgba(16,185,129,0.08)',color:'#6ee7b7'}}>✓ clear</span>}
+                      </div>
+                    </div>
+                    {rate!==null&&(
+                      <div className="text-right shrink-0 ml-3">
+                        <p className="text-[26px] font-black leading-none" style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>{rate}</p>
+                        <p className="text-[9px] font-semibold" style={{color:'rgba(255,255,255,0.2)'}}>% att</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                {rate!==null&&(
-                  <div className="text-right shrink-0 ml-3">
-                    <p className="text-[26px] font-black leading-none"
-                      style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>
-                      {rate}
-                    </p>
-                    <p className="text-[9px] font-semibold" style={{color:'rgba(255,255,255,0.2)'}}>% att</p>
-                  </div>
-                )}
-              </div>
-            </Link>
+                </Link>
+              </HoverCard>
+            </StaggerItem>
           ))}
-        </div>
-      </div>
+        </StaggerList>
+      </FadeUp>
 
       {/* ── ATTENDANCE TREND ── */}
-      <div style={fade(240)}>
+      <FadeUp delay={240}>
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>Attendance Trend · Past 8 Weeks</p>
         <AttendanceTrendChart attendance={attendance} teams={visibleTeams} athletes={athletes}/>
-      </div>
+      </FadeUp>
 
       {/* ── WIN / LOSS ── */}
       <WinLossChart/>
 
     </div>
   );
-}
 
 // ── Main ─────────────────────────────────────────────────────
 export default function DashboardPage() {

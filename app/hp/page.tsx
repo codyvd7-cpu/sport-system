@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { PageLoader } from '@/components/HPIcons';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 
@@ -78,11 +79,7 @@ export default function HPDashboard() {
   const allDone8 = grade8.every(c=>c.pct===100);
   const allDone9 = grade9.every(c=>c.pct===100);
 
-  const fade=(d:number)=>({
-    opacity:mounted?1:0,
-    transform:mounted?'translateY(0)':'translateY(14px)',
-    transition:`opacity 0.5s ease ${d}ms,transform 0.5s ease ${d}ms`,
-  });
+  const fade = (d: number) => ({ delay: d });
 
   return(
     <main className="min-h-screen pb-24 text-white md:pb-8" style={{background:'#030810'}}>
@@ -95,7 +92,7 @@ export default function HPDashboard() {
       <div className="relative mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-6">
 
         {/* ── HEADER ── */}
-        <div style={fade(0)}>
+        <FadeUp delay={0}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(16,185,129,0.7)'}}>
             St Benedict's College
           </p>
@@ -115,50 +112,56 @@ export default function HPDashboard() {
               )}
             </div>
           </div>
-        </div>
+        </FadeUp>
 
         {/* ── PROGRAMME STATS ── */}
-        <div style={fade(60)}>
+        <FadeUp delay={60}>
           <div className="grid grid-cols-3 gap-3">
             {[
-              {label:'Enrolled',  val:totalStudents, color:'white',    href:'/hp/students',       glow:'transparent'},
+              {label:'Enrolled',  val:totalStudents, color:'white',    href:'/hp/students',              glow:'transparent'},
               {label:'Tested',    val:totalTested,   color:'#10b981',  href:'/hp/students?tested=true',  glow:'rgba(16,185,129,0.08)'},
               {label:'Remaining', val:totalUntested, color:totalUntested>0?'#fbbf24':'rgba(255,255,255,0.15)', href:'/hp/students?tested=false', glow:totalUntested>0?'rgba(251,191,36,0.06)':'transparent'},
             ].map(s=>(
-              <Link key={s.label} href={s.href}
-                className="relative overflow-hidden rounded-2xl border p-4 text-center transition hover:-translate-y-0.5"
-                style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.07)',boxShadow:`0 0 40px ${s.glow}`}}>
-                <p className="text-3xl font-black leading-none" style={{color:s.color}}>{s.val}</p>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.2em] mt-1.5" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
-              </Link>
+              <HoverCard key={s.label}>
+                <Link href={s.href}
+                  className="relative overflow-hidden rounded-2xl border p-4 text-center block"
+                  style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.07)',boxShadow:`0 0 40px ${s.glow}`}}>
+                  <CountUp value={s.val} className="text-3xl font-black leading-none block" style={{color:s.color}}/>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] mt-1.5" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+                </Link>
+              </HoverCard>
             ))}
           </div>
-        </div>
+        </FadeUp>
 
         {/* ── QUICK ACTIONS ── */}
-        <div style={fade(100)}>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {ACTIONS.map((a,i)=>(
-              <Link key={a.href} href={a.href}
-                className="group relative overflow-hidden rounded-2xl border p-4 transition hover:-translate-y-0.5"
-                style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)',animationDelay:`${i*40}ms`}}>
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{background:`radial-gradient(ellipse at 0% 0%,${a.color}12,transparent 70%)`}}/>
-                <div className="relative">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl transition group-hover:scale-110"
-                    style={{background:`${a.color}12`,color:a.color}}>
-                    {a.icon}
-                  </div>
-                  <p className="text-[13px] font-black text-white">{a.label}</p>
-                  <p className="text-[10px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{a.sub}</p>
-                </div>
-              </Link>
+        <FadeUp delay={100}>
+          <StaggerList className="grid grid-cols-2 gap-2 sm:grid-cols-4" stagger={40}>
+            {ACTIONS.map((a)=>(
+              <StaggerItem key={a.href}>
+                <HoverCard>
+                  <Link href={a.href}
+                    className="group relative overflow-hidden rounded-2xl border p-4 block"
+                    style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{background:`radial-gradient(ellipse at 0% 0%,${a.color}12,transparent 70%)`}}/>
+                    <div className="relative">
+                      <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-xl transition group-hover:scale-110"
+                        style={{background:`${a.color}12`,color:a.color}}>
+                        {a.icon}
+                      </div>
+                      <p className="text-[13px] font-black text-white">{a.label}</p>
+                      <p className="text-[10px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{a.sub}</p>
+                    </div>
+                  </Link>
+                </HoverCard>
+              </StaggerItem>
             ))}
-          </div>
-        </div>
+          </StaggerList>
+        </FadeUp>
 
         {/* ── GRADE 8 ── */}
-        <div style={fade(140)}>
+        <FadeUp delay={140}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="h-6 w-1 rounded-full" style={{background:'rgba(56,189,248,0.5)'}}/>
@@ -174,13 +177,17 @@ export default function HPDashboard() {
               Export
             </a>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            {grade8.map((c:any)=><ClassCard key={c.id} c={c} accent="#38bdf8"/>)}
-          </div>
-        </div>
+          <StaggerList className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" stagger={30}>
+            {grade8.map((c:any)=>(
+              <StaggerItem key={c.id}>
+                <ClassCard c={c} accent="#38bdf8"/>
+              </StaggerItem>
+            ))}
+          </StaggerList>
+        </FadeUp>
 
         {/* ── GRADE 9 ── */}
-        <div style={fade(180)}>
+        <FadeUp delay={180}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-3">
               <div className="h-6 w-1 rounded-full" style={{background:'rgba(167,139,250,0.5)'}}/>
@@ -196,24 +203,29 @@ export default function HPDashboard() {
               Export
             </a>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-            {grade9.map((c:any)=><ClassCard key={c.id} c={c} accent="#a78bfa"/>)}
-          </div>
-        </div>
+          <StaggerList className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" stagger={30}>
+            {grade9.map((c:any)=>(
+              <StaggerItem key={c.id}>
+                <ClassCard c={c} accent="#a78bfa"/>
+              </StaggerItem>
+            ))}
+          </StaggerList>
+        </FadeUp>
 
       </div>
     </main>
   );
-}
+
 
 function ClassCard({c,accent}:{c:any;accent:string}) {
   const done = c.pct===100;
   const none = c.tested===0;
 
   return(
-    <Link href={`/hp/class/${c.id}`}
-      className="group relative overflow-hidden rounded-2xl border transition-all duration-200 hover:-translate-y-0.5"
-      style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+    <HoverCard>
+      <Link href={`/hp/class/${c.id}`}
+        className="group relative overflow-hidden rounded-2xl border block"
+        style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
       {/* Top accent */}
       <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity"
         style={{background:`linear-gradient(90deg,transparent,${accent}70,transparent)`}}/>
@@ -283,5 +295,6 @@ function ClassCard({c,accent}:{c:any;accent:string}) {
         </div>
       </div>
     </Link>
+    </HoverCard>
   );
 }
