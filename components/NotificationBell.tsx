@@ -2,26 +2,6 @@
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
 
-function base64UrlToUint8Array(base64Url: string): Uint8Array {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  // Convert URL-safe to standard base64
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  // Manual decode — no atob
-  const bytes: number[] = [];
-  let i = 0;
-  const s = base64.replace(/=+$/, '');
-  while (i < s.length) {
-    const a = chars.indexOf(s[i++]) ?? 0;
-    const b = chars.indexOf(s[i++]) ?? 0;
-    const c = i <= s.length ? (chars.indexOf(s[i++]) ?? 0) : 0;
-    const d = i <= s.length ? (chars.indexOf(s[i++]) ?? 0) : 0;
-    bytes.push((a << 2) | (b >> 4));
-    if (c >= 0) bytes.push(((b & 0xf) << 4) | (c >> 2));
-    if (d >= 0) bytes.push(((c & 0x3) << 6) | d);
-  }
-  return new Uint8Array(bytes);
-}
-
 export default function NotificationBell() {
   const { showToast } = useToast();
   const [subscribed, setSubscribed] = React.useState(false);
@@ -41,21 +21,24 @@ export default function NotificationBell() {
   async function subscribe() {
     setLoading(true);
     try {
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-      console.log('[Push] key length:', vapidKey.length);
-      if (!vapidKey) { showToast('Push not configured.', 'error'); setLoading(false); return; }
+      const rawKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+      if (!rawKey) { showToast('Push not configured.', 'error'); setLoading(false); return; }
 
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') { showToast('Please allow notifications.', 'error'); setLoading(false); return; }
 
       const reg = await navigator.serviceWorker.ready;
-      console.log('[Push] SW ready');
 
-      const keyBytes = base64UrlToUint8Array(vapidKey);
-      console.log('[Push] key bytes:', keyBytes.length);
+      // Import the VAPID public key using Web Crypto API — no atob needed
+      const keyData = Uint8Array.from(
+        rawKey.replace(/-/g, '+').replace(/_/g, '/'),
+        (c) => c.charCodeAt(0)
+      );
 
-      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes.buffer as ArrayBuffer });
-      console.log('[Push] subscribed');
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: rawKey,
+      });
 
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
