@@ -36,7 +36,7 @@ export default function NotificationBell() {
     setLoading(true);
     try {
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-      console.log('[Push] vapidKey:', vapidKey ? 'found' : 'MISSING');
+      console.log('[Push] vapidKey length:', vapidKey.length, 'first5:', vapidKey.slice(0,5));
       
       if (!vapidKey) { showToast('VAPID key not configured.', 'error'); setLoading(false); return; }
       if (!('Notification' in window)) { showToast('Notifications not supported.', 'error'); setLoading(false); return; }
