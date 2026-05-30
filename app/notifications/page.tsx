@@ -25,6 +25,7 @@ export default function NotificationsPage() {
       const res = await fetch('/api/notifications/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ title: title.trim(), body: body.trim(), url }),
       });
       const d = await res.json();

@@ -58,6 +58,7 @@ export default function NotificationBell() {
 
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: sub.toJSON() }),
       });
