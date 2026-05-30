@@ -51,10 +51,10 @@ export default function NotificationBell() {
       const reg = await navigator.serviceWorker.ready;
       console.log('[Push] SW ready');
 
-      const applicationServerKey = base64UrlToUint8Array(vapidKey).buffer as ArrayBuffer;
-      console.log('[Push] key bytes:', applicationServerKey.length);
+      const keyBytes = base64UrlToUint8Array(vapidKey);
+      console.log('[Push] key bytes:', keyBytes.length);
 
-      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes.buffer as ArrayBuffer });
       console.log('[Push] subscribed');
 
       const res = await fetch('/api/notifications/subscribe', {
