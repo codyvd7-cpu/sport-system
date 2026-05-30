@@ -2,6 +2,18 @@
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
 
+// Standard VAPID key conversion - tested implementation
+function vapidKeyToUint8Array(vapidKey: string): Uint8Array {
+  const base64 = vapidKey.replace(/-/g, '+').replace(/_/g, '/');
+  const pad = base64.length % 4 === 0 ? '' : '='.repeat(4 - base64.length % 4);
+  const raw = window.atob(base64 + pad);
+  const result = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    result[i] = raw.charCodeAt(i);
+  }
+  return result;
+}
+
 export default function NotificationBell() {
   const { showToast } = useToast();
   const [subscribed, setSubscribed] = React.useState(false);
@@ -13,31 +25,35 @@ export default function NotificationBell() {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       setSupported(false); return;
     }
-    navigator.serviceWorker.ready.then(reg =>
-      reg.pushManager.getSubscription().then(sub => setSubscribed(!!sub))
-    ).catch(() => {});
+    navigator.serviceWorker.ready
+      .then(reg => reg.pushManager.getSubscription())
+      .then(sub => setSubscribed(!!sub))
+      .catch(() => {});
   }, []);
 
   async function subscribe() {
     setLoading(true);
     try {
-      const rawKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-      if (!rawKey) { showToast('Push not configured.', 'error'); setLoading(false); return; }
+      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+      if (!vapidKey) {
+        showToast('Push not configured.', 'error');
+        setLoading(false); return;
+      }
 
       const permission = await Notification.requestPermission();
-      if (permission !== 'granted') { showToast('Please allow notifications.', 'error'); setLoading(false); return; }
+      if (permission !== 'granted') {
+        showToast('Please allow notifications.', 'error');
+        setLoading(false); return;
+      }
 
       const reg = await navigator.serviceWorker.ready;
-
-      // Import the VAPID public key using Web Crypto API — no atob needed
-      const keyData = Uint8Array.from(
-        rawKey.replace(/-/g, '+').replace(/_/g, '/'),
-        (c) => c.charCodeAt(0)
-      );
+      
+      // Convert key - this is the only correct way
+      const serverKey = vapidKeyToUint8Array(vapidKey);
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: rawKey,
+        applicationServerKey: serverKey,
       });
 
       const res = await fetch('/api/notifications/subscribe', {
@@ -46,10 +62,15 @@ export default function NotificationBell() {
         body: JSON.stringify({ subscription: sub.toJSON() }),
       });
 
-      if (res.ok) { setSubscribed(true); showToast('Notifications enabled ✓'); }
-      else { const d = await res.json(); showToast(`Failed: ${d.error}`, 'error'); }
+      if (res.ok) {
+        setSubscribed(true);
+        showToast('Notifications enabled ✓');
+      } else {
+        const d = await res.json();
+        showToast(`Failed: ${d.error}`, 'error');
+      }
     } catch (e: any) {
-      console.error('[Push]', e);
+      console.error('[Push error]', e);
       showToast(`Error: ${e.message}`, 'error');
     }
     setLoading(false);
@@ -83,7 +104,7 @@ export default function NotificationBell() {
       onClick={subscribed ? unsubscribe : subscribe}
       disabled={loading}
       title={subscribed ? 'Notifications on — tap to disable' : 'Enable notifications'}
-      className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all"
+      className="flex h-9 w-9 items-center justify-center rounded-xl transition-all"
       style={{
         background: subscribed ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)',
         border: `1px solid ${subscribed ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
