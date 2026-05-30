@@ -3,6 +3,7 @@ import './globals.css';
 import RootLayoutClient from '@/components/RootLayoutClient';
 import { ToastProvider } from '@/components/Toast';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
   title: "Kinetiq Sport",
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <ToastProvider>
           <RootLayoutClient>{children}</RootLayoutClient>
         </ToastProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
