@@ -36,8 +36,9 @@ export async function POST(req: NextRequest) {
   let query = supabase.from('push_subscriptions').select('*');
   if (targetEmails?.length) query = query.in('email', targetEmails);
 
-  const { data: subs } = await query;
-  if (!subs?.length) return NextResponse.json({ ok: true, sent: 0 });
+  const { data: subs, error: subErr } = await query;
+  console.log('[Send] subs found:', subs?.length, 'error:', subErr?.message);
+  if (!subs?.length) return NextResponse.json({ ok: true, sent: 0, debug: subErr?.message });
 
   const payload = { title, body, url: url || '/dashboard', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' };
   const vapidKeys = { publicKey: vapidPublic, privateKey: vapidPrivate, email: 'cody@kinetiqsport.co.za' };
