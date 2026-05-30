@@ -14,7 +14,6 @@ const cspProd = [
   "form-action 'self'",
   "base-uri 'self'",
   "object-src 'none'",
-  "upgrade-insecure-requests",
 ].join('; ');
 
 const cspDev = [
