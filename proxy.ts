@@ -14,7 +14,7 @@ function checkRateLimit(key: string, max: number, windowMs: number): boolean {
   return true;
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown';
 
