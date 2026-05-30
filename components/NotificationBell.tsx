@@ -53,7 +53,7 @@ export default function NotificationBell() {
 
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: serverKey,
+        applicationServerKey: serverKey as unknown as BufferSource,
       });
 
       const res = await fetch('/api/notifications/subscribe', {
