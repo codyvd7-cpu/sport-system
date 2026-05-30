@@ -1,6 +1,10 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
+} from 'recharts';
 import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
@@ -389,7 +393,83 @@ ${testBreakdown || 'No results recorded yet.'}`;
           )}
         </div>
 
-        {/* ── ATTENDANCE ── */}
+        {/* ── PERFORMANCE RADAR ── */}
+        {yearResults.length > 0 && (() => {
+          const radarData = tests.map(t => {
+            const r = yearResults.slice().reverse().find(r => r[t.key]);
+            const val = r ? parseFloat(r[t.key]) : null;
+            if (val === null) return null;
+            const tier = getTier(t.key, val, t.lower);
+            const tierIdx = tier ? TIERS.findIndex(x => x.label === tier.label) : 2;
+            const score = Math.round(((4 - tierIdx) / 4) * 100);
+            return { test: t.label.split(' ').slice(-1)[0].slice(0,8), score, full: t.label };
+          }).filter(Boolean) as {test:string;score:number;full:string}[];
+
+          if (radarData.length < 3) return null;
+          return (
+            <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+              <div className="px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+                <p className="text-[15px] font-black text-white">Performance Radar</p>
+                <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>Latest results across all tests · higher = better tier</p>
+              </div>
+              <div className="p-4">
+                <ResponsiveContainer width="100%" height={220}>
+                  <RadarChart data={radarData}>
+                    <PolarGrid stroke="rgba(255,255,255,0.07)" radialLines={false}/>
+                    <PolarAngleAxis dataKey="test" tick={{fill:'rgba(255,255,255,0.45)',fontSize:9}} tickLine={false}/>
+                    <Radar dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.12} strokeWidth={2}/>
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── TERM COMPARISON ── */}
+        {yearResults.length > 1 && (() => {
+          const barData = TERMS.map(term => {
+            const r = yearResults.find(x => x.term === term);
+            if (!r) return null;
+            let score = 0, count = 0;
+            tests.forEach(t => {
+              const v = parseFloat(r[t.key]);
+              if (isNaN(v)) return;
+              const tier = getTier(t.key, v, t.lower);
+              const idx = tier ? TIERS.findIndex(x => x.label === tier.label) : 2;
+              score += (4 - idx) * 25;
+              count++;
+            });
+            return count > 0 ? { term: term.replace('Term ','T'), score: Math.round(score / count) } : null;
+          }).filter(Boolean) as {term:string;score:number}[];
+
+          if (barData.length < 2) return null;
+          return (
+            <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+              <div className="px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+                <p className="text-[15px] font-black text-white">Term Comparison</p>
+                <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>Overall performance score by term</p>
+              </div>
+              <div className="p-4">
+                <ResponsiveContainer width="100%" height={130}>
+                  <BarChart data={barData} margin={{top:5,right:5,bottom:0,left:-25}}>
+                    <XAxis dataKey="term" tick={{fill:'rgba(255,255,255,0.4)',fontSize:10}} axisLine={false} tickLine={false}/>
+                    <YAxis domain={[0,100]} tick={{fill:'rgba(255,255,255,0.25)',fontSize:9}} axisLine={false} tickLine={false}/>
+                    <Tooltip
+                      contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,fontSize:11}}
+                      formatter={(v:any) => [`${v}/100`, 'Score']}
+                      labelStyle={{color:'rgba(255,255,255,0.5)'}}
+                    />
+                    {barData.map((d,i) => (
+                      <Bar key={d.term} dataKey="score" fill="#10b981" radius={[6,6,0,0]}>
+                        <Cell fill={i===barData.length-1?'#10b981':'rgba(16,185,129,0.4)'}/>
+                      </Bar>
+                    ))}
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          );
+        })()}
         <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
             <div>
