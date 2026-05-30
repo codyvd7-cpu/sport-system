@@ -16,6 +16,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Never intercept navigation requests — let the browser handle redirects
+  if (event.request.mode === 'navigate') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   if (event.request.url.includes('supabase.co') || event.request.url.includes('/api/')) {
     event.respondWith(fetch(event.request).catch(() => new Response('{}', { headers: { 'Content-Type': 'application/json' } })));
     return;
