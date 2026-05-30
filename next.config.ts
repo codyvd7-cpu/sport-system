@@ -9,7 +9,7 @@ const cspProd = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://fcm.googleapis.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://fcm.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com",
   "frame-ancestors 'self'",
   "form-action 'self'",
   "base-uri 'self'",
