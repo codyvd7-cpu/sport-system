@@ -436,12 +436,27 @@ export default function AthleteProfile({params}:PageProps) {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2">
-              {playerCode?(
-                <span className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-1.5 text-[11px] font-black font-mono text-white/50">{playerCode}</span>
-              ):null}
+              {playerCode && (
+                <div className="flex items-center gap-1.5">
+                  <span className="rounded-xl border px-3 py-1.5 text-[11px] font-black font-mono"
+                    style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)'}}>
+                    {playerCode}
+                  </span>
+                  <button onClick={() => navigator.clipboard.writeText(playerCode)}
+                    className="rounded-xl border px-2 py-1.5 text-[10px] font-semibold transition hover:text-white"
+                    style={{borderColor:'rgba(255,255,255,0.07)',background:'rgba(255,255,255,0.03)',color:'rgba(255,255,255,0.3)'}}>
+                    Copy
+                  </button>
+                </div>
+              )}
               <button onClick={generateCode} disabled={genCode}
-                className="rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-[11px] font-black text-white/50 hover:text-white transition disabled:opacity-50">
-                {genCode?'…':playerCode?'Regen Code':'Gen Code'}
+                className="rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-50 hover:text-white"
+                style={{
+                  borderColor: playerCode ? 'rgba(251,191,36,0.25)' : 'rgba(56,189,248,0.25)',
+                  background:  playerCode ? 'rgba(251,191,36,0.06)' : 'rgba(56,189,248,0.06)',
+                  color:       playerCode ? '#fde68a' : '#7dd3fc',
+                }}>
+                {genCode ? '…' : playerCode ? '↻ Regen' : '+ Gen Code'}
               </button>
             </div>
           </div>

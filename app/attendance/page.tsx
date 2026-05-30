@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
@@ -25,6 +26,45 @@ const TEAM_GROUPS = [
 
 function fDate(d:string) {
   return new Date(d).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+}
+
+// ── LOW ATTENDANCE ALERT ─────────────────────────────────────
+function LowAttendanceAlert({athletes,history}:{athletes:Row[];history:Row[]}) {
+  const alerts = React.useMemo(() => {
+    return athletes.map(a => {
+      const recs = history.filter(h => h.athlete_id === a.id);
+      if (recs.length < 3) return null;
+      const present = recs.filter(h => ['present','late'].includes(h.status?.toLowerCase()||'')).length;
+      const rate = Math.round((present/recs.length)*100);
+      if (rate >= 70) return null;
+      return { id:a.id, name:a.full_name, team:a.team, rate };
+    }).filter(Boolean) as {id:string;name:string;team:string;rate:number}[];
+  }, [athletes, history]);
+
+  if (!alerts.length) return null;
+
+  return (
+    <div className="rounded-2xl border overflow-hidden"
+      style={{background:'rgba(248,113,113,0.03)',borderColor:'rgba(248,113,113,0.15)'}}>
+      <div className="flex items-center gap-2.5 px-4 py-3 border-b"
+        style={{borderColor:'rgba(248,113,113,0.1)'}}>
+        <span className="h-1.5 w-1.5 rounded-full bg-red-400 animate-pulse"/>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-400">
+          Below 70% Attendance · {alerts.length} player{alerts.length!==1?'s':''}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2 p-4">
+        {alerts.map(a => (
+          <Link key={a.id} href={`/athletes/${a.id}`}
+            className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-[11px] font-semibold transition hover:opacity-80"
+            style={{background:'rgba(248,113,113,0.08)',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.2)'}}>
+            {a.name.split(' ').pop()}
+            <span style={{opacity:0.5}}>· {a.team} · {a.rate}%</span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function AttendancePage() {
@@ -149,7 +189,7 @@ export default function AttendancePage() {
 
   return(
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-8 flex items-start justify-between gap-4">
@@ -296,6 +336,10 @@ export default function AttendancePage() {
         {/* ── HISTORY ── */}
         {view==='history'&&(
           <div className="space-y-5">
+
+            {/* Low attendance alert */}
+            <LowAttendanceAlert athletes={athletes} history={history}/>
+
             {/* Team filter */}
             <div className="flex flex-wrap gap-2">
               <button onClick={()=>setHistTeam('All')}
