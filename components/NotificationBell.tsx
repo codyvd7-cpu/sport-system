@@ -2,72 +2,71 @@
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
 
-function urlBase64ToUint8Array(base64String: string) {
-  // Convert URL-safe base64 to regular base64
-  const b64 = base64String
-    .replace(/-/g, '+')
-    .replace(/_/g, '/')
-    .padEnd(base64String.length + (4 - base64String.length % 4) % 4, '=');
-  
-  const str = atob(b64);
-  const arr = new Uint8Array(str.length);
-  for (let i = 0; i < str.length; i++) arr[i] = str.charCodeAt(i);
-  return arr;
+function base64UrlToUint8Array(base64Url: string): Uint8Array {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  // Convert URL-safe to standard base64
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  // Manual decode — no atob
+  const bytes: number[] = [];
+  let i = 0;
+  const s = base64.replace(/=+$/, '');
+  while (i < s.length) {
+    const a = chars.indexOf(s[i++]) ?? 0;
+    const b = chars.indexOf(s[i++]) ?? 0;
+    const c = i <= s.length ? (chars.indexOf(s[i++]) ?? 0) : 0;
+    const d = i <= s.length ? (chars.indexOf(s[i++]) ?? 0) : 0;
+    bytes.push((a << 2) | (b >> 4));
+    if (c >= 0) bytes.push(((b & 0xf) << 4) | (c >> 2));
+    if (d >= 0) bytes.push(((c & 0x3) << 6) | d);
+  }
+  return new Uint8Array(bytes);
 }
 
 export default function NotificationBell() {
   const { showToast } = useToast();
-  const [status, setStatus]       = React.useState<'unknown'|'granted'|'denied'|'unsupported'>('unknown');
   const [subscribed, setSubscribed] = React.useState(false);
-  const [loading, setLoading]     = React.useState(false);
+  const [loading, setLoading]       = React.useState(false);
+  const [supported, setSupported]   = React.useState(true);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      setStatus('unsupported'); return;
+      setSupported(false); return;
     }
-    setStatus(Notification.permission as any);
     navigator.serviceWorker.ready.then(reg =>
       reg.pushManager.getSubscription().then(sub => setSubscribed(!!sub))
-    );
+    ).catch(() => {});
   }, []);
 
   async function subscribe() {
     setLoading(true);
     try {
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-      console.log('[Push] vapidKey length:', vapidKey.length, 'first5:', vapidKey.slice(0,5));
-      
-      if (!vapidKey) { showToast('VAPID key not configured.', 'error'); setLoading(false); return; }
-      if (!('Notification' in window)) { showToast('Notifications not supported.', 'error'); setLoading(false); return; }
+      console.log('[Push] key length:', vapidKey.length);
+      if (!vapidKey) { showToast('Push not configured.', 'error'); setLoading(false); return; }
 
-      console.log('[Push] Requesting permission...');
       const permission = await Notification.requestPermission();
-      console.log('[Push] Permission:', permission);
-      setStatus(permission as any);
-      if (permission !== 'granted') { showToast('Allow notifications in browser settings.', 'error'); setLoading(false); return; }
+      if (permission !== 'granted') { showToast('Please allow notifications.', 'error'); setLoading(false); return; }
 
-      console.log('[Push] Getting SW registration...');
       const reg = await navigator.serviceWorker.ready;
-      console.log('[Push] SW ready, subscribing...');
-      
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
-      });
-      console.log('[Push] Subscribed, saving...');
+      console.log('[Push] SW ready');
+
+      const applicationServerKey = base64UrlToUint8Array(vapidKey).buffer as ArrayBuffer;
+      console.log('[Push] key bytes:', applicationServerKey.length);
+
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey });
+      console.log('[Push] subscribed');
 
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: sub.toJSON() }),
       });
-      console.log('[Push] Save response:', res.status);
 
       if (res.ok) { setSubscribed(true); showToast('Notifications enabled ✓'); }
       else { const d = await res.json(); showToast(`Failed: ${d.error}`, 'error'); }
     } catch (e: any) {
-      console.error('[Push] Error:', e);
+      console.error('[Push]', e);
       showToast(`Error: ${e.message}`, 'error');
     }
     setLoading(false);
@@ -94,22 +93,18 @@ export default function NotificationBell() {
     setLoading(false);
   }
 
-  if (status === 'unsupported') return null;
+  if (!supported) return null;
 
   return (
     <button
       onClick={subscribed ? unsubscribe : subscribe}
-      disabled={loading || status === 'denied'}
-      title={
-        status === 'denied'  ? 'Blocked in browser settings' :
-        subscribed           ? 'Notifications on — tap to disable' :
-        'Enable notifications'
-      }
+      disabled={loading}
+      title={subscribed ? 'Notifications on — tap to disable' : 'Enable notifications'}
       className="relative flex h-9 w-9 items-center justify-center rounded-xl transition-all"
       style={{
         background: subscribed ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.04)',
         border: `1px solid ${subscribed ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.08)'}`,
-        color: subscribed ? '#10b981' : status === 'denied' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.5)',
+        color: subscribed ? '#10b981' : 'rgba(255,255,255,0.5)',
       }}>
       {loading ? (
         <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent"/>
