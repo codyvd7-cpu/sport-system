@@ -6,6 +6,10 @@ import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { safeUUID, generatePlayerCode } from '@/lib/uuid';
+import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, Tooltip,
+} from 'recharts';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -89,6 +93,71 @@ function Spark({vals,lower}:{vals:number[];lower:boolean}) {
 }
 
 // ── Main ─────────────────────────────────────────────────────
+// ── ATHLETE RADAR CHART ───────────────────────────────────────
+function AthleteRadarChart({pbs}:{pbs:{test:string;pb:number;unit:string;tier:any;vals:number[]}[]}) {
+  // Normalise each PB to 0-100 scale based on tier benchmarks
+  const data = pbs.slice(0,8).map(p => {
+    // Simple normalisation: use pb value as % of max observed
+    const max = Math.max(...p.vals, p.pb);
+    const min = Math.min(...p.vals, p.pb);
+    const range = max - min || 1;
+    const score = Math.round(((p.pb - min) / range) * 60 + 40); // 40-100 range
+    const label = p.test.split(' ').slice(-1)[0].slice(0,6); // short label
+    return { test: label, score };
+  });
+
+  return (
+    <ResponsiveContainer width="100%" height={200}>
+      <RadarChart data={data} margin={{top:10,right:20,bottom:10,left:20}}>
+        <PolarGrid stroke="rgba(255,255,255,0.08)" radialLines={false}/>
+        <PolarAngleAxis dataKey="test" tick={{fill:'rgba(255,255,255,0.4)',fontSize:9}} tickLine={false}/>
+        <Radar dataKey="score" stroke="#a78bfa" fill="#a78bfa" fillOpacity={0.15} strokeWidth={1.5}/>
+      </RadarChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ── ATHLETE PROGRESS CHART ────────────────────────────────────
+function AthleteProgressChart({pbs}:{pbs:{test:string;pb:number;unit:string;tier:any;vals:number[]}[]}) {
+  const [selected, setSelected] = React.useState(0);
+  const p = pbs.filter(x => x.vals.length > 1)[selected] || pbs.find(x => x.vals.length > 1);
+  if (!p) return null;
+
+  const data = p.vals.map((v,i) => ({session:`S${i+1}`,value:v}));
+
+  return (
+    <div>
+      {/* Test selector */}
+      <div className="flex flex-wrap gap-1 mb-3">
+        {pbs.filter(x=>x.vals.length>1).map((x,i) => (
+          <button key={x.test} onClick={()=>setSelected(i)}
+            className="rounded-lg px-2 py-1 text-[9px] font-bold transition"
+            style={{
+              background: i===selected ? 'rgba(167,139,250,0.15)' : 'rgba(255,255,255,0.04)',
+              color: i===selected ? '#a78bfa' : 'rgba(255,255,255,0.3)',
+              border: `1px solid ${i===selected ? 'rgba(167,139,250,0.3)' : 'rgba(255,255,255,0.06)'}`,
+            }}>
+            {x.test.split(' ').slice(-1)[0]}
+          </button>
+        ))}
+      </div>
+      <ResponsiveContainer width="100%" height={130}>
+        <LineChart data={data} margin={{top:5,right:5,bottom:0,left:-25}}>
+          <XAxis dataKey="session" tick={{fill:'rgba(255,255,255,0.25)',fontSize:9}} axisLine={false} tickLine={false}/>
+          <YAxis tick={{fill:'rgba(255,255,255,0.25)',fontSize:9}} axisLine={false} tickLine={false}/>
+          <Tooltip
+            contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,fontSize:11}}
+            labelStyle={{color:'rgba(255,255,255,0.4)'}}
+            itemStyle={{color:'#a78bfa'}}
+            formatter={(v:any) => [`${v} ${p.unit}`, p.test]}
+          />
+          <Line type="monotone" dataKey="value" stroke="#a78bfa" strokeWidth={2} dot={{fill:'#a78bfa',r:3}} activeDot={{r:5}}/>
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 export default function AthleteProfile({params}:PageProps) {
   const {id} = React.use(params);
   const router = useRouter();
@@ -430,6 +499,30 @@ export default function AthleteProfile({params}:PageProps) {
                       </p>
                     </div>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Radar chart */}
+            {pbs.length>=3&&(
+              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"}}>
+                <div className="border-b border-white/7 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Performance Profile</p>
+                </div>
+                <div className="p-4">
+                  <AthleteRadarChart pbs={pbs}/>
+                </div>
+              </div>
+            )}
+
+            {/* Progress chart */}
+            {pbs.some(p=>p.vals.length>1)&&(
+              <div className="rounded-2xl overflow-hidden" style={{border:"1px solid rgba(255,255,255,0.07)",background:"rgba(255,255,255,0.015)"}}>
+                <div className="border-b border-white/7 px-5 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Progress Over Time</p>
+                </div>
+                <div className="p-4">
+                  <AthleteProgressChart pbs={pbs}/>
                 </div>
               </div>
             )}

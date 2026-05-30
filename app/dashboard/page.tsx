@@ -5,6 +5,10 @@ import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
+import {
+  LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell,
+} from 'recharts';
 
 type Row = Record<string, any>;
 
@@ -351,6 +355,111 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
 }
 
 // ── HOH Overview ─────────────────────────────────────────────
+// ── ATTENDANCE TREND CHART ────────────────────────────────────
+function AttendanceTrendChart({attendance,teams,athletes}:{attendance:Row[];teams:string[];athletes:Row[]}) {
+  const data = React.useMemo(() => {
+    const weeks: {week:string;rate:number}[] = [];
+    for (let i = 7; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i * 7);
+      const start = new Date(d); start.setDate(start.getDate() - 6);
+      const startStr = start.toISOString().split('T')[0];
+      const endStr   = d.toISOString().split('T')[0];
+      const weekRecs = attendance.filter(a => a.session_date >= startStr && a.session_date <= endStr);
+      if (!weekRecs.length) return weeks;
+      const present = weekRecs.filter(a => ['present','late'].includes(a.status?.toLowerCase()||'')).length;
+      const rate = Math.round((present / weekRecs.length) * 100);
+      const label = start.toLocaleDateString('en-ZA',{day:'numeric',month:'short'});
+      weeks.push({week:label, rate});
+    }
+    return weeks;
+  }, [attendance]);
+
+  if (data.length < 2) return (
+    <div className="rounded-2xl border py-8 text-center" style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+      <p className="text-sm" style={{color:'rgba(255,255,255,0.25)'}}>Not enough data yet</p>
+    </div>
+  );
+
+  return (
+    <div className="rounded-2xl border p-4" style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+      <ResponsiveContainer width="100%" height={160}>
+        <LineChart data={data} margin={{top:5,right:5,bottom:0,left:-20}}>
+          <XAxis dataKey="week" tick={{fill:'rgba(255,255,255,0.25)',fontSize:9}} axisLine={false} tickLine={false}/>
+          <YAxis domain={[0,100]} tick={{fill:'rgba(255,255,255,0.25)',fontSize:9}} axisLine={false} tickLine={false}/>
+          <Tooltip
+            contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,fontSize:11}}
+            labelStyle={{color:'rgba(255,255,255,0.5)'}}
+            itemStyle={{color:'#38bdf8'}}
+            formatter={(v:any) => [`${v}%`, 'Attendance']}
+          />
+          <Line type="monotone" dataKey="rate" stroke="#38bdf8" strokeWidth={2} dot={{fill:'#38bdf8',r:3}} activeDot={{r:5}}/>
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ── WIN / LOSS CHART ──────────────────────────────────────────
+function WinLossChart() {
+  const [data, setData] = React.useState<{team:string;W:number;D:number;L:number}[]>([]);
+
+  React.useEffect(() => {
+    supabase.from('portal_results').select('team,final_score').limit(200).then(({data:rows}) => {
+      if (!rows) return;
+      const map: Record<string,{W:number;D:number;L:number}> = {};
+      rows.forEach(r => {
+        const parts = r.final_score?.split(/[-–]/);
+        if (!parts || parts.length !== 2) return;
+        const a = parseInt(parts[0]), b = parseInt(parts[1]);
+        if (isNaN(a) || isNaN(b)) return;
+        if (!map[r.team]) map[r.team] = {W:0,D:0,L:0};
+        if (a > b) map[r.team].W++;
+        else if (a === b) map[r.team].D++;
+        else map[r.team].L++;
+      });
+      const sorted = Object.entries(map)
+        .map(([team,s]) => ({team,...s}))
+        .sort((a,b) => b.W - a.W)
+        .slice(0, 8);
+      setData(sorted);
+    });
+  }, []);
+
+  if (!data.length) return null;
+
+  return (
+    <div style={{marginTop:0}}>
+      <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
+        style={{color:'rgba(255,255,255,0.2)'}}>Win / Draw / Loss by Team</p>
+      <div className="rounded-2xl border p-4" style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={data} margin={{top:5,right:5,bottom:0,left:-20}} barSize={8} barGap={2}>
+            <XAxis dataKey="team" tick={{fill:'rgba(255,255,255,0.35)',fontSize:9}} axisLine={false} tickLine={false}/>
+            <YAxis tick={{fill:'rgba(255,255,255,0.25)',fontSize:9}} axisLine={false} tickLine={false}/>
+            <Tooltip
+              contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,fontSize:11}}
+              labelStyle={{color:'rgba(255,255,255,0.5)'}}
+            />
+            <Bar dataKey="W" name="Won"  fill="#10b981" radius={[4,4,0,0]}/>
+            <Bar dataKey="D" name="Drew" fill="#fbbf24" radius={[4,4,0,0]}/>
+            <Bar dataKey="L" name="Lost" fill="#f87171" radius={[4,4,0,0]}/>
+          </BarChart>
+        </ResponsiveContainer>
+        <div className="flex justify-center gap-4 mt-2">
+          {[{c:'#10b981',l:'Won'},{c:'#fbbf24',l:'Drew'},{c:'#f87171',l:'Lost'}].map(x=>(
+            <div key={x.l} className="flex items-center gap-1.5">
+              <div className="h-2 w-2 rounded-full" style={{background:x.c}}/>
+              <span className="text-[10px]" style={{color:'rgba(255,255,255,0.3)'}}>{x.l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── OverviewView ──────────────────────────────────────────────
 function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
   athletes:Row[];attendance:Row[];myTeams:string[];canSeeAllTeams:boolean;coaches:Row[];
 }) {
@@ -575,6 +684,16 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
           ))}
         </div>
       </div>
+
+      {/* ── ATTENDANCE TREND ── */}
+      <div style={fade(240)}>
+        <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
+          style={{color:'rgba(255,255,255,0.2)'}}>Attendance Trend · Past 8 Weeks</p>
+        <AttendanceTrendChart attendance={attendance} teams={visibleTeams} athletes={athletes}/>
+      </div>
+
+      {/* ── WIN / LOSS ── */}
+      <WinLossChart/>
 
     </div>
   );
