@@ -74,7 +74,6 @@ export default function GradeExport({ params }: PageProps) {
         setLoading(false);
       });
   }, [grade]);
-  }, [gradeNum]);
 
   React.useEffect(() => {
     if (!loading && students.length > 0) setTimeout(() => window.print(), 500);
