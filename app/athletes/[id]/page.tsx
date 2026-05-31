@@ -8,10 +8,10 @@ import { supabase } from '@/lib/supabase';
 import { safeUUID, generatePlayerCode } from '@/lib/uuid';
 import { AthletePDFButton } from '@/components/PDFButton';
 import {
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, Tooltip,
 } from 'recharts';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };

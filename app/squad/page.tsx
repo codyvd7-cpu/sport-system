@@ -102,6 +102,7 @@ export default function SquadBoardPage() {
 
   return (
     <main className="min-h-screen pb-20 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
+      <FadeUp delay={0}>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Header */}
@@ -225,8 +226,6 @@ export default function SquadBoardPage() {
                     </div>
                   )}
                 </div>
-
-                <FadeUp delay={0}>
         <div className="space-y-5">
                   {TEAM_GROUPS.map((group) => {
                     const col = COLORS[group.color];
@@ -295,7 +294,6 @@ export default function SquadBoardPage() {
 
         {/* OVERVIEW VIEW */}
         {view === 'overview' && (
-          <FadeUp delay={0}>
         <div className="space-y-6">
             {TEAM_GROUPS.map((group) => {
               const col = COLORS[group.color];
@@ -332,6 +330,7 @@ export default function SquadBoardPage() {
           </div>
         )}
       </div>
+      </FadeUp>
     </main>
   );
 }

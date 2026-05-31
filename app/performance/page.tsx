@@ -187,10 +187,10 @@ export default function PerformancePage() {
   // ── RENDER ────────────────────────────────────────────────
   return (
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
+      <FadeUp delay={0}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* Header */}
-        <FadeUp delay={0}>
         <div className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{color:"rgba(167,139,250,0.7)"}}>Testing</p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Performance Testing</h1>
@@ -445,6 +445,7 @@ export default function PerformancePage() {
           </div>
         )}
       </div>
+      </FadeUp>
     </main>
   );
 }

@@ -66,6 +66,7 @@ export default function AIToolsPage() {
 
   return (
     <main className="min-h-screen pb-20 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
+      <FadeUp delay={0}>
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
@@ -89,7 +90,6 @@ export default function AIToolsPage() {
 
         {/* Parent Update */}
         {activeTab === 'parent' && (
-          <FadeUp delay={0}>
         <div className="space-y-5">
             <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-sky-400">Parent Message Generator</p>
@@ -157,7 +157,6 @@ export default function AIToolsPage() {
 
         {/* Session Builder */}
         {activeTab === 'session' && (
-          <FadeUp delay={0}>
         <div className="space-y-5">
             <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-violet-400">Training Session Builder</p>
@@ -215,7 +214,6 @@ export default function AIToolsPage() {
                     </button>
                   </div>
                 </div>
-                <FadeUp delay={0}>
         <div className="space-y-2">
                   {sessionOutput.split('\n').filter(Boolean).map((line, i) => (
                     <p key={i} className={`text-sm leading-relaxed ${
@@ -230,6 +228,7 @@ export default function AIToolsPage() {
           </div>
         )}
       </div>
+      </FadeUp>
     </main>
   );
 }
