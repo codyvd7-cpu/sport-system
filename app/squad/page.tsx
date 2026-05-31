@@ -100,7 +100,7 @@ export default function SquadBoardPage() {
   const pct = athletes.length > 0 ? Math.round((assigned / athletes.length) * 100) : 0;
 
   return (
-    <main className="min-h-screen overflow-x-hidden" style={{background:'var(--bg)' pb-20 text-white md:pb-0">
+    <main className="min-h-screen pb-20 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Header */}

@@ -64,7 +64,7 @@ export default function AIToolsPage() {
   const labelCls = "mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35";
 
   return (
-    <main className="min-h-screen overflow-x-hidden" style={{background:'var(--bg)' pb-20 text-white md:pb-0">
+    <main className="min-h-screen pb-20 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
