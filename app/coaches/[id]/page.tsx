@@ -423,6 +423,7 @@ export default function CoachProfilePage({ params }: PageProps) {
         )}
 
       </div>
+      </FadeUp>
     </main>
   );
 }

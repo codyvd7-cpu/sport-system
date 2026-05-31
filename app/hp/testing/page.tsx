@@ -230,6 +230,7 @@ function HPTestingInner() {
   }
 
   return (
+<FadeUp delay={0}>
     <main className="min-h-screen pb-20 text-white md:pb-0" style={{background:'#030810'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
@@ -305,8 +306,6 @@ function HPTestingInner() {
           <div className="mb-4 h-2 w-full overflow-hidden rounded-full bg-white/5">
             <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${classStudents.length > 0 ? (completed/classStudents.length)*100 : 0}%` }} />
           </div>
-
-          <FadeUp delay={0}>
         <div className="space-y-2">
             {classStudents.map(s => {
               const isOpen = activeStudent === s.id;
@@ -433,5 +432,6 @@ function HPTestingInner() {
         )}
       </div>
     </main>
+    </FadeUp>
   );
 }

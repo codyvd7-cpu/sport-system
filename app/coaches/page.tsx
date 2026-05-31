@@ -105,6 +105,7 @@ export default function CoachesPage() {
   const activeCoaches = coaches.filter(c => c.is_active !== false);
 
   return (
+    <FadeUp delay={0}>
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
@@ -125,9 +126,6 @@ export default function CoachesPage() {
         {showInvite && (
           <div className="mb-6 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-4">
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400">New Coach</p>
-            </FadeUp>
-
-        <FadeUp delay={80}>
         <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35">Full Name</label>
@@ -183,9 +181,6 @@ export default function CoachesPage() {
             <p className="text-sm text-white/25">No coaches added yet.</p>
           </div>
         ) : (
-          </FadeUp>
-
-        <FadeUp delay={80}>
         <div className="grid gap-3 sm:grid-cols-2">
             {activeCoaches.map(c => {
               const rs = ROLE_STYLE[c.role] || ROLE_STYLE.coach;
@@ -333,5 +328,6 @@ export default function CoachesPage() {
         </div>
       )}
     </main>
+    </FadeUp>
   );
 }

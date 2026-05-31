@@ -92,6 +92,7 @@ function HPAttendanceInner() {
   const recentDates = [...new Set(classHistory.map(h => h.session_date))].slice(0, 6);
 
   return (
+<FadeUp delay={0}>
     <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
@@ -122,7 +123,6 @@ function HPAttendanceInner() {
         {/* Step 2: Select class */}
         <div className="mb-5 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
           <p className="mb-4 text-xs font-black uppercase tracking-wide text-white/35">Step 2 — Select Class</p>
-          <FadeUp delay={0}>
         <div className="space-y-3">
             <button onClick={() => setSelectedClass(null)}
               className={`w-full rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>
@@ -168,7 +168,6 @@ function HPAttendanceInner() {
               ✓ All Present
             </button>
           </div>
-          <FadeUp delay={0}>
         <div className="space-y-1.5">
             {classStudents.map(s => (
               <div key={s.id} className="flex items-center gap-3 rounded-xl border border-white/6 bg-[rgba(255,255,255,0.02)]/40 p-3">
@@ -211,7 +210,6 @@ function HPAttendanceInner() {
                 ) : null;
               })()}
             </div>
-            <FadeUp delay={0}>
         <div className="space-y-2">
               {recentDates.map(date => {
                 const sess = classHistory.filter(h => h.session_date === date);
@@ -236,5 +234,6 @@ function HPAttendanceInner() {
         )}
       </div>
     </main>
+    </FadeUp>
   );
 }

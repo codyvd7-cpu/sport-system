@@ -4,10 +4,10 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { PageLoader } from '@/components/HPIcons';
 import {
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, CartesianGrid, ReferenceLine,
 } from 'recharts';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -514,5 +514,6 @@ export default function HPTrendsPage(){
 
       </div>
     </main>
+    </FadeUp>
   );
 }

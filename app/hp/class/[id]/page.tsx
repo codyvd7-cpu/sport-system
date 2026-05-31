@@ -124,6 +124,7 @@ function ClassProfileInner({params}:PageProps) {
   if(loading) return <PageLoader label="Loading Class"/>;
 
   return (
+    <FadeUp delay={0}>
     <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
@@ -229,7 +230,6 @@ function ClassProfileInner({params}:PageProps) {
 
         {/* ── ATTENDANCE/REGISTER TAB ── */}
         {tab==='attendance'&&(
-          <FadeUp delay={0}>
         <div className="space-y-4">
             {/* Take register */}
             <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
@@ -293,7 +293,6 @@ function ClassProfileInner({params}:PageProps) {
 
             {/* History */}
             {sessions.length>0&&(
-              <FadeUp delay={0}>
         <div className="space-y-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25">Session History</p>
                 {sessions.map(date=>{
@@ -333,7 +332,6 @@ function ClassProfileInner({params}:PageProps) {
 
         {/* ── TESTING TAB ── */}
         {tab==='testing'&&(
-          <FadeUp delay={0}>
         <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-black uppercase tracking-wide text-white/25">{term} Results</p>
@@ -369,5 +367,6 @@ function ClassProfileInner({params}:PageProps) {
 
       </div>
     </main>
+    </FadeUp>
   );
 }

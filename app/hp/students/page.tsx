@@ -93,6 +93,7 @@ function HPStudentsInner() {
   const g9 = students.filter(s => s.grade === 'Grade 9').length;
 
   return (
+    <FadeUp delay={0}>
     <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
@@ -165,7 +166,6 @@ function HPStudentsInner() {
 
         {/* Student list */}
         {loading ? (
-          <FadeUp delay={0}>
         <div className="space-y-2">
             {[1,2,3,4,5].map(i => (
               <div key={i} className="h-14 w-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.025)]">
@@ -176,7 +176,6 @@ function HPStudentsInner() {
         ) : filtered.length === 0 ? (
           <EmptyState icon={<IconUsers className="h-8 w-8"/>} title="No students found" sub="Try adjusting your search or filters"/>
         ) : (
-          <FadeUp delay={0}>
         <div className="space-y-1">
             {filtered.map(s => {
               const grpColors: Record<number,string> = {1:'bg-sky-500/15 text-sky-300',2:'bg-violet-500/15 text-violet-300',3:'bg-amber-500/15 text-amber-300',4:'bg-emerald-500/15 text-emerald-300'};
@@ -210,6 +209,7 @@ function HPStudentsInner() {
         )}
       </div>
     </main>
+    </FadeUp>
   );
 }
 export default function HPStudentsPage() {
