@@ -1,46 +1,89 @@
-// HP Term utilities — shared across all HP pages
-// SA IEB Private School Calendar (3 terms)
+// HP Term utilities — St Benedict's College exact term dates
+// Source: official school calendar
 
 export const HP_TERMS = ['Term 1', 'Term 2', 'Term 3'] as const;
 export type HPTerm = typeof HP_TERMS[number];
 
-// SA IEB private school approximate term dates:
-// Term 1: ~Jan 20 – ~Apr 10  (ends before Easter)
-// Term 2: ~Apr 22 – ~Jun 28
-// Term 3: ~Jul 21 – ~Sep 28
-export function getCalendarTerm(): HPTerm {
-  const now   = new Date();
-  const m     = now.getMonth() + 1;  // 1-indexed
-  const d     = now.getDate();
+interface TermDate {
+  start: { month: number; day: number };
+  end:   { month: number; day: number };
+}
 
-  // Term 1: 20 Jan → 10 Apr
-  if ((m === 1 && d >= 20) || m === 2 || m === 3 || (m === 4 && d <= 10)) return 'Term 1';
-  // Term 2: 22 Apr → 28 Jun
-  if ((m === 4 && d >= 22) || m === 5 || m === 6) return 'Term 2';
-  // Term 3: 21 Jul → 28 Sep
-  if ((m === 7 && d >= 21) || m === 8 || (m === 9 && d <= 28)) return 'Term 3';
+// Exact term dates per year
+const TERM_DATES: Record<number, Record<HPTerm, TermDate>> = {
+  2026: {
+    'Term 1': { start: { month: 1,  day: 14 }, end: { month: 4,  day: 10 } },
+    'Term 2': { start: { month: 5,  day: 6  }, end: { month: 8,  day: 7  } },
+    'Term 3': { start: { month: 9,  day: 9  }, end: { month: 12, day: 4  } },
+  },
+  2027: {
+    'Term 1': { start: { month: 1,  day: 13 }, end: { month: 4,  day: 9  } },
+    'Term 2': { start: { month: 5,  day: 5  }, end: { month: 8,  day: 6  } },
+    'Term 3': { start: { month: 9,  day: 7  }, end: { month: 12, day: 3  } },
+  },
+};
 
-  // Holiday periods — return most recent term
-  if (m === 4 && d > 10 && d < 22) return 'Term 1'; // Easter break
-  if (m === 7 && d < 21)            return 'Term 2'; // July holiday
-  if (m >= 10 || (m === 9 && d > 28)) return 'Term 3'; // Oct–Dec holidays/exams
-  if (m === 1 && d < 20)            return 'Term 3'; // Jan before school starts
+function isOnOrAfter(m: number, d: number, startMonth: number, startDay: number): boolean {
+  return m > startMonth || (m === startMonth && d >= startDay);
+}
 
-  return 'Term 1';
+function isOnOrBefore(m: number, d: number, endMonth: number, endDay: number): boolean {
+  return m < endMonth || (m === endMonth && d <= endDay);
+}
+
+export function getCalendarTerm(date: Date = new Date()): HPTerm {
+  const year = date.getFullYear();
+  const m = date.getMonth() + 1;
+  const d = date.getDate();
+
+  const dates = TERM_DATES[year];
+
+  if (dates) {
+    for (const term of HP_TERMS) {
+      const { start, end } = dates[term];
+      if (isOnOrAfter(m, d, start.month, start.day) && isOnOrBefore(m, d, end.month, end.day)) {
+        return term;
+      }
+    }
+    // In a holiday — return the most recently ended term
+    // Check which term we're after
+    for (const term of [...HP_TERMS].reverse()) {
+      const { start } = dates[term];
+      if (isOnOrAfter(m, d, start.month, start.day)) return term;
+    }
+    return 'Term 1';
+  }
+
+  // Fallback for years without exact data — use approximate ranges
+  if (m <= 4) return 'Term 1';
+  if (m <= 8) return 'Term 2';
+  return 'Term 3';
 }
 
 export function getCurrentYear(): number {
   return new Date().getFullYear();
 }
 
-// Get term date range label
-export function getTermDateRange(term: HPTerm): string {
-  const ranges: Record<HPTerm, string> = {
-    'Term 1': 'Jan – Apr',
-    'Term 2': 'Apr – Jun',
-    'Term 3': 'Jul – Sep',
-  };
-  return ranges[term];
+// Get term start/end dates for a given year
+export function getTermDates(term: HPTerm, year: number): TermDate | null {
+  return TERM_DATES[year]?.[term] ?? null;
+}
+
+// Get readable date range string
+export function getTermDateRange(term: HPTerm, year?: number): string {
+  const y = year ?? getCurrentYear();
+  const dates = TERM_DATES[y];
+  if (!dates) {
+    const fallback: Record<HPTerm, string> = {
+      'Term 1': 'Jan – Apr',
+      'Term 2': 'May – Aug',
+      'Term 3': 'Sep – Dec',
+    };
+    return fallback[term];
+  }
+  const { start, end } = dates[term];
+  const months = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${start.day} ${months[start.month]} – ${end.day} ${months[end.month]}`;
 }
 
 // Given test results, find the most recent term that has data
@@ -51,10 +94,8 @@ export function getLatestTermWithData(
   const calendar = getCalendarTerm();
   const yearResults = results.filter(r => r.year === year);
 
-  // Prefer current term if it has data
   if (yearResults.some(r => r.term === calendar)) return calendar;
 
-  // Fall back to most recent term with data
   for (const t of [...HP_TERMS].reverse()) {
     if (yearResults.some(r => r.term === t)) return t;
   }
@@ -62,34 +103,30 @@ export function getLatestTermWithData(
   return calendar;
 }
 
-// Get the previous term
 export function prevTerm(t: HPTerm): HPTerm | null {
   const idx = HP_TERMS.indexOf(t);
   return idx > 0 ? HP_TERMS[idx - 1] : null;
 }
 
-// Get the next term
 export function nextTerm(t: HPTerm): HPTerm | null {
   const idx = HP_TERMS.indexOf(t);
   return idx < HP_TERMS.length - 1 ? HP_TERMS[idx + 1] : null;
 }
 
-// Get term from URL param, with fallback to calendar
 export function termFromParam(param: string | null): HPTerm {
   if (param && HP_TERMS.includes(param as HPTerm)) return param as HPTerm;
   return getCalendarTerm();
 }
 
-// Get year from URL param, with fallback to current year
 export function yearFromParam(param: string | null): number {
   const n = parseInt(param || '');
   return isNaN(n) ? getCurrentYear() : n;
 }
 
-// Is this term in the future relative to now?
 export function isTermFuture(term: HPTerm, year: number): boolean {
-  const currentYear = getCurrentYear();
-  const currentTerm = getCalendarTerm();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentTerm = getCalendarTerm(now);
   if (year > currentYear) return true;
   if (year < currentYear) return false;
   return HP_TERMS.indexOf(term) > HP_TERMS.indexOf(currentTerm);
