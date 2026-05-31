@@ -422,8 +422,8 @@ export default function CoachProfilePage({ params }: PageProps) {
           </div>
         )}
 
+        </FadeUp>
       </div>
-      </FadeUp>
     </main>
   );
 }

@@ -512,8 +512,8 @@ export default function HPTrendsPage(){
           </div>
         )}
 
+        </FadeUp>
       </div>
     </main>
-    </FadeUp>
   );
 }
