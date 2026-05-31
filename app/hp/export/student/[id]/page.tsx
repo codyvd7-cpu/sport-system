@@ -82,67 +82,98 @@ export default function StudentExport({ params }: PageProps) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Inter',sans-serif;background:#fff;color:#111827;}
-        @page{size:A4 portrait;margin:12mm 14mm;}
+        body{font-family:'Inter',sans-serif;background:#030810;color:#f1f5f9;-webkit-font-smoothing:antialiased;}
+        @page{size:A4 portrait;margin:10mm 12mm;}
         @media print{
           .no-print{display:none!important;}
           body{print-color-adjust:exact;-webkit-print-color-adjust:exact;}
         }
-        .page{max-width:760px;margin:0 auto;padding:32px 28px;}
+        .page{max-width:760px;margin:0 auto;padding:24px 20px;}
 
         /* ── HEADER ── */
-        .doc-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;padding-bottom:20px;border-bottom:3px solid #111827;}
+        .doc-header{
+          display:flex;align-items:center;justify-content:space-between;
+          margin-bottom:20px;padding:14px 18px;
+          background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(255,255,255,0.02));
+          border-radius:14px;border:1px solid rgba(16,185,129,0.2);position:relative;overflow:hidden;
+        }
+        .doc-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981,#38bdf8,transparent);}
         .doc-header-left{display:flex;align-items:center;gap:14px;}
-        .doc-header img{width:52px;height:52px;object-fit:contain;}
-        .doc-school{font-size:20px;font-weight:800;color:#111827;line-height:1.1;}
-        .doc-subtitle{font-size:11px;color:#6b7280;margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:0.06em;}
+        .doc-header img{width:44px;height:44px;object-fit:contain;}
+        .doc-school{font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.02em;}
+        .doc-subtitle{font-size:9px;color:rgba(16,185,129,0.7);margin-top:3px;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;}
         .doc-header-right{text-align:right;}
-        .doc-header-right .report-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#6b7280;}
-        .doc-header-right .report-date{font-size:12px;color:#374151;margin-top:3px;font-weight:500;}
+        .report-type{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.3);}
+        .report-date{font-size:11px;color:rgba(255,255,255,0.5);margin-top:3px;font-weight:500;}
 
         /* ── ATHLETE BANNER ── */
-        .athlete-banner{background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;}
-        .athlete-name{font-size:22px;font-weight:800;color:#111827;}
-        .athlete-meta{display:flex;gap:20px;margin-top:6px;}
-        .athlete-meta-item{font-size:11px;color:#6b7280;}
-        .athlete-meta-item span{font-weight:600;color:#374151;}
-        .att-ring-wrap{text-align:center;}
-        .att-ring-pct{font-size:22px;font-weight:800;}
-        .att-ring-lbl{font-size:9px;text-transform:uppercase;letter-spacing:0.08em;color:#9ca3af;margin-top:1px;}
+        .athlete-banner{
+          background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);
+          border-radius:12px;padding:16px 20px;margin-bottom:20px;
+          display:flex;align-items:center;justify-content:space-between;
+        }
+        .athlete-name{font-size:22px;font-weight:800;color:#fff;letter-spacing:-0.03em;}
+        .athlete-meta{display:flex;gap:16px;margin-top:6px;flex-wrap:wrap;}
+        .athlete-meta-item{font-size:10px;color:rgba(255,255,255,0.4);}
+        .athlete-meta-item span{font-weight:700;color:rgba(255,255,255,0.7);}
+        .att-ring-wrap{text-align:center;min-width:60px;}
+        .att-ring-pct{font-size:24px;font-weight:800;line-height:1;}
+        .att-ring-lbl{font-size:8px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.3);margin-top:3px;}
 
         /* ── SECTION LABEL ── */
-        .section-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#9ca3af;margin-bottom:10px;margin-top:22px;}
+        .section-label{
+          font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;
+          color:rgba(255,255,255,0.25);margin-bottom:10px;margin-top:20px;
+        }
 
         /* ── TEST CARDS ── */
-        .test-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:4px;}
-        .test-card{border:1px solid #e5e7eb;border-radius:8px;padding:12px 10px;text-align:center;}
-        .test-card.no-data{background:#f9fafb;}
-        .test-label{font-size:8.5px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:#9ca3af;margin-bottom:6px;}
-        .test-value{font-size:20px;font-weight:800;line-height:1;}
-        .test-unit{font-size:9px;color:#9ca3af;margin-top:1px;}
-        .tier-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:8px;font-weight:700;margin-top:5px;}
-        .test-terms{display:flex;justify-content:center;gap:8px;margin-top:7px;padding-top:7px;border-top:1px solid #f3f4f6;}
+        .test-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:4px;}
+        .test-card{
+          border:1px solid rgba(255,255,255,0.07);border-radius:10px;
+          padding:12px 8px;text-align:center;background:rgba(255,255,255,0.02);
+        }
+        .test-label{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,0.3);margin-bottom:6px;}
+        .test-value{font-size:20px;font-weight:800;line-height:1;letter-spacing:-0.02em;}
+        .test-unit{font-size:8.5px;color:rgba(255,255,255,0.3);margin-top:2px;}
+        .tier-badge{
+          display:inline-block;padding:2px 7px;border-radius:20px;
+          font-size:7.5px;font-weight:700;margin-top:5px;letter-spacing:0.03em;
+        }
+        .test-terms{
+          display:flex;justify-content:center;gap:6px;margin-top:8px;padding-top:8px;
+          border-top:1px solid rgba(255,255,255,0.06);
+        }
         .term-val{text-align:center;}
-        .term-val .tv{font-size:10px;font-weight:700;color:#374151;}
-        .term-val .tl{font-size:8px;color:#9ca3af;}
-        .delta{font-size:9px;font-weight:700;margin-top:4px;}
-        .delta.up{color:#047857;}
-        .delta.dn{color:#b91c1c;}
+        .tv{font-size:9px;font-weight:700;color:#fff;}
+        .tl{font-size:7.5px;color:rgba(255,255,255,0.3);}
+        .delta{font-size:8.5px;font-weight:700;margin-top:4px;}
+        .delta.up{color:#10b981;}
+        .delta.dn{color:#f87171;}
 
         /* ── ATTENDANCE ── */
         .att-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-        .att-bar-label{font-size:11px;font-weight:500;color:#374151;width:60px;}
-        .att-bar-track{flex:1;height:8px;background:#f3f4f6;border-radius:4px;overflow:hidden;}
-        .att-bar-fill{height:100%;border-radius:4px;}
-        .att-bar-num{font-size:11px;font-weight:700;color:#111827;width:24px;text-align:right;}
+        .att-bar-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);width:56px;}
+        .att-bar-track{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+        .att-bar-fill{height:100%;border-radius:3px;}
+        .att-bar-num{font-size:10px;font-weight:700;color:#fff;width:20px;text-align:right;}
 
         /* ── FOOTER ── */
-        .doc-footer{margin-top:28px;padding-top:14px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;}
-        .doc-footer-logo{font-size:10px;font-weight:700;color:#6b7280;}
-        .doc-footer-conf{font-size:9px;color:#9ca3af;font-style:italic;}
+        .doc-footer{
+          margin-top:24px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);
+          display:flex;justify-content:space-between;align-items:center;
+        }
+        .doc-footer-logo{font-size:9px;font-weight:600;color:rgba(255,255,255,0.2);}
+        .doc-footer-conf{font-size:8px;color:rgba(255,255,255,0.15);font-style:italic;}
 
         /* ── PRINT BUTTON ── */
-        .print-btn{position:fixed;bottom:28px;right:28px;background:#111827;color:#fff;border:none;border-radius:10px;padding:13px 28px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+        .print-btn{
+          position:fixed;bottom:24px;right:24px;
+          background:linear-gradient(135deg,#10b981,#38bdf8);
+          color:#fff;border:none;border-radius:12px;padding:12px 24px;
+          font-size:13px;font-weight:700;cursor:pointer;
+          font-family:'Inter',sans-serif;
+          box-shadow:0 8px 24px rgba(16,185,129,0.3);
+        }
       `}</style>
 
       <div className="page">
@@ -157,7 +188,7 @@ export default function StudentExport({ params }: PageProps) {
             </div>
           </div>
           <div className="doc-header-right">
-            <div className="report-type">Athlete Report</div>
+            <div className="report-type">Athlete Performance Report</div>
             <div className="report-date">{new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}</div>
           </div>
         </div>
@@ -174,7 +205,7 @@ export default function StudentExport({ params }: PageProps) {
           </div>
           {attRate !== null && (
             <div className="att-ring-wrap">
-              <div className="att-ring-pct" style={{color:attRate>=80?'#047857':attRate>=60?'#b45309':'#b91c1c'}}>{attRate}%</div>
+              <div className="att-ring-pct" style={{color:attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171'}}>{attRate}%</div>
               <div className="att-ring-lbl">Attendance</div>
             </div>
           )}
@@ -183,7 +214,7 @@ export default function StudentExport({ params }: PageProps) {
         {/* Test results */}
         <div className="section-label">Physical Performance Testing — {year}</div>
         {results.length === 0 ? (
-          <p style={{color:'#9ca3af',fontStyle:'italic',fontSize:12,marginBottom:20}}>No test results have been recorded for this athlete yet.</p>
+          <p style={{color:'rgba(255,255,255,0.2)',fontStyle:'italic',fontSize:12,marginBottom:20}}>No test results recorded yet.</p>
         ) : (
           <div className="test-grid">
             {tests.map(t => {
@@ -202,25 +233,25 @@ export default function StudentExport({ params }: PageProps) {
                 delta = { improved, pct: Math.abs(((latestVal-firstVal)/firstVal)*100).toFixed(1) };
               }
               return (
-                <div key={t.key} className={`test-card${!hasData?' no-data':''}`} style={tier&&hasData?{borderColor:`${tier.color}44`,background:`${tier.bg}55`}:{}}>
+                <div key={t.key} className="test-card" style={tier&&hasData?{borderColor:`${tier.color}30`,background:`${tier.color}08`}:{}}>
                   <div className="test-label">{t.label}</div>
                   {hasData&&latestVal!==null ? (
                     <>
                       <div className="test-value" style={{color:tier?.color}}>{fmt(t.key,latestVal)}</div>
                       {t.unit&&<div className="test-unit">{t.unit}</div>}
-                      {tier&&<div className="tier-badge" style={{background:tier.bg,color:tier.color}}>{tier.label}</div>}
+                      {tier&&<div className="tier-badge" style={{background:`${tier.color}18`,color:tier.color}}>{tier.label}</div>}
                       <div className="test-terms">
                         {TERMS.map((term,i)=>(
                           <div key={term} className="term-val">
                             <div className="tl">{term.replace('Term ','T')}</div>
-                            <div className="tv">{termVals[i]!==null?`${fmt(t.key,termVals[i]!)}${t.unit}`:'—'}</div>
+                            <div className="tv">{termVals[i]!==null?fmt(t.key,termVals[i]!):'—'}</div>
                           </div>
                         ))}
                       </div>
                       {delta&&<div className={`delta ${delta.improved?'up':'dn'}`}>{delta.improved?'▲':'▼'} {delta.pct}%</div>}
                     </>
                   ) : (
-                    <div style={{color:'#d1d5db',fontSize:18,marginTop:8}}>—</div>
+                    <div style={{color:'rgba(255,255,255,0.15)',fontSize:18,marginTop:8}}>—</div>
                   )}
                 </div>
               );
@@ -232,24 +263,24 @@ export default function StudentExport({ params }: PageProps) {
         {attendance.length > 0 && (
           <>
             <div className="section-label">Attendance Summary</div>
-            <div style={{background:'#f8fafc',border:'1px solid #e5e7eb',borderRadius:10,padding:'16px 20px'}}>
+            <div style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.07)',borderRadius:12,padding:'14px 18px'}}>
               {[
-                {label:'Present', val:attendance.filter(a=>a.status==='Present').length, color:'#047857'},
-                {label:'Late',    val:attendance.filter(a=>a.status==='Late').length,    color:'#b45309'},
-                {label:'Absent',  val:attendance.filter(a=>a.status==='Absent').length,  color:'#b91c1c'},
-                {label:'Excused', val:attendance.filter(a=>a.status==='Excused').length, color:'#0369a1'},
+                {label:'Present', val:attendance.filter(a=>a.status==='Present').length, color:'#10b981'},
+                {label:'Late',    val:attendance.filter(a=>a.status==='Late').length,    color:'#fbbf24'},
+                {label:'Absent',  val:attendance.filter(a=>a.status==='Absent').length,  color:'#f87171'},
+                {label:'Excused', val:attendance.filter(a=>a.status==='Excused').length, color:'#38bdf8'},
               ].filter(x=>x.val>0).map(x=>(
                 <div key={x.label} className="att-bar-row">
                   <div className="att-bar-label">{x.label}</div>
                   <div className="att-bar-track">
                     <div className="att-bar-fill" style={{width:`${Math.round((x.val/attendance.length)*100)}%`,background:x.color}}/>
                   </div>
-                  <div className="att-bar-num">{x.val}</div>
+                  <div className="att-bar-num" style={{color:x.color}}>{x.val}</div>
                 </div>
               ))}
-              <div style={{marginTop:10,fontSize:11,color:'#6b7280'}}>
+              <div style={{marginTop:10,fontSize:10,color:'rgba(255,255,255,0.3)'}}>
                 {attendance.length} sessions recorded &nbsp;·&nbsp; {present} attended &nbsp;·&nbsp;
-                <strong style={{color:attRate!==null&&attRate>=80?'#047857':attRate!==null&&attRate>=60?'#b45309':'#b91c1c'}}>{attRate}% rate</strong>
+                <strong style={{color:attRate!==null&&attRate>=80?'#10b981':attRate!==null&&attRate>=60?'#fbbf24':'#f87171'}}>{attRate}% attendance rate</strong>
               </div>
             </div>
           </>
@@ -258,11 +289,11 @@ export default function StudentExport({ params }: PageProps) {
         {/* Footer */}
         <div className="doc-footer">
           <div className="doc-footer-logo">St Benedict's College · High Performance Programme</div>
-          <div className="doc-footer-conf">Confidential · {new Date().getFullYear()}</div>
+          <div className="doc-footer-conf">Confidential · Coach and Administration Use Only · {new Date().getFullYear()}</div>
         </div>
       </div>
 
-      <button className="print-btn no-print" onClick={()=>window.print()}>Save as PDF</button>
+      <button className="print-btn no-print" onClick={()=>window.print()}>⬇ Save as PDF</button>
     </>
   );
 }
