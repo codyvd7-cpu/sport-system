@@ -26,7 +26,7 @@ const TEAM_GROUPS = [
 ];
 
 function fDate(d:string) {
-  return new Date(d);
+  return new Date(d).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
 }
 
 // ── LOW ATTENDANCE ALERT ─────────────────────────────────────
