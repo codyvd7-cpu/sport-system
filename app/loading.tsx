@@ -60,7 +60,7 @@ export default function Loading() {
 
       {/* Badge */}
       <img
-        src="/st-benedicts-logo.png"
+        src="/sbc-logo.svg"
         alt="St Benedict's"
         style={{
           width: 110, height: 110,
