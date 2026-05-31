@@ -32,14 +32,14 @@ export default function PortalLoginPage() {
       <div className="absolute left-[5%] top-[10%] h-64 w-64 rounded-full bg-sky-500/8 blur-3xl"/>
       <div className="absolute bottom-[10%] right-[5%] h-64 w-64 rounded-full bg-violet-500/8 blur-3xl"/>
 
-      <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-slate-800 bg-slate-950/95 p-8 shadow-2xl ring-1 ring-white/5">
+      <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-white/6 bg-[rgba(255,255,255,0.01)]/95 p-8 shadow-2xl ring-1 ring-white/5">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl ring-1 ring-white/10">
             <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
           </div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">St Benedict's College</p>
           <h1 className="mt-2 text-3xl font-black text-white">Hockey Portal</h1>
-          <p className="mt-2 text-sm text-slate-400">Enter the portal access code to continue</p>
+          <p className="mt-2 text-sm text-white/50">Enter the portal access code to continue</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -48,7 +48,7 @@ export default function PortalLoginPage() {
             value={code} onChange={e => setCode(e.target.value)}
             placeholder="Access code"
             autoComplete="off"
-            className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-center text-lg tracking-widest text-white outline-none placeholder:text-slate-600 focus:border-sky-500 transition"
+            className="w-full rounded-2xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-center text-lg tracking-widest text-white outline-none placeholder:text-white/25 focus:border-sky-500 transition"
           />
           {error && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-300 text-center">{error}</div>
@@ -60,7 +60,7 @@ export default function PortalLoginPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-xs text-slate-600 hover:text-slate-400 transition">← Back to Departments</a>
+          <a href="/" className="text-xs text-white/25 hover:text-white/50 transition">← Back to Departments</a>
         </div>
       </section>
     </main>

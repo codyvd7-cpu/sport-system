@@ -92,7 +92,7 @@ export default function AttendanceExportPage() {
   }
 
   if (roleLoading || loading) return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+    <main className="flex min-h-screen items-center justify-center bg-[rgba(255,255,255,0.01)]">
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
     </main>
   );
@@ -112,27 +112,27 @@ export default function AttendanceExportPage() {
       `}</style>
 
       {/* ── COACH INTERFACE (no-print) ── */}
-      <div className="no-print min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+      <div className="no-print min-h-screen bg-[rgba(255,255,255,0.01)] pb-20 text-white md:pb-0">
         <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
           {/* Header */}
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              <Link href="/dashboard" className="text-xs text-slate-500 hover:text-slate-300 transition mb-3 inline-block">← Dashboard</Link>
+              <Link href="/dashboard" className="text-xs text-white/35 hover:text-white/70 transition mb-3 inline-block">← Dashboard</Link>
               <div className="flex items-center gap-2 mb-1">
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-400">Head of Hockey</p>
                 <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[9px] font-black text-amber-300">HOH Only</span>
               </div>
               <h1 className="text-3xl font-black text-white">Attendance Export</h1>
-              <p className="mt-1 text-sm text-slate-500">Export team registers and attendance history as PDF</p>
+              <p className="mt-1 text-sm text-white/35">Export team registers and attendance history as PDF</p>
             </div>
           </div>
 
           {/* Export type */}
-          <div className="mb-6 flex rounded-xl border border-slate-800 bg-slate-900 p-1 w-fit">
+          <div className="mb-6 flex rounded-xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-1 w-fit">
             {(['register','history'] as const).map(mode => (
               <button key={mode} onClick={() => setExportMode(mode)}
-                className={`rounded-lg px-5 py-2 text-xs font-black capitalize transition ${exportMode === mode ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-white'}`}>
+                className={`rounded-lg px-5 py-2 text-xs font-black capitalize transition ${exportMode === mode ? 'bg-white/8 text-white' : 'text-white/35 hover:text-white'}`}>
                 {mode === 'register' ? 'Session Register' : 'Full History'}
               </button>
             ))}
@@ -140,20 +140,20 @@ export default function AttendanceExportPage() {
 
           {/* Team selector */}
           <div className="mb-6">
-            <p className="mb-3 text-[10px] font-black uppercase tracking-wide text-slate-500">Select Team</p>
+            <p className="mb-3 text-[10px] font-black uppercase tracking-wide text-white/35">Select Team</p>
             <div className="space-y-3">
               {TEAM_GROUPS.map(g => (
                 <div key={g.group}>
-                  <p className="mb-2 text-[9px] font-black uppercase tracking-wide text-slate-700">{g.group}</p>
+                  <p className="mb-2 text-[9px] font-black uppercase tracking-wide text-white/15">{g.group}</p>
                   <div className="flex flex-wrap gap-2">
                     {g.teams.map(t => {
                       const count = athletes.filter(a => a.team === t).length;
                       if (!count) return null;
                       return (
                         <button key={t} onClick={() => setSelTeam(selTeam === t ? null : t)}
-                          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black transition ${selTeam === t ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-slate-700 bg-slate-900 text-slate-400 hover:text-white hover:border-slate-500'}`}>
+                          className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-black transition ${selTeam === t ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white hover:border-slate-500'}`}>
                           {t}
-                          <span className={`text-[9px] ${selTeam === t ? 'text-amber-400/70' : 'text-slate-600'}`}>{count}</span>
+                          <span className={`text-[9px] ${selTeam === t ? 'text-amber-400/70' : 'text-white/25'}`}>{count}</span>
                         </button>
                       );
                     })}
@@ -167,38 +167,38 @@ export default function AttendanceExportPage() {
           {selTeam && (
             <div className="mb-6 grid grid-cols-2 gap-3">
               <div>
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">From</label>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35">From</label>
                 <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"/>
+                  className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"/>
               </div>
               <div>
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">To</label>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35">To</label>
                 <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"/>
+                  className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500"/>
               </div>
             </div>
           )}
 
           {/* Preview summary */}
           {selTeam && (
-            <div className="mb-6 rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-xs font-black uppercase tracking-wide text-slate-500 mb-3">Export Preview</p>
+            <div className="mb-6 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
+              <p className="text-xs font-black uppercase tracking-wide text-white/35 mb-3">Export Preview</p>
               <div className="flex gap-6">
                 <div>
                   <p className="text-2xl font-black text-white">{teamAthletes.length}</p>
-                  <p className="text-[10px] text-slate-600 uppercase tracking-wide">Athletes</p>
+                  <p className="text-[10px] text-white/25 uppercase tracking-wide">Athletes</p>
                 </div>
                 <div>
                   <p className="text-2xl font-black text-white">{sessionDates.length}</p>
-                  <p className="text-[10px] text-slate-600 uppercase tracking-wide">Sessions</p>
+                  <p className="text-[10px] text-white/25 uppercase tracking-wide">Sessions</p>
                 </div>
                 <div>
                   <p className="text-2xl font-black text-white">{filteredAttendance.length}</p>
-                  <p className="text-[10px] text-slate-600 uppercase tracking-wide">Records</p>
+                  <p className="text-[10px] text-white/25 uppercase tracking-wide">Records</p>
                 </div>
               </div>
               {sessionDates.length > 0 && (
-                <p className="mt-3 text-[11px] text-slate-600">
+                <p className="mt-3 text-[11px] text-white/25">
                   {fmt(sessionDates[sessionDates.length - 1])} → {fmt(sessionDates[0])}
                 </p>
               )}
@@ -218,8 +218,8 @@ export default function AttendanceExportPage() {
           )}
 
           {!selTeam && (
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 py-12 text-center">
-              <p className="text-slate-600 text-sm">Select a team above to preview and export</p>
+            <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)]/50 py-12 text-center">
+              <p className="text-white/25 text-sm">Select a team above to preview and export</p>
             </div>
           )}
         </div>

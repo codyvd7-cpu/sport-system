@@ -136,7 +136,7 @@ export default function AssistantPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="flex min-h-screen flex-col bg-[rgba(255,255,255,0.01)] pb-20 text-white md:pb-0">
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6 sm:px-6">
 
         {/* Header */}
@@ -144,7 +144,7 @@ export default function AssistantPage() {
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">AI Assistant</p>
             <h1 className="mt-0.5 text-3xl font-black tracking-tight text-white">Hockey Intelligence</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-white/35">
               {contextLoading ? 'Loading team data...' : `Connected · ${context.includes('FLAGGED') ? 'Athletes flagged' : 'All systems nominal'}`}
             </p>
           </div>
@@ -156,11 +156,11 @@ export default function AssistantPage() {
         {/* Quick prompts */}
         {messages.length === 0 && !contextLoading && (
           <div className="mb-6">
-            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600">Ask me anything</p>
+            <p className="mb-3 text-[10px] font-black uppercase tracking-[0.2em] text-white/25">Ask me anything</p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {QUICK_PROMPTS.map((p) => (
                 <button key={p.label} onClick={() => sendMessage(p.prompt)}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-left transition hover:border-sky-500/30 hover:bg-sky-500/5 active:scale-[0.98]">
+                  className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)]/80 p-4 text-left transition hover:border-sky-500/30 hover:bg-sky-500/5 active:scale-[0.98]">
                   <span className="text-sky-400">{p.icon}</span>
                   <p className="mt-2 text-xs font-black text-white leading-snug">{p.label}</p>
                 </button>
@@ -170,9 +170,9 @@ export default function AssistantPage() {
         )}
 
         {contextLoading && (
-          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-4">
+          <div className="mb-4 flex items-center gap-3 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-4">
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent shrink-0" />
-            <p className="text-sm text-slate-400">Loading athlete data, attendance records and performance tests...</p>
+            <p className="text-sm text-white/50">Loading athlete data, attendance records and performance tests...</p>
           </div>
         )}
 
@@ -186,12 +186,12 @@ export default function AssistantPage() {
                 </div>
               )}
               <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === 'user' ? 'bg-sky-500/15 border border-sky-500/20 text-white' : 'bg-slate-900 border border-slate-800 text-slate-200'
+                msg.role === 'user' ? 'bg-sky-500/15 border border-sky-500/20 text-white' : 'bg-[rgba(255,255,255,0.025)] border border-white/6 text-white/85'
               }`}>
                 {msg.content}
               </div>
               {msg.role === 'user' && (
-                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-[10px] font-black text-slate-400">YOU</div>
+                <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5 text-[10px] font-black text-white/50">YOU</div>
               )}
             </div>
           ))}
@@ -201,7 +201,7 @@ export default function AssistantPage() {
               <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/30 to-violet-500/20 border border-sky-500/20">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 text-sky-300"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="7.5" cy="14.5" r="1.5" fill="currentColor"/><circle cx="16.5" cy="14.5" r="1.5" fill="currentColor"/></svg>
                 </div>
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-4">
+              <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] px-4 py-4">
                 <div className="flex gap-1.5">
                   {[0, 150, 300].map((d) => (
                     <div key={d} className="h-2 w-2 rounded-full bg-sky-500 animate-bounce" style={{ animationDelay: `${d}ms` }} />
@@ -215,7 +215,7 @@ export default function AssistantPage() {
 
         {/* Clear button if there are messages */}
         {messages.length > 0 && (
-          <button onClick={() => setMessages([])} className="mt-3 text-center text-[10px] text-slate-700 hover:text-slate-500 transition">
+          <button onClick={() => setMessages([])} className="mt-3 text-center text-[10px] text-white/15 hover:text-white/35 transition">
             Clear conversation
           </button>
         )}
@@ -229,7 +229,7 @@ export default function AssistantPage() {
             placeholder={contextLoading ? 'Loading data...' : 'Ask about players, training plans, performance, feedback...'}
             rows={2}
             disabled={loading || contextLoading}
-            className="flex-1 resize-none rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500 disabled:opacity-40 transition"
+            className="flex-1 resize-none rounded-2xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-sm text-white outline-none placeholder:text-white/25 focus:border-sky-500 disabled:opacity-40 transition"
           />
           <button onClick={() => sendMessage(input)} disabled={!input.trim() || loading || contextLoading}
             className="flex w-12 shrink-0 items-center justify-center rounded-2xl border border-sky-500/40 bg-sky-500/15 text-sky-300 transition hover:bg-sky-500/25 disabled:opacity-30">
@@ -238,7 +238,7 @@ export default function AssistantPage() {
             </svg>
           </button>
         </div>
-        <p className="mt-1.5 text-center text-[10px] text-slate-700">Enter to send · Shift+Enter for new line</p>
+        <p className="mt-1.5 text-center text-[10px] text-white/15">Enter to send · Shift+Enter for new line</p>
       </div>
     </main>
   );

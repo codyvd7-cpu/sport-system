@@ -153,12 +153,12 @@ export default function PortalPage() {
               <span className="text-2xl"></span>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">St Benedict's College</p>
-                <p className="text-[10px] uppercase tracking-widest text-slate-400">Hockey Department</p>
+                <p className="text-[10px] uppercase tracking-widest text-white/50">Hockey Department</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <a href="/" className="rounded-full border border-slate-700/50 bg-slate-900 px-3 py-1.5 text-xs font-black text-slate-500 transition hover:text-slate-300">← Departments</a>
-              <a href="/login" className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-black text-slate-300 transition hover:text-white">Coach Login</a>
+              <a href="/" className="rounded-full border border-white/8/50 bg-[rgba(255,255,255,0.025)] px-3 py-1.5 text-xs font-black text-white/35 transition hover:text-white/70">← Departments</a>
+              <a href="/login" className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
               <a href="/player" className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">Player Login</a>
             </div>
           </div>
@@ -172,13 +172,13 @@ export default function PortalPage() {
                 Player &amp; Parent<br />
                 <span className="bg-gradient-to-r from-sky-400 via-sky-300 to-sky-500 bg-clip-text text-transparent">Portal.</span>
               </h1>
-              <p className="mt-5 max-w-lg text-sm leading-relaxed text-slate-500 sm:text-base">
+              <p className="mt-5 max-w-lg text-sm leading-relaxed text-white/35 sm:text-base">
                 Weekly plans, fixtures, results, programs and department updates — all in one place.
               </p>
               <div className="mt-7 flex flex-wrap gap-2">
                 {['This Week', 'Fixtures', 'Results', 'Programs', 'Reminders'].map((label) => (
                   <a key={label} href={`#${label.toLowerCase().replace(' ', '')}`}
-                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-slate-400 transition hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-white">
+                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-white/50 transition hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-white">
                     {label}
                   </a>
                 ))}
@@ -186,14 +186,14 @@ export default function PortalPage() {
             </div>
 
             {/* Right — Sponsor card (original style) */}
-            <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950/70 p-4 shadow-xl">
+            <div className="rounded-[1.5rem] border border-white/6 bg-[rgba(255,255,255,0.01)]/70 p-4 shadow-xl">
               <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">Sponsors</p>
               <h2 className="mt-2 text-xl font-black">Supported by our partners</h2>
               <div className="mt-4">
                 {loadingSponsors ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">Loading sponsors...</div>
+                  <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.01)]/60 p-4 text-sm text-white/50">Loading sponsors...</div>
                 ) : sponsors.length === 0 ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">Sponsor space available.</div>
+                  <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.01)]/60 p-4 text-sm text-white/50">Sponsor space available.</div>
                 ) : (
                   <>
                     <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
@@ -205,16 +205,16 @@ export default function PortalPage() {
                             className="max-h-full max-w-full object-contain"
                           />
                         ) : (
-                          <p className="text-center text-lg font-black text-slate-700">{activeSponsor?.name || 'Sponsor'}</p>
+                          <p className="text-center text-lg font-black text-white/15">{activeSponsor?.name || 'Sponsor'}</p>
                         )}
                       </div>
                     </div>
                     <div className="mt-4 flex items-center justify-between gap-3">
-                      <p className="line-clamp-1 text-sm font-black text-slate-200">{activeSponsor?.name || 'Sponsor'}</p>
+                      <p className="line-clamp-1 text-sm font-black text-white/85">{activeSponsor?.name || 'Sponsor'}</p>
                       <div className="flex gap-1.5">
                         {sponsors.map((_: Row, i: number) => (
                           <button key={i} onClick={() => setActiveSponsorIndex(i)}
-                            className={`h-2.5 rounded-full transition-all ${i === activeSponsorIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-slate-700'}`}
+                            className={`h-2.5 rounded-full transition-all ${i === activeSponsorIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-white/8'}`}
                             aria-label={`Show sponsor ${i + 1}`} />
                         ))}
                       </div>
@@ -235,7 +235,7 @@ export default function PortalPage() {
         <section id="thisweek" className="mb-16 scroll-mt-8">
           <Label text="This Week" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Week at a Glance</h2>
-          <p className="mt-2 text-sm text-slate-500">Tap any day to expand the full session plan.</p>
+          <p className="mt-2 text-sm text-white/35">Tap any day to expand the full session plan.</p>
           <div className="mt-6">
             {loadingWeek ? <Skeleton /> : weekItems.length === 0 ? <Empty text="No week plan published yet." /> : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -251,15 +251,15 @@ export default function PortalPage() {
                       <div className={`absolute right-0 top-0 h-16 w-16 rounded-bl-3xl ${isOpen ? 'bg-sky-500/15' : 'bg-white/3'}`} />
                       <div className="p-5">
                         <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black ${
-                          isOpen ? 'bg-sky-500 text-white' : 'bg-white/8 text-slate-400'
+                          isOpen ? 'bg-sky-500 text-white' : 'bg-white/8 text-white/50'
                         }`}>
                           {(item.day_label || 'D').slice(0, 2).toUpperCase()}
                         </div>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isOpen ? 'text-sky-400' : 'text-slate-600'}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isOpen ? 'text-sky-400' : 'text-white/25'}`}>
                           {item.day_label || 'Day'}
                         </p>
                         <p className="mt-1.5 text-sm font-black text-white">{item.title || 'Session'}</p>
-                        <p className={`mt-2 text-xs leading-5 ${isOpen ? 'text-slate-300' : 'line-clamp-2 text-slate-600'}`}>
+                        <p className={`mt-2 text-xs leading-5 ${isOpen ? 'text-white/70' : 'line-clamp-2 text-white/25'}`}>
                           {item.details || 'Tap for details.'}
                         </p>
                         {!isOpen && (
@@ -278,7 +278,7 @@ export default function PortalPage() {
         <section id="fixtures" className="mb-16 scroll-mt-8">
           <Label text="Schedule" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Fixtures</h2>
-          <p className="mt-2 text-sm text-slate-500">Upcoming matches and venues.</p>
+          <p className="mt-2 text-sm text-white/35">Upcoming matches and venues.</p>
           <div className="mt-6">
             {loadingFixtures ? <Skeleton /> : fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
               <div className="space-y-3">
@@ -292,15 +292,15 @@ export default function PortalPage() {
                         className="flex w-full items-center gap-5 p-5 text-left">
                         <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
                           <p className="text-xl font-black leading-none text-white">{d.getDate()}</p>
-                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{d.toLocaleDateString('en-ZA', { month: 'short' })}</p>
+                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{d.toLocaleDateString('en-ZA', { month: 'short' })}</p>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black uppercase tracking-wide text-slate-500 mb-1">{d.toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
+                          <p className="text-xs font-black uppercase tracking-wide text-white/35 mb-1">{d.toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
                           <p className="text-base font-black text-white">{dayFixtures.length} {dayFixtures.length === 1 ? 'match' : 'matches'}</p>
-                          <p className="mt-0.5 text-xs text-slate-500">{dayFixtures.map((f: Row) => f.team).join(' · ')}</p>
+                          <p className="mt-0.5 text-xs text-white/35">{dayFixtures.map((f: Row) => f.team).join(' · ')}</p>
                         </div>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                          className={`h-4 w-4 shrink-0 text-slate-500 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
+                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
                           <path d="M9 18l6-6-6-6"/>
                         </svg>
                       </button>
@@ -310,10 +310,10 @@ export default function PortalPage() {
                             <div key={fixture.id} className="rounded-xl border border-white/5 bg-white/3 p-3">
                               <div className="flex flex-wrap items-center gap-2 mb-1.5">
                                 <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-[10px] font-black text-sky-300">{fixture.team}</span>
-                                {fixture.fixture_time && <span className="text-[10px] text-slate-500">{fixture.fixture_time}</span>}
+                                {fixture.fixture_time && <span className="text-[10px] text-white/35">{fixture.fixture_time}</span>}
                               </div>
                               <p className="text-sm font-black text-white">vs {fixture.opponent}</p>
-                              {fixture.venue && <p className="mt-0.5 text-xs text-slate-500">{fixture.venue}</p>}
+                              {fixture.venue && <p className="mt-0.5 text-xs text-white/35">{fixture.venue}</p>}
                             </div>
                           ))}
                         </div>
@@ -330,7 +330,7 @@ export default function PortalPage() {
         <section id="results" className="mb-16 scroll-mt-8">
           <Label text="Latest" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Results</h2>
-          <p className="mt-2 text-sm text-slate-500">Recent match outcomes and scorers.</p>
+          <p className="mt-2 text-sm text-white/35">Recent match outcomes and scorers.</p>
           <div className="mt-6">
             {loadingResults ? <Skeleton /> : results.length === 0 ? <Empty text="No results published yet." /> : (
               <div className="space-y-3">
@@ -346,19 +346,19 @@ export default function PortalPage() {
                         className="flex w-full items-center gap-5 p-5 text-left">
                         <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
                           <p className="text-xl font-black leading-none text-white">{new Date(date as string).getDate()}</p>
-                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">{new Date(date as string).toLocaleDateString('en-ZA', { month: 'short' })}</p>
+                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{new Date(date as string).toLocaleDateString('en-ZA', { month: 'short' })}</p>
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-slate-500 mb-1">{new Date(date as string).toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
+                          <p className="text-xs text-white/35 mb-1">{new Date(date as string).toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
                           <p className="text-base font-black text-white">{dayResults.length} {dayResults.length === 1 ? 'match' : 'matches'}</p>
                           <div className="flex gap-3 mt-1">
                             {wins > 0 && <span className="text-[10px] font-black text-emerald-400">{wins}W</span>}
-                            {draws > 0 && <span className="text-[10px] font-black text-slate-400">{draws}D</span>}
+                            {draws > 0 && <span className="text-[10px] font-black text-white/50">{draws}D</span>}
                             {losses > 0 && <span className="text-[10px] font-black text-red-400">{losses}L</span>}
                           </div>
                         </div>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                          className={`h-4 w-4 shrink-0 text-slate-500 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
+                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
                           <path d="M9 18l6-6-6-6"/>
                         </svg>
                       </button>
@@ -374,11 +374,11 @@ export default function PortalPage() {
                             const outcome = won ? 'WIN' : drew ? 'DRAW' : score ? 'LOSS' : '—';
                             return (
                               <div key={result.id} className={`flex items-center gap-3 rounded-xl border p-3 ${won ? 'border-emerald-500/20 bg-emerald-500/5' : drew ? 'border-white/5 bg-white/3' : 'border-red-500/15 bg-red-500/5'}`}>
-                                <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-black ${won ? 'bg-emerald-500/20 text-emerald-300' : drew ? 'bg-white/10 text-slate-400' : 'bg-red-500/20 text-red-300'}`}>{outcome}</span>
+                                <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-black ${won ? 'bg-emerald-500/20 text-emerald-300' : drew ? 'bg-white/10 text-white/50' : 'bg-red-500/20 text-red-300'}`}>{outcome}</span>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-black text-white">{result.team} vs {result.opponent}</p>
-                                  <p className="text-xs text-slate-500">{score}</p>
-                                  {result.goal_scorers && <p className="text-[10px] text-slate-500 mt-0.5">{result.goal_scorers}</p>}
+                                  <p className="text-xs text-white/35">{score}</p>
+                                  {result.goal_scorers && <p className="text-[10px] text-white/35 mt-0.5">{result.goal_scorers}</p>}
                                 </div>
                               </div>
                             );
@@ -397,7 +397,7 @@ export default function PortalPage() {
         <section id="programs" className="mb-16 scroll-mt-8">
           <Label text="Training" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Programs</h2>
-          <p className="mt-2 text-sm text-slate-500">Current gym, mobility and recovery work.</p>
+          <p className="mt-2 text-sm text-white/35">Current gym, mobility and recovery work.</p>
           <div className="mt-6">
             {loadingPrograms ? <Skeleton /> : programs.length === 0 ? <Empty text="No programs published yet." /> : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -416,7 +416,7 @@ export default function PortalPage() {
                         </span>
                       )}
                       <p className="text-sm font-black text-white">{program.title}</p>
-                      <p className="mt-2 flex-1 text-xs leading-5 text-slate-400">{program.details || 'No details added.'}</p>
+                      <p className="mt-2 flex-1 text-xs leading-5 text-white/50">{program.details || 'No details added.'}</p>
                       {program.file_url ? (
                         <div className="mt-5 flex gap-2">
                           <a href={program.file_url} target="_blank" rel="noreferrer"
@@ -424,12 +424,12 @@ export default function PortalPage() {
                             Open PDF
                           </a>
                           <a href={program.file_url} download={program.file_name || `${program.title}.pdf`}
-                            className="flex-1 rounded-xl bg-white/5 py-2.5 text-center text-xs font-black text-slate-300 transition hover:bg-white/10">
+                            className="flex-1 rounded-xl bg-white/5 py-2.5 text-center text-xs font-black text-white/70 transition hover:bg-white/10">
                             Download
                           </a>
                         </div>
                       ) : (
-                        <p className="mt-4 text-[10px] text-slate-600">No PDF attached.</p>
+                        <p className="mt-4 text-[10px] text-white/25">No PDF attached.</p>
                       )}
                     </div>
                   );
@@ -443,7 +443,7 @@ export default function PortalPage() {
         <section id="reminders" className="mb-16 scroll-mt-8">
           <Label text="Notices" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Reminders</h2>
-          <p className="mt-2 text-sm text-slate-500">Key updates from the hockey department.</p>
+          <p className="mt-2 text-sm text-white/35">Key updates from the hockey department.</p>
           <div className="mt-6">
             {loadingReminders ? <Skeleton /> : reminders.length === 0 ? <Empty text="No reminders published yet." /> : (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -456,7 +456,7 @@ export default function PortalPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-black text-white">{reminder.title}</p>
-                      <p className="mt-1.5 text-xs leading-5 text-slate-400">{reminder.details || '—'}</p>
+                      <p className="mt-1.5 text-xs leading-5 text-white/50">{reminder.details || '—'}</p>
                     </div>
                   </div>
                 ))}
@@ -469,7 +469,7 @@ export default function PortalPage() {
         <section id="leaderboards" className="mb-8 scroll-mt-8">
           <Label text="Rankings" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Leaderboards</h2>
-          <p className="mt-2 text-sm text-slate-500">Top performers across the squad.</p>
+          <p className="mt-2 text-sm text-white/35">Top performers across the squad.</p>
 
           <div className="mt-6 grid gap-8 xl:grid-cols-2">
             {[
@@ -481,7 +481,7 @@ export default function PortalPage() {
                 <div className="mb-4 flex items-end justify-between">
                   <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{color:board.accent}}>{board.title}</p>
-                    <p className="text-[11px] text-slate-600 mt-0.5">{board.sub}</p>
+                    <p className="text-[11px] text-white/25 mt-0.5">{board.sub}</p>
                   </div>
                 </div>
 
@@ -511,11 +511,11 @@ export default function PortalPage() {
                             <p className="truncate text-sm font-black text-white">
                               {(athlete.name||'').split(' ')[0]||'Athlete'}
                             </p>
-                            <p className="text-[11px] text-slate-500">{athlete.team}</p>
+                            <p className="text-[11px] text-white/35">{athlete.team}</p>
                           </div>
                           <div className="shrink-0 text-right">
                             <p className="text-xl font-black" style={{color:board.accent}}>{athlete.score}</p>
-                            <p className="text-[10px] text-slate-600">
+                            <p className="text-[10px] text-white/25">
                               {board.type==='gym'?`${athlete.attendanceRate}% att`:athlete.days===null?'No tests':`${athlete.days}d ago`}
                             </p>
                           </div>
@@ -537,11 +537,11 @@ export default function PortalPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col items-center gap-3 text-center">
             <p className="text-sm font-black text-white">St Benedict's College Hockey</p>
-            <p className="text-xs text-slate-600">© {new Date().getFullYear()} — Built for excellence</p>
-            <p className="text-[10px] text-slate-700">
-              <a href="/privacy" className="hover:text-slate-500 transition-colors">Privacy Policy</a>
+            <p className="text-xs text-white/25">© {new Date().getFullYear()} — Built for excellence</p>
+            <p className="text-[10px] text-white/15">
+              <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
               <span className="mx-2">·</span>
-              <a href="/terms" className="hover:text-slate-500 transition-colors">Terms of Use</a>
+              <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
             </p>
           </div>
         </div>
@@ -562,13 +562,13 @@ function Skeleton() {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/3 p-5">
       <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-      <p className="text-sm text-slate-600">Loading...</p>
+      <p className="text-sm text-white/25">Loading...</p>
     </div>
   );
 }
 
 function Empty({ text }: { text: string }) {
   return (
-    <div className="rounded-2xl border border-white/6 bg-white/3 p-5 text-sm text-slate-600">{text}</div>
+    <div className="rounded-2xl border border-white/6 bg-white/3 p-5 text-sm text-white/25">{text}</div>
   );
 }

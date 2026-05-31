@@ -100,30 +100,30 @@ export default function SquadBoardPage() {
   const pct = athletes.length > 0 ? Math.round((assigned / athletes.length) * 100) : 0;
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen overflow-x-hidden" style={{background:'var(--bg)' pb-20 text-white md:pb-0">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Team Management</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Squad Board</h1>
-          <p className="mt-1 text-sm text-slate-500">Assign players to their teams for the season.</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(56,189,248,0.7)"}}>Team Management</p>
+          <h1 className="text-4xl font-black tracking-tight text-white leading-none">Squad Board</h1>
+          <p className="mt-1 text-sm text-white/35">Assign players to their teams for the season.</p>
         </div>
 
 
         {/* Progress */}
-        <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-5">
+        <div className="mb-8 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
           <div className="flex items-center justify-between gap-4 mb-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-wide text-slate-500">Assignment Progress</p>
-              <p className="mt-0.5 text-2xl font-black text-white">{assigned} <span className="text-base font-semibold text-slate-500">of {athletes.length} assigned</span></p>
+              <p className="text-xs font-black uppercase tracking-wide text-white/35">Assignment Progress</p>
+              <p className="mt-0.5 text-2xl font-black text-white">{assigned} <span className="text-base font-semibold text-white/35">of {athletes.length} assigned</span></p>
             </div>
             <p className={`text-3xl font-black ${pct === 100 ? 'text-emerald-400' : pct > 50 ? 'text-sky-400' : 'text-amber-400'}`}>{pct}%</p>
           </div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
             <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-sky-500'}`} style={{ width: `${pct}%` }} />
           </div>
-          <p className="mt-2 text-xs text-slate-600">{unassigned.length} players still unassigned</p>
+          <p className="mt-2 text-xs text-white/25">{unassigned.length} players still unassigned</p>
         </div>
 
         {/* Tabs */}
@@ -131,7 +131,7 @@ export default function SquadBoardPage() {
           {(['assign', 'overview'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)}
               className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-                view === v ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'
+                view === v ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white'
               }`}>
               {v === 'assign' ? 'Assign Players' : 'Team Overview'}
             </button>
@@ -144,7 +144,7 @@ export default function SquadBoardPage() {
 
             {/* Left — unassigned */}
             <div className="xl:col-span-2">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-amber-400">Unassigned</p>
@@ -156,12 +156,12 @@ export default function SquadBoardPage() {
                 {/* Search + filter */}
                 <div className="mb-4 space-y-2">
                   <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search players..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500" />
+                    className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.01)] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-sky-500" />
                   <div className="flex flex-wrap gap-1.5">
                     {['All', ...ageGroups].map((ag) => (
                       <button key={ag} onClick={() => setAgeFilter(ag)}
                         className={`rounded-full px-3 py-1 text-xs font-black transition ${
-                          ageFilter === ag ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-slate-700 bg-slate-800 text-slate-500 hover:text-white'
+                          ageFilter === ag ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-white/8 bg-white/5 text-white/35 hover:text-white'
                         }`}>{ag}</button>
                     ))}
                   </div>
@@ -170,7 +170,7 @@ export default function SquadBoardPage() {
                 {loading ? (
                   <div className="flex items-center gap-2 py-4">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
-                    <p className="text-sm text-slate-400">Loading players...</p>
+                    <p className="text-sm text-white/50">Loading players...</p>
                   </div>
                 ) : filteredUnassigned.length === 0 ? (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center">
@@ -180,14 +180,14 @@ export default function SquadBoardPage() {
                 ) : (
                   <div className="max-h-[55vh] space-y-2 overflow-y-auto pr-1">
                     {filteredUnassigned.map((athlete) => (
-                      <div key={athlete.id} className="rounded-xl border border-slate-800 bg-slate-950/60 p-3">
+                      <div key={athlete.id} className="rounded-xl border border-white/6 bg-[rgba(255,255,255,0.01)]/60 p-3">
                         <div className="flex items-center gap-2.5 mb-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-black text-slate-300">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-[10px] font-black text-white/70">
                             {initials(athlete.full_name)}
                           </div>
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-sm font-bold text-white">{athlete.full_name}</p>
-                            <p className="text-[10px] text-slate-500">{athlete.age_group || '—'}</p>
+                            <p className="text-[10px] text-white/35">{athlete.age_group || '—'}</p>
                           </div>
                           {saving === athlete.id && <div className="h-3 w-3 animate-spin rounded-full border border-sky-500 border-t-transparent shrink-0" />}
                         </div>
@@ -196,7 +196,7 @@ export default function SquadBoardPage() {
                             const col = getColor(t);
                             return (
                               <button key={t} onClick={() => assignTeam(athlete.id, t)} disabled={saving === athlete.id}
-                                className={`rounded-md border px-2 py-0.5 text-[9px] font-black transition bg-slate-900 text-slate-500 hover:text-white ${col.border} disabled:opacity-50`}>
+                                className={`rounded-md border px-2 py-0.5 text-[9px] font-black transition bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white ${col.border} disabled:opacity-50`}>
                                 {t}
                               </button>
                             );
@@ -211,7 +211,7 @@ export default function SquadBoardPage() {
 
             {/* Right — team grid */}
             <div className="xl:col-span-3">
-              <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+              <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Teams</p>
@@ -220,7 +220,7 @@ export default function SquadBoardPage() {
                   {saving === 'bulk' && (
                     <div className="flex items-center gap-2">
                       <div className="h-3 w-3 animate-spin rounded-full border border-sky-500 border-t-transparent" />
-                      <p className="text-xs text-slate-400">Saving...</p>
+                      <p className="text-xs text-white/50">Saving...</p>
                     </div>
                   )}
                 </div>
@@ -232,7 +232,7 @@ export default function SquadBoardPage() {
                       <div key={group.group}>
                         <div className="mb-2 flex items-center justify-between">
                           <p className={`text-xs font-black uppercase tracking-[0.18em] ${col.text}`}>{group.group}</p>
-                          <button onClick={() => bulkAssign(group.teams[0])} className="text-[10px] text-slate-600 hover:text-slate-400 transition">
+                          <button onClick={() => bulkAssign(group.teams[0])} className="text-[10px] text-white/25 hover:text-white/50 transition">
                             bulk assign filtered →
                           </button>
                         </div>
@@ -244,11 +244,11 @@ export default function SquadBoardPage() {
                               <button key={team} onClick={() => setSelectedTeam(isSelected ? null : team)}
                                 className={`rounded-xl border p-3 text-center transition ${
                                   isSelected ? `${col.border} ${col.bg}` :
-                                  count > 0 ? 'border-slate-700 bg-slate-800/60 hover:border-slate-600' :
-                                  'border-slate-800/60 bg-slate-950/40 hover:border-slate-700'
+                                  count > 0 ? 'border-white/8 bg-white/5/60 hover:border-white/10' :
+                                  'border-white/6/60 bg-[rgba(255,255,255,0.01)]/40 hover:border-white/8'
                                 }`}>
-                                <p className={`text-xl font-black leading-none ${isSelected ? col.text : count > 0 ? 'text-white' : 'text-slate-700'}`}>{count}</p>
-                                <p className={`mt-1 text-[10px] font-black ${isSelected ? col.text : count > 0 ? 'text-slate-400' : 'text-slate-700'}`}>{team}</p>
+                                <p className={`text-xl font-black leading-none ${isSelected ? col.text : count > 0 ? 'text-white' : 'text-white/15'}`}>{count}</p>
+                                <p className={`mt-1 text-[10px] font-black ${isSelected ? col.text : count > 0 ? 'text-white/50' : 'text-white/15'}`}>{team}</p>
                               </button>
                             );
                           })}
@@ -260,21 +260,21 @@ export default function SquadBoardPage() {
 
                 {/* Selected team */}
                 {selectedTeam && (
-                  <div className="mt-5 border-t border-slate-800 pt-5">
+                  <div className="mt-5 border-t border-white/6 pt-5">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className={`rounded-full px-2.5 py-1 text-xs font-black ${getColor(selectedTeam).badge}`}>{selectedTeam}</span>
-                        <p className="text-sm text-slate-400">{teamPlayers.length} players</p>
+                        <p className="text-sm text-white/50">{teamPlayers.length} players</p>
                       </div>
-                      <button onClick={() => setSelectedTeam(null)} className="text-xs text-slate-500 hover:text-slate-300">✕ Close</button>
+                      <button onClick={() => setSelectedTeam(null)} className="text-xs text-white/35 hover:text-white/70">✕ Close</button>
                     </div>
                     {teamPlayers.length === 0 ? (
-                      <p className="text-sm text-slate-500">No players assigned yet.</p>
+                      <p className="text-sm text-white/35">No players assigned yet.</p>
                     ) : (
                       <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 max-h-48 overflow-y-auto pr-1">
                         {teamPlayers.map((athlete) => (
-                          <div key={athlete.id} className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/50 p-2.5">
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-[9px] font-black text-slate-300">
+                          <div key={athlete.id} className="flex items-center gap-2 rounded-xl border border-white/6 bg-[rgba(255,255,255,0.01)]/50 p-2.5">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/5 text-[9px] font-black text-white/70">
                               {initials(athlete.full_name)}
                             </div>
                             <p className="flex-1 truncate text-xs font-semibold text-white">{athlete.full_name}</p>
@@ -306,16 +306,16 @@ export default function SquadBoardPage() {
                       return (
                         <div key={team} onClick={() => setSelectedTeam(isSelected ? null : team)}
                           className={`cursor-pointer rounded-2xl border p-4 transition ${
-                            isSelected ? `${col.border} ${col.bg}` : 'border-slate-800 bg-slate-900 hover:border-slate-700'
+                            isSelected ? `${col.border} ${col.bg}` : 'border-white/6 bg-[rgba(255,255,255,0.025)] hover:border-white/8'
                           }`}>
                           <div className="flex items-center justify-between mb-3">
                             <span className={`rounded-full px-2.5 py-1 text-xs font-black ${col.badge}`}>{team}</span>
-                            <p className={`text-2xl font-black ${players.length > 0 ? col.text : 'text-slate-700'}`}>{players.length}</p>
+                            <p className={`text-2xl font-black ${players.length > 0 ? col.text : 'text-white/15'}`}>{players.length}</p>
                           </div>
                           {isSelected && players.length > 0 && (
                             <div className="mt-2 space-y-1 border-t border-white/5 pt-2 max-h-40 overflow-y-auto">
                               {players.map((p) => (
-                                <p key={p.id} className="truncate text-xs text-slate-400">{p.full_name}</p>
+                                <p key={p.id} className="truncate text-xs text-white/50">{p.full_name}</p>
                               ))}
                             </div>
                           )}

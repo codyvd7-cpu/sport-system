@@ -42,10 +42,10 @@ export default function SetPasswordPage() {
   }
 
   if (!ready) return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950">
+    <main className="flex min-h-screen items-center justify-center bg-[rgba(255,255,255,0.01)]">
       <div className="text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-sky-500"/>
-        <p className="text-sm text-slate-500">Setting up your account…</p>
+        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-white/8 border-t-sky-500"/>
+        <p className="text-sm text-white/35">Setting up your account…</p>
       </div>
     </main>
   );
@@ -54,30 +54,30 @@ export default function SetPasswordPage() {
     <main className="relative flex min-h-screen flex-col items-center justify-center bg-[#060812] px-4 text-white overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(56,189,248,0.08),transparent)]"/>
 
-      <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-white/8 bg-slate-950/95 p-8 shadow-2xl">
+      <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-white/8 bg-[rgba(255,255,255,0.01)]/95 p-8 shadow-2xl">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl">
             <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
           </div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">St Benedict's College</p>
           <h1 className="mt-2 text-2xl font-black text-white">Set Your Password</h1>
-          <p className="mt-1.5 text-sm text-slate-400">Choose a password for your coach account</p>
+          <p className="mt-1.5 text-sm text-white/50">Choose a password for your coach account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-400">New Password</label>
+            <label className="mb-1.5 block text-xs font-semibold text-white/50">New Password</label>
             <input type="password" required minLength={8}
               value={password} onChange={e => setPassword(e.target.value)}
               placeholder="At least 8 characters"
-              className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition"/>
+              className="w-full rounded-2xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition"/>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-slate-400">Confirm Password</label>
+            <label className="mb-1.5 block text-xs font-semibold text-white/50">Confirm Password</label>
             <input type="password" required minLength={8}
               value={confirm} onChange={e => setConfirm(e.target.value)}
               placeholder="Repeat password"
-              className="w-full rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition"/>
+              className="w-full rounded-2xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-sm text-white outline-none focus:border-sky-500 transition"/>
           </div>
 
           {error && (

@@ -142,7 +142,7 @@ export default function TeamPage({ params }: PageProps) {
 
   if (loading) return (
     <main className="min-h-screen bg-[#060812] flex items-center justify-center">
-      <div className="h-7 w-7 rounded-full border-2 border-slate-800 border-t-sky-500 animate-spin"/>
+      <div className="h-7 w-7 rounded-full border-2 border-white/6 border-t-sky-500 animate-spin"/>
     </main>
   );
 
@@ -155,7 +155,7 @@ export default function TeamPage({ params }: PageProps) {
 
         {/* ── HEADER ── */}
         <div className="mb-6">
-          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-[11px] text-slate-600 hover:text-slate-400 transition mb-4">
+          <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-[11px] text-white/25 hover:text-white/50 transition mb-4">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
             Dashboard
           </Link>
@@ -163,9 +163,9 @@ export default function TeamPage({ params }: PageProps) {
             <div className="absolute inset-0" style={{background:`radial-gradient(ellipse at 0% 50%, ${accent}0e, transparent 60%)`}}/>
             <div className="relative flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">Hockey</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/25 mb-1">Hockey</p>
                 <h1 className="text-5xl font-black tracking-tight leading-none" style={{color:accent}}>{teamName}</h1>
-                <p className="mt-2 text-sm text-slate-400">{squad.length} players · {available.length} available</p>
+                <p className="mt-2 text-sm text-white/50">{squad.length} players · {available.length} available</p>
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <Link href="/attendance"
@@ -175,7 +175,7 @@ export default function TeamPage({ params }: PageProps) {
                   Take Register
                 </Link>
                 <button onClick={() => setShowLogResult(true)}
-                  className="flex items-center gap-2 rounded-xl border border-white/8 px-4 py-2.5 text-xs font-black text-slate-300 hover:bg-white/5 transition"
+                  className="flex items-center gap-2 rounded-xl border border-white/8 px-4 py-2.5 text-xs font-black text-white/70 hover:bg-white/5 transition"
                   style={{background:'rgba(255,255,255,0.03)'}}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M12 5v14M5 12h14"/></svg>
                   Log Result
@@ -187,13 +187,13 @@ export default function TeamPage({ params }: PageProps) {
             {nextFixture && (
               <div className="relative mt-5 pt-5 border-t border-white/5 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-600">Next Match</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Next Match</p>
                   <p className="text-sm font-black text-white mt-0.5">vs {nextFixture.opponent}</p>
-                  <p className="text-[11px] text-slate-500">{fDate(nextFixture.fixture_date)}{nextFixture.fixture_time && ` · ${nextFixture.fixture_time}`}{nextFixture.venue && ` · ${nextFixture.venue}`}</p>
+                  <p className="text-[11px] text-white/35">{fDate(nextFixture.fixture_date)}{nextFixture.fixture_time && ` · ${nextFixture.fixture_time}`}{nextFixture.venue && ` · ${nextFixture.venue}`}</p>
                 </div>
                 <div className="text-3xl font-black" style={{color:accent}}>
                   {Math.max(0, Math.ceil((new Date(nextFixture.fixture_date).getTime() - Date.now()) / 86400000))}
-                  <span className="text-base font-semibold text-slate-600">d</span>
+                  <span className="text-base font-semibold text-white/25">d</span>
                 </div>
               </div>
             )}
@@ -204,7 +204,7 @@ export default function TeamPage({ params }: PageProps) {
         <div className="mb-5 flex rounded-2xl border border-white/5 p-1" style={{background:'rgba(255,255,255,0.02)'}}>
           {([['squad','Squad'],['attendance','Attendance'],['results','Results']] as const).map(([key,label]) => (
             <button key={key} onClick={() => setTab(key)}
-              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${tab===key?'bg-white/8 text-white':'text-slate-500 hover:text-slate-300'}`}>
+              className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${tab===key?'bg-white/8 text-white':'text-white/35 hover:text-white/70'}`}>
               {label}
             </button>
           ))}
@@ -217,7 +217,7 @@ export default function TeamPage({ params }: PageProps) {
             {/* Available */}
             <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
               <div className="px-5 py-3 border-b border-white/5 flex items-center justify-between">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Available</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Available</p>
                 <span className="text-[11px] font-semibold text-emerald-400">{available.length} players</span>
               </div>
               <div className="divide-y divide-white/3">
@@ -230,7 +230,7 @@ export default function TeamPage({ params }: PageProps) {
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-white">{a.full_name}</p>
-                        {a.position && <p className="text-[10px] text-slate-600">{a.position}</p>}
+                        {a.position && <p className="text-[10px] text-white/25">{a.position}</p>}
                       </div>
                     </Link>
                     <div className="flex items-center gap-2 shrink-0">
@@ -244,7 +244,7 @@ export default function TeamPage({ params }: PageProps) {
                         value="Available"
                         onChange={e => setAvailability(a.id, e.target.value)}
                         disabled={updatingId === a.id}
-                        className="rounded-lg border border-white/6 bg-white/3 px-2 py-1 text-[10px] font-black text-slate-500 outline-none"
+                        className="rounded-lg border border-white/6 bg-white/3 px-2 py-1 text-[10px] font-black text-white/35 outline-none"
                         onClick={e => e.stopPropagation()}>
                         <option value="Available">Available</option>
                         <option value="Modified">Modified</option>
@@ -255,7 +255,7 @@ export default function TeamPage({ params }: PageProps) {
                   </div>
                 ))}
                 {available.length === 0 && (
-                  <p className="px-5 py-6 text-sm text-slate-600 text-center">No available players.</p>
+                  <p className="px-5 py-6 text-sm text-white/25 text-center">No available players.</p>
                 )}
               </div>
             </div>
@@ -264,7 +264,7 @@ export default function TeamPage({ params }: PageProps) {
             {unavailable.length > 0 && (
               <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
                 <div className="px-5 py-3 border-b border-white/5">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Unavailable / Modified</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/35">Unavailable / Modified</p>
                 </div>
                 <div className="divide-y divide-white/3">
                   {unavailable.map(a => {
@@ -285,7 +285,7 @@ export default function TeamPage({ params }: PageProps) {
                           value={a.availability}
                           onChange={e => setAvailability(a.id, e.target.value)}
                           disabled={updatingId === a.id}
-                          className="shrink-0 rounded-lg border border-white/6 bg-white/3 px-2 py-1 text-[10px] font-black text-slate-500 outline-none"
+                          className="shrink-0 rounded-lg border border-white/6 bg-white/3 px-2 py-1 text-[10px] font-black text-white/35 outline-none"
                           onClick={e => e.stopPropagation()}>
                           <option value="Available">Available</option>
                           <option value="Modified">Modified</option>
@@ -306,14 +306,14 @@ export default function TeamPage({ params }: PageProps) {
           <div className="space-y-3">
             {sessions.length === 0 ? (
               <div className="rounded-2xl border border-white/5 py-12 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
-                <p className="text-sm text-slate-600">No sessions recorded yet.</p>
+                <p className="text-sm text-white/25">No sessions recorded yet.</p>
               </div>
             ) : sessions.map(s => (
               <div key={s.date} className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
                 <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
                   <div>
                     <p className="text-sm font-black text-white">{fDate(s.date)}</p>
-                    {s.type && <p className="text-[10px] text-slate-600">{s.type}</p>}
+                    {s.type && <p className="text-[10px] text-white/25">{s.type}</p>}
                   </div>
                   <div className="flex items-center gap-2">
                     {s.present < s.total && (
@@ -358,16 +358,16 @@ export default function TeamPage({ params }: PageProps) {
             </button>
             {results.length === 0 ? (
               <div className="rounded-2xl border border-white/5 py-10 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
-                <p className="text-sm text-slate-600">No results logged yet.</p>
+                <p className="text-sm text-white/25">No results logged yet.</p>
               </div>
             ) : results.map(r => (
               <div key={r.id} className="rounded-2xl border border-white/5 p-5" style={{background:'rgba(255,255,255,0.02)'}}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-[10px] text-slate-600">{fDate(r.result_date)}</p>
+                    <p className="text-[10px] text-white/25">{fDate(r.result_date)}</p>
                     <p className="text-base font-black text-white mt-0.5">vs {r.opponent}</p>
                     {r.goal_scorers && (
-                      <p className="text-[11px] text-slate-500 mt-1">Scorers: {r.goal_scorers}</p>
+                      <p className="text-[11px] text-white/35 mt-1">Scorers: {r.goal_scorers}</p>
                     )}
                   </div>
                   <p className="shrink-0 text-2xl font-black" style={{color:accent}}>{r.final_score}</p>
@@ -388,10 +388,10 @@ export default function TeamPage({ params }: PageProps) {
             onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-600">Match Result</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-white/25">Match Result</p>
                 <h2 className="text-xl font-black text-white mt-0.5">{teamName}</h2>
               </div>
-              <button onClick={() => setShowLogResult(false)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 text-slate-500 hover:text-white transition">
+              <button onClick={() => setShowLogResult(false)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/8 text-white/35 hover:text-white transition">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
@@ -399,25 +399,25 @@ export default function TeamPage({ params }: PageProps) {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Date</label>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/25">Date</label>
                   <input type="date" value={resultDate} onChange={e => setResultDate(e.target.value)}
                     className="w-full rounded-xl border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition"/>
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Score</label>
+                  <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/25">Score</label>
                   <input value={resultScore} onChange={e => setResultScore(e.target.value)} placeholder="e.g. 2-1"
                     className="w-full rounded-xl border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition"/>
                 </div>
               </div>
 
               <div>
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-600">Opponent</label>
+                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/25">Opponent</label>
                 <input value={resultOpponent} onChange={e => setResultOpponent(e.target.value)} placeholder="e.g. St Stithians"
                   className="w-full rounded-xl border border-white/8 bg-white/3 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500/50 transition"/>
               </div>
 
               <div>
-                <label className="mb-2 block text-[10px] font-black uppercase tracking-wide text-slate-600">Goal Scorers (tap to select)</label>
+                <label className="mb-2 block text-[10px] font-black uppercase tracking-wide text-white/25">Goal Scorers (tap to select)</label>
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                   {squad.filter(a => !a.availability || a.availability === 'Available').map(a => {
                     const sel = resultScorers.includes(a.id);

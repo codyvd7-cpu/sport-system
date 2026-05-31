@@ -121,7 +121,7 @@ export default function HPClassesPage() {
         <div className="mb-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">High Performance</p>
           <h1 className="mt-1 text-3xl font-black text-white">Classes</h1>
-          <p className="mt-1 text-sm text-slate-500">Select a class to view roster and manage training groups</p>
+          <p className="mt-1 text-sm text-white/35">Select a class to view roster and manage training groups</p>
         </div>
 
         {/* Class selector */}
@@ -134,10 +134,10 @@ export default function HPClassesPage() {
                 const tested = cs.filter(s => latestResults[s.id]).length;
                 return (
                   <button key={c} onClick={() => setSelectedClass(selectedClass === c ? null : c)}
-                    className={`rounded-2xl border px-5 py-3 text-left transition hover:scale-[1.03] ${selectedClass === c ? 'border-sky-500/50 bg-sky-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
+                    className={`rounded-2xl border px-5 py-3 text-left transition hover:scale-[1.03] ${selectedClass === c ? 'border-sky-500/50 bg-sky-500/15' : 'border-white/6 bg-[rgba(255,255,255,0.025)] hover:border-white/8'}`}>
                     <p className={`text-2xl font-black ${selectedClass === c ? 'text-sky-400' : 'text-white'}`}>{c}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{cs.length} students</p>
-                    <p className="text-[10px] text-slate-600">{tested} tested</p>
+                    <p className="text-[10px] text-white/35 mt-0.5">{cs.length} students</p>
+                    <p className="text-[10px] text-white/25">{tested} tested</p>
                   </button>
                 );
               })}
@@ -151,10 +151,10 @@ export default function HPClassesPage() {
                 const tested = cs.filter(s => latestResults[s.id]).length;
                 return (
                   <button key={c} onClick={() => setSelectedClass(selectedClass === c ? null : c)}
-                    className={`rounded-2xl border px-5 py-3 text-left transition hover:scale-[1.03] ${selectedClass === c ? 'border-violet-500/50 bg-violet-500/15' : 'border-slate-800 bg-slate-900 hover:border-slate-700'}`}>
+                    className={`rounded-2xl border px-5 py-3 text-left transition hover:scale-[1.03] ${selectedClass === c ? 'border-violet-500/50 bg-violet-500/15' : 'border-white/6 bg-[rgba(255,255,255,0.025)] hover:border-white/8'}`}>
                     <p className={`text-2xl font-black ${selectedClass === c ? 'text-violet-400' : 'text-white'}`}>{c}</p>
-                    <p className="text-[10px] text-slate-500 mt-0.5">{cs.length} students</p>
-                    <p className="text-[10px] text-slate-600">{tested} tested</p>
+                    <p className="text-[10px] text-white/35 mt-0.5">{cs.length} students</p>
+                    <p className="text-[10px] text-white/25">{tested} tested</p>
                   </button>
                 );
               })}
@@ -164,12 +164,12 @@ export default function HPClassesPage() {
 
         {/* Class detail */}
         {selectedClass && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden">
+          <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] overflow-hidden">
             {/* Class header */}
-            <div className="border-b border-slate-800 px-5 py-4 flex items-center justify-between flex-wrap gap-3">
+            <div className="border-b border-white/6 px-5 py-4 flex items-center justify-between flex-wrap gap-3">
               <div>
                 <p className="text-lg font-black text-white">{selectedClass[0] === '8' ? 'Grade 8' : 'Grade 9'} — Class {selectedClass[1]}</p>
-                <p className="text-xs text-slate-500">{classStudents.length} students · {classStudents.filter(s => latestResults[s.id]).length} with results</p>
+                <p className="text-xs text-white/35">{classStudents.length} students · {classStudents.filter(s => latestResults[s.id]).length} with results</p>
               </div>
               <div className="flex flex-wrap gap-2 items-center">
                 <Link href={`/hp/attendance?class=${selectedClass}`}
@@ -184,11 +184,11 @@ export default function HPClassesPage() {
             </div>
 
             {/* Group controls */}
-            <div className="border-b border-slate-800 px-5 py-3 flex items-center gap-3 flex-wrap bg-slate-900/50">
-              <p className="text-xs font-black text-slate-500">Training Groups:</p>
+            <div className="border-b border-white/6 px-5 py-3 flex items-center gap-3 flex-wrap bg-[rgba(255,255,255,0.025)]/50">
+              <p className="text-xs font-black text-white/35">Training Groups:</p>
               {[2,3,4,5].map(n => (
                 <button key={n} onClick={() => setNumGroups(n)}
-                  className={`h-7 w-7 rounded-lg text-xs font-black transition ${numGroups === n ? 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-800 text-slate-500 hover:text-white'}`}>
+                  className={`h-7 w-7 rounded-lg text-xs font-black transition ${numGroups === n ? 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-white/8 bg-white/5 text-white/35 hover:text-white'}`}>
                   {n}
                 </button>
               ))}
@@ -199,7 +199,7 @@ export default function HPClassesPage() {
             </div>
 
             {/* Group preview strips */}
-            <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-slate-800">
+            <div className="px-5 py-3 flex flex-wrap gap-2 border-b border-white/6">
               {Array.from({ length: numGroups }, (_, i) => i + 1).map(g => {
                 const members = classStudents.filter(s => (computedGroups[s.id] ?? s.training_group) === g);
                 return (
@@ -210,22 +210,22 @@ export default function HPClassesPage() {
                 );
               })}
               {classStudents.filter(s => !computedGroups[s.id] && !s.training_group).length > 0 && (
-                <span className="text-[10px] text-slate-600 self-center">{classStudents.filter(s => !computedGroups[s.id] && !s.training_group).length} ungrouped</span>
+                <span className="text-[10px] text-white/25 self-center">{classStudents.filter(s => !computedGroups[s.id] && !s.training_group).length} ungrouped</span>
               )}
             </div>
 
             {/* Student roster */}
             {loading ? (
-              <div className="p-5 space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 rounded-xl bg-slate-800 animate-pulse" />)}</div>
+              <div className="p-5 space-y-2">{[1,2,3].map(i => <div key={i} className="h-12 rounded-xl bg-white/5 animate-pulse" />)}</div>
             ) : (
-              <div className="divide-y divide-slate-800/60">
+              <div className="divide-y divide-white/5/60">
                 {classStudents.map(s => {
                   const group = computedGroups[s.id] ?? s.training_group;
                   const hasTested = !!latestResults[s.id];
                   return (
                     <Link key={s.id} href={`/hp/students/${s.id}`}
-                      className="flex items-center gap-3 px-5 py-3 hover:bg-slate-800/40 transition">
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-black border ${group ? GROUP_COLORS[group] : 'border-slate-700 bg-slate-800 text-slate-400'}`}>
+                      className="flex items-center gap-3 px-5 py-3 hover:bg-white/5/40 transition">
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-black border ${group ? GROUP_COLORS[group] : 'border-white/8 bg-white/5 text-white/50'}`}>
                         {s.full_name.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">

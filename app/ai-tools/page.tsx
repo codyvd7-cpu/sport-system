@@ -60,28 +60,28 @@ export default function AIToolsPage() {
     setSessionLoading(false);
   }
 
-  const inputCls = "w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-600 focus:border-violet-500 transition";
-  const labelCls = "mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500";
+  const inputCls = "w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.01)] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-violet-500 transition";
+  const labelCls = "mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35";
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
-      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
+    <main className="min-h-screen overflow-x-hidden" style={{background:'var(--bg)' pb-20 text-white md:pb-0">
+      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-8">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-violet-400">AI Tools</p>
           <h1 className="mt-1 text-3xl font-black tracking-tight text-white">Coaching Assistant</h1>
-          <p className="mt-1 text-sm text-slate-500">Generate parent updates and training sessions instantly</p>
+          <p className="mt-1 text-sm text-white/35">Generate parent updates and training sessions instantly</p>
         </div>
 
         {/* Tabs */}
         <div className="mb-6 flex gap-2">
           <button onClick={() => setActiveTab('parent')}
-            className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${activeTab === 'parent' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
+            className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${activeTab === 'parent' ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white'}`}>
             Parent Update
           </button>
           <button onClick={() => setActiveTab('session')}
-            className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${activeTab === 'session' ? 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
+            className={`rounded-xl px-5 py-2.5 text-sm font-black transition ${activeTab === 'session' ? 'bg-violet-500/20 border border-violet-500/40 text-violet-300' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white'}`}>
             Session Builder
           </button>
         </div>
@@ -89,7 +89,7 @@ export default function AIToolsPage() {
         {/* Parent Update */}
         {activeTab === 'parent' && (
           <div className="space-y-5">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-sky-400">Parent Message Generator</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -138,7 +138,7 @@ export default function AIToolsPage() {
                   <p className="text-xs font-black uppercase tracking-wide text-sky-400">Generated Message</p>
                   <div className="flex gap-2">
                     <button onClick={() => { navigator.clipboard.writeText(parentOutput); }}
-                      className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">
+                      className="rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 hover:text-white transition">
                       Copy
                     </button>
                     <button onClick={generateParentUpdate}
@@ -147,7 +147,7 @@ export default function AIToolsPage() {
                     </button>
                   </div>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-200 whitespace-pre-wrap">{parentOutput}</p>
+                <p className="text-sm leading-relaxed text-white/85 whitespace-pre-wrap">{parentOutput}</p>
               </div>
             )}
           </div>
@@ -156,7 +156,7 @@ export default function AIToolsPage() {
         {/* Session Builder */}
         {activeTab === 'session' && (
           <div className="space-y-5">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
+            <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-violet-400">Training Session Builder</p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
@@ -203,7 +203,7 @@ export default function AIToolsPage() {
                   <p className="text-xs font-black uppercase tracking-wide text-violet-400">Session Plan</p>
                   <div className="flex gap-2">
                     <button onClick={() => { navigator.clipboard.writeText(sessionOutput); }}
-                      className="rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">
+                      className="rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-semibold text-white/70 hover:text-white transition">
                       Copy
                     </button>
                     <button onClick={generateSession}
@@ -216,8 +216,8 @@ export default function AIToolsPage() {
                   {sessionOutput.split('\n').filter(Boolean).map((line, i) => (
                     <p key={i} className={`text-sm leading-relaxed ${
                       line.match(/^\d\./) ? 'font-black text-violet-300 mt-3 text-base' :
-                      line.startsWith('-') ? 'text-slate-300 pl-3' :
-                      'text-slate-200'
+                      line.startsWith('-') ? 'text-white/70 pl-3' :
+                      'text-white/85'
                     }`}>{line}</p>
                   ))}
                 </div>
