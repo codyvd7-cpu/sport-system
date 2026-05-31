@@ -3,6 +3,7 @@ import './globals.css';
 import RootLayoutClient from '@/components/RootLayoutClient';
 import { ToastProvider } from '@/components/Toast';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
+import QueryProvider from '@/components/QueryProvider';
 
 export const metadata: Metadata = {
   title: "Kinetiq Sport",
@@ -41,9 +42,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body className="min-h-screen text-white antialiased" style={{background:'var(--bg)',fontFamily:'var(--font-sans)'}} suppressHydrationWarning>
         <ServiceWorkerRegistrar/>
-        <ToastProvider>
-          <RootLayoutClient>{children}</RootLayoutClient>
-        </ToastProvider>
+        <QueryProvider>
+          <ToastProvider>
+            <RootLayoutClient>{children}</RootLayoutClient>
+          </ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );

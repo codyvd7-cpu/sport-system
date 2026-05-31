@@ -4,19 +4,13 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 
+import { fDate, fDay, fMonth, fMonthKey } from '@/lib/dates';
+
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
 
 function initials(n: string) {
   return (n || '?').split(' ').map(x => x[0]).join('').slice(0, 2).toUpperCase();
-}
-function fDate(d?: string) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-function fMonth(d?: string) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
 }
 
 const ROLE_COLOR: Record<string,string> = {
@@ -35,9 +29,7 @@ export default function CoachProfilePage({ params }: PageProps) {
   const [photo, setPhoto]         = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const [tab, setTab]             = React.useState<'overview'|'sessions'|'paysheet'>('overview');
-  const [month, setMonth]         = React.useState(() => {
-    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [month, setMonth]         = React.useState(() => fMonthKey());
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -104,8 +96,8 @@ export default function CoachProfilePage({ params }: PageProps) {
     [uniqueSessions, month]
   );
 
-  const thisMonth  = new Date().toISOString().slice(0, 7);
-  const lastMonth  = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().slice(0, 7);
+  const thisMonth  = fMonthKey();
+  const lastMonth  = fMonthKey(new Date(new Date().setMonth(new Date().getMonth() - 1)));
   const thisMonthCount = uniqueSessions.filter(s => s.session_date?.startsWith(thisMonth)).length;
   const lastMonthCount = uniqueSessions.filter(s => s.session_date?.startsWith(lastMonth)).length;
 
@@ -365,7 +357,7 @@ export default function CoachProfilePage({ params }: PageProps) {
                 style={{borderColor:'rgba(255,255,255,0.05)',background:'rgba(255,255,255,0.02)'}}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'#10b981'}}>Paysheet</p>
                 <p className="text-[14px] font-black text-white mt-0.5">
-                  {new Date(month + '-01').toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })}
+                  {fMonth(month + '-01')}
                 </p>
               </div>
 
@@ -403,7 +395,7 @@ export default function CoachProfilePage({ params }: PageProps) {
               const rows = [
                 ['Coach', coach.full_name || coach.email],
                 ['Email', coach.email],
-                ['Month', new Date(month + '-01').toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' })],
+                ['Month', fMonth(month + '-01')],
                 ['Total Sessions', monthSessions.length.toString()],
                 [''],
                 ['Date', 'Session Type'],

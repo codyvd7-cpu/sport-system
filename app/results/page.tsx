@@ -1,8 +1,10 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
+import { usePortalResults } from '@/lib/queries';
+import { fDateShort } from '@/lib/dates';
+import { FadeUp, StaggerList, StaggerItem } from '@/components/Motion';
 
 type Result = {
   id: string; team: string; opponent: string;
@@ -18,9 +20,6 @@ const TEAM_GROUPS = [
 ];
 const ALL_TEAMS = TEAM_GROUPS.flatMap(g => g.teams);
 function getAccent(t: string) { return TEAM_GROUPS.find(g => g.teams.includes(t))?.accent || '#94a3b8'; }
-function fDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
-}
 function parseScore(s: string) {
   const parts = s.split(/[-–]/);
   if (parts.length !== 2) return null;
@@ -31,25 +30,13 @@ function parseScore(s: string) {
 
 export default function MatchHistoryPage() {
   const { teams: myTeams, canSeeAllTeams } = useRole();
-  const [results, setResults]     = React.useState<Result[]>([]);
-  const [loading, setLoading]     = React.useState(true);
   const [teamFilter, setTeamFilter] = React.useState('All');
-  const [mounted, setMounted]     = React.useState(false);
 
-  React.useEffect(() => { setTimeout(() => setMounted(true), 60); }, []);
-
-  React.useEffect(() => {
-    async function load() {
-      let q = supabase.from('portal_results').select('*').order('result_date', { ascending: false });
-      const { data } = await q;
-      setResults(data || []);
-      setLoading(false);
-    }
-    load();
-  }, []);
+  // React Query — auto-caches, refetches on focus, no manual useEffect
+  const { data: results = [], isLoading: loading } = usePortalResults();
 
   const visibleTeams = canSeeAllTeams ? ALL_TEAMS : myTeams;
-  const filtered = results.filter(r =>
+  const filtered = results.filter((r: Result) =>
     visibleTeams.includes(r.team) &&
     (teamFilter === 'All' || r.team === teamFilter)
   );
@@ -194,7 +181,7 @@ export default function MatchHistoryPage() {
                     {/* Opponent + date */}
                     <div className="min-w-0">
                       <p className="text-[13px] font-semibold text-white truncate">vs {r.opponent}</p>
-                      <p className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>{fDate(r.result_date)}</p>
+                      <p className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>{fDateShort(r.result_date)}</p>
                     </div>
 
                     {/* Team */}

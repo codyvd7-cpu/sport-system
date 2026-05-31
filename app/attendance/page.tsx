@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
+import { fDateShort, fISODate } from '@/lib/dates';
 
 type Row = Record<string, any>;
 
@@ -25,7 +26,7 @@ const TEAM_GROUPS = [
 ];
 
 function fDate(d:string) {
-  return new Date(d).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
+  return new Date(d);
 }
 
 // ── LOW ATTENDANCE ALERT ─────────────────────────────────────
@@ -78,7 +79,7 @@ export default function AttendancePage() {
   // Session setup
   const [selTeam, setSelTeam] = React.useState('');
   const [sessionType, setSessionType] = React.useState('Training');
-  const [sessionDate, setSessionDate] = React.useState(()=>new Date().toISOString().split('T')[0]);
+  const [sessionDate, setSessionDate] = React.useState(()=>fISODate());
 
   // Mark phase
   const [statuses, setStatuses] = React.useState<Record<string,string>>({});
