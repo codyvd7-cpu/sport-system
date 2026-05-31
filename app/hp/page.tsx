@@ -1,8 +1,10 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PageLoader } from '@/components/HPIcons';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { termFromParam, yearFromParam } from '@/lib/hpTerm';
 
 type Row = Record<string, any>;
 
@@ -14,10 +16,7 @@ const CLASSES = [
   { id:'9J', grade:'Grade 9', cls:'J' },{ id:'9M', grade:'Grade 9', cls:'M' },
 ];
 
-function getTerm() {
-  const m = new Date().getMonth()+1;
-  if(m<=3)return'Term 1'; if(m<=6)return'Term 2'; if(m<=9)return'Term 3'; return'Term 4';
-}
+
 
 const ACTIONS = [
   { href:'/hp/attendance', label:'Take Register',  sub:'Mark class attendance',    color:'#10b981',
@@ -36,8 +35,8 @@ export default function HPDashboard() {
   const [attendance, setAtt]    = React.useState<Row[]>([]);
   const [loading, setLoading]   = React.useState(true);
   const [mounted, setMounted]   = React.useState(false);
-  const term = getTerm();
-  const year = new Date().getFullYear();
+  const term = getCalendarTerm();
+  const year = getCurrentYear();
 
   React.useEffect(()=>{setTimeout(()=>setMounted(true),60);},[]);
 

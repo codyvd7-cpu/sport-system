@@ -11,7 +11,7 @@ import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/componen
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
-const TERMS = ['Term 1','Term 2','Term 3'];
+const TERMS = HP_TERMS;
 
 const TESTS = [
   { key: 'chin_up_hang',      label: 'Chin Up Hang',  unit: 's',     higher: true,  grade: '8' },

@@ -22,7 +22,7 @@ const TIERS = [
   {label:'On Track',color:'#a78bfa'},{label:'Developing',color:'#fbbf24'},{label:'Needs Work',color:'#94a3b8'},
 ];
 
-function getCurrentTerm() {
+function getCalendarTerm() {
   const m = new Date().getMonth()+1;
   if(m<=3)return'Term 1'; if(m<=6)return'Term 2'; if(m<=9)return'Term 3'; return'Term 4';
 }
@@ -66,8 +66,8 @@ function ClassProfileInner({params}:PageProps) {
     if(t==='attendance'||t==='testing') return t;
     return 'students';
   });
-  const term = getCurrentTerm();
-  const year = new Date().getFullYear();
+  const term = getCalendarTerm();
+  const year = getCurrentYear();
 
   // Attendance form
   const [attDate,setAttDate] = React.useState(()=>new Date().toISOString().split('T')[0]);

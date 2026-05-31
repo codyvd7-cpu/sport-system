@@ -102,14 +102,8 @@ function HPTestingInner() {
   const searchParams = useSearchParams();
   const urlClass = searchParams.get('class');
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [term, setTerm] = React.useState(() => {
-    const m = new Date().getMonth() + 1;
-    if (m <= 3) return 'Term 1';
-    if (m <= 6) return 'Term 2';
-    if (m <= 9) return 'Term 3';
-    return 'Term 4';
-  });
-  const [year, setYear] = React.useState(() => new Date().getFullYear());
+  const [term, setTerm] = React.useState<string>(() => getCalendarTerm());
+  const [year, setYear] = React.useState(() => getCurrentYear());
   const [testDate, setTestDate] = React.useState(() => new Date().toISOString().split('T')[0]);
   const [selectedClass, setSelectedClass] = React.useState<string | null>(urlClass || null);
   const [results, setResults] = React.useState<Record<string, Row>>({});
@@ -136,7 +130,7 @@ function HPTestingInner() {
   React.useEffect(() => {
     if (students.length === 0) return;
     setLoadError(null);
-    const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
+    const prevTerm = prevTerm(term as any);
 
     fetch(`/api/hp/data?type=testing&term=${encodeURIComponent(term)}&year=${year}`, { credentials: 'include' })
       .then(r => r.json()).then(d => {
@@ -244,7 +238,7 @@ function HPTestingInner() {
           <p className="mb-4 text-xs font-black uppercase tracking-wide text-white/35">Step 1 — Session Setup</p>
           <div className="grid gap-3 sm:grid-cols-3">
             <select value={term} onChange={e => setTerm(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
-              {['Term 1','Term 2','Term 3'].map(t => <option key={t}>{t}</option>)}
+              {HP_TERMS.map(t => <option key={t}>{t}</option>)}
             </select>
             <select value={year} onChange={e => setYear(Number(e.target.value))} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
               {[2025,2026,2027].map(y => <option key={y}>{y}</option>)}
@@ -311,7 +305,7 @@ function HPTestingInner() {
               const isOpen = activeStudent === s.id;
               const isDone = saved[s.id];
               const studentTests = s.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
-              const prevTerm = term === 'Term 2' ? 'Term 1' : term === 'Term 3' ? 'Term 2' : null;
+              const prevTerm = prevTerm(term as any);
               return (
                 <div key={s.id} className={`rounded-2xl border transition ${isDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-white/6 bg-[rgba(255,255,255,0.025)]/50'}`}>
                   <button onClick={() => setActiveStudent(isOpen ? null : s.id)} className="flex w-full items-center gap-3 px-4 py-3">
