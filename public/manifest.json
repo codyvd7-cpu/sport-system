@@ -1,11 +1,11 @@
 {
-  "name": "St Benedict's College — High Performance",
-  "short_name": "SBC HP",
+  "name": "Kinetiq Sport",
+  "short_name": "Kinetiq",
   "description": "High-performance sport operations platform for St Benedict's College.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#06071a",
-  "theme_color": "#0ea5e9",
+  "background_color": "#030810",
+  "theme_color": "#030810",
   "orientation": "portrait",
   "icons": [
     {
