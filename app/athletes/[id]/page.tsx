@@ -6,6 +6,7 @@ import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { safeUUID, generatePlayerCode } from '@/lib/uuid';
+import { AthletePDFButton } from '@/components/PDFButton';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -436,6 +437,7 @@ export default function AthleteProfile({params}:PageProps) {
               </button>
             ))}
             <div className="ml-auto flex items-center gap-2">
+              <AthletePDFButton athleteId={id} name={name}/>
               {playerCode && (
                 <div className="flex items-center gap-1.5">
                   <span className="rounded-xl border px-3 py-1.5 text-[11px] font-black font-mono"
