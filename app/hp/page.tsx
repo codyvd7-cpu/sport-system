@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PageLoader } from '@/components/HPIcons';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
-import { termFromParam, yearFromParam } from '@/lib/hpTerm';
+import { getCalendarTerm, getCurrentYear, HP_TERMS, getTermDateRange, prevTerm, nextTerm, termFromParam, yearFromParam, getLatestTermWithData } from '@/lib/hpTerm';
 
 type Row = Record<string, any>;
 

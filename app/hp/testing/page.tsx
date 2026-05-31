@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { PageLoader } from '@/components/HPIcons';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { getCalendarTerm, getCurrentYear, HP_TERMS, getTermDateRange, prevTerm, nextTerm, termFromParam, yearFromParam, getLatestTermWithData } from '@/lib/hpTerm';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -130,7 +131,7 @@ function HPTestingInner() {
   React.useEffect(() => {
     if (students.length === 0) return;
     setLoadError(null);
-    const prevTerm = prevTerm(term as any);
+    const prevTermName = prevTerm(term as any);
 
     fetch(`/api/hp/data?type=testing&term=${encodeURIComponent(term)}&year=${year}`, { credentials: 'include' })
       .then(r => r.json()).then(d => {
@@ -146,8 +147,8 @@ function HPTestingInner() {
         setSaved(preSaved);
       }).catch(e => setLoadError(`Could not load results: ${e.message}`));
 
-    if (prevTerm) {
-      fetch(`/api/hp/data?type=testing&term=${encodeURIComponent(prevTerm)}&year=${year}`, { credentials: 'include' })
+    if (prevTermName) {
+      fetch(`/api/hp/data?type=testing&term=${encodeURIComponent(prevTermName)}&year=${year}`, { credentials: 'include' })
         .then(r => r.json()).then(d => {
           const prevPre: Record<string, Row> = {};
           (d.tests || []).forEach((r: Row) => { prevPre[r.student_id] = r; });
@@ -305,7 +306,7 @@ function HPTestingInner() {
               const isOpen = activeStudent === s.id;
               const isDone = saved[s.id];
               const studentTests = s.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
-              const prevTerm = prevTerm(term as any);
+              const prevTermName = prevTerm(term as any);
               return (
                 <div key={s.id} className={`rounded-2xl border transition ${isDone ? 'border-emerald-500/20 bg-emerald-500/5' : isOpen ? 'border-violet-500/30 bg-violet-500/5' : 'border-white/6 bg-[rgba(255,255,255,0.025)]/50'}`}>
                   <button onClick={() => setActiveStudent(isOpen ? null : s.id)} className="flex w-full items-center gap-3 px-4 py-3">
@@ -322,9 +323,9 @@ function HPTestingInner() {
                   {isOpen && (
                     <div className="border-t border-white/6 px-4 pb-4 pt-3">
                       {/* Previous term reference */}
-                      {prevTerm && prevResults[s.id] && (
+                      {prevTermName && prevResults[s.id] && (
                         <div className="mb-3 rounded-xl border border-white/8 bg-white/5/50 px-3 py-2">
-                          <p className="mb-1.5 text-[9px] font-black uppercase tracking-wide text-white/35">{prevTerm} Reference</p>
+                          <p className="mb-1.5 text-[9px] font-black uppercase tracking-wide text-white/35">{prevTermName} Reference</p>
                           <div className="flex flex-wrap gap-x-4 gap-y-1">
                             {studentTests.map(t => {
                               const prev = prevResults[s.id];

@@ -8,6 +8,7 @@ import {
   BarChart, Bar, Cell, CartesianGrid, ReferenceLine,
 } from 'recharts';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { getCalendarTerm, getCurrentYear, HP_TERMS, getTermDateRange, prevTerm, nextTerm, termFromParam, yearFromParam, getLatestTermWithData } from '@/lib/hpTerm';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];

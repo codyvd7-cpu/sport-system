@@ -6,6 +6,7 @@ import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
 import { PageLoader } from '@/components/HPIcons';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { getCalendarTerm, getCurrentYear, HP_TERMS, getTermDateRange, prevTerm, nextTerm, termFromParam, yearFromParam, getLatestTermWithData } from '@/lib/hpTerm';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -22,10 +23,6 @@ const TIERS = [
   {label:'On Track',color:'#a78bfa'},{label:'Developing',color:'#fbbf24'},{label:'Needs Work',color:'#94a3b8'},
 ];
 
-function getCalendarTerm() {
-  const m = new Date().getMonth()+1;
-  if(m<=3)return'Term 1'; if(m<=6)return'Term 2'; if(m<=9)return'Term 3'; return'Term 4';
-}
 
 function fDate(d:string) {
   return new Date(d).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'});
