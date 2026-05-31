@@ -56,12 +56,6 @@ export default function MatchHistoryPage() {
     return base;
   }, [filtered]);
 
-  const fade = (d: number) => ({
-    opacity: mounted ? 1 : 0,
-    transform: mounted ? 'translateY(0)' : 'translateY(14px)',
-    transition: `opacity 0.5s ease ${d}ms, transform 0.5s ease ${d}ms`,
-  });
-
   return (
     <main className="min-h-screen pb-24 text-white md:pb-8 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -72,7 +66,7 @@ export default function MatchHistoryPage() {
       <div className="relative mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-5">
 
         {/* Header */}
-        <div style={fade(0)}>
+        <FadeUp delay={0}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(255,255,255,0.25)'}}>
             St Benedict's College
           </p>
@@ -82,11 +76,11 @@ export default function MatchHistoryPage() {
               History
             </span>
           </h1>
-        </div>
+        </FadeUp>
 
         {/* Season stats */}
         {!loading && filtered.length > 0 && (
-          <div style={fade(60)}>
+          <FadeUp delay={60}>
             <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
               {[
                 { label:'Played', val:stats.played,  color:'white' },
@@ -103,11 +97,11 @@ export default function MatchHistoryPage() {
                 </div>
               ))}
             </div>
-          </div>
+          </FadeUp>
         )}
 
         {/* Team filter */}
-        <div style={fade(100)}>
+        <FadeUp delay={100}>
           <div className="flex flex-wrap gap-1.5">
             <button onClick={() => setTeamFilter('All')}
               className="rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition"
@@ -134,7 +128,7 @@ export default function MatchHistoryPage() {
               </React.Fragment>
             ))}
           </div>
-        </div>
+        </FadeUp>
 
         {/* Results Table */}
         {loading ? (
@@ -142,13 +136,13 @@ export default function MatchHistoryPage() {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{...fade(140),background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.05)'}} className="rounded-2xl py-16 text-center">
+          <div style={{background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.05)'}} className="rounded-2xl py-16 text-center">
             <p className="text-3xl mb-3">🏑</p>
             <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No results yet.</p>
             <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.2)'}}>Log results from the team page or portal admin.</p>
           </div>
         ) : (
-          <div style={{...fade(140),border:'1px solid rgba(255,255,255,0.07)'}} className="rounded-2xl overflow-hidden">
+          <div style={{border:'1px solid rgba(255,255,255,0.07)'}} className="rounded-2xl overflow-hidden">
             {/* Table header */}
             <div className="grid grid-cols-[auto_1fr_auto_auto_1fr] gap-0 px-4 py-2.5 border-b"
               style={{background:'rgba(255,255,255,0.03)',borderColor:'rgba(255,255,255,0.06)'}}>
