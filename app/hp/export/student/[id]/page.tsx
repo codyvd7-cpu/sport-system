@@ -55,13 +55,14 @@ export default function StudentExport({ params }: PageProps) {
   const year = new Date().getFullYear();
 
   React.useEffect(() => {
-    Promise.all([
-      supabase.from('hp_students').select('*').eq('id', id).single(),
-      supabase.from('hp_attendance').select('*').eq('student_id', id).order('session_date', { ascending: false }),
-      supabase.from('hp_test_results').select('*').eq('student_id', id).eq('year', year).order('term'),
-    ]).then(([s, a, r]) => {
-      setStudent(s.data); setAttendance(a.data||[]); setResults(r.data||[]); setLoading(false);
-    });
+    fetch(`/api/hp/data?type=student&id=${id}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        setStudent(d.student || null);
+        setAttendance(d.attendance || []);
+        setResults((d.tests || []).filter((r: Row) => r.year === year));
+        setLoading(false);
+      });
   }, [id]);
 
   React.useEffect(() => {

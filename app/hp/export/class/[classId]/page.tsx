@@ -54,18 +54,19 @@ export default function ClassExport({ params }: PageProps) {
   const cls = classId[1];
 
   React.useEffect(() => {
-    Promise.all([
-      supabase.from('hp_students').select('*').eq('grade',grade).eq('class_group',cls).eq('is_active',true),
-      supabase.from('hp_test_results').select('*').eq('year',year).order('term'),
-    ]).then(([s,r])=>{
-      const sorted=(s.data||[]).sort((a:Row,b:Row)=>{
-        const sA=a.full_name.trim().split(' ').pop()?.toLowerCase()||'';
-        const sB=b.full_name.trim().split(' ').pop()?.toLowerCase()||'';
-        return sA.localeCompare(sB);
+    fetch(`/api/hp/data?type=class&id=${classId}&year=${year}`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        const sorted = (d.students || []).sort((a: Row, b: Row) => {
+          const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          return sA.localeCompare(sB);
+        });
+        setStudents(sorted);
+        setResults(d.tests || []);
+        setLoading(false);
       });
-      setStudents(sorted); setResults(r.data||[]); setLoading(false);
-    });
-  },[classId]);
+  }, [classId]);
 
   React.useEffect(()=>{ if(!loading&&students.length>0) setTimeout(()=>window.print(),600); },[loading,students]);
 

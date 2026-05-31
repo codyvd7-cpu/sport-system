@@ -59,20 +59,21 @@ export default function GradeExport({ params }: PageProps) {
   const year = new Date().getFullYear();
 
   React.useEffect(() => {
-    Promise.all([
-      supabase.from('hp_students').select('*').eq('grade', grade).eq('is_active', true),
-      supabase.from('hp_test_results').select('*').eq('year', year).order('term'),
-    ]).then(([s, r]) => {
-      const sorted = (s.data || []).sort((a:Row, b:Row) => {
-        if (a.class_group !== b.class_group) return a.class_group.localeCompare(b.class_group);
-        const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-        const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-        return sA.localeCompare(sB);
+    fetch(`/api/hp/data?type=trends`, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        const gradeStudents = (d.students || []).filter((s: Row) => s.grade === grade);
+        const sorted = gradeStudents.sort((a: Row, b: Row) => {
+          if (a.class_group !== b.class_group) return a.class_group.localeCompare(b.class_group);
+          const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
+          return sA.localeCompare(sB);
+        });
+        setStudents(sorted);
+        setResults((d.tests || []).filter((r: Row) => r.year === year));
+        setLoading(false);
       });
-      setStudents(sorted);
-      setResults(r.data || []);
-      setLoading(false);
-    });
+  }, [grade]);
   }, [gradeNum]);
 
   React.useEffect(() => {
