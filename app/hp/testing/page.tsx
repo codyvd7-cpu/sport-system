@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { PageLoader } from '@/components/HPIcons';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -305,7 +306,8 @@ function HPTestingInner() {
             <div className="h-full rounded-full bg-violet-500 transition-all" style={{ width: `${classStudents.length > 0 ? (completed/classStudents.length)*100 : 0}%` }} />
           </div>
 
-          <div className="space-y-2">
+          <FadeUp delay={0}>
+        <div className="space-y-2">
             {classStudents.map(s => {
               const isOpen = activeStudent === s.id;
               const isDone = saved[s.id];

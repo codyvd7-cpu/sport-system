@@ -4,6 +4,7 @@ import Link from 'next/link';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 
@@ -85,13 +86,16 @@ export default function TeamsPage() {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
 
         {/* Header */}
+        <FadeUp delay={0}>
         <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">Squad Management</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-4xl">Teams</h1>
-          <p className="mt-1 text-sm text-white/35">{assignedAthletes} players assigned across {allTeams.filter((t) => (teamStats[t]?.count || 0) > 0).length} active teams</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>Squad Management</p>
+          <h1 className="text-4xl font-black tracking-tight text-white leading-none">Teams</h1>
+          <p className="mt-2 text-sm text-white/35">{assignedAthletes} players assigned across {allTeams.filter((t) => (teamStats[t]?.count || 0) > 0).length} active teams</p>
         </div>
+        </FadeUp>
 
         {/* Department overview */}
+        <FadeUp delay={60}>
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
             { label: 'Total Players', value: totalSquad, color: 'sky' },
@@ -100,21 +104,23 @@ export default function TeamsPage() {
             { label: 'Modified', value: totalModified, color: 'amber' },
           ].map((kpi) => (
             <div key={kpi.label} className={`rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : 'border-amber-500/20'}`}>
-              <p className={`text-3xl font-black ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : 'text-amber-400'}`}>{kpi.value}</p>
+              <CountUp value={kpi.value} className={`text-3xl font-black block ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : 'text-amber-400'}`}/>
               <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{kpi.label}</p>
             </div>
           ))}
         </div>
+        </FadeUp>
 
         {/* Team groups */}
         {loading ? (
           <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" /><p className="text-sm text-white/50">Loading...</p></div>
         ) : (
-          <div className="space-y-8">
+          <StaggerList className="space-y-8" stagger={60}>
             {visibleTeamGroups.map((group) => {
               const col = COLORS[group.color];
               return (
-                <div key={group.group}>
+                <StaggerItem key={group.group}>
+                <div>
                   <p className={`mb-3 text-xs font-black uppercase tracking-[0.2em] ${col.text}`}>{group.group}</p>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                     {group.teams.map((team) => {
@@ -157,9 +163,10 @@ export default function TeamsPage() {
                     })}
                   </div>
                 </div>
+                </StaggerItem>
               );
             })}
-          </div>
+          </StaggerList>
         )}
       </div>
     </main>

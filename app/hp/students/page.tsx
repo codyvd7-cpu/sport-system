@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
 import { PageLoader, EmptyState, IconUsers, IconPlus, IconTrash, IconSearch } from '@/components/HPIcons';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -164,7 +165,8 @@ function HPStudentsInner() {
 
         {/* Student list */}
         {loading ? (
-          <div className="space-y-2">
+          <FadeUp delay={0}>
+        <div className="space-y-2">
             {[1,2,3,4,5].map(i => (
               <div key={i} className="h-14 w-full overflow-hidden rounded-2xl bg-[rgba(255,255,255,0.025)]">
                 <div className="h-full w-full" style={{background:'linear-gradient(90deg,#0f172a 0%,#1e293b 50%,#0f172a 100%)',backgroundSize:'200% 100%',animation:'shimmer 1.8s infinite'}}/>
@@ -174,7 +176,8 @@ function HPStudentsInner() {
         ) : filtered.length === 0 ? (
           <EmptyState icon={<IconUsers className="h-8 w-8"/>} title="No students found" sub="Try adjusting your search or filters"/>
         ) : (
-          <div className="space-y-1">
+          <FadeUp delay={0}>
+        <div className="space-y-1">
             {filtered.map(s => {
               const grpColors: Record<number,string> = {1:'bg-sky-500/15 text-sky-300',2:'bg-violet-500/15 text-violet-300',3:'bg-amber-500/15 text-amber-300',4:'bg-emerald-500/15 text-emerald-300'};
               return (

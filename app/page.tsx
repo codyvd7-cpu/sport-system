@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 import Image from 'next/image';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 const PHOTOS = ['/sbc-photo-4.jpg', '/sbc-photo-1.jpg', '/sbc-photo-3.jpg', '/sbc-photo-2.jpg'];
 

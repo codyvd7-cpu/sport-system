@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { PageLoader } from '@/components/HPIcons';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 const HP_CLASSES = ['B','E','F','J','M'];
@@ -121,7 +122,8 @@ function HPAttendanceInner() {
         {/* Step 2: Select class */}
         <div className="mb-5 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
           <p className="mb-4 text-xs font-black uppercase tracking-wide text-white/35">Step 2 — Select Class</p>
-          <div className="space-y-3">
+          <FadeUp delay={0}>
+        <div className="space-y-3">
             <button onClick={() => setSelectedClass(null)}
               className={`w-full rounded-xl border py-2.5 text-sm font-black transition ${!selectedClass ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-white/8 bg-white/5 text-white/50 hover:text-white'}`}>
               All Students
@@ -166,7 +168,8 @@ function HPAttendanceInner() {
               ✓ All Present
             </button>
           </div>
-          <div className="space-y-1.5">
+          <FadeUp delay={0}>
+        <div className="space-y-1.5">
             {classStudents.map(s => (
               <div key={s.id} className="flex items-center gap-3 rounded-xl border border-white/6 bg-[rgba(255,255,255,0.02)]/40 p-3">
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-[10px] font-black text-emerald-300">
@@ -208,7 +211,8 @@ function HPAttendanceInner() {
                 ) : null;
               })()}
             </div>
-            <div className="space-y-2">
+            <FadeUp delay={0}>
+        <div className="space-y-2">
               {recentDates.map(date => {
                 const sess = classHistory.filter(h => h.session_date === date);
                 const present = sess.filter(h => ['Present','Late'].includes(h.status)).length;

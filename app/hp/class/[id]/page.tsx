@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
 import { PageLoader } from '@/components/HPIcons';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -228,7 +229,8 @@ function ClassProfileInner({params}:PageProps) {
 
         {/* ── ATTENDANCE/REGISTER TAB ── */}
         {tab==='attendance'&&(
-          <div className="space-y-4">
+          <FadeUp delay={0}>
+        <div className="space-y-4">
             {/* Take register */}
             <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
               <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between gap-3 flex-wrap">
@@ -291,7 +293,8 @@ function ClassProfileInner({params}:PageProps) {
 
             {/* History */}
             {sessions.length>0&&(
-              <div className="space-y-2">
+              <FadeUp delay={0}>
+        <div className="space-y-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/25">Session History</p>
                 {sessions.map(date=>{
                   const recs=attendance.filter(a=>a.session_date===date);
@@ -330,7 +333,8 @@ function ClassProfileInner({params}:PageProps) {
 
         {/* ── TESTING TAB ── */}
         {tab==='testing'&&(
-          <div className="space-y-3">
+          <FadeUp delay={0}>
+        <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-[10px] font-black uppercase tracking-wide text-white/25">{term} Results</p>
               <Link href={`/hp/testing?class=${id}`}

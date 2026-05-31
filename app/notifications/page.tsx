@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 const PRESETS = [
   { title:'Match Result Posted',    body:'A new result has been added. Check the portal.' },
@@ -40,7 +41,8 @@ export default function NotificationsPage() {
       <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-5">
 
         {/* Header */}
-        <div>
+        <FadeUp delay={0}>
+          <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(255,255,255,0.25)'}}>HOH</p>
           <h1 className="text-4xl font-black tracking-tight leading-none text-white">Send<br/>
             <span style={{background:'linear-gradient(135deg,#38bdf8,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>

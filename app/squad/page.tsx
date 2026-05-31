@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Athlete = {
   id: string;
@@ -225,7 +226,8 @@ export default function SquadBoardPage() {
                   )}
                 </div>
 
-                <div className="space-y-5">
+                <FadeUp delay={0}>
+        <div className="space-y-5">
                   {TEAM_GROUPS.map((group) => {
                     const col = COLORS[group.color];
                     return (
@@ -293,7 +295,8 @@ export default function SquadBoardPage() {
 
         {/* OVERVIEW VIEW */}
         {view === 'overview' && (
-          <div className="space-y-6">
+          <FadeUp delay={0}>
+        <div className="space-y-6">
             {TEAM_GROUPS.map((group) => {
               const col = COLORS[group.color];
               return (

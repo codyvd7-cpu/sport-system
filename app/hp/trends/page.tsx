@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { PageLoader } from '@/components/HPIcons';
 import {
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, CartesianGrid, ReferenceLine,
 } from 'recharts';
@@ -150,6 +151,7 @@ export default function HPTrendsPage(){
           </div>
         </div>
 
+        <FadeUp delay={0}>
         {/* ── CONTROL BAR ── */}
         <div className="mb-5 flex flex-wrap gap-2">
           {/* Year navigator */}

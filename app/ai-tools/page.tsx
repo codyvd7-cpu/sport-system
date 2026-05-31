@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 const TEAM_LIST = ['1sts','2nds','3rds','4ths','5ths','U16A','U16B','U16C','U16D','U15A','U15B','U15C','U15D','U15E','U14A','U14B','U14C','U14D'];
 
@@ -88,7 +89,8 @@ export default function AIToolsPage() {
 
         {/* Parent Update */}
         {activeTab === 'parent' && (
-          <div className="space-y-5">
+          <FadeUp delay={0}>
+        <div className="space-y-5">
             <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-sky-400">Parent Message Generator</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -155,7 +157,8 @@ export default function AIToolsPage() {
 
         {/* Session Builder */}
         {activeTab === 'session' && (
-          <div className="space-y-5">
+          <FadeUp delay={0}>
+        <div className="space-y-5">
             <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
               <p className="mb-4 text-xs font-black uppercase tracking-[0.18em] text-violet-400">Training Session Builder</p>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -212,7 +215,8 @@ export default function AIToolsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="space-y-2">
+                <FadeUp delay={0}>
+        <div className="space-y-2">
                   {sessionOutput.split('\n').filter(Boolean).map((line, i) => (
                     <p key={i} className={`text-sm leading-relaxed ${
                       line.match(/^\d\./) ? 'font-black text-violet-300 mt-3 text-base' :

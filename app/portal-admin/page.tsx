@@ -12,6 +12,7 @@ import { WeekSection } from './sections/WeekSection';
 import { ProgramsSection } from './sections/ProgramsSection';
 import { RemindersSection } from './sections/RemindersSection';
 import { SponsorsSection } from './sections/SponsorsSection';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type GenericRow = Record<string, any>;
 type WeekPlan = { id: string; created_at: string | null; week_label: string; published: boolean; };

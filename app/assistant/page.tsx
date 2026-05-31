@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type Row = Record<string, any>;

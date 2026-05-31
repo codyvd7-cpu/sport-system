@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 
 import { fDate, fDay, fMonth, fMonthKey } from '@/lib/dates';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -130,6 +131,7 @@ export default function CoachProfilePage({ params }: PageProps) {
       <div className="relative mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Back */}
+        <FadeUp delay={0}>
         <Link href="/coaches" className="mb-5 inline-flex items-center gap-1.5 text-[11px] font-medium transition"
           style={{color:'rgba(255,255,255,0.3)'}}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3">

@@ -6,6 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from 'recharts';
 import { supabase } from '@/lib/supabase';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };

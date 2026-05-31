@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
 import { fDateShort, fISODate } from '@/lib/dates';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 
@@ -193,6 +194,7 @@ export default function AttendancePage() {
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
+        <FadeUp delay={0}>
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(255,255,255,0.25)"}}>Hockey</p>
@@ -209,6 +211,7 @@ export default function AttendancePage() {
             </button>
           </div>
         </div>
+        </FadeUp>
 
         {/* ── MARK REGISTER ── */}
         {view==='mark'&&(

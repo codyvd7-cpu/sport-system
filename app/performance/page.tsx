@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
+import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 
@@ -189,6 +190,7 @@ export default function PerformancePage() {
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* Header */}
+        <FadeUp delay={0}>
         <div className="mb-6">
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{color:"rgba(167,139,250,0.7)"}}>Testing</p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Performance Testing</h1>
