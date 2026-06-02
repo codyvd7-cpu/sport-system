@@ -21,7 +21,7 @@ const GRADE8_TESTS = [
 
 const GRADE9_TESTS = [
   { key: 'pushup_reps',       label: 'Push Up Reps',   unit: 'reps', higher: true,  inputType: 'number' },
-  { key: 'pushup_hold',       label: 'Push Up Hold',   unit: 's',    higher: true,  inputType: 'number' },
+  { key: 'pushup_hold',       label: 'Push Up Hold',   unit: 'mm:ss', higher: true,  inputType: 'text' },
   { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm', higher: true, inputType: 'number' },
   { key: 'sprint_10m',        label: '10m Sprint',     unit: 's',    higher: false, inputType: 'number' },
   { key: 'sprint_30m',        label: '30m Sprint',     unit: 's',    higher: false, inputType: 'number' },
@@ -54,7 +54,7 @@ function assignGroups(students: Row[], results: Record<string, Row>, numGroups: 
     const r = results[s.id] || {};
     const scores: number[] = [];
     tests.forEach(t => {
-      const val = t.key === 'run_500m' ? mmssToSeconds(r[t.key] || '') : parseFloat(r[t.key] || '');
+      const val = (t.key === 'run_500m' || t.key === 'pushup_hold') ? mmssToSeconds(r[t.key] || '') : parseFloat(r[t.key] || '');
       if (val !== null && !isNaN(val)) scores.push(val);
     });
     return { ...s, _scores: scores, _avgScore: scores.length > 0 ? scores.reduce((a: number, b: number) => a + b, 0) / scores.length : null } as Row;
@@ -67,11 +67,11 @@ function assignGroups(students: Row[], results: Record<string, Row>, numGroups: 
     tests.forEach(t => {
       const allVals = students.map(st => {
         const rv = results[st.id] || {};
-        return t.key === 'run_500m' ? mmssToSeconds(rv[t.key] || '') : parseFloat(rv[t.key] || '');
+        return (t.key === 'run_500m' || t.key === 'pushup_hold') ? mmssToSeconds(rv[t.key] || '') : parseFloat(rv[t.key] || '');
       }).filter(v => v !== null && !isNaN(v as number)) as number[];
       if (allVals.length < 2) return;
       const min = Math.min(...allVals), max = Math.max(...allVals);
-      const val = t.key === 'run_500m' ? mmssToSeconds(r[t.key] || '') : parseFloat(r[t.key] || '');
+      const val = (t.key === 'run_500m' || t.key === 'pushup_hold') ? mmssToSeconds(r[t.key] || '') : parseFloat(r[t.key] || '');
       if (val !== null && !isNaN(val)) {
         total += normaliseScore(val, t.higher, min, max);
         count++;
@@ -183,7 +183,7 @@ function HPTestingInner() {
     const studentTests = student?.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
     const payload: Row = { student_id: studentId, term, year, test_date: testDate };
     studentTests.forEach(t => {
-      if (t.key === 'run_500m' || t.key === 'chin_up_hang') {
+      if (t.key === 'run_500m' || t.key === 'chin_up_hang' || t.key === 'pushup_hold') {
         payload[t.key] = mmssToSeconds(vals[t.key] || '');
       } else {
         payload[t.key] = vals[t.key] ? parseFloat(vals[t.key]) : null;

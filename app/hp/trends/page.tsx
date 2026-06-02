@@ -18,6 +18,7 @@ const TESTS = [
   { key: 'chin_up_hang',      label: 'Chin Up Hang',  unit: 's',     higher: true,  grade: '8' },
   { key: 'broad_jump',        label: 'Broad Jump',    unit: 'cm',    higher: true,  grade: '8' },
   { key: 'pushup_reps',       label: 'Push Up Reps', unit: 'reps',  higher: true,  grade: '9' },
+  { key: 'pushup_hold',       label: 'Push Up Hold', unit: 'mm:ss', higher: true,  grade: '9' },
   { key: 'triple_broad_jump', label: 'Triple Jump',   unit: 'cm',    higher: true,  grade: '9' },
   { key: 'sprint_10m',        label: '10m Sprint',    unit: 's',     higher: false, grade: 'both' },
   { key: 'sprint_30m',        label: '30m Sprint',    unit: 's',     higher: false, grade: 'both' },
