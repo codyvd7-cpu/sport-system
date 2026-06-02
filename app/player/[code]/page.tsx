@@ -291,6 +291,93 @@ export default function PlayerProfilePage({params}:PageProps){
           </div>
         </div>
 
+        {/* ── SEASON STATS ── */}
+        {attendance.length>0&&(
+          <div style={{...fade(140),marginTop:12,borderRadius:20,border:'1px solid rgba(255,255,255,0.06)',overflow:'hidden'}}>
+            <div style={{padding:'16px 20px',borderBottom:'1px solid rgba(255,255,255,0.05)',background:'rgba(16,185,129,0.03)'}}>
+              <p style={{margin:0,fontSize:9,fontWeight:900,letterSpacing:'0.25em',textTransform:'uppercase',color:'#10b981'}}>Your Season</p>
+              <p style={{margin:'3px 0 0',fontSize:16,fontWeight:900,color:'white'}}>{new Date().getFullYear()} Stats</p>
+            </div>
+
+            {/* Attendance rate bar */}
+            {attRate!==null&&(
+              <div style={{padding:'16px 20px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',marginBottom:8}}>
+                  <p style={{margin:0,fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.5)'}}>Attendance Rate</p>
+                  <p style={{margin:0,fontSize:15,fontWeight:900,color:attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171'}}>{attRate}%</p>
+                </div>
+                <div style={{height:6,background:'rgba(255,255,255,0.06)',borderRadius:99,overflow:'hidden'}}>
+                  <div style={{height:'100%',borderRadius:99,width:`${attRate}%`,background:attRate>=80?'#10b981':attRate>=60?'#fbbf24':'#f87171',transition:'width 1s ease'}}/>
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',marginTop:8}}>
+                  <p style={{margin:0,fontSize:10,color:'#334155'}}>{present} present · {absent} absent</p>
+                  <p style={{margin:0,fontSize:10,color:'#334155'}}>{attendance.length} sessions</p>
+                </div>
+              </div>
+            )}
+
+            {/* Monthly heatmap */}
+            {(()=>{
+              const months:{[k:string]:{p:number;t:number}}={};
+              attendance.filter(a=>a.session_date?.startsWith(String(new Date().getFullYear()))).forEach(a=>{
+                const m=a.session_date?.slice(0,7);
+                if(!m)return;
+                if(!months[m])months[m]={p:0,t:0};
+                months[m].t++;
+                if(['present','late'].includes(a.status?.toLowerCase()||''))months[m].p++;
+              });
+              const entries=Object.entries(months).sort();
+              if(!entries.length)return null;
+              return(
+                <div style={{padding:'14px 20px',borderBottom:'1px solid rgba(255,255,255,0.04)'}}>
+                  <p style={{margin:'0 0 10px',fontSize:9,fontWeight:900,letterSpacing:'0.15em',textTransform:'uppercase',color:'#334155'}}>Monthly</p>
+                  <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                    {entries.map(([m,v])=>{
+                      const pct=Math.round((v.p/v.t)*100);
+                      const col=pct>=80?'#10b981':pct>=60?'#fbbf24':'#f87171';
+                      const mn=new Date(m+'-01').toLocaleDateString('en-ZA',{month:'short'});
+                      return(
+                        <div key={m} style={{background:`${col}14`,border:`1px solid ${col}30`,borderRadius:12,padding:'10px 10px',textAlign:'center',minWidth:50}}>
+                          <p style={{margin:0,fontSize:15,fontWeight:900,color:col,lineHeight:1}}>{pct}%</p>
+                          <p style={{margin:'3px 0 0',fontSize:9,color:'rgba(255,255,255,0.3)'}}>{mn}</p>
+                          <p style={{margin:'1px 0 0',fontSize:8,color:'#334155'}}>{v.p}/{v.t}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Team W/D/L */}
+            {(()=>{
+              const wins=recentResults.filter(r=>{const p=r.final_score?.split(/[-–]/);return p&&parseInt(p[0])>parseInt(p[1]);}).length;
+              const draws=recentResults.filter(r=>{const p=r.final_score?.split(/[-–]/);return p&&parseInt(p[0])===parseInt(p[1]);}).length;
+              const losses=recentResults.filter(r=>{const p=r.final_score?.split(/[-–]/);return p&&parseInt(p[0])<parseInt(p[1]);}).length;
+              const played=wins+draws+losses;
+              if(!played)return null;
+              const wr=Math.round((wins/played)*100);
+              return(
+                <div style={{padding:'14px 20px'}}>
+                  <p style={{margin:'0 0 10px',fontSize:9,fontWeight:900,letterSpacing:'0.15em',textTransform:'uppercase',color:'#334155'}}>Team Record</p>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8,marginBottom:10}}>
+                    {[{l:'Played',v:played,c:'white'},{l:'Won',v:wins,c:wins>0?'#10b981':'#334155'},{l:'Drew',v:draws,c:draws>0?'#fbbf24':'#334155'},{l:'Lost',v:losses,c:losses>0?'#f87171':'#334155'}].map(s=>(
+                      <div key={s.l} style={{background:'rgba(0,0,0,0.2)',borderRadius:12,padding:'10px 6px',textAlign:'center'}}>
+                        <p style={{margin:0,fontSize:18,fontWeight:900,color:s.c,lineHeight:1}}>{s.v}</p>
+                        <p style={{margin:'3px 0 0',fontSize:8,fontWeight:700,textTransform:'uppercase',letterSpacing:'0.1em',color:'#334155'}}>{s.l}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{height:5,background:'rgba(255,255,255,0.05)',borderRadius:99,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${wr}%`,background:wr>=60?'#10b981':wr>=40?'#fbbf24':'#f87171',borderRadius:99}}/>
+                  </div>
+                  <p style={{margin:'5px 0 0',fontSize:10,color:'#334155',textAlign:'right'}}>{wr}% win rate</p>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {/* ── NEXT MATCH ── */}
         {nextFixture&&(
           <div style={{...fade(160),marginTop:12,borderRadius:20,border:'1px solid rgba(167,139,250,0.2)',background:'rgba(167,139,250,0.04)',padding:'18px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
