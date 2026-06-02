@@ -55,9 +55,15 @@ function fmt(key:string,val:number):string{
 // ─── Mini sparkline ───────────────────────────────────────────────────────────
 function Spark({vals,higher}:{vals:(number|null)[];higher:boolean}){
   const v=vals.filter((x):x is number=>x!==null);
-  if(v.length<2)return null;
-  const mn=Math.min(...v),mx=Math.max(...v),rng=mx-mn||1;
+  if(v.length<1)return null;
   const W=48,H=20;
+  // Single data point — just a dot
+  if(v.length===1) return(
+    <svg viewBox={`0 0 ${W} ${H}`} className="h-5 w-12">
+      <circle cx={W/2} cy={H/2} r="2.5" fill="rgba(255,255,255,0.3)"/>
+    </svg>
+  );
+  const mn=Math.min(...v),mx=Math.max(...v),rng=mx-mn||1;
   const improved=higher?v[v.length-1]>v[0]:v[v.length-1]<v[0];
   const col=improved?'#10b981':'#f87171';
   const pts=vals.map((x,i)=>x!==null?`${(i/(vals.length-1))*W},${H-3-((x-mn)/rng)*(H-6)}`:null).filter(Boolean).join(' ');
