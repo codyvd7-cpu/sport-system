@@ -273,13 +273,7 @@ export default function HPTrendsPage(){
                         {chartData.length > 1 && (
                           <ResponsiveContainer width="100%" height={40}>
                             <LineChart data={chartData} margin={{top:4,right:4,bottom:4,left:4}}>
-                              <Line type="monotone" dataKey="val" stroke={improved?'#10b981':'#f87171'} strokeWidth={2} dot={{r:2,fill:improved?'#10b981':'#f87171'}} activeDot={{r:3}}/>
-                              <Tooltip
-                                contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,fontSize:10,padding:'4px 8px'}}
-                                itemStyle={{color:'white'}}
-                                labelStyle={{display:'none'}}
-                                formatter={(v:any)=>[`${fmt(t.key,v)} ${t.unit!=='mm:ss'?t.unit:''}`,'']}
-                              />
+                              <Line type="monotone" dataKey="val" stroke={improved?'#10b981':'#f87171'} strokeWidth={2} dot={{r:2,fill:improved?'#10b981':'#f87171'}} activeDot={false}/>
                             </LineChart>
                           </ResponsiveContainer>
                         )}
