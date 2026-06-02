@@ -160,6 +160,191 @@ function AthleteProgressChart({pbs}:{pbs:{test:string;pb:number;unit:string;tier
   );
 }
 
+// ── SEASON STATS COMPONENT ───────────────────────────────────
+function SeasonStats({attendance,performance,matchResults,team,year}:{
+  attendance: Row[];
+  performance: Row[];
+  matchResults: Row[];
+  team: string;
+  year: number;
+}) {
+  // ── Attendance stats ──
+  const yearAtt = attendance.filter(a => a.session_date?.startsWith(String(year)));
+  const sessions = yearAtt.length;
+  const present  = yearAtt.filter(a=>['Present','Late'].includes(a.status||'')).length;
+  const absent   = yearAtt.filter(a=>a.status==='Absent').length;
+  const excused  = yearAtt.filter(a=>a.status==='Excused').length;
+  const rate     = sessions > 0 ? Math.round((present/sessions)*100) : null;
+
+  // Current streak
+  let streak = 0;
+  for(const a of yearAtt) {
+    if(['Present','Late'].includes(a.status||'')) streak++;
+    else break;
+  }
+
+  // Monthly breakdown
+  const months: Record<string,{present:number;total:number}> = {};
+  yearAtt.forEach(a => {
+    const m = a.session_date?.slice(0,7);
+    if(!m) return;
+    if(!months[m]) months[m] = {present:0,total:0};
+    months[m].total++;
+    if(['Present','Late'].includes(a.status||'')) months[m].present++;
+  });
+
+  // ── Match stats ──
+  const wins   = matchResults.filter(r => { const p=r.final_score?.split(/[-–]/); return p&&parseInt(p[0])>parseInt(p[1]); }).length;
+  const draws  = matchResults.filter(r => { const p=r.final_score?.split(/[-–]/); return p&&parseInt(p[0])===parseInt(p[1]); }).length;
+  const losses = matchResults.filter(r => { const p=r.final_score?.split(/[-–]/); return p&&parseInt(p[0])<parseInt(p[1]); }).length;
+  const played = wins + draws + losses;
+  const winRate = played > 0 ? Math.round((wins/played)*100) : null;
+
+  // Goals scored (from portal results if tracked)
+  const totalGoalsFor = matchResults.reduce((sum,r) => {
+    const p = r.final_score?.split(/[-–]/);
+    return sum + (p ? parseInt(p[0])||0 : 0);
+  }, 0);
+
+  // ── Performance trends ──
+  const pbMap: Record<string,{vals:number[];unit:string}> = {};
+  performance.forEach(p => {
+    if(!pbMap[p.test_type]) pbMap[p.test_type] = {vals:[],unit:p.unit||''};
+    pbMap[p.test_type].vals.push(p.value);
+  });
+  const testCount = Object.keys(pbMap).length;
+  const improving = Object.entries(pbMap).filter(([k,v]) => {
+    if(v.vals.length < 2) return false;
+    const lower = ['sprint','run','time'].some(x => k.toLowerCase().includes(x));
+    return lower ? v.vals[v.vals.length-1] < v.vals[0] : v.vals[v.vals.length-1] > v.vals[0];
+  }).length;
+
+  const rateColor = rate===null?'white':rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171';
+
+  return (
+    <div className="space-y-5">
+
+      {/* Attendance summary */}
+      <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+        <div className="px-5 py-3 border-b" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'rgba(16,185,129,0.7)'}}>Attendance · {year}</p>
+        </div>
+        <div className="grid grid-cols-3 divide-x" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+          {[
+            {label:'Sessions',  val:sessions,       color:'white'},
+            {label:'Rate',      val:rate!==null?`${rate}%`:'—', color:rateColor},
+            {label:'Streak',    val:streak>0?`${streak}🔥`:'0', color:streak>=5?'#fbbf24':'white'},
+          ].map(s=>(
+            <div key={s.label} className="p-4 text-center">
+              <p className="text-2xl font-black" style={{color:s.color}}>{s.val}</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 divide-x border-t" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+          {[
+            {label:'Present', val:present, color:'#10b981'},
+            {label:'Absent',  val:absent,  color:absent>0?'#f87171':'rgba(255,255,255,0.2)'},
+            {label:'Excused', val:excused, color:'#38bdf8'},
+          ].map(s=>(
+            <div key={s.label} className="p-3 text-center">
+              <p className="text-lg font-black" style={{color:s.color}}>{s.val}</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-0.5" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Monthly heatmap */}
+        {Object.keys(months).length > 0 && (
+          <div className="px-5 pb-4 pt-3 border-t" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-3" style={{color:'rgba(255,255,255,0.2)'}}>Monthly Breakdown</p>
+            <div className="flex gap-2 flex-wrap">
+              {Object.entries(months).sort().map(([m,v]) => {
+                const pct = Math.round((v.present/v.total)*100);
+                const col = pct>=80?'#10b981':pct>=60?'#fbbf24':'#f87171';
+                const monthName = new Date(m+'-01').toLocaleDateString('en-ZA',{month:'short'});
+                return (
+                  <div key={m} className="rounded-xl p-3 text-center min-w-[52px]"
+                    style={{background:`${col}12`,border:`1px solid ${col}30`}}>
+                    <p className="text-base font-black" style={{color:col}}>{pct}%</p>
+                    <p className="text-[9px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{monthName}</p>
+                    <p className="text-[8px]" style={{color:'rgba(255,255,255,0.2)'}}>{v.present}/{v.total}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Team match stats */}
+      {played > 0 && (
+        <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+          <div className="px-5 py-3 border-b" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'rgba(56,189,248,0.7)'}}>Team Results · {team}</p>
+          </div>
+          <div className="grid grid-cols-4 divide-x" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+            {[
+              {label:'Played', val:played,  color:'white'},
+              {label:'Won',    val:wins,    color:wins>0?'#10b981':'rgba(255,255,255,0.2)'},
+              {label:'Drew',   val:draws,   color:draws>0?'#fbbf24':'rgba(255,255,255,0.2)'},
+              {label:'Lost',   val:losses,  color:losses>0?'#f87171':'rgba(255,255,255,0.2)'},
+            ].map(s=>(
+              <div key={s.label} className="p-4 text-center">
+                <p className="text-2xl font-black" style={{color:s.color}}>{s.val}</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+          {winRate !== null && (
+            <div className="px-5 py-3 border-t" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px]" style={{color:'rgba(255,255,255,0.3)'}}>Win rate</p>
+                <p className="text-sm font-black" style={{color:winRate>=60?'#10b981':winRate>=40?'#fbbf24':'#f87171'}}>{winRate}%</p>
+              </div>
+              <div className="mt-2 h-1.5 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,0.06)'}}>
+                <div className="h-full rounded-full transition-all"
+                  style={{width:`${winRate}%`,background:winRate>=60?'#10b981':winRate>=40?'#fbbf24':'#f87171'}}/>
+              </div>
+              <div className="flex justify-between mt-1">
+                <p className="text-[9px]" style={{color:'rgba(255,255,255,0.2)'}}>Goals for: {totalGoalsFor}</p>
+                <p className="text-[9px]" style={{color:'rgba(255,255,255,0.2)'}}>{matchResults.length} results recorded</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Performance summary */}
+      {testCount > 0 && (
+        <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+          <div className="px-5 py-3 border-b" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'rgba(167,139,250,0.7)'}}>Performance · {year}</p>
+          </div>
+          <div className="grid grid-cols-2 divide-x" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+            <div className="p-4 text-center">
+              <p className="text-2xl font-black text-white">{testCount}</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>Tests Recorded</p>
+            </div>
+            <div className="p-4 text-center">
+              <p className="text-2xl font-black" style={{color:improving>0?'#10b981':'rgba(255,255,255,0.2)'}}>{improving}</p>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>Improving</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {sessions===0 && played===0 && testCount===0 && (
+        <div className="rounded-2xl border py-12 text-center" style={{background:'rgba(255,255,255,0.01)',borderColor:'rgba(255,255,255,0.05)'}}>
+          <p className="text-[13px]" style={{color:'rgba(255,255,255,0.25)'}}>No season data recorded yet for {year}</p>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
 export default function AthleteProfile({params}:PageProps) {
   const {id} = React.use(params);
   const router = useRouter();
@@ -170,7 +355,8 @@ export default function AthleteProfile({params}:PageProps) {
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [notes, setNotes] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<'overview'|'attendance'|'performance'|'notes'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'attendance'|'performance'|'notes'>('overview');
+  const [matchResults, setMatchResults] = React.useState<Row[]>([]);
 
   // Edit states
   const [editingInfo, setEditingInfo] = React.useState(false);
@@ -233,6 +419,11 @@ export default function AthleteProfile({params}:PageProps) {
     setAttendance(attRes.data||[]);
     setPerformance(perfRes.data||[]);
     setNotes(nRes.data||[]);
+    // Fetch team match results
+    if(aRes.data?.team) {
+      const {data:results} = await supabase.from('portal_results').select('*').eq('team',aRes.data.team).order('result_date',{ascending:false}).limit(50);
+      setMatchResults(results||[]);
+    }
     setLoading(false);
   }
 
@@ -346,6 +537,7 @@ export default function AthleteProfile({params}:PageProps) {
 
   const TABS = [
     {key:'overview',    label:'Overview'},
+    {key:'season',      label:'Season'},
     {key:'attendance',  label:`Attendance ${attendance.length>0?`(${attendance.length})`:''}` },
     {key:'performance', label:`Performance ${pbs.length>0?`(${pbs.length})`:''}`},
     {key:'notes',       label:`Notes ${coachNotes.length>0?`(${coachNotes.length})`:''}`},
@@ -626,6 +818,16 @@ export default function AthleteProfile({params}:PageProps) {
         )}
 
         {/* ══ ATTENDANCE TAB ══ */}
+        {activeTab==='season'&&(
+          <SeasonStats
+            attendance={attendance}
+            performance={performance}
+            matchResults={matchResults}
+            team={rawAthlete.team||''}
+            year={new Date().getFullYear()}
+          />
+        )}
+
         {activeTab==='attendance'&&(
           <div className="space-y-5">
             {/* Quick add */}
