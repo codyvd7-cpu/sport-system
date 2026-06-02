@@ -20,11 +20,12 @@ const GRADE8_TESTS = [
 ];
 
 const GRADE9_TESTS = [
-  { key: 'pushup_2min', label: '2 Min Push Up', unit: 'reps', higher: true },
-  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm', higher: true },
-  { key: 'sprint_10m', label: '10m Sprint', unit: 's', higher: false },
-  { key: 'sprint_30m', label: '30m Sprint', unit: 's', higher: false },
-  { key: 'run_500m', label: '500m Run', unit: 'mm:ss', higher: false },
+  { key: 'pushup_reps',       label: 'Push Up Reps',   unit: 'reps', higher: true,  inputType: 'number' },
+  { key: 'pushup_hold',       label: 'Push Up Hold',   unit: 's',    higher: true,  inputType: 'number' },
+  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm', higher: true, inputType: 'number' },
+  { key: 'sprint_10m',        label: '10m Sprint',     unit: 's',    higher: false, inputType: 'number' },
+  { key: 'sprint_30m',        label: '30m Sprint',     unit: 's',    higher: false, inputType: 'number' },
+  { key: 'run_500m',          label: '500m Run',       unit: 'mm:ss',higher: false, inputType: 'text'   },
 ];
 
 function mmssToSeconds(val: string): number | null {
@@ -351,7 +352,7 @@ function HPTestingInner() {
                               inputMode={t.unit === 'mm:ss' ? 'text' : 'decimal'}
                               value={results[s.id]?.[t.key] || ''}
                               onChange={e => setResults(p => ({ ...p, [s.id]: { ...(p[s.id] || {}), [t.key]: e.target.value } }))}
-                              placeholder={t.unit === 'mm:ss' ? '2:05' : '—'}
+                              placeholder={t.unit === 'mm:ss' ? '2:05' : t.unit === 's' ? '0.00' : '—'}
                               className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-white outline-none focus:border-violet-500"
                             />
                           </div>

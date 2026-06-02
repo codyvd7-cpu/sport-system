@@ -20,7 +20,7 @@ const GRADE8_TESTS = [
 ];
 
 const GRADE9_TESTS = [
-  { key: 'pushup_2min',       label: '2 Min Push Up',     unit: 'reps', lower: false },
+  { key: 'pushup_reps',       label: 'Push Up Reps',     unit: 'reps', lower: false },
   { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm',   lower: false },
   { key: 'sprint_10m',        label: '10m Sprint',        unit: 's',    lower: true  },
   { key: 'sprint_30m',        label: '30m Sprint',        unit: 's',    lower: true  },
@@ -31,7 +31,8 @@ const GRADE9_TESTS = [
 const BENCH: Record<string, [number,number,number,number]> = {
   chin_up_hang:      [45, 25, 12, 5],
   broad_jump:        [185, 165, 148, 130],
-  pushup_2min:       [22, 18, 14, 10],
+  pushup_reps:       [22, 18, 14, 10],
+  pushup_hold:       [90, 70, 50, 30],
   triple_broad_jump: [680, 600, 530, 460],
   sprint_10m:        [1.85, 1.97, 2.10, 2.25],
   sprint_30m:        [4.25, 4.52, 4.80, 5.10],

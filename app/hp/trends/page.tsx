@@ -17,7 +17,7 @@ const TERMS = HP_TERMS;
 const TESTS = [
   { key: 'chin_up_hang',      label: 'Chin Up Hang',  unit: 's',     higher: true,  grade: '8' },
   { key: 'broad_jump',        label: 'Broad Jump',    unit: 'cm',    higher: true,  grade: '8' },
-  { key: 'pushup_2min',       label: '2 Min Push Up', unit: 'reps',  higher: true,  grade: '9' },
+  { key: 'pushup_reps',       label: 'Push Up Reps', unit: 'reps',  higher: true,  grade: '9' },
   { key: 'triple_broad_jump', label: 'Triple Jump',   unit: 'cm',    higher: true,  grade: '9' },
   { key: 'sprint_10m',        label: '10m Sprint',    unit: 's',     higher: false, grade: 'both' },
   { key: 'sprint_30m',        label: '30m Sprint',    unit: 's',     higher: false, grade: 'both' },
@@ -26,7 +26,7 @@ const TESTS = [
 
 const BENCH: Record<string,[number,number,number,number]> = {
   chin_up_hang:[45,25,12,5], broad_jump:[185,165,148,130],
-  pushup_2min:[22,18,14,10], triple_broad_jump:[680,600,530,460],
+  pushup_reps:[22,18,14,10], pushup_hold:[90,70,50,30], triple_broad_jump:[680,600,530,460],
   sprint_10m:[1.85,1.97,2.10,2.25], sprint_30m:[4.25,4.52,4.80,5.10],
   run_500m:[100,115,130,150],
 };
