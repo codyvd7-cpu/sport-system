@@ -17,15 +17,16 @@ export type UserRole = StaffRole | null;
 export type StaffProfile = {
   role:            StaffRole | null;
   email:           string;
-  teams:           string[];       // assigned teams — empty = all teams in their sport
-  sport:           SportKey | null;// their sport — null means all sports (HOS/deputy/owner)
+  teams:           string[];
+  sport:           SportKey | null;
   loading:         boolean;
   isOwner:         boolean;
-  isHOS:           boolean;        // head_of_sport or deputy_head_of_sport or owner
-  isMIC:           boolean;        // mic (or legacy head_of_hockey)
-  isCoach:         boolean;        // any authenticated staff
-  canSeeAllSports: boolean;        // owner, head_of_sport, deputy_head_of_sport
-  canSeeAllTeams:  boolean;        // all of the above + mic
+  isHOS:           boolean;
+  isMIC:           boolean;
+  isHOH:           boolean;        // legacy alias for isHOS || isMIC
+  isCoach:         boolean;
+  canSeeAllSports: boolean;
+  canSeeAllTeams:  boolean;
 };
 
 export function useRole(): StaffProfile {
@@ -76,15 +77,11 @@ export function useRole(): StaffProfile {
   const isCoach        = !!role;
   const canSeeAllSports= isHOS;
   const canSeeAllTeams = isHOS || isMIC;
-
-  // Legacy: isHOH kept for backward compat with existing pages
   const isHOH          = isHOS || isMIC;
 
   return {
     role, email, teams, sport, loading,
-    isOwner, isHOS, isMIC, isCoach,
+    isOwner, isHOS, isMIC, isHOH, isCoach,
     canSeeAllSports, canSeeAllTeams,
-    // @ts-ignore legacy
-    isHOH,
   };
 }
