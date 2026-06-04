@@ -26,7 +26,7 @@ type Props = {
   formatDate: (d?: string | null) => string;
 };
 
-export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureTeam, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate }: Props) {
+export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureTeam, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {/* Create */}

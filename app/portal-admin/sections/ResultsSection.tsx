@@ -26,7 +26,7 @@ type Props = {
   formatDate: (d?: string | null) => string;
 };
 
-export function ResultsSection({ results, busy, newResultTeam, setNewResultTeam, newResultOpponent, setNewResultOpponent, newResultDate, setNewResultDate, newResultFinalScore, setNewResultFinalScore, newResultGoalScorers, setNewResultGoalScorers, newResultPublished, setNewResultPublished, handleCreateResult, editingResultId, editResultTeam, setEditResultTeam, editResultOpponent, setEditResultOpponent, editResultDate, setEditResultDate, editResultFinalScore, setEditResultFinalScore, editResultGoalScorers, setEditResultGoalScorers, editResultPublished, setEditResultPublished, handleSaveResult, cancelEditResult, startEditResult, handleDeleteResult, moveItem, formatDate }: Props) {
+export function ResultsSection({ results, busy, newResultTeam, setNewResultTeam, newResultOpponent, setNewResultOpponent, newResultDate, setNewResultDate, newResultFinalScore, setNewResultFinalScore, newResultGoalScorers, setNewResultGoalScorers, newResultPublished, setNewResultPublished, handleCreateResult, editingResultId, editResultTeam, setEditResultTeam, editResultOpponent, setEditResultOpponent, editResultDate, setEditResultDate, editResultFinalScore, setEditResultFinalScore, editResultGoalScorers, setEditResultGoalScorers, editResultPublished, setEditResultPublished, handleSaveResult, cancelEditResult, startEditResult, handleDeleteResult, moveItem, formatDate, teamOptions }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {/* Create */}
