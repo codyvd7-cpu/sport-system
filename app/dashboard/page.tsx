@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { getTeamGroups, type SportKey } from '@/lib/sports';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell,
@@ -13,15 +14,25 @@ import {
 
 type Row = Record<string, any>;
 
-const TEAM_GROUPS = [
-  { group:'Senior', accent:'#a78bfa', dim:'rgba(167,139,250,0.08)', teams:['1sts','2nds','3rds','4ths','5ths'] },
-  { group:'U16',    accent:'#38bdf8', dim:'rgba(56,189,248,0.08)',  teams:['U16A','U16B','U16C','U16D','U16E'] },
-  { group:'U15',    accent:'#10b981', dim:'rgba(16,185,129,0.08)',  teams:['U15A','U15B','U15C','U15D','U15E'] },
-  { group:'U14',    accent:'#f59e0b', dim:'rgba(245,158,11,0.08)',  teams:['U14A','U14B','U14C','U14D','U14E'] },
-];
-const ALL_TEAMS = TEAM_GROUPS.flatMap(g => g.teams);
-function getAccent(t:string){return TEAM_GROUPS.find(g=>g.teams.includes(t))?.accent||'#94a3b8';}
-function getDim(t:string){return TEAM_GROUPS.find(g=>g.teams.includes(t))?.dim||'rgba(255,255,255,0.04)';}
+// Sport-aware team group builder
+function buildTeamGroups(sport: SportKey | null) {
+  const groups = getTeamGroups((sport || 'hockey') as SportKey);
+  const ACCENTS = ['#a78bfa','#38bdf8','#10b981','#f59e0b','#f87171','#34d399'];
+  return groups.map((g, i) => ({
+    group: g.group,
+    accent: ACCENTS[i] || '#94a3b8',
+    dim: `${ACCENTS[i] || '#94a3b8'}14`,
+    teams: g.teams,
+  }));
+}
+
+// Keep these as functions that accept groups
+function getAccent(t:string, groups:{teams:string[];accent:string}[]){
+  return groups.find(g=>g.teams.includes(t))?.accent||'#94a3b8';
+}
+function getDim(t:string, groups:{teams:string[];dim:string}[]){
+  return groups.find(g=>g.teams.includes(t))?.dim||'rgba(255,255,255,0.04)';
+}
 function weekAgo(){return new Date(Date.now()-7*86400000).toISOString().split('T')[0];}
 function today(){return new Date().toISOString().split('T')[0];}
 
@@ -46,8 +57,8 @@ function Spinner({color='#38bdf8'}:{color?:string}) {
 function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
   teamName:string; athletes:Row[]; attendance:Row[]; fixtures:Row[]; onRefresh:()=>void;
 }) {
-  const accent   = getAccent(teamName);
-  const dimBg    = getDim(teamName);
+  const accent   = getAccent(teamName, buildTeamGroups(null));
+  const dimBg    = getDim(teamName, buildTeamGroups(null));
   const {showToast} = useToast();
   const [sessionType,setSessionType] = React.useState('Training');
   const [statuses,setStatuses]       = React.useState<Record<string,string>>({});
@@ -461,9 +472,11 @@ function WinLossChart() {
 }
 
 // ── OverviewView ──────────────────────────────────────────────
-function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
-  athletes:Row[];attendance:Row[];myTeams:string[];canSeeAllTeams:boolean;coaches:Row[];
+function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}:{
+  athletes:Row[];attendance:Row[];myTeams:string[];canSeeAllTeams:boolean;coaches:Row[];sport:SportKey|null;
 }) {
+  const TEAM_GROUPS = buildTeamGroups(sport);
+  const ALL_TEAMS = TEAM_GROUPS.flatMap(g => g.teams);
   const visibleTeams = canSeeAllTeams?ALL_TEAMS:myTeams;
   const [mounted,setMounted] = React.useState(false);
   React.useEffect(()=>{setTimeout(()=>setMounted(true),50);},[]);
@@ -483,7 +496,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
       const rate=ta.length>0?Math.round((tp/ta.length)*100):null;
       const inj=sq.filter(a=>a.availability==='Injured').length;
       const mod=sq.filter(a=>a.availability==='Modified').length;
-      return{team,count:sq.length,rate,inj,mod,accent:getAccent(team),dim:getDim(team),coach:coachFor(team)};
+      return{team,count:sq.length,rate,inj,mod,accent:getAccent(team,TEAM_GROUPS),dim:getDim(team,TEAM_GROUPS),coach:coachFor(team)};
     });
 
   const total=athletes.length;
@@ -683,7 +696,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches}:{
 
 // ── Main ─────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const {canSeeAllTeams,teams:myTeams,loading:roleLoading}=useRole();
+  const {canSeeAllTeams,teams:myTeams,loading:roleLoading,sport}=useRole();
   const [athletes,setAthletes] = React.useState<Row[]>([]);
   const [attendance,setAttendance] = React.useState<Row[]>([]);
   const [fixtures,setFixtures] = React.useState<Row[]>([]);
@@ -692,20 +705,27 @@ export default function DashboardPage() {
 
   async function load() {
     if(roleLoading)return;
-    let q=supabase.from('athletes').select('id,full_name,team,availability,position,age_group');
-    if(!canSeeAllTeams&&myTeams.length>0)q=q.in('team',myTeams);
+    let q=supabase.from('athletes').select('id,full_name,team,availability,position,age_group,sport');
+    if(!canSeeAllTeams&&myTeams.length>0) q=q.in('team',myTeams);
+    // MIC/coach: filter by sport
+    else if(sport) q=q.eq('sport',sport);
     const [aRes,attRes,fixRes,coachRes]=await Promise.all([
       q,
-      supabase.from('attendance').select('id,athlete_id,status,session_date,session_type').gte('session_date',weekAgo()).order('session_date',{ascending:false}).limit(500),
-      supabase.from('portal_fixtures').select('*').order('fixture_date').limit(20),
-      supabase.from('staff_roles').select('email,teams,role,full_name').eq('is_active',true),
+      supabase.from('attendance').select('id,athlete_id,status,session_date,session_type,sport')
+        .gte('session_date',weekAgo())
+        .order('session_date',{ascending:false})
+        .limit(500),
+      supabase.from('portal_fixtures').select('*')
+        .eq('sport', sport || 'hockey')
+        .order('fixture_date').limit(20),
+      supabase.from('staff_roles').select('email,teams,role,full_name,sport').eq('is_active',true),
     ]);
     setAthletes(aRes.data||[]);setAttendance(attRes.data||[]);
     setFixtures(fixRes.data||[]);setCoaches(coachRes.data||[]);
     setLoading(false);
   }
 
-  React.useEffect(()=>{load();},[roleLoading,canSeeAllTeams,myTeams.join(',')]);
+  React.useEffect(()=>{load();},[roleLoading,canSeeAllTeams,myTeams.join(','),sport]);
 
   if(roleLoading||loading)return(
     <main className="min-h-screen flex items-center justify-center" style={{background:'var(--bg)'}}>
@@ -749,6 +769,7 @@ export default function DashboardPage() {
             myTeams={myTeams}
             canSeeAllTeams={canSeeAllTeams}
             coaches={coaches}
+            sport={sport}
           />
         )}
       </div>

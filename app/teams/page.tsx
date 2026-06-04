@@ -5,30 +5,25 @@ import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 
 type Row = Record<string, any>;
 
-const TEAM_GROUPS = [
-  { group: 'Senior', color: 'violet', teams: ['1sts', '2nds', '3rds', '4ths', '5ths'] },
-  { group: 'U16', color: 'sky', teams: ['U16A', 'U16B', 'U16C', 'U16D', 'U16E'] },
-  { group: 'U15', color: 'emerald', teams: ['U15A', 'U15B', 'U15C', 'U15D', 'U15E'] },
-  { group: 'U14', color: 'amber', teams: ['U14A', 'U14B', 'U14C', 'U14D', 'U14E'] },
-];
+const GROUP_ACCENTS = ['#a78bfa','#38bdf8','#10b981','#f59e0b','#f87171','#34d399'];
 
-const COLORS: Record<string, { text: string; bg: string; border: string; badge: string }> = {
-  violet:  { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/30',  badge: 'bg-violet-500/15 text-violet-300' },
-  sky:     { text: 'text-sky-400',     bg: 'bg-sky-500/10',     border: 'border-sky-500/30',     badge: 'bg-sky-500/15 text-sky-300' },
-  emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', badge: 'bg-emerald-500/15 text-emerald-300' },
-  amber:   { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/30',   badge: 'bg-amber-500/15 text-amber-300' },
-};
+function buildGroups(sport: SportKey | null) {
+  return getTeamGroups((sport || 'hockey') as SportKey).map((g, i) => ({
+    ...g,
+    accent: GROUP_ACCENTS[i] || '#94a3b8',
+  }));
+}
 
-function getGroupColor(team: string) {
-  const g = TEAM_GROUPS.find((g) => g.teams.includes(team));
-  return g ? COLORS[g.color] : COLORS.sky;
+function getGroupAccent(team: string, groups: {teams:string[];accent:string}[]) {
+  return groups.find(g => g.teams.includes(team))?.accent || '#94a3b8';
 }
 
 export default function TeamsPage() {
-  const { canSeeAllTeams, teams: myTeams, loading: roleLoading } = useRole();
+  const { canSeeAllTeams, teams: myTeams, loading: roleLoading, sport } = useRole();
   const [athletes, setAthletes] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -38,6 +33,7 @@ export default function TeamsPage() {
     async function load() {
       let athQuery = supabase.from('athletes').select('id, full_name, team, availability').order('full_name');
       if (!canSeeAllTeams && myTeams.length > 0) athQuery = athQuery.in('team', myTeams);
+      else if (sport) athQuery = athQuery.eq('sport', sport);
       const [athRes, attRes] = await Promise.all([
         athQuery,
         supabase.from('attendance').select('athlete_id, status, session_date').gte('session_date', new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0]),
@@ -47,7 +43,9 @@ export default function TeamsPage() {
       setLoading(false);
     }
     load();
-  }, [roleLoading, canSeeAllTeams, myTeams.join(',')]);
+  }, [roleLoading, canSeeAllTeams, myTeams.join(','), sport]);
+
+  const TEAM_GROUPS = buildGroups(sport);
 
   const visibleTeamGroups = React.useMemo(() => {
     if (canSeeAllTeams) return TEAM_GROUPS;
@@ -55,7 +53,7 @@ export default function TeamsPage() {
       ...g,
       teams: g.teams.filter(t => myTeams.includes(t)),
     })).filter(g => g.teams.length > 0);
-  }, [canSeeAllTeams, myTeams.join(',')]);
+  }, [canSeeAllTeams, myTeams.join(','), sport]);
 
   const allTeams = visibleTeamGroups.flatMap(g => g.teams);
 
@@ -88,7 +86,9 @@ export default function TeamsPage() {
         {/* Header */}
         <FadeUp delay={0}>
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>Squad Management</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>
+            {sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports'}
+          </p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Teams</h1>
           <p className="mt-2 text-sm text-white/35">{assignedAthletes} players assigned across {allTeams.filter((t) => (teamStats[t]?.count || 0) > 0).length} active teams</p>
         </div>
@@ -117,18 +117,20 @@ export default function TeamsPage() {
         ) : (
           <StaggerList className="space-y-8" stagger={60}>
             {visibleTeamGroups.map((group) => {
-              const col = COLORS[group.color];
+              const accent = group.accent || '#94a3b8';
               return (
                 <StaggerItem key={group.group}>
                 <div>
-                  <p className={`mb-3 text-xs font-black uppercase tracking-[0.2em] ${col.text}`}>{group.group}</p>
+                  <p className="mb-3 text-xs font-black uppercase tracking-[0.2em]"
+                    style={{color:accent}}>{group.group}</p>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                     {group.teams.map((team) => {
                       const s = teamStats[team];
                       if (!s || s.count === 0) return (
-                        <div key={team} className="rounded-2xl border border-white/7/60 bg-[#04060e]/40 p-4 opacity-50">
+                        <div key={team} className="rounded-2xl border border-white/7 bg-white/2 p-4 opacity-40">
                           <div className="flex items-center justify-between mb-2">
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${col.badge}`}>{team}</span>
+                            <span className="rounded-full px-2.5 py-1 text-xs font-black"
+                              style={{background:`${accent}18`,color:accent}}>{team}</span>
                             <p className="text-lg font-black text-white/15">0</p>
                           </div>
                           <p className="text-xs text-white/15">No players assigned</p>
@@ -136,10 +138,12 @@ export default function TeamsPage() {
                       );
                       return (
                         <Link key={team} href={`/teams/${encodeURIComponent(team)}`}
-                          className={`rounded-2xl border p-4 transition hover:border-opacity-60 hover:scale-[1.02] ${col.border} ${col.bg}`}>
+                          className="rounded-2xl border p-4 transition hover:scale-[1.02]"
+                          style={{borderColor:`${accent}28`,background:`${accent}08`}}>
                           <div className="flex items-center justify-between mb-3">
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${col.badge}`}>{team}</span>
-                            <p className={`text-2xl font-black ${col.text}`}>{s.count}</p>
+                            <span className="rounded-full px-2.5 py-1 text-xs font-black"
+                              style={{background:`${accent}18`,color:accent}}>{team}</span>
+                            <p className="text-2xl font-black" style={{color:accent}}>{s.count}</p>
                           </div>
                           {/* Availability bar */}
                           <div className="flex gap-1 mb-3">
