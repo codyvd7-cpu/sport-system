@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { safeUUID, generatePlayerCode } from '@/lib/uuid';
 import { AthletePDFButton } from '@/components/PDFButton';
+import { SPORTS, getSportColor, getSportLabel, type SportKey } from '@/lib/sports';
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, Tooltip,
@@ -354,6 +355,7 @@ export default function AthleteProfile({params}:PageProps) {
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [notes, setNotes] = React.useState<Row[]>([]);
+  const [sportAssignments, setSportAssignments] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'attendance'|'performance'|'notes'>('overview');
   const [matchResults, setMatchResults] = React.useState<Row[]>([]);
@@ -424,6 +426,10 @@ export default function AthleteProfile({params}:PageProps) {
       const {data:results} = await supabase.from('portal_results').select('*').eq('team',aRes.data.team).order('result_date',{ascending:false}).limit(50);
       setMatchResults(results||[]);
     }
+    // Fetch sport assignments
+    const {data:sports} = await supabase.from('athlete_sports')
+      .select('*').eq('athlete_id',id).eq('year',new Date().getFullYear()).order('sport');
+    setSportAssignments(sports||[]);
     setLoading(false);
   }
 
@@ -611,6 +617,24 @@ export default function AthleteProfile({params}:PageProps) {
                     {ageGroup!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{ageGroup}</span>}
                     {position!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{position}</span>}
                   </div>
+                  {/* Sport assignments */}
+                  {sportAssignments.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {sportAssignments.map(s => {
+                        const sport = SPORTS[s.sport as SportKey];
+                        const col = sport?.color || '#94a3b8';
+                        return (
+                          <span key={s.sport}
+                            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                            style={{background:`${col}14`,color:col,border:`1px solid ${col}28`}}>
+                            {sport?.icon} {sport?.label || s.sport}
+                            {s.team && <span style={{opacity:0.6}}>· {s.team}</span>}
+                            {s.is_specialist && <span style={{opacity:0.5}}>★</span>}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </>
               )}
             </div>
