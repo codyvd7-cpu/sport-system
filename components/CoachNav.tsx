@@ -72,14 +72,16 @@ export default function CoachNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { isHOH, isOwner, email, loading: roleLoading } = useRole();
+  const { isHOH, isHOS, isMIC, isOwner, email, sport, loading: roleLoading } = useRole();
 
   const navItems = isHOH ? HOH_NAV : COACH_NAV;
   const tabs     = isHOH ? HOH_TABS : COACH_TABS;
 
-  const roleBadge = isOwner ? { label:'Owner', color:'#f87171', bg:'rgba(248,113,113,0.1)' }
-    : isHOH ? { label:'Head of Hockey', color:'#fbbf24', bg:'rgba(251,191,36,0.1)' }
-    : { label:'Coach', color:'rgba(255,255,255,0.35)', bg:'rgba(255,255,255,0.05)' };
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports';
+  const roleBadge = isOwner ? { label:'Admin',             color:'#f87171', bg:'rgba(248,113,113,0.1)' }
+    : isHOS   ? { label:'Head of Sport',       color:'#10b981', bg:'rgba(16,185,129,0.1)' }
+    : isMIC   ? { label:`MIC · ${sportLabel}`, color:'#fbbf24', bg:'rgba(251,191,36,0.1)' }
+    : { label:`Coach · ${sportLabel}`, color:'rgba(255,255,255,0.35)', bg:'rgba(255,255,255,0.05)' };
 
   const isActive = (href: string) =>
     href === '/dashboard' ? pathname === '/dashboard' : pathname === href || pathname.startsWith(href + '/');

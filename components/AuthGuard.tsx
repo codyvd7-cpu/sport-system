@@ -3,7 +3,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export type StaffRole = 'owner' | 'head_of_hockey' | 'coach' | 'viewer';
+export type StaffRole = 'owner' | 'head_of_sport' | 'deputy_head_of_sport' | 'mic' | 'coach' | 'head_of_hockey' | 'viewer';
 
 interface Props {
   children: React.ReactNode;

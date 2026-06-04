@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export type StaffRole = 'owner' | 'head_of_hockey' | 'coach' | 'viewer';
+export type StaffRole = 'owner' | 'head_of_sport' | 'deputy_head_of_sport' | 'mic' | 'coach' | 'head_of_hockey' | 'viewer';
 
 export type ServerAuthResult = {
   ok: boolean;
