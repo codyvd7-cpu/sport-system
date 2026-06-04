@@ -76,19 +76,20 @@ export default function AthletesPage() {
   }, [successMessage]);
 
   const [showAddForm, setShowAddForm] = useState(false);
-  const { canSeeAllTeams, teams: myTeams, loading: roleLoading } = useRole();
+  const { canSeeAllTeams, teams: myTeams, loading: roleLoading, sport } = useRole();
 
   async function loadAthletes() {
     setLoading(true);
-    let q = supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability, position, player_code, is_active').order('full_name');
+    let q = supabase.from('athletes').select('id, full_name, first_name, last_name, team, age_group, availability, position, player_code, is_active, sport').order('full_name');
     if (!canSeeAllTeams && myTeams.length > 0) q = q.in('team', myTeams);
+    else if (sport) q = q.eq('sport', sport);
     const { data, error: err } = await q;
     if (err) { setError(err.message); setLoading(false); return; }
     setAthleteRows((data as GenericRow[]) || []);
     setLoading(false);
   }
 
-  useEffect(() => { if (!roleLoading) loadAthletes(); }, [roleLoading, canSeeAllTeams, myTeams.join(',')]);
+  useEffect(() => { if (!roleLoading) loadAthletes(); }, [roleLoading, canSeeAllTeams, myTeams.join(','), sport]);
 
   const athletes = useMemo(() =>
     athleteRows.map(normalizeAthlete).sort((a, b) => a.name.localeCompare(b.name)),
@@ -186,9 +187,11 @@ export default function AthletesPage() {
         {/* Header */}
         <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-600 mb-1">Roster</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>
+              {sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports'}
+            </p>
             <h1 className="text-4xl font-black text-white leading-none tracking-tight">Athletes</h1>
-            <p className="mt-2 text-sm text-slate-500">{athletes.length} players · {uniqueTeams.length} teams</p>
+            <p className="mt-2 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>{athletes.length} players · {uniqueTeams.length} teams</p>
           </div>
           <button onClick={() => setShowAddForm(v => !v)}
             className="flex items-center gap-2 rounded-2xl border border-white/8 px-5 py-3 text-sm font-black text-white transition hover:bg-white/5"

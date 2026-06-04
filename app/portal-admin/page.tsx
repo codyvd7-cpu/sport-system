@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { safeUUID } from '@/lib/uuid';
 import { useRouter } from 'next/navigation';
+import { useRole } from '@/lib/useRole';
+import { SPORTS, type SportKey } from '@/lib/sports';
 import { FixturesSection } from './sections/FixturesSection';
 import { ResultsSection } from './sections/ResultsSection';
 import { WeekSection } from './sections/WeekSection';
@@ -163,6 +165,11 @@ const SPONSOR_BUCKET = 'portal-sponsors';
 export default function PortalAdminPage() {
 const router = useRouter();
   const { showToast } = useToast();
+  const { sport, isHOH } = useRole();
+  // MICs manage their sport's portal; HOS/owner can select sport
+  const [activeSport, setActiveSport] = useState<SportKey>('hockey');
+  // Once role loads, set sport
+  useEffect(() => { if (sport) setActiveSport(sport as SportKey); }, [sport]);
 
 async function handleLogout() {
   await supabase.auth.signOut();
@@ -295,11 +302,13 @@ async function handleLogout() {
       supabase
         .from('portal_fixtures')
         .select('*')
+        .eq('sport', activeSport)
         .order('fixture_date', { ascending: true })
         .order('sort_order', { ascending: true }),
       supabase
         .from('portal_results')
         .select('*')
+        .eq('sport', activeSport)
         .order('result_date', { ascending: false })
         .order('sort_order', { ascending: true }),
       supabase.from('portal_programs').select('*').order('sort_order', { ascending: true }),
@@ -341,7 +350,7 @@ async function handleLogout() {
 
   useEffect(() => {
     loadPortalAdminData();
-  }, []);
+  }, [activeSport]);
 
   const weekPlans = useMemo(
     () =>
@@ -685,6 +694,7 @@ async function handleLogout() {
           venue: newFixtureVenue.trim(),
           is_published: newFixturePublished,
           sort_order: Number(newFixtureSortOrder) || 0,
+          sport: activeSport,
         },
       ]);
 
@@ -723,6 +733,7 @@ async function handleLogout() {
           goal_scorers: newResultGoalScorers.trim(),
           is_published: newResultPublished,
           sort_order: Number(newResultSortOrder) || 0,
+          sport: activeSport,
         },
       ]);
 
@@ -1333,20 +1344,33 @@ async function handleLogout() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-sky-400">St Benedict's College Hockey</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-white">Portal Admin</h1>
-            <p className="mt-1 text-sm text-slate-500">Manage fixtures, results, week plan, programs, reminders and sponsors.</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>
+              {SPORTS[activeSport]?.label || activeSport} · Portal Admin
+            </p>
+            <h1 className="mt-1 text-4xl font-black tracking-tight text-white leading-none">Portal Admin</h1>
+            <p className="mt-2 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>Manage fixtures, results, week plan, programs, reminders and sponsors.</p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 flex-wrap">
+            {/* Sport switcher — only for HOS/owner who can manage all sports */}
+            {isHOH && !sport && (
+              <div className="flex rounded-xl border border-white/7 bg-white/3 p-0.5">
+                {(['hockey','rugby','cricket','rowing','swimming','waterpolo'] as SportKey[]).map(s => (
+                  <button key={s} onClick={() => setActiveSport(s)}
+                    className={`rounded-lg px-3 py-2 text-[11px] font-black capitalize transition ${activeSport===s?'bg-white/8 text-white':'text-white/30 hover:text-white/60'}`}>
+                    {SPORTS[s]?.icon} {SPORTS[s]?.label}
+                  </button>
+                ))}
+              </div>
+            )}
             <Link href="/portal" className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-black text-emerald-300 hover:bg-emerald-500/20 transition">Portal</Link>
             <button onClick={handleLogout} className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm font-black text-red-300 hover:bg-red-500/20 transition">Logout</button>
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-800 pb-4">
+        <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
           {['fixtures','results','week','programs','reminders','sponsors'].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-slate-700 bg-slate-900 text-slate-400 hover:text-white'}`}>
+              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-white/7 bg-white/2 text-white/35 hover:text-white'}`}>
               {tab === 'week' ? 'Week Plan' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
