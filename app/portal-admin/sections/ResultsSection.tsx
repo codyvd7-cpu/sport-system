@@ -4,6 +4,7 @@ type Props = {
   results: Result[];
   busy: boolean;
   newResultTeam: string; setNewResultTeam: (v: string) => void;
+  teamOptions: string[];
   newResultOpponent: string; setNewResultOpponent: (v: string) => void;
   newResultDate: string; setNewResultDate: (v: string) => void;
   newResultFinalScore: string; setNewResultFinalScore: (v: string) => void;
@@ -33,7 +34,10 @@ export function ResultsSection({ results, busy, newResultTeam, setNewResultTeam,
         <h2 className="mb-4 text-lg font-semibold">Add Result</h2>
         <form onSubmit={handleCreateResult} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <input value={newResultTeam} onChange={(e) => setNewResultTeam(e.target.value)} placeholder="Team" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+            <select value={newResultTeam} onChange={(e) => setNewResultTeam(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+              <option value="">Select Team</option>
+              {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
             <input value={newResultOpponent} onChange={(e) => setNewResultOpponent(e.target.value)} placeholder="Opponent" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input type="date" value={newResultDate} onChange={(e) => setNewResultDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input value={newResultFinalScore} onChange={(e) => setNewResultFinalScore(e.target.value)} placeholder="Score e.g. 3-1" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
@@ -59,7 +63,10 @@ export function ResultsSection({ results, busy, newResultTeam, setNewResultTeam,
                   {isEditing ? (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
-                        <input value={editResultTeam} onChange={(e) => setEditResultTeam(e.target.value)} placeholder="Team" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
+                        <select value={editResultTeam} onChange={(e) => setEditResultTeam(e.target.value)} className="rounded-lg border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-white outline-none">
+                          <option value="">Select Team</option>
+                          {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
                         <input value={editResultOpponent} onChange={(e) => setEditResultOpponent(e.target.value)} placeholder="Opponent" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                         <input type="date" value={editResultDate} onChange={(e) => setEditResultDate(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                         <input value={editResultFinalScore} onChange={(e) => setEditResultFinalScore(e.target.value)} placeholder="Score" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />

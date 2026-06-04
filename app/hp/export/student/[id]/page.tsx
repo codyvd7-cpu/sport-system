@@ -82,7 +82,7 @@ export default function StudentExport({ params }: PageProps) {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         *{margin:0;padding:0;box-sizing:border-box;}
-        body{font-family:'Inter',sans-serif;background:#030810;color:#f1f5f9;-webkit-font-smoothing:antialiased;}
+        body{font-family:'Inter',sans-serif;background:#fff;color:#0f172a;-webkit-font-smoothing:antialiased;}
         @page{size:A4 portrait;margin:10mm 12mm;}
         @media print{
           .no-print{display:none!important;}
@@ -94,10 +94,9 @@ export default function StudentExport({ params }: PageProps) {
         .doc-header{
           display:flex;align-items:center;justify-content:space-between;
           margin-bottom:20px;padding:14px 18px;
-          background:linear-gradient(135deg,rgba(16,185,129,0.08),rgba(255,255,255,0.02));
-          border-radius:14px;border:1px solid rgba(16,185,129,0.2);position:relative;overflow:hidden;
+          background:#0f172a;border-radius:10px;position:relative;overflow:hidden;
         }
-        .doc-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981,#38bdf8,transparent);}
+        .doc-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#38bdf8,#6366f1,#a78bfa);}
         .doc-header-left{display:flex;align-items:center;gap:14px;}
         .doc-header img{width:44px;height:44px;object-fit:contain;}
         .doc-school{font-size:16px;font-weight:800;color:#fff;letter-spacing:-0.02em;}
@@ -108,7 +107,7 @@ export default function StudentExport({ params }: PageProps) {
 
         /* ── ATHLETE BANNER ── */
         .athlete-banner{
-          background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);
+          background:#f8fafc;border:1.5px solid #e2e8f0;
           border-radius:12px;padding:16px 20px;margin-bottom:20px;
           display:flex;align-items:center;justify-content:space-between;
         }
@@ -123,7 +122,7 @@ export default function StudentExport({ params }: PageProps) {
         /* ── SECTION LABEL ── */
         .section-label{
           font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;
-          color:rgba(255,255,255,0.25);margin-bottom:10px;margin-top:20px;
+          color:#94a3b8;margin-bottom:10px;margin-top:20px;
         }
 
         /* ── TEST CARDS ── */
@@ -134,7 +133,7 @@ export default function StudentExport({ params }: PageProps) {
         }
         .test-label{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:0.07em;color:rgba(255,255,255,0.3);margin-bottom:6px;}
         .test-value{font-size:20px;font-weight:800;line-height:1;letter-spacing:-0.02em;}
-        .test-unit{font-size:8.5px;color:rgba(255,255,255,0.3);margin-top:2px;}
+        .test-unit{font-size:8.5px;color:#94a3b8;margin-top:2px;}
         .tier-badge{
           display:inline-block;padding:2px 7px;border-radius:20px;
           font-size:7.5px;font-weight:700;margin-top:5px;letter-spacing:0.03em;
@@ -153,13 +152,13 @@ export default function StudentExport({ params }: PageProps) {
         /* ── ATTENDANCE ── */
         .att-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
         .att-bar-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.5);width:56px;}
-        .att-bar-track{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;}
+        .att-bar-track{flex:1;height:6px;background:#f1f5f9;border-radius:3px;overflow:hidden;}
         .att-bar-fill{height:100%;border-radius:3px;}
         .att-bar-num{font-size:10px;font-weight:700;color:#fff;width:20px;text-align:right;}
 
         /* ── FOOTER ── */
         .doc-footer{
-          margin-top:24px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);
+          margin-top:24px;padding-top:12px;border-top:2px solid #f1f5f9;
           display:flex;justify-content:space-between;align-items:center;
         }
         .doc-footer-logo{font-size:9px;font-weight:600;color:rgba(255,255,255,0.2);}

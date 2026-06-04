@@ -4,6 +4,7 @@ type Props = {
   fixtures: Fixture[];
   busy: boolean;
   newFixtureTeam: string; setNewFixtureTeam: (v: string) => void;
+  teamOptions: string[];
   newFixtureOpponent: string; setNewFixtureOpponent: (v: string) => void;
   newFixtureDate: string; setNewFixtureDate: (v: string) => void;
   newFixtureTime: string; setNewFixtureTime: (v: string) => void;
@@ -33,7 +34,10 @@ export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureT
         <h2 className="mb-4 text-lg font-semibold">Add Fixture</h2>
         <form onSubmit={handleCreateFixture} className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <input value={newFixtureTeam} onChange={(e) => setNewFixtureTeam(e.target.value)} placeholder="Team" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+            <select value={newFixtureTeam} onChange={(e) => setNewFixtureTeam(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+              <option value="">Select Team</option>
+              {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
             <input value={newFixtureOpponent} onChange={(e) => setNewFixtureOpponent(e.target.value)} placeholder="Opponent" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input type="date" value={newFixtureDate} onChange={(e) => setNewFixtureDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input type="time" value={newFixtureTime} onChange={(e) => setNewFixtureTime(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
@@ -58,7 +62,10 @@ export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureT
                   {isEditing ? (
                     <div className="space-y-2">
                       <div className="grid grid-cols-2 gap-2">
-                        <input value={editFixtureTeam} onChange={(e) => setEditFixtureTeam(e.target.value)} placeholder="Team" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
+                        <select value={editFixtureTeam} onChange={(e) => setEditFixtureTeam(e.target.value)} className="rounded-lg border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-white outline-none">
+                          <option value="">Select Team</option>
+                          {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
                         <input value={editFixtureOpponent} onChange={(e) => setEditFixtureOpponent(e.target.value)} placeholder="Opponent" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                         <input type="date" value={editFixtureDate} onChange={(e) => setEditFixtureDate(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                         <input type="time" value={editFixtureTime} onChange={(e) => setEditFixtureTime(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
