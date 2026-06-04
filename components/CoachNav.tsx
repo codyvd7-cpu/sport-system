@@ -72,8 +72,9 @@ export default function CoachNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { isHOH, isHOS, isMIC, isOwner, email, sport, loading: roleLoading } = useRole();
+  const { isHOS, isMIC, isOwner, email, sport, loading: roleLoading } = useRole();
 
+  const isHOH = isHOS || isMIC;
   const navItems = isHOH ? HOH_NAV : COACH_NAV;
   const tabs     = isHOH ? HOH_TABS : COACH_TABS;
 
