@@ -4,6 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
+import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 import { useToast } from '@/components/Toast';
 import { fDateShort, fISODate } from '@/lib/dates';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
@@ -71,7 +72,8 @@ function LowAttendanceAlert({athletes,history}:{athletes:Row[];history:Row[]}) {
 
 export default function AttendancePage() {
   const {showToast} = useToast();
-  const {canSeeAllTeams, teams:myTeams, loading:roleLoading} = useRole();
+  const {canSeeAllTeams, teams:myTeams, loading:roleLoading, sport} = useRole();
+  const TEAM_GROUPS = getTeamGroups((sport || 'hockey') as SportKey);
 
   const [athletes, setAthletes] = React.useState<Row[]>([]);
   const [history, setHistory] = React.useState<Row[]>([]);
@@ -197,7 +199,7 @@ export default function AttendancePage() {
         <FadeUp delay={0}>
         <div className="mb-8 flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(255,255,255,0.25)"}}>Hockey</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(255,255,255,0.25)"}}>{sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : "Sport"}</p>
             <h1 className="text-4xl font-black text-white tracking-tight leading-none">Attendance</h1>
           </div>
           <div className="flex rounded-xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-0.5">

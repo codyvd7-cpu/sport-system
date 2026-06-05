@@ -4,17 +4,12 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
+import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
 
-const TEAM_GROUPS = [
-  { group: 'Senior', color: 'violet', teams: ['1sts', '2nds', '3rds', '4ths', '5ths'] },
-  { group: 'U16', color: 'sky', teams: ['U16A', 'U16B', 'U16C', 'U16D', 'U16E'] },
-  { group: 'U15', color: 'emerald', teams: ['U15A', 'U15B', 'U15C', 'U15D', 'U15E'] },
-  { group: 'U14', color: 'amber', teams: ['U14A', 'U14B', 'U14C', 'U14D', 'U14E'] },
-];
-const ALL_TEAMS = TEAM_GROUPS.flatMap((g) => g.teams);
+// Team groups built dynamically from sport context
 
 const TEST_LIBRARY = [
   { name: '10m Sprint',   unit: 's',   lower: true,  desc: 'Acceleration',      group: 'Speed' },
@@ -80,7 +75,9 @@ function getTierTextColor(testName: string, value: number, ageGroup: string) {
 export default function PerformancePage() {
   // Step state
   const { showToast } = useToast();
-  const { canSeeAllTeams, teams: myTeams } = useRole();
+  const { canSeeAllTeams, teams: myTeams, sport } = useRole();
+  const TEAM_GROUPS = getTeamGroups((sport || 'hockey') as SportKey);
+  const ALL_TEAMS = TEAM_GROUPS.flatMap(g => g.teams);
   const [step, setStep] = React.useState<'setup' | 'capture' | 'done'>('setup');
 
   // Setup
