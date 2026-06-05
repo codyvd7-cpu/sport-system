@@ -178,7 +178,7 @@ export default function PortalPage() {
             </div>
             <div className="flex items-center gap-2">
               <a href="/" className="rounded-full border border-white/8/50 bg-[rgba(255,255,255,0.025)] px-3 py-1.5 text-xs font-black text-white/35 transition hover:text-white/70">← Departments</a>
-              <a href="/login" className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
+              <a href={`/login?sport=${sport}`} className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
               <a href="/player" className="rounded-full border px-3 py-1.5 text-xs font-black transition" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>Player Login</a>
             </div>
           </div>

@@ -18,6 +18,12 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/dashboard';
+  const sport = searchParams.get('sport');
+
+  function storeSportAndRedirect(url: string) {
+    if (sport) localStorage.setItem('activeSport', sport);
+    window.location.href = url;
+  }
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,7 +35,7 @@ function LoginForm() {
   useEffect(() => {
     async function checkExistingSession() {
       const { data } = await supabase.auth.getSession();
-      if (data.session) { window.location.href = redirectTo; return; }
+      if (data.session) { storeSportAndRedirect(redirectTo); return; }
       setCheckingSession(false);
     }
     checkExistingSession();
@@ -44,7 +50,7 @@ function LoginForm() {
       if (result.error) { setErrorMessage(cleanAuthError(result.error.message)); setStatus(''); setLoading(false); return; }
       if (!result.data.session) { setErrorMessage('Login failed. Please confirm this user exists in Supabase.'); setStatus(''); setLoading(false); return; }
       setStatus('Login successful. Opening admin...');
-      window.location.href = redirectTo;
+      storeSportAndRedirect(redirectTo);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Login failed.');
       setStatus(''); setLoading(false);
