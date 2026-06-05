@@ -33,7 +33,11 @@ export function useRole(): StaffProfile {
   const [role,   setRole]   = React.useState<StaffRole | null>(null);
   const [email,  setEmail]  = React.useState('');
   const [teams,  setTeams]  = React.useState<string[]>([]);
-  const [sport,  setSport]  = React.useState<SportKey | null>(null);
+  // Read sport from localStorage immediately — prevents blue flash on rugby pages
+  const [sport,  setSport]  = React.useState<SportKey | null>(() => {
+    if (typeof window === 'undefined') return null;
+    return (localStorage.getItem('activeSport') as SportKey) || null;
+  });
   const [loading,setLoading]= React.useState(true);
 
   React.useEffect(() => {
