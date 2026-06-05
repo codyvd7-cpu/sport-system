@@ -223,8 +223,7 @@ export default function AthletesPage() {
               </select>
               <button type="submit" disabled={submitting}
                 className="sm:col-span-3 rounded-xl border py-3 text-sm font-black transition disabled:opacity-40"
-                style={{borderColor:`${sportColor}4d`,background:`${sportColor}14`,color:sportColor}}
-                style={{background:`${sportColor}0f`}}>
+                style={{borderColor:`${sportColor}4d`,background:`${sportColor}14`,color:sportColor}}>
                 {submitting ? 'Adding…' : 'Add Athlete'}
               </button>
             </form>
