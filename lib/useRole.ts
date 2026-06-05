@@ -55,8 +55,17 @@ export function useRole(): StaffProfile {
 
       setRole(staffRow.role as StaffRole);
 
-      // Sport — null means all sports
-      setSport((staffRow.sport as SportKey) || null);
+      // Sport context:
+      // - MIC/coach: use DB sport
+      // - owner/HOS: read from localStorage (set by landing page click)
+      const dbSport = staffRow.sport as SportKey | null;
+      const isHOSRole = ['owner','head_of_sport','deputy_head_of_sport'].includes(staffRow.role);
+      if (isHOSRole) {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem('activeSport') : null;
+        setSport((stored as SportKey) || dbSport || null);
+      } else {
+        setSport(dbSport || null);
+      }
 
       // Teams
       const raw = staffRow.teams;
