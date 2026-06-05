@@ -1,10 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { SPORTS, type SportKey } from '@/lib/sports';
 
 type Row = Record<string, any>;
+
+// Sport config for portal branding
+const SPORT_CONFIG: Record<string, { label: string; color: string; accent: string }> = {
+  hockey:    { label: 'Hockey',     color: '#38bdf8', accent: 'rgba(56,189,248,0.15)' },
+  rugby:     { label: 'Rugby',      color: '#f87171', accent: 'rgba(248,113,113,0.15)' },
+  cricket:   { label: 'Cricket',    color: '#fbbf24', accent: 'rgba(251,191,36,0.15)' },
+  rowing:    { label: 'Rowing',     color: '#34d399', accent: 'rgba(52,211,153,0.15)' },
+  swimming:  { label: 'Swimming',   color: '#818cf8', accent: 'rgba(129,140,248,0.15)' },
+  waterpolo: { label: 'Water Polo', color: '#06b6d4', accent: 'rgba(6,182,212,0.15)' },
+};
 
 function dateLabel(value?: string | null) {
   if (!value) return 'TBC';
@@ -38,6 +50,10 @@ async function safeQuery<T>(
 }
 
 export default function PortalPage() {
+  const searchParams = useSearchParams();
+  const sport = (searchParams.get('sport') || 'hockey') as SportKey;
+  const sportCfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
+
   const [sponsors, setSponsors] = useState<Row[]>([]);
   const [activeSponsorIndex, setActiveSponsorIndex] = useState(0);
   const [weekItems, setWeekItems] = useState<Row[]>([]);
@@ -61,29 +77,29 @@ export default function PortalPage() {
   useEffect(() => {
     async function loadAll() {
       const sponsorsData = await safeQuery<Row[]>(
-        supabase.from('portal_sponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_sponsors').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       const activePlanData = await safeQuery<Row[]>(
-        supabase.from('portal_week_plans').select('id').eq('published', true).order('created_at', { ascending: false }).limit(1), []
+        supabase.from('portal_week_plans').select('id').eq('published', true).eq('sport', sport).order('created_at', { ascending: false }).limit(1), []
       );
       const activePlanId = activePlanData[0]?.id ?? null;
       const weekData = activePlanId
         ? await safeQuery<Row[]>(supabase.from('portal_week_plan_items').select('*').eq('week_plan_id', activePlanId).order('sort_order', { ascending: true }), [])
         : [];
       const remindersData = await safeQuery<Row[]>(
-        supabase.from('portal_reminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_reminders').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       const fixturesData = await safeQuery<Row[]>(
-        supabase.from('portal_fixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }), []
+        supabase.from('portal_fixtures').select('*').eq('is_published', true).eq('sport', sport).order('fixture_date', { ascending: true }), []
       );
       const resultsData = await safeQuery<Row[]>(
-        supabase.from('portal_results').select('*').eq('is_published', true).order('result_date', { ascending: false }), []
+        supabase.from('portal_results').select('*').eq('is_published', true).eq('sport', sport).order('result_date', { ascending: false }), []
       );
       const programsData = await safeQuery<Row[]>(
-        supabase.from('portal_programs').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_programs').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       // Fetch leaderboard data via API route (bypasses RLS)
-      const lbRes = await fetch('/api/portal/leaderboard');
+      const lbRes = await fetch(`/api/portal/leaderboard?sport=${sport}`);
       const lbData = lbRes.ok ? await lbRes.json() : { athletes: [], attendance: [], performance: [] };
       const athletes: Row[] = lbData.athletes || [];
       const attendance: Row[] = lbData.attendance || [];
@@ -154,7 +170,7 @@ export default function PortalPage() {
               <span className="text-2xl"></span>
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">St Benedict's College</p>
-                <p className="text-[10px] uppercase tracking-widest text-white/50">Hockey Department</p>
+                <p className="text-[10px] uppercase tracking-widest" style={{color:sportCfg.color}}>{sportCfg.label} Department</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -537,7 +553,7 @@ export default function PortalPage() {
       <footer className="border-t border-white/5 bg-[#030410] py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <p className="text-sm font-black text-white">St Benedict's College Hockey</p>
+            <p className="text-sm font-black text-white">St Benedict's College {sportCfg.label}</p>
             <p className="text-xs text-white/25">© {new Date().getFullYear()} — Built for excellence</p>
             <p className="text-[10px] text-white/15">
               <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>

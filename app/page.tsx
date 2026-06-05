@@ -12,7 +12,7 @@ const DEPARTMENTS = [
     id: 'hockey',
     label: 'Hockey',
     sub: 'Teams · Attendance · Performance',
-    href: '/dashboard',
+    href: '/portal?sport=hockey',
     available: true,
     color: '#38bdf8',
     glow: 'rgba(56,189,248,0.15)',
@@ -34,7 +34,7 @@ const DEPARTMENTS = [
     id: 'rugby',
     label: 'Rugby',
     sub: 'Teams · Attendance · Performance',
-    href: '/dashboard',
+    href: '/portal?sport=rugby',
     available: true,
     color: '#f87171',
     glow: 'rgba(248,113,113,0.12)',
@@ -292,12 +292,7 @@ export default function LandingPage() {
                     className={`h-full ${mounted ? 'card-in' : 'opacity-0'}`}
                     style={{animationDelay:`${500 + i * 80}ms`}}>
                     {dept.available
-                      ? <Link href={dept.href} className="block h-full"
-                          onClick={() => {
-                            if (dept.id !== 'hp') {
-                              localStorage.setItem('activeSport', dept.id);
-                            }
-                          }}>{inner}</Link>
+                      ? <Link href={dept.href} className="block h-full">{inner}</Link>
                       : inner
                     }
                   </div>
