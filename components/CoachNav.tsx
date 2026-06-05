@@ -123,7 +123,7 @@ export default function CoachNav() {
             <div>
               <p className="text-[11px] font-bold text-white leading-tight tracking-tight">St Benedict's</p>
               <p className="text-[9px] font-medium tracking-[0.15em] uppercase"
-                style={{color:sportCfg.color}}>{sportCfg.label}</p>
+                style={{color:var(--sport-color)}}>{sportCfg.label}</p>
             </div>
           </Link>
         </div>
@@ -136,9 +136,9 @@ export default function CoachNav() {
               <Link key={item.href} href={item.href}
                 className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150"
                 style={{
-                  background: active ? `${sportCfg.color}1a` : 'transparent',
-                  color: active ? sportCfg.color : 'rgba(255,255,255,0.45)',
-                  borderLeft: active ? `2px solid ${sportCfg.color}` : '2px solid transparent',
+                  background: active ? `${var(--sport-color)}1a` : 'transparent',
+                  color: active ? var(--sport-color) : 'rgba(255,255,255,0.45)',
+                  borderLeft: active ? `2px solid ${var(--sport-color)}` : '2px solid transparent',
                 }}
                 onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.8)'; } }}
                 onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='transparent'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'; } }}>
@@ -153,7 +153,7 @@ export default function CoachNav() {
         <div className="px-3 pb-4 pt-2 border-t space-y-1" style={{borderColor:'rgba(255,255,255,0.06)'}}>
           <div className="flex items-center gap-2.5 px-3 py-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
-              style={{background:`${sportCfg.color}1f`,color:sportCfg.color}}>
+              style={{background:`${var(--sport-color)}1f`,color:var(--sport-color)}}>
               {initials(email||'')}
             </div>
             <div className="flex-1 min-w-0">
@@ -195,7 +195,7 @@ export default function CoachNav() {
             <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5"/>
             <div>
               <p className="text-[11px] font-bold text-white leading-none">St Benedict's</p>
-              <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:sportCfg.color}}>{sportCfg.label}</p>
+              <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:var(--sport-color)}}>{sportCfg.label}</p>
             </div>
           </Link>
         )}
@@ -230,7 +230,7 @@ export default function CoachNav() {
               style={{borderColor:'rgba(255,255,255,0.06)'}}>
               <div className="flex items-center gap-2.5">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
-                  style={{background:`${sportCfg.color}1f`,color:sportCfg.color}}>
+                  style={{background:`${var(--sport-color)}1f`,color:var(--sport-color)}}>
                   {initials(email||'')}
                 </div>
                 <p className="text-[12px] font-medium truncate max-w-[170px]" style={{color:'rgba(255,255,255,0.5)'}}>{email}</p>
@@ -250,9 +250,9 @@ export default function CoachNav() {
                   <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
                     className="flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium transition"
                     style={{
-                      background: active ? `${sportCfg.color}1a` : 'transparent',
-                      color: active ? sportCfg.color : 'rgba(255,255,255,0.55)',
-                      borderLeft: active ? `2px solid ${sportCfg.color}` : '2px solid transparent',
+                      background: active ? `${var(--sport-color)}1a` : 'transparent',
+                      color: active ? var(--sport-color) : 'rgba(255,255,255,0.55)',
+                      borderLeft: active ? `2px solid ${var(--sport-color)}` : '2px solid transparent',
                     }}>
                     <span style={{opacity: active ? 1 : 0.6}}>{item.icon}</span>
                     {item.label}
@@ -289,7 +289,7 @@ export default function CoachNav() {
             return (
               <Link key={item.href} href={item.href}
                 className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-all"
-                style={{color: active ? sportCfg.color : 'rgba(255,255,255,0.3)'}}>
+                style={{color: active ? var(--sport-color) : 'rgba(255,255,255,0.3)'}}>
                 <span style={{
                   transform: active ? 'scale(1.1)' : 'scale(1)',
                   transition: 'transform 0.15s ease',
@@ -299,13 +299,13 @@ export default function CoachNav() {
                 </span>
                 <span className="text-[9px] font-semibold tracking-[0.05em]" style={{
                   opacity: active ? 1 : 0.6,
-                  color: active ? sportCfg.color : undefined,
+                  color: active ? var(--sport-color) : undefined,
                 }}>
                   {item.label}
                 </span>
                 {active && (
                   <span className="absolute bottom-0 h-0.5 w-6 rounded-full"
-                    style={{background:sportCfg.color,opacity:0.8}}/>
+                    style={{background:var(--sport-color),opacity:0.8}}/>
                 )}
               </Link>
             );

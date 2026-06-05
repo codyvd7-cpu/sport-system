@@ -40,6 +40,18 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
+      <head>
+        <script dangerouslySetInnerHTML={{__html:`
+          (function(){
+            var COLORS={hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+            var sport=localStorage.getItem('activeSport')||'hockey';
+            var c=COLORS[sport]||'#38bdf8';
+            document.documentElement.style.setProperty('--sport-color',c);
+            document.documentElement.style.setProperty('--sport-color-dim',c+'1a');
+            document.documentElement.style.setProperty('--sport-color-border',c+'4d');
+          })();
+        `}}/>
+      </head>
       <body className="min-h-screen text-white antialiased" style={{background:'var(--bg)',fontFamily:'var(--font-sans)'}} suppressHydrationWarning>
         <ServiceWorkerRegistrar/>
         <QueryProvider>

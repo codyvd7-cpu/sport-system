@@ -33,12 +33,23 @@ export function useRole(): StaffProfile {
   const [role,   setRole]   = React.useState<StaffRole | null>(null);
   const [email,  setEmail]  = React.useState('');
   const [teams,  setTeams]  = React.useState<string[]>([]);
-  // Read sport from localStorage immediately — prevents blue flash on rugby pages
   const [sport,  setSport]  = React.useState<SportKey | null>(() => {
     if (typeof window === 'undefined') return null;
     return (localStorage.getItem('activeSport') as SportKey) || null;
   });
   const [loading,setLoading]= React.useState(true);
+
+  // Set CSS variable immediately so nav colour never flashes
+  React.useLayoutEffect(() => {
+    const SPORT_COLORS: Record<string,string> = {
+      hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',
+      rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4',
+    };
+    const color = SPORT_COLORS[(sport||'hockey')] || '#38bdf8';
+    document.documentElement.style.setProperty('--sport-color', color);
+    document.documentElement.style.setProperty('--sport-color-dim', `${color}1a`);
+    document.documentElement.style.setProperty('--sport-color-border', `${color}4d`);
+  }, [sport]);
 
   React.useEffect(() => {
     async function load() {
