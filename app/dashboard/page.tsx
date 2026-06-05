@@ -402,10 +402,10 @@ function AttendanceTrendChart({attendance,teams,athletes}:{attendance:Row[];team
           <Tooltip
             contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:12,fontSize:11}}
             labelStyle={{color:'rgba(255,255,255,0.5)'}}
-            itemStyle={{color:'#38bdf8'}}
+            itemStyle={{color:sportColor}}
             formatter={(v:any) => [`${v}%`, 'Attendance']}
           />
-          <Line type="monotone" dataKey="rate" stroke="#38bdf8" strokeWidth={2} dot={{fill:'#38bdf8',r:3}} activeDot={{r:5}}/>
+          <Line type="monotone" dataKey="rate" stroke={sportColor} strokeWidth={2} dot={{fill:sportColor,r:3}} activeDot={{r:5}}/>
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -413,11 +413,11 @@ function AttendanceTrendChart({attendance,teams,athletes}:{attendance:Row[];team
 }
 
 // ── WIN / LOSS CHART ──────────────────────────────────────────
-function WinLossChart() {
+function WinLossChart({sport}:{sport:SportKey|null}) {
   const [data, setData] = React.useState<{team:string;W:number;D:number;L:number}[]>([]);
 
   React.useEffect(() => {
-    supabase.from('portal_results').select('team,final_score').limit(200).then(({data:rows}) => {
+    supabase.from('portal_results').select('team,final_score,sport').eq('sport',sport||'hockey').limit(200).then(({data:rows}) => {
       if (!rows) return;
       const map: Record<string,{W:number;D:number;L:number}> = {};
       rows.forEach(r => {
@@ -436,7 +436,7 @@ function WinLossChart() {
         .slice(0, 8);
       setData(sorted);
     });
-  }, []);
+  }, [sport]);
 
   if (!data.length) return null;
 
@@ -523,7 +523,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
         <h1 className="text-4xl font-black tracking-tight text-white leading-none">
           Department<br/>
           <span style={{
-            background:'linear-gradient(135deg,#38bdf8,#818cf8)',
+            background:`linear-gradient(135deg,${sportColor},#818cf8)`,
             WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
           }}>Overview</span>
         </h1>
@@ -537,7 +537,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
             {label:'Squad',   val:total,          color:'white',   glow:'rgba(255,255,255,0.04)'},
             {label:'Injured', val:injured.length, color:injured.length>0?'#f87171':'rgba(255,255,255,0.15)', glow:injured.length>0?'rgba(248,113,113,0.06)':'transparent'},
             {label:'Modified',val:modified.length,color:modified.length>0?'#fbbf24':'rgba(255,255,255,0.15)', glow:modified.length>0?'rgba(251,191,36,0.06)':'transparent'},
-            {label:'Teams',   val:cards.length,   color:'#38bdf8', glow:'rgba(56,189,248,0.06)'},
+            {label:'Teams',   val:cards.length,   color:sportColor, glow:'rgba(56,189,248,0.06)'},
           ].map(s=>(
             <div key={s.label} className="relative overflow-hidden rounded-2xl border p-3 text-center"
               style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)',boxShadow:`0 0 30px ${s.glow}`}}>
@@ -617,7 +617,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
             {label:'Performance',href:'/performance',color:'#a78bfa',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
-            {label:'Athletes',href:'/athletes',color:'#38bdf8',
+            {label:'Athletes',href:'/athletes',color:sportColor,
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>},
             {label:'Coaches',href:'/coaches',color:'#f59e0b',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>},
@@ -694,7 +694,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
       </FadeUp>
 
       {/* ── WIN / LOSS ── */}
-      <WinLossChart/>
+      <WinLossChart sport={sport}/>
 
     </div>
   );
@@ -744,7 +744,7 @@ export default function DashboardPage() {
       <div className="text-center space-y-3">
         <div className="relative mx-auto w-8 h-8">
           <div className="absolute inset-0 rounded-full border-2 animate-spin"
-            style={{borderColor:'rgba(56,189,248,0.15)',borderTopColor:'#38bdf8'}}/>
+            style={{borderColor:`${sportColor}26`,borderTopColor:sportColor}}/>
           <div className="absolute inset-0 rounded-full border-2 animate-spin"
             style={{borderColor:'rgba(167,139,250,0.1)',borderBottomColor:'#a78bfa',animationDuration:'1.5s',animationDirection:'reverse'}}/>
         </div>
