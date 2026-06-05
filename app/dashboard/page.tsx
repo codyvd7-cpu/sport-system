@@ -704,7 +704,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
 
 // ── Main ─────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const {canSeeAllTeams,teams:myTeams,loading:roleLoading,sport}=useRole();
+  const {canSeeAllTeams,canSeeAllSports,teams:myTeams,loading:roleLoading,sport}=useRole();
   const SPORT_COLORS: Record<string,string> = {
     hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',
     rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4',

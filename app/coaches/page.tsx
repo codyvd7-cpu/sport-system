@@ -26,6 +26,7 @@ function initials(name: string) {
 
 export default function CoachesPage() {
   const { showToast } = useToast();
+  const {isHOH, isOwner, email, sport, loading: roleLoading} = useRole();
   const [coaches, setCoaches] = React.useState<Coach[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [showInvite, setShowInvite] = React.useState(false);
