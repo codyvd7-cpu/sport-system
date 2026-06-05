@@ -477,6 +477,12 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
 }) {
   const TEAM_GROUPS = buildTeamGroups(sport);
   const ALL_TEAMS = TEAM_GROUPS.flatMap(g => g.teams);
+  const SPORT_COLORS: Record<string,string> = {
+    hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',
+    rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4',
+  };
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || '#38bdf8';
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
   const visibleTeams = canSeeAllTeams?ALL_TEAMS:myTeams;
   const [mounted,setMounted] = React.useState(false);
   React.useEffect(()=>{setTimeout(()=>setMounted(true),50);},[]);
