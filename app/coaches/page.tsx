@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
+import { useRole } from '@/lib/useRole';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Coach = { id: string; email: string; full_name: string; role: string; teams?: string[]; is_active?: boolean };
