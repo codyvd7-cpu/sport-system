@@ -77,6 +77,8 @@ export default function AthletesPage() {
 
   const [showAddForm, setShowAddForm] = useState(false);
   const { canSeeAllTeams, teams: myTeams, loading: roleLoading, sport } = useRole();
+  const SPORT_COLORS: Record<string,string> = {hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || '#38bdf8';
 
   async function loadAthletes() {
     setLoading(true);
@@ -180,14 +182,14 @@ export default function AthletesPage() {
   return (
     <main className="min-h-screen bg-[#060812] pb-24 text-white md:pb-0 overflow-x-hidden">
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full bg-sky-600/8 blur-[120px]"/>
+        <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full  blur-[120px]"/>
       </div>
       <div className="relative mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor}b3`}}>
               {sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports'}
             </p>
             <h1 className="text-4xl font-black text-white leading-none tracking-tight">Athletes</h1>
@@ -210,18 +212,19 @@ export default function AthletesPage() {
             <p className="mb-5 text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">New Athlete</p>
             <form onSubmit={handleAddAthlete} className="grid gap-3 sm:grid-cols-2">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
-                className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500/50 transition"/>
+                className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus: transition"/>
               <input value={team} onChange={e => setTeam(e.target.value)} list="team-opts" placeholder="Team e.g. 1sts"
-                className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500/50 transition"/>
+                className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus: transition"/>
               <datalist id="team-opts">{uniqueTeams.map(t => <option key={t} value={t}/>)}</datalist>
               <select value={ageGroup} onChange={e => setAgeGroup(e.target.value)}
-                className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none focus:border-sky-500/50 transition">
+                className="rounded-xl border border-white/8 bg-white/3 px-4 py-3 text-sm text-white outline-none focus: transition">
                 <option value="">Age group…</option>
                 {AGE_GROUPS.map(g => <option key={g}>{g}</option>)}
               </select>
               <button type="submit" disabled={submitting}
-                className="sm:col-span-3 rounded-xl border border-sky-500/30 py-3 text-sm font-black text-sky-300 transition hover:bg-sky-500/10 disabled:opacity-40"
-                style={{background:'rgba(56,189,248,0.06)'}}>
+                className="sm:col-span-3 rounded-xl border py-3 text-sm font-black transition disabled:opacity-40"
+                style={{borderColor:`${sportColor}4d`,background:`${sportColor}14`,color:sportColor}}
+                style={{background:`${sportColor}0f`}}>
                 {submitting ? 'Adding…' : 'Add Athlete'}
               </button>
             </form>
@@ -235,10 +238,10 @@ export default function AthletesPage() {
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>
             <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search athletes…"
-              className="w-full rounded-xl border border-white/6 bg-white/3 pl-11 pr-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-sky-500/40 transition"/>
+              className="w-full rounded-xl border border-white/6 bg-white/3 pl-11 pr-4 py-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-white/20 transition"/>
           </div>
           <select value={teamFilter} onChange={e => setTeamFilter(e.target.value)}
-            className="rounded-xl border border-white/6 bg-white/3 px-4 py-3 text-sm text-white outline-none focus:border-sky-500/40 transition sm:w-44">
+            className="rounded-xl border border-white/6 bg-white/3 px-4 py-3 text-sm text-white outline-none focus:border-white/20 transition sm:w-44">
             <option value="All">All Teams</option>
             {uniqueTeams.map(t => <option key={t}>{t}</option>)}
           </select>
@@ -273,19 +276,19 @@ export default function AthletesPage() {
                     <div className="p-4 space-y-3">
                       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Name"
-                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:border-sky-500/50"/>
+                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:"/>
                         <input value={editTeam} onChange={e => setEditTeam(e.target.value)} list="team-opts-edit" placeholder="Team"
-                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:border-sky-500/50"/>
+                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:"/>
                         <datalist id="team-opts-edit">{uniqueTeams.map(t => <option key={t} value={t}/>)}</datalist>
                         <select value={editAgeGroup} onChange={e => setEditAgeGroup(e.target.value)}
-                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:border-sky-500/50">
+                          className="rounded-xl border border-white/8 bg-white/4 px-3 py-2 text-sm text-white outline-none focus:">
                           <option value="">Age group…</option>
                           {AGE_GROUPS.map(g => <option key={g}>{g}</option>)}
                         </select>
                       </div>
                       <div className="flex gap-2">
                         <button onClick={() => handleSaveEdit(athlete.id)} disabled={editSaving}
-                          className="rounded-xl border border-sky-500/30 bg-sky-500/8 px-4 py-1.5 text-xs font-black text-sky-300 disabled:opacity-50">
+                          className="rounded-xl border px-4 py-1.5 text-xs font-black disabled:opacity-50" style={{borderColor:`${sportColor}4d`,background:`${sportColor}14`,color:sportColor}}>
                           {editSaving ? 'Saving…' : 'Save'}
                         </button>
                         <button onClick={cancelEdit}
