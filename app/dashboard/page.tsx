@@ -368,7 +368,9 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
 
 // ── HOH Overview ─────────────────────────────────────────────
 // ── ATTENDANCE TREND CHART ────────────────────────────────────
-function AttendanceTrendChart({attendance,teams,athletes}:{attendance:Row[];teams:string[];athletes:Row[]}) {
+function AttendanceTrendChart({attendance,teams,athletes,sport}:{attendance:Row[];teams:string[];athletes:Row[];sport:SportKey|null}) {
+  const SPORT_COLORS: Record<string,string> = {hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || '#38bdf8';
   const data = React.useMemo(() => {
     const weeks: {week:string;rate:number}[] = [];
     for (let i = 7; i >= 0; i--) {
@@ -690,7 +692,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
       <FadeUp delay={240}>
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>Attendance Trend · Past 8 Weeks</p>
-        <AttendanceTrendChart attendance={attendance} teams={visibleTeams} athletes={athletes}/>
+        <AttendanceTrendChart attendance={attendance} teams={visibleTeams} athletes={athletes} sport={sport}/>
       </FadeUp>
 
       {/* ── WIN / LOSS ── */}
