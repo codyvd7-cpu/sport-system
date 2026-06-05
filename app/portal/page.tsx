@@ -265,9 +265,9 @@ export default function PortalPage() {
                   return (
                     <button key={item.id} type="button" onClick={() => setOpenWeekItemId(isOpen ? null : itemId)}
                       className={`group relative w-full overflow-hidden rounded-2xl border text-left transition-all duration-200 ${
-                        isOpen ? 'border-white/15 shadow-xl' style={{background:isOpen?`linear-gradient(135deg,${sportCfg.colorDim},transparent)`:undefined}}
-                          : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/6'
-                      }`}>
+                        isOpen ? 'border-white/15 shadow-xl' : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/6'
+                      }`}
+                      style={isOpen ? {background:`linear-gradient(135deg,${sportCfg.colorDim},transparent)`} : undefined}>
                       <div className="absolute right-0 top-0 h-16 w-16 rounded-bl-3xl" style={{background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.03)'}} />
                       <div className="p-5">
                         <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black ${
