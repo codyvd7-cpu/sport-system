@@ -1,8 +1,11 @@
 'use client';
 import * as React from 'react';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 
 export default function PortalLoginPage() {
+  const searchParams = useSearchParams();
+  const sport = searchParams.get('sport') || 'hockey';
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -19,7 +22,7 @@ export default function PortalLoginPage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Access denied.'); setLoading(false); return; }
-      window.location.href = '/portal';
+      window.location.href = `/portal?sport=${sport}`;
     } catch {
       setError('Network error. Please try again.');
       setLoading(false);

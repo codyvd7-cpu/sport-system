@@ -32,21 +32,22 @@ export function proxy(req: NextRequest) {
     }
   }
 
-  // Portal auth check
+  // Portal auth check — applies to /portal regardless of query params
   if (pathname === '/portal') {
+    const sport = req.nextUrl.searchParams.get('sport') || 'hockey';
     const portalCookie = req.cookies.get('portal_access');
     if (!portalCookie?.value) {
-      return NextResponse.redirect(new URL('/portal-login', req.url));
+      return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
     }
     try {
       const [payload, sig] = decodeURIComponent(portalCookie.value).split('.');
-      if (!payload || !sig) return NextResponse.redirect(new URL('/portal-login', req.url));
+      if (!payload || !sig) return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
       const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
       if (!decoded.exp || decoded.exp < Date.now()) {
-        return NextResponse.redirect(new URL('/portal-login', req.url));
+        return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
       }
     } catch {
-      return NextResponse.redirect(new URL('/portal-login', req.url));
+      return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
     }
   }
 
