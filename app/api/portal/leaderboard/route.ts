@@ -12,11 +12,11 @@ export async function GET(req: NextRequest) {
 
   try {
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
+    const sport = req.nextUrl.searchParams.get('sport') || 'hockey';
 
     const [athletesRes, attendanceRes, performanceRes] = await Promise.all([
-      // Only fetch first name + team — never full name for public leaderboard
-      admin.from('athletes').select('id,full_name,team').limit(500),
-      admin.from('attendance').select('athlete_id,status,session_type').limit(2000),
+      admin.from('athletes').select('id,full_name,team,sport').eq('sport', sport).limit(500),
+      admin.from('attendance').select('athlete_id,status,session_type,sport').eq('sport', sport).limit(2000),
       admin.from('performance_tests').select('athlete_id,test_date').limit(2000),
     ]);
 
