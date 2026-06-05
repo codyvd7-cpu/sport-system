@@ -28,7 +28,7 @@ export default function PortalLoginPage() {
       const res = await fetch('/api/portal/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: code.trim() }),
+        body: JSON.stringify({ code: code.trim(), sport }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || 'Access denied.'); setLoading(false); return; }
