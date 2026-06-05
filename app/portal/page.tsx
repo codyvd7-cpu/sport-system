@@ -198,7 +198,7 @@ export default function PortalPage() {
               <div className="mt-7 flex flex-wrap gap-2">
                 {['This Week', 'Fixtures', 'Results', 'Programs', 'Reminders'].map((label) => (
                   <a key={label} href={`#${label.toLowerCase().replace(' ', '')}`}
-                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-white/50 transition hover:text-white" style={{}} onMouseEnter={e=>{e.currentTarget.style.borderColor=sportCfg.accentBorder;e.currentTarget.style.background=sportCfg.colorDim;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="";e.currentTarget.style.background="";}}'}>
+                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-white/50 transition hover:text-white" style={{}} onMouseEnter={e=>{e.currentTarget.style.borderColor=sportCfg.accentBorder;e.currentTarget.style.background=sportCfg.colorDim;}} onMouseLeave={e=>{e.currentTarget.style.borderColor="";e.currentTarget.style.background="";}}>
                     {label}
                   </a>
                 ))}
