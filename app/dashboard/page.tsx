@@ -525,7 +525,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
         <h1 className="text-4xl font-black tracking-tight text-white leading-none">
           Department<br/>
           <span style={{
-            background:`linear-gradient(135deg,${sportColor},#818cf8)`,
+            background:`linear-gradient(135deg,${sportColor},${sportColor}99)`,
             WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
           }}>Overview</span>
         </h1>
