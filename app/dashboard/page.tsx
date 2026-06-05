@@ -513,7 +513,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
       {/* ── HEADER ── */}
       <FadeUp delay={0}>
         <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-2"
-          style={{color:'rgba(255,255,255,0.25)'}}>Head of Hockey</p>
+          style={{color:'rgba(255,255,255,0.25)'}}>Head of {sportLabel}</p>
         <h1 className="text-4xl font-black tracking-tight text-white leading-none">
           Department<br/>
           <span style={{
@@ -697,6 +697,12 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
 // ── Main ─────────────────────────────────────────────────────
 export default function DashboardPage() {
   const {canSeeAllTeams,teams:myTeams,loading:roleLoading,sport}=useRole();
+  const SPORT_COLORS: Record<string,string> = {
+    hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',
+    rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4',
+  };
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || '#38bdf8';
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
   const [athletes,setAthletes] = React.useState<Row[]>([]);
   const [attendance,setAttendance] = React.useState<Row[]>([]);
   const [fixtures,setFixtures] = React.useState<Row[]>([]);

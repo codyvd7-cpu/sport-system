@@ -5,6 +5,7 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { useRole } from '@/lib/useRole';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ name: string }> };
@@ -164,7 +165,7 @@ export default function TeamPage({ params }: PageProps) {
             <div className="absolute inset-0" style={{background:`radial-gradient(ellipse at 0% 50%, ${accent}0e, transparent 60%)`}}/>
             <div className="relative flex items-start justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/25 mb-1">Hockey</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] mb-1" style={{color:`${sportColor}90`}}>{sportLabel}</p>
                 <h1 className="text-5xl font-black tracking-tight leading-none" style={{color:accent}}>{teamName}</h1>
                 <p className="mt-2 text-sm text-white/50">{squad.length} players · {available.length} available</p>
               </div>

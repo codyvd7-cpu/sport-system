@@ -79,6 +79,11 @@ export default function CoachNav() {
   const tabs     = isHOH ? HOH_TABS : COACH_TABS;
 
   const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports';
+  const SPORT_COLORS: Record<string,string> = {
+    hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',
+    rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4',
+  };
+  const sportCfg = { label: sportLabel, color: SPORT_COLORS[sport||'hockey'] || '#38bdf8' };
   const roleBadge = isOwner ? { label:'Admin',             color:'#f87171', bg:'rgba(248,113,113,0.1)' }
     : isHOS   ? { label:'Head of Sport',       color:'#10b981', bg:'rgba(16,185,129,0.1)' }
     : isMIC   ? { label:`MIC · ${sportLabel}`, color:'#fbbf24', bg:'rgba(251,191,36,0.1)' }
@@ -118,7 +123,7 @@ export default function CoachNav() {
             <div>
               <p className="text-[11px] font-bold text-white leading-tight tracking-tight">St Benedict's</p>
               <p className="text-[9px] font-medium tracking-[0.15em] uppercase"
-                style={{color:'var(--sky)'}}>Hockey</p>
+                style={{color:sportCfg.color}}>{sportCfg.label}</p>
             </div>
           </Link>
         </div>
@@ -131,9 +136,9 @@ export default function CoachNav() {
               <Link key={item.href} href={item.href}
                 className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150"
                 style={{
-                  background: active ? 'rgba(56,189,248,0.1)' : 'transparent',
-                  color: active ? '#38bdf8' : 'rgba(255,255,255,0.45)',
-                  borderLeft: active ? '2px solid #38bdf8' : '2px solid transparent',
+                  background: active ? `${sportCfg.color}1a` : 'transparent',
+                  color: active ? sportCfg.color : 'rgba(255,255,255,0.45)',
+                  borderLeft: active ? `2px solid ${sportCfg.color}` : '2px solid transparent',
                 }}
                 onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.8)'; } }}
                 onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='transparent'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'; } }}>
@@ -148,7 +153,7 @@ export default function CoachNav() {
         <div className="px-3 pb-4 pt-2 border-t space-y-1" style={{borderColor:'rgba(255,255,255,0.06)'}}>
           <div className="flex items-center gap-2.5 px-3 py-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
-              style={{background:'rgba(56,189,248,0.12)',color:'#38bdf8'}}>
+              style={{background:`${sportCfg.color}1f`,color:sportCfg.color}}>
               {initials(email||'')}
             </div>
             <div className="flex-1 min-w-0">
@@ -190,7 +195,7 @@ export default function CoachNav() {
             <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5"/>
             <div>
               <p className="text-[11px] font-bold text-white leading-none">St Benedict's</p>
-              <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:'var(--sky)'}}>Hockey</p>
+              <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:sportCfg.color}}>{sportCfg.label}</p>
             </div>
           </Link>
         )}
@@ -225,7 +230,7 @@ export default function CoachNav() {
               style={{borderColor:'rgba(255,255,255,0.06)'}}>
               <div className="flex items-center gap-2.5">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold"
-                  style={{background:'rgba(56,189,248,0.12)',color:'#38bdf8'}}>
+                  style={{background:`${sportCfg.color}1f`,color:sportCfg.color}}>
                   {initials(email||'')}
                 </div>
                 <p className="text-[12px] font-medium truncate max-w-[170px]" style={{color:'rgba(255,255,255,0.5)'}}>{email}</p>
@@ -245,9 +250,9 @@ export default function CoachNav() {
                   <Link key={item.href} href={item.href} onClick={() => setOpen(false)}
                     className="flex items-center gap-3 rounded-xl px-4 py-3 text-[14px] font-medium transition"
                     style={{
-                      background: active ? 'rgba(56,189,248,0.1)' : 'transparent',
-                      color: active ? '#38bdf8' : 'rgba(255,255,255,0.55)',
-                      borderLeft: active ? '2px solid #38bdf8' : '2px solid transparent',
+                      background: active ? `${sportCfg.color}1a` : 'transparent',
+                      color: active ? sportCfg.color : 'rgba(255,255,255,0.55)',
+                      borderLeft: active ? `2px solid ${sportCfg.color}` : '2px solid transparent',
                     }}>
                     <span style={{opacity: active ? 1 : 0.6}}>{item.icon}</span>
                     {item.label}
@@ -284,7 +289,7 @@ export default function CoachNav() {
             return (
               <Link key={item.href} href={item.href}
                 className="flex flex-1 flex-col items-center justify-center gap-1 py-2.5 transition-all"
-                style={{color: active ? '#38bdf8' : 'rgba(255,255,255,0.3)'}}>
+                style={{color: active ? sportCfg.color : 'rgba(255,255,255,0.3)'}}>
                 <span style={{
                   transform: active ? 'scale(1.1)' : 'scale(1)',
                   transition: 'transform 0.15s ease',
@@ -294,13 +299,13 @@ export default function CoachNav() {
                 </span>
                 <span className="text-[9px] font-semibold tracking-[0.05em]" style={{
                   opacity: active ? 1 : 0.6,
-                  color: active ? '#38bdf8' : undefined,
+                  color: active ? sportCfg.color : undefined,
                 }}>
                   {item.label}
                 </span>
                 {active && (
                   <span className="absolute bottom-0 h-0.5 w-6 rounded-full"
-                    style={{background:'#38bdf8',opacity:0.8}}/>
+                    style={{background:sportCfg.color,opacity:0.8}}/>
                 )}
               </Link>
             );

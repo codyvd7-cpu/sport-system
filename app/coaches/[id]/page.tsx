@@ -118,7 +118,7 @@ export default function CoachProfilePage({ params }: PageProps) {
   );
 
   const accent = ROLE_COLOR[coach.role] || '#38bdf8';
-  const roleLabel = coach.role === 'head_of_hockey' ? 'Head of Hockey' : coach.role === 'owner' ? 'Owner' : 'Coach';
+  const roleLabel = coach.role === 'head_of_hockey' || coach.role === 'mic' ? 'MIC' : coach.role === 'owner' ? 'Admin' : coach.role === 'head_of_sport' ? 'Head of Sport' : 'Coach';
 
   return (
     <main className="min-h-screen pb-24 text-white md:pb-8 overflow-x-hidden" style={{background:'var(--bg)'}}>
