@@ -48,7 +48,7 @@ export default function SquadBoardPage() {
   const [view, setView] = useState<'assign' | 'overview'>('assign');
 
   useEffect(() => {
-    supabase.from('athletes').select('id, full_name, age_group, team').order('full_name')
+    (() => { let q = supabase.from('athletes').select('id, full_name, age_group, team, sport').order('full_name'); if(sport) q = q.eq('sport', sport); return q; })()
       .then(({ data }) => { if (data) setAthletes(data as Athlete[]); setLoading(false); });
   }, []);
 

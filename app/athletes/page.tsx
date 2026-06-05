@@ -117,10 +117,10 @@ export default function AthletesPage() {
     if (!name.trim()) { setError('Name is required.'); return; }
     setSubmitting(true); setError('');
     const insertAttempts = [
-      { name: name.trim(), team: team.trim(), age_group: ageGroup || null },
-      { full_name: name.trim(), team: team.trim(), age_group: ageGroup || null },
-      { athlete_name: name.trim(), team: team.trim(), age_group: ageGroup || null },
-      { name: name.trim(), team_name: team.trim(), age_group: ageGroup || null },
+      { name: name.trim(), team: team.trim(), age_group: ageGroup || null, sport: sport || 'hockey' },
+      { full_name: name.trim(), team: team.trim(), age_group: ageGroup || null, sport: sport || 'hockey' },
+      { athlete_name: name.trim(), team: team.trim(), age_group: ageGroup || null, sport: sport || 'hockey' },
+      { name: name.trim(), team_name: team.trim(), age_group: ageGroup || null, sport: sport || 'hockey' },
     ];
     let insertErr: any = null;
     for (const payload of insertAttempts) {

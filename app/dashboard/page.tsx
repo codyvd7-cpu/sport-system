@@ -726,13 +726,14 @@ export default function DashboardPage() {
     const [aRes,attRes,fixRes,coachRes]=await Promise.all([
       q,
       supabase.from('attendance').select('id,athlete_id,status,session_date,session_type,sport')
+        .eq('sport', sport || 'hockey')
         .gte('session_date',weekAgo())
         .order('session_date',{ascending:false})
         .limit(500),
       supabase.from('portal_fixtures').select('*')
         .eq('sport', sport || 'hockey')
         .order('fixture_date').limit(20),
-      supabase.from('staff_roles').select('email,teams,role,full_name,sport').eq('is_active',true),
+      (() => { let sr = supabase.from('staff_roles').select('email,teams,role,full_name,sport').eq('is_active',true); if(sport && !canSeeAllSports) sr = sr.eq('sport',sport); return sr; })(),
     ]);
     setAthletes(aRes.data||[]);setAttendance(attRes.data||[]);
     setFixtures(fixRes.data||[]);setCoaches(coachRes.data||[]);

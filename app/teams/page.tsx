@@ -36,7 +36,7 @@ export default function TeamsPage() {
       else if (sport) athQuery = athQuery.eq('sport', sport);
       const [athRes, attRes] = await Promise.all([
         athQuery,
-        supabase.from('attendance').select('athlete_id, status, session_date').gte('session_date', new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0]),
+        supabase.from('attendance').select('athlete_id, status, session_date, sport').eq('sport', sport || 'hockey').gte('session_date', new Date(Date.now()-30*24*60*60*1000).toISOString().split('T')[0]),
       ]);
       setAthletes(athRes.data || []);
       setAttendance(attRes.data || []);

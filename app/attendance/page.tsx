@@ -95,11 +95,13 @@ export default function AttendancePage() {
   React.useEffect(()=>{
     if(roleLoading) return;
     async function load(){
-      let q = supabase.from('athletes').select('id,full_name,team,availability').order('full_name');
+      let q = supabase.from('athletes').select('id,full_name,team,availability,sport').order('full_name');
+      if (!canSeeAllTeams && myTeams.length > 0) q = q.in('team', myTeams);
+      else if (sport) q = q.eq('sport', sport);
       if(!canSeeAllTeams&&myTeams.length>0) q=q.in('team',myTeams);
       const [aRes,hRes] = await Promise.all([
         q,
-        supabase.from('attendance').select('*,athletes(full_name,team)').order('session_date',{ascending:false}).limit(500),
+        supabase.from('attendance').select('*,athletes(full_name,team)').eq('sport', sport || 'hockey').order('session_date',{ascending:false}).limit(500),
       ]);
       setAthletes(aRes.data||[]);
       setHistory(hRes.data||[]);
@@ -155,13 +157,14 @@ export default function AttendancePage() {
       session_date:sessionDate,
       session_type:sessionType,
       status:statuses[a.id]||'Present',
+      sport: sport || 'hockey',
     }));
     const {error}=await supabase.from('attendance').insert(rows);
     if(error){showToast(`Error: ${error.message}`,'error');}
     else{
       showToast(`${squad.length} athletes marked ✓`);
       // Refresh history
-      const {data}=await supabase.from('attendance').select('*,athletes(full_name,team)').order('session_date',{ascending:false}).limit(500);
+      const {data}=await supabase.from('attendance').select('*,athletes(full_name,team)').eq('sport', sport || 'hockey').order('session_date',{ascending:false}).limit(500);
       setHistory(data||[]);
     }
     setSaving(false);

@@ -45,7 +45,9 @@ export default function CoachesPage() {
   const [saving, setSaving] = React.useState(false);
 
   async function load() {
-    const { data } = await supabase.from('staff_roles').select('*').eq('is_active', true).order('full_name');
+    let coachQ = supabase.from('staff_roles').select('*').eq('is_active', true).order('full_name');
+    if (sport) coachQ = coachQ.eq('sport', sport);
+    const { data } = await coachQ;
     setCoaches(data || []);
     setLoading(false);
   }
