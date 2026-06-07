@@ -9,7 +9,7 @@ import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 
 type Row = Record<string, any>;
 
-const GROUP_ACCENTS = ['#a78bfa',sportColor,'#10b981','#f59e0b','#f87171','#34d399'];
+const GROUP_ACCENTS = ['#a78bfa','#38bdf8','#10b981','#f59e0b','#f87171','#34d399'];
 
 function buildGroups(sport: SportKey | null) {
   return getTeamGroups((sport || 'hockey') as SportKey).map((g, i) => ({
