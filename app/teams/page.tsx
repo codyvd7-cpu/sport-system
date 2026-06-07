@@ -161,7 +161,7 @@ export default function TeamsPage() {
                             {s.available > 0 && <div className="h-1.5 rounded-full bg-emerald-500" style={{ flex: s.available }} />}
                             {s.modified > 0 && <div className="h-1.5 rounded-full bg-amber-500" style={{ flex: s.modified }} />}
                             {s.injured > 0 && <div className="h-1.5 rounded-full bg-red-500" style={{ flex: s.injured }} />}
-                            {s.resting > 0 && <div className="h-1.5 rounded-full " style={{background:sportColor}} style={{ flex: s.resting }} />}
+                            {s.resting > 0 && <div className="h-1.5 rounded-full" style={{background:sportColor, flex:s.resting}} />}
                           </div>
                           <div className="flex items-center justify-between text-[10px]">
                             <div className="flex gap-2">
