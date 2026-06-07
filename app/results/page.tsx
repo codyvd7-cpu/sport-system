@@ -147,7 +147,7 @@ export default function MatchHistoryPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.05)'}} className="rounded-2xl py-16 text-center">
-            <p className="text-3xl mb-3">🏑</p>
+            <p className="text-3xl mb-3">{sport==="rugby"?"🏉":sport==="cricket"?"🏏":sport==="swimming"?"🏊":sport==="rowing"?"🚣":sport==="waterpolo"?"🤽":"🏑"}</p>
             <p className="text-sm" style={{color:'rgba(255,255,255,0.3)'}}>No results yet.</p>
             <p className="text-[11px] mt-1" style={{color:'rgba(255,255,255,0.2)'}}>Log results from the team page or portal admin.</p>
           </div>

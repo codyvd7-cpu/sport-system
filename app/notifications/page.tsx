@@ -55,7 +55,7 @@ export default function NotificationsPage() {
 
         {/* Header */}
           <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(255,255,255,0.25)'}}>HOH</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:sportColor}}>{sportLabel}</p>
           <h1 className="text-4xl font-black tracking-tight leading-none text-white">Send<br/>
             <span style={{background:`linear-gradient(135deg,${sportColor},#a78bfa)`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
               Notification
