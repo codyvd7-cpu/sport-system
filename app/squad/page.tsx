@@ -118,7 +118,7 @@ export default function SquadBoardPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor},0.7)"}}>Team Management</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:sportColor+'b3'}}>Team Management</p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Squad Board</h1>
           <p className="mt-1 text-sm text-white/35">Assign players to their teams for the season.</p>
         </div>
@@ -143,9 +143,8 @@ export default function SquadBoardPage() {
         <div className="mb-6 flex gap-2">
           {(['assign', 'overview'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)}
-              className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-                view === v ? 'bg-white/8 text-white/70 border border-white/10' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white'
-              }`}>
+              className="rounded-xl px-4 py-2 text-sm font-black transition border"
+              style={{background:view===v?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.025)',borderColor:'rgba(255,255,255,0.1)',color:view===v?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.5)'}}>
               {v === 'assign' ? 'Assign Players' : 'Team Overview'}
             </button>
           ))}
@@ -173,9 +172,9 @@ export default function SquadBoardPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {['All', ...ageGroups].map((ag) => (
                       <button key={ag} onClick={() => setAgeFilter(ag)}
-                        className={`rounded-full px-3 py-1 text-xs font-black transition ${
+                        className={'rounded-full px-3 py-1 text-xs font-black transition '+
                           ageFilter === ag ? 'bg-white/8 text-white/70 border border-white/10' : 'border border-white/8 bg-white/5 text-white/35 hover:text-white'
-                        }`}>{ag}</button>
+                        +'}>{ag}</button>
                     ))}
                   </div>
                 </div>
@@ -209,7 +208,7 @@ export default function SquadBoardPage() {
                             const col = getColor(t);
                             return (
                               <button key={t} onClick={() => assignTeam(athlete.id, t)} disabled={saving === athlete.id}
-                                className={`rounded-md border px-2 py-0.5 text-[9px] font-black transition bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white ${col.border} disabled:opacity-50`}>
+                                className={'rounded-md border px-2 py-0.5 text-[9px] font-black transition bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white '+col.border+' disabled:opacity-50'}>
                                 {t}
                               </button>
                             );
@@ -243,7 +242,7 @@ export default function SquadBoardPage() {
                     return (
                       <div key={group.group}>
                         <div className="mb-2 flex items-center justify-between">
-                          <p className={`text-xs font-black uppercase tracking-[0.18em] ${col.text}`}>{group.group}</p>
+                          <p className={'text-xs font-black uppercase tracking-[0.18em] '+col.text+'}>{group.group}</p>
                           <button onClick={() => bulkAssign(group.teams[0])} className="text-[10px] text-white/25 hover:text-white/50 transition">
                             bulk assign filtered →
                           </button>
@@ -254,13 +253,10 @@ export default function SquadBoardPage() {
                             const isSelected = selectedTeam === team;
                             return (
                               <button key={team} onClick={() => setSelectedTeam(isSelected ? null : team)}
-                                className={`rounded-xl border p-3 text-center transition ${
-                                  isSelected ? `${col.border} ${col.bg}` :
-                                  count > 0 ? 'border-white/8 bg-white/5/60 hover:border-white/10' :
-                                  'border-white/6/60 bg-[rgba(255,255,255,0.01)]/40 hover:border-white/8'
-                                }`}>
-                                <p className={`text-xl font-black leading-none ${isSelected ? col.text : count > 0 ? 'text-white' : 'text-white/15'}`}>{count}</p>
-                                <p className={`mt-1 text-[10px] font-black ${isSelected ? col.text : count > 0 ? 'text-white/50' : 'text-white/15'}`}>{team}</p>
+                                className="rounded-xl border p-3 text-center transition"
+                                style={{borderColor:isSelected?'rgba(255,255,255,0.2)':count>0?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.06)',background:isSelected?'rgba(255,255,255,0.08)':count>0?'rgba(255,255,255,0.05)':'rgba(255,255,255,0.01)'}}>
+                                <p className="text-xl font-black leading-none" style={{color:isSelected?sportColor:count>0?'white':'rgba(255,255,255,0.15)'}}>{count}</p>
+                                <p className="mt-1 text-[10px] font-black" style={{color:isSelected?sportColor:count>0?'rgba(255,255,255,0.5)':'rgba(255,255,255,0.15)'}}>{team}</p>
                               </button>
                             );
                           })}
@@ -275,7 +271,7 @@ export default function SquadBoardPage() {
                   <div className="mt-5 border-t border-white/6 pt-5">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={`rounded-full px-2.5 py-1 text-xs font-black ${getColor(selectedTeam).badge}`}>{selectedTeam}</span>
+                        <span className={'rounded-full px-2.5 py-1 text-xs font-black '+getColor(selectedTeam).badge+'}>{selectedTeam}</span>
                         <p className="text-sm text-white/50">{teamPlayers.length} players</p>
                       </div>
                       <button onClick={() => setSelectedTeam(null)} className="text-xs text-white/35 hover:text-white/70">✕ Close</button>
@@ -310,19 +306,18 @@ export default function SquadBoardPage() {
               const col = COLORS[group.color];
               return (
                 <div key={group.group}>
-                  <p className={`mb-3 text-xs font-black uppercase tracking-[0.2em] ${col.text}`}>{group.group}</p>
+                  <p className={'mb-3 text-xs font-black uppercase tracking-[0.2em] '+col.text+'}>{group.group}</p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                     {group.teams.map((team) => {
                       const players = athletes.filter((a) => a.team === team);
                       const isSelected = selectedTeam === team;
                       return (
                         <div key={team} onClick={() => setSelectedTeam(isSelected ? null : team)}
-                          className={`cursor-pointer rounded-2xl border p-4 transition ${
-                            isSelected ? `${col.border} ${col.bg}` : 'border-white/6 bg-[rgba(255,255,255,0.025)] hover:border-white/8'
-                          }`}>
+                          className="cursor-pointer rounded-2xl border p-4 transition"
+                          style={{borderColor:isSelected?'rgba(255,255,255,0.2)':'rgba(255,255,255,0.06)',background:isSelected?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.025)'}}>
                           <div className="flex items-center justify-between mb-3">
-                            <span className={`rounded-full px-2.5 py-1 text-xs font-black ${col.badge}`}>{team}</span>
-                            <p className={`text-2xl font-black ${players.length > 0 ? col.text : 'text-white/15'}`}>{players.length}</p>
+                            <span className={'rounded-full px-2.5 py-1 text-xs font-black '+col.badge+'}>{team}</span>
+                            <p className={'text-2xl font-black '+players.length > 0 ? col.text : 'text-white/15'+'}>{players.length}</p>
                           </div>
                           {isSelected && players.length > 0 && (
                             <div className="mt-2 space-y-1 border-t border-white/5 pt-2 max-h-40 overflow-y-auto">

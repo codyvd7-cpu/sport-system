@@ -95,7 +95,7 @@ export default function TeamsPage() {
         {/* Header */}
         <FadeUp delay={0}>
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor},0.7)'}}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:sportColor+'b3'}}>
             {sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports'}
           </p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Teams</h1>
@@ -148,9 +148,9 @@ export default function TeamsPage() {
                         </div>
                       );
                       return (
-                        <Link key={team} href={`/teams/${encodeURIComponent(team)}`}
+                        <Link key={team} href={'/teams/'+encodeURIComponent(team)}
                           className="rounded-2xl border p-4 transition hover:scale-[1.02]"
-                          style={{borderColor:`${accent}28`,background:`${accent}08`}}>
+                          style={{borderColor:accent+'28',background:accent+'08'}}>
                           <div className="flex items-center justify-between mb-3">
                             <span className="rounded-full px-2.5 py-1 text-xs font-black"
                               style={{background:accent+'18',color:accent}}>{team}</span>
@@ -170,7 +170,7 @@ export default function TeamsPage() {
                               {s.modified > 0 && <span className="text-amber-400">{s.modified} mod</span>}
                             </div>
                             {s.attendanceRate !== null && (
-                              <span className={`font-black ${s.attendanceRate >= 80 ? 'text-emerald-400' : s.attendanceRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{s.attendanceRate}% att</span>
+                              <span className={'font-black '+s.attendanceRate >= 80 ? 'text-emerald-400' : s.attendanceRate >= 60 ? 'text-amber-400' : 'text-red-400'+'}>{s.attendanceRate}% att</span>
                             )}
                           </div>
                         </Link>

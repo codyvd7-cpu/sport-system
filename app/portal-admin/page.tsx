@@ -1360,7 +1360,7 @@ async function handleLogout() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor},0.7)'}}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:sportColor+'b3'}}>
               {SPORTS[activeSport]?.label || activeSport} · Portal Admin
             </p>
             <h1 className="mt-1 text-4xl font-black tracking-tight text-white leading-none">Portal Admin</h1>
@@ -1387,7 +1387,8 @@ async function handleLogout() {
         <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
           {['fixtures','results','week','programs','reminders','sponsors'].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-white/8 border border-white/10 text-white/70' : 'border border-white/7 bg-white/2 text-white/35 hover:text-white'}`}>
+              className="rounded-xl px-4 py-2 text-sm font-black capitalize transition border"
+              style={{background:activeTab===tab?sportColor+'20':'rgba(255,255,255,0.02)',borderColor:activeTab===tab?sportColor+'66':'rgba(255,255,255,0.07)',color:activeTab===tab?'white':'rgba(255,255,255,0.35)'}}>
               {tab === 'week' ? 'Week Plan' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
