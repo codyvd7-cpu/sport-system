@@ -15,7 +15,10 @@ const SPORT_CONFIG: Record<string, { label: string; color: string; colorClass: s
 
 function PortalLoginInner() {
   const searchParams = useSearchParams();
-  const sport = searchParams.get('sport') || 'hockey';
+  const sport = searchParams.get('sport') ||
+    (typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c => c.trim().startsWith('portal_sport='))?.split('=')[1]
+      : null) || 'hockey';
   const cfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState('');

@@ -34,7 +34,11 @@ export function proxy(req: NextRequest) {
 
   // Portal auth check — applies to /portal regardless of query params
   if (pathname === '/portal') {
-    const sport = req.nextUrl.searchParams.get('sport') || 'hockey';
+    // Read sport from cookie (set by landing page) — more reliable than URL params on mobile
+    const portalSportCookie = req.cookies.get('portal_sport');
+    const urlSport = req.nextUrl.searchParams.get('sport');
+    const sport = portalSportCookie?.value || urlSport || 'hockey';
+
     const portalCookie = req.cookies.get('portal_access');
     if (!portalCookie?.value) {
       return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));

@@ -292,7 +292,12 @@ export default function LandingPage() {
                     className={`h-full ${mounted ? 'card-in' : 'opacity-0'}`}
                     style={{animationDelay:`${500 + i * 80}ms`}}>
                     {dept.available
-                      ? <Link href={dept.href} className="block h-full">{inner}</Link>
+                      ? <Link href={dept.href} className="block h-full"
+                          onClick={() => {
+                            if (dept.id !== 'hp') {
+                              document.cookie = `portal_sport=${dept.id};path=/;max-age=86400`;
+                            }
+                          }}>{inner}</Link>
                       : inner
                     }
                   </div>

@@ -55,7 +55,10 @@ async function safeQuery<T>(
 
 function PortalInner() {
   const searchParams = useSearchParams();
-  const sport = (searchParams.get('sport') || 'hockey') as SportKey;
+  const sport = (searchParams.get('sport') ||
+    (typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c => c.trim().startsWith('portal_sport='))?.split('=')[1]
+      : null) || 'hockey') as SportKey;
   const sportCfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
 
   const [sponsors, setSponsors] = useState<Row[]>([]);
