@@ -17,7 +17,7 @@ const STATUS_STYLES: Record<string,{bg:string;text:string;border:string}> = {
   Present: {bg:'bg-emerald-500/20',text:'text-emerald-300',border:'border-emerald-500/30'},
   Late:    {bg:'bg-amber-500/20',  text:'text-amber-300',  border:'border-amber-500/30'},
   Absent:  {bg:'bg-red-500/20',    text:'text-red-300',    border:'border-red-500/30'},
-  Excused: {bg:'bg-sky-500/20',    text:'text-sky-300',    border:'border-sky-500/30'},
+  Excused: {bg:'bg-white/8',    text:'text-white/70',    border:'border-white/10'},
 };
 
 const TEAM_GROUPS = [
@@ -73,6 +73,15 @@ function LowAttendanceAlert({athletes,history}:{athletes:Row[];history:Row[]}) {
 export default function AttendancePage() {
   const {showToast} = useToast();
   const {canSeeAllTeams, teams:myTeams, loading:roleLoading, sport} = useRole();
+  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
+  const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
+    hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
+    cricket:{scorers:'Top Scorers',score:'Runs'}, rowing:{scorers:'Crew',score:'Time'},
+    swimming:{scorers:'Swimmers',score:'Time'}, waterpolo:{scorers:'Goal Scorers',score:'Goals'},
+  };
+  const scoreTerm = SCORE_TERMS[sport||'hockey'] || SCORE_TERMS.hockey;
   const TEAM_GROUPS = getTeamGroups((sport || 'hockey') as SportKey);
 
   const [athletes, setAthletes] = React.useState<Row[]>([]);
@@ -278,7 +287,7 @@ export default function AttendancePage() {
                     {label:'Present',val:presentCount,color:'text-emerald-400'},
                     {label:'Late',val:lateCount,color:'text-amber-400'},
                     {label:'Absent',val:absentCount,color:absentCount>0?'text-red-400':'text-white/25'},
-                    {label:'Excused',val:excusedCount,color:'text-sky-400'},
+                    {label:'Excused',val:excusedCount,color:''},
                   ].map(s=>(
                     <div key={s.label} className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-3 text-center">
                       <p className={`text-xl font-black ${s.color}`}>{s.val}</p>

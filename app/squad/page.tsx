@@ -24,7 +24,7 @@ const ALL_TEAMS = TEAM_GROUPS.flatMap((g) => g.teams);
 
 const COLORS: Record<string, { badge: string; text: string; border: string; bg: string }> = {
   violet: { badge: 'bg-violet-500/15 text-violet-300', text: 'text-violet-400', border: 'border-violet-500/30', bg: 'bg-violet-500/8' },
-  sky:    { badge: 'bg-sky-500/15 text-sky-300',       text: 'text-sky-400',    border: 'border-sky-500/30',    bg: 'bg-sky-500/8' },
+  sky:    { badge: 'bg-white/5 text-white/70',       text: '',    border: 'border-white/10',    bg: '' },
   emerald:{ badge: 'bg-emerald-500/15 text-emerald-300',text: 'text-emerald-400',border: 'border-emerald-500/30',bg: 'bg-emerald-500/8' },
   amber:  { badge: 'bg-amber-500/15 text-amber-300',   text: 'text-amber-400',  border: 'border-amber-500/30',  bg: 'bg-amber-500/8' },
 };
@@ -41,6 +41,15 @@ function initials(name: string) {
 export default function SquadBoardPage() {
   const { showToast } = useToast();
   const { sport } = useRole();
+  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
+  const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
+    hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
+    cricket:{scorers:'Top Scorers',score:'Runs'}, rowing:{scorers:'Crew',score:'Time'},
+    swimming:{scorers:'Swimmers',score:'Time'}, waterpolo:{scorers:'Goal Scorers',score:'Goals'},
+  };
+  const scoreTerm = SCORE_TERMS[sport||'hockey'] || SCORE_TERMS.hockey;
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -109,7 +118,7 @@ export default function SquadBoardPage() {
 
         {/* Header */}
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(56,189,248,0.7)"}}>Team Management</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor},0.7)"}}>Team Management</p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Squad Board</h1>
           <p className="mt-1 text-sm text-white/35">Assign players to their teams for the season.</p>
         </div>
@@ -122,10 +131,10 @@ export default function SquadBoardPage() {
               <p className="text-xs font-black uppercase tracking-wide text-white/35">Assignment Progress</p>
               <p className="mt-0.5 text-2xl font-black text-white">{assigned} <span className="text-base font-semibold text-white/35">of {athletes.length} assigned</span></p>
             </div>
-            <p className={`text-3xl font-black ${pct === 100 ? 'text-emerald-400' : pct > 50 ? 'text-sky-400' : 'text-amber-400'}`}>{pct}%</p>
+            <p className={`text-3xl font-black ${pct === 100 ? 'text-emerald-400' : pct > 50 ? '' : 'text-amber-400'}`}>{pct}%</p>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-            <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : 'bg-sky-500'}`} style={{ width: `${pct}%` }} />
+            <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : ''}`} style={{ width: `${pct}%` }} />
           </div>
           <p className="mt-2 text-xs text-white/25">{unassigned.length} players still unassigned</p>
         </div>
@@ -135,7 +144,7 @@ export default function SquadBoardPage() {
           {(['assign', 'overview'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)}
               className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-                view === v ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white'
+                view === v ? 'bg-white/8 text-white/70 border border-white/10' : 'border border-white/8 bg-[rgba(255,255,255,0.025)] text-white/50 hover:text-white'
               }`}>
               {v === 'assign' ? 'Assign Players' : 'Team Overview'}
             </button>
@@ -160,12 +169,12 @@ export default function SquadBoardPage() {
                 {/* Search + filter */}
                 <div className="mb-4 space-y-2">
                   <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search players..."
-                    className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.01)] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 focus:border-sky-500" />
+                    className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.01)] px-3 py-2.5 text-sm text-white outline-none placeholder:text-white/25 " />
                   <div className="flex flex-wrap gap-1.5">
                     {['All', ...ageGroups].map((ag) => (
                       <button key={ag} onClick={() => setAgeFilter(ag)}
                         className={`rounded-full px-3 py-1 text-xs font-black transition ${
-                          ageFilter === ag ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'border border-white/8 bg-white/5 text-white/35 hover:text-white'
+                          ageFilter === ag ? 'bg-white/8 text-white/70 border border-white/10' : 'border border-white/8 bg-white/5 text-white/35 hover:text-white'
                         }`}>{ag}</button>
                     ))}
                   </div>
@@ -173,7 +182,7 @@ export default function SquadBoardPage() {
 
                 {loading ? (
                   <div className="flex items-center gap-2 py-4">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
                     <p className="text-sm text-white/50">Loading players...</p>
                   </div>
                 ) : filteredUnassigned.length === 0 ? (
@@ -193,7 +202,7 @@ export default function SquadBoardPage() {
                             <p className="truncate text-sm font-bold text-white">{athlete.full_name}</p>
                             <p className="text-[10px] text-white/35">{athlete.age_group || '—'}</p>
                           </div>
-                          {saving === athlete.id && <div className="h-3 w-3 animate-spin rounded-full border border-sky-500 border-t-transparent shrink-0" />}
+                          {saving === athlete.id && <div className="h-3 w-3 animate-spin rounded-full border border-t-transparent shrink-0" />}
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {ALL_TEAMS.map((t) => {
@@ -218,12 +227,12 @@ export default function SquadBoardPage() {
               <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Teams</p>
+                    <p className="text-xs font-black uppercase tracking-[0.18em]" style={{color:sportColor}}>Teams</p>
                     <h2 className="mt-0.5 text-lg font-black text-white">25 Teams</h2>
                   </div>
                   {saving === 'bulk' && (
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 animate-spin rounded-full border border-sky-500 border-t-transparent" />
+                      <div className="h-3 w-3 animate-spin rounded-full border border-t-transparent" />
                       <p className="text-xs text-white/50">Saving...</p>
                     </div>
                   )}

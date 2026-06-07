@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
+import { useRole } from '@/lib/useRole';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 const PRESETS = [
@@ -13,6 +14,17 @@ const PRESETS = [
 
 export default function NotificationsPage() {
   const { showToast } = useToast();
+  const { sport } = useRole();
+  
+  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
+  const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
+    hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
+    cricket:{scorers:'Top Scorers',score:'Runs'}, rowing:{scorers:'Crew',score:'Time'},
+    swimming:{scorers:'Swimmers',score:'Time'}, waterpolo:{scorers:'Goal Scorers',score:'Goals'},
+  };
+  const scoreTerm = SCORE_TERMS[sport||'hockey'] || SCORE_TERMS.hockey;
   const [title, setTitle]     = React.useState('');
   const [body, setBody]       = React.useState('');
   const [url, setUrl]         = React.useState('/dashboard');
@@ -45,7 +57,7 @@ export default function NotificationsPage() {
           <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(255,255,255,0.25)'}}>HOH</p>
           <h1 className="text-4xl font-black tracking-tight leading-none text-white">Send<br/>
-            <span style={{background:'linear-gradient(135deg,#38bdf8,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+            <span style={{background:`linear-gradient(135deg,${sportColor},#a78bfa)`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
               Notification
             </span>
           </h1>
@@ -71,7 +83,7 @@ export default function NotificationsPage() {
         {/* Compose */}
         <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'}}>
           <div className="px-5 py-3 border-b" style={{borderColor:'rgba(255,255,255,0.05)',background:'rgba(255,255,255,0.02)'}}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'#38bdf8'}}>Compose</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:sportColor}}>Compose</p>
           </div>
           <div className="p-5 space-y-3">
             <div>

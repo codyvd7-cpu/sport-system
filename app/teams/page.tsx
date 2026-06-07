@@ -9,7 +9,7 @@ import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 
 type Row = Record<string, any>;
 
-const GROUP_ACCENTS = ['#a78bfa','#38bdf8','#10b981','#f59e0b','#f87171','#34d399'];
+const GROUP_ACCENTS = ['#a78bfa',sportColor,'#10b981','#f59e0b','#f87171','#34d399'];
 
 function buildGroups(sport: SportKey | null) {
   return getTeamGroups((sport || 'hockey') as SportKey).map((g, i) => ({
@@ -24,6 +24,15 @@ function getGroupAccent(team: string, groups: {teams:string[];accent:string}[]) 
 
 export default function TeamsPage() {
   const { canSeeAllTeams, teams: myTeams, loading: roleLoading, sport } = useRole();
+  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
+  const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
+    hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
+    cricket:{scorers:'Top Scorers',score:'Runs'}, rowing:{scorers:'Crew',score:'Time'},
+    swimming:{scorers:'Swimmers',score:'Time'}, waterpolo:{scorers:'Goal Scorers',score:'Goals'},
+  };
+  const scoreTerm = SCORE_TERMS[sport||'hockey'] || SCORE_TERMS.hockey;
   const [athletes, setAthletes] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -86,7 +95,7 @@ export default function TeamsPage() {
         {/* Header */}
         <FadeUp delay={0}>
         <div className="mb-8">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor},0.7)'}}>
             {sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports'}
           </p>
           <h1 className="text-4xl font-black tracking-tight text-white leading-none">Teams</h1>
@@ -103,8 +112,8 @@ export default function TeamsPage() {
             { label: 'Injured', value: totalInjured, color: 'red' },
             { label: 'Modified', value: totalModified, color: 'amber' },
           ].map((kpi) => (
-            <div key={kpi.label} className={`rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4 ${kpi.color === 'sky' ? 'border-sky-500/20' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : 'border-amber-500/20'}`}>
-              <CountUp value={kpi.value} className={`text-3xl font-black block ${kpi.color === 'sky' ? 'text-sky-400' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : 'text-amber-400'}`}/>
+            <div key={kpi.label} className={`rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4 ${kpi.color === 'sky' ? 'border-white/8' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : 'border-amber-500/20'}`}>
+              <CountUp value={kpi.value} className={`text-3xl font-black block ${kpi.color === 'sky' ? '' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : 'text-amber-400'}`}/>
               <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{kpi.label}</p>
             </div>
           ))}
@@ -113,7 +122,7 @@ export default function TeamsPage() {
 
         {/* Team groups */}
         {loading ? (
-          <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" /><p className="text-sm text-white/50">Loading...</p></div>
+          <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportColor}}" /><p className="text-sm text-white/50">Loading...</p></div>
         ) : (
           <StaggerList className="space-y-8" stagger={60}>
             {visibleTeamGroups.map((group) => {
@@ -150,7 +159,7 @@ export default function TeamsPage() {
                             {s.available > 0 && <div className="h-1.5 rounded-full bg-emerald-500" style={{ flex: s.available }} />}
                             {s.modified > 0 && <div className="h-1.5 rounded-full bg-amber-500" style={{ flex: s.modified }} />}
                             {s.injured > 0 && <div className="h-1.5 rounded-full bg-red-500" style={{ flex: s.injured }} />}
-                            {s.resting > 0 && <div className="h-1.5 rounded-full bg-sky-500" style={{ flex: s.resting }} />}
+                            {s.resting > 0 && <div className="h-1.5 rounded-full " style={{background:sportColor}} style={{ flex: s.resting }} />}
                           </div>
                           <div className="flex items-center justify-between text-[10px]">
                             <div className="flex gap-2">

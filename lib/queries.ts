@@ -48,15 +48,17 @@ export function useAttendance(days = 30, teams?: string[]) {
 }
 
 // ── Portal Results ────────────────────────────────────────────
-export function usePortalResults(team?: string) {
+export function usePortalResults(team?: string, sport?: string) {
   return useQuery({
-    queryKey: ['portal_results', team ?? 'all'],
+    queryKey: ['portal_results', team ?? 'all', sport ?? 'hockey'],
     queryFn: async () => {
       let q = supabase.from('portal_results')
         .select('*')
         .order('result_date', { ascending: false })
         .limit(100);
       if (team) q = q.eq('team', team);
+      if (sport) q = q.eq('sport', sport);
+      else q = q.eq('sport', 'hockey');
       const { data, error } = await q;
       if (error) throw error;
       return data as Row[];

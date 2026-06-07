@@ -14,7 +14,7 @@ type Result = {
 
 const TEAM_GROUPS = [
   { group:'Senior', accent:'#a78bfa', teams:['1sts','2nds','3rds','4ths','5ths'] },
-  { group:'U16',    accent:'#38bdf8', teams:['U16A','U16B','U16C','U16D','U16E'] },
+  { group:'U16',    accent:sportColor, teams:['U16A','U16B','U16C','U16D','U16E'] },
   { group:'U15',    accent:'#10b981', teams:['U15A','U15B','U15C','U15D','U15E'] },
   { group:'U14',    accent:'#f59e0b', teams:['U14A','U14B','U14C','U14D','U14E'] },
 ];
@@ -29,11 +29,21 @@ function parseScore(s: string) {
 }
 
 export default function MatchHistoryPage() {
-  const { teams: myTeams, canSeeAllTeams } = useRole();
+  const { teams: myTeams, canSeeAllTeams, sport } = useRole();
+  
+  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
+  const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
+    hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
+    cricket:{scorers:'Top Scorers',score:'Runs'}, rowing:{scorers:'Crew',score:'Time'},
+    swimming:{scorers:'Swimmers',score:'Time'}, waterpolo:{scorers:'Goal Scorers',score:'Goals'},
+  };
+  const scoreTerm = SCORE_TERMS[sport||'hockey'] || SCORE_TERMS.hockey;
   const [teamFilter, setTeamFilter] = React.useState('All');
 
   // React Query — auto-caches, refetches on focus, no manual useEffect
-  const { data: results = [], isLoading: loading } = usePortalResults();
+  const { data: results = [], isLoading: loading } = usePortalResults(undefined, sport || 'hockey');
 
   const visibleTeams = canSeeAllTeams ? ALL_TEAMS : myTeams;
   const filtered = results.filter((r: Result) =>
@@ -67,12 +77,12 @@ export default function MatchHistoryPage() {
 
         {/* Header */}
         <FadeUp delay={0}>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(255,255,255,0.25)'}}>
-            St Benedict's College
+          <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:sportColor}}>
+            {sportLabel}
           </p>
           <h1 className="text-4xl font-black tracking-tight leading-none">
             Match<br/>
-            <span style={{background:'linear-gradient(135deg,#38bdf8,#a78bfa)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
+            <span style={{background:`linear-gradient(135deg,${sportColor},#a78bfa)`,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>
               History
             </span>
           </h1>
@@ -87,7 +97,7 @@ export default function MatchHistoryPage() {
                 { label:'Won',    val:stats.won,     color:'#10b981' },
                 { label:'Drew',   val:stats.drew,    color:'#fbbf24' },
                 { label:'Lost',   val:stats.lost,    color:'#f87171' },
-                { label:'GF',     val:stats.gf,      color:'#38bdf8' },
+                { label:'GF',     val:stats.gf,      color:sportColor },
                 { label:'GA',     val:stats.ga,      color:'rgba(255,255,255,0.3)' },
               ].map(s => (
                 <div key={s.label} className="rounded-2xl border p-3 text-center"
@@ -106,9 +116,9 @@ export default function MatchHistoryPage() {
             <button onClick={() => setTeamFilter('All')}
               className="rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition"
               style={{
-                borderColor: teamFilter === 'All' ? 'rgba(56,189,248,0.3)' : 'rgba(255,255,255,0.07)',
+                borderColor: teamFilter === 'All' ? `${sportColor}4d` : 'rgba(255,255,255,0.07)',
                 background:  teamFilter === 'All' ? 'rgba(56,189,248,0.08)' : 'rgba(255,255,255,0.02)',
-                color:       teamFilter === 'All' ? '#38bdf8' : 'rgba(255,255,255,0.4)',
+                color:       teamFilter === 'All' ? sportColor : 'rgba(255,255,255,0.4)',
               }}>
               All Teams
             </button>
@@ -133,7 +143,7 @@ export default function MatchHistoryPage() {
         {/* Results Table */}
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent"/>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{background:'rgba(255,255,255,0.01)',border:'1px solid rgba(255,255,255,0.05)'}} className="rounded-2xl py-16 text-center">
@@ -192,7 +202,7 @@ export default function MatchHistoryPage() {
 
                     {/* Scorers */}
                     <p className="text-[10px] truncate" style={{color:'rgba(255,255,255,0.35)'}}>
-                      {scorers.length > 0 ? `⚽ ${scorers.join(', ')}` : '—'}
+                      {scorers.length > 0 ? `${sport==='rugby'?'🏉':sport==='cricket'?'🏏':'⚽'} ${scorers.join(', ')}` : '—'}
                     </p>
                   </div>
                 );

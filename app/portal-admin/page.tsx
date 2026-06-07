@@ -167,6 +167,15 @@ export default function PortalAdminPage() {
 const router = useRouter();
   const { showToast } = useToast();
   const { sport, isHOH } = useRole();
+  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
+  const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
+    hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
+    cricket:{scorers:'Top Scorers',score:'Runs'}, rowing:{scorers:'Crew',score:'Time'},
+    swimming:{scorers:'Swimmers',score:'Time'}, waterpolo:{scorers:'Goal Scorers',score:'Goals'},
+  };
+  const scoreTerm = SCORE_TERMS[sport||'hockey'] || SCORE_TERMS.hockey;
   // MICs manage their sport's portal; HOS/owner can select sport
   const [activeSport, setActiveSport] = useState<SportKey>('hockey');
   // Once role loads, set sport
@@ -1351,7 +1360,7 @@ async function handleLogout() {
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(56,189,248,0.7)'}}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor},0.7)'}}>
               {SPORTS[activeSport]?.label || activeSport} · Portal Admin
             </p>
             <h1 className="mt-1 text-4xl font-black tracking-tight text-white leading-none">Portal Admin</h1>
@@ -1377,7 +1386,7 @@ async function handleLogout() {
         <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
           {['fixtures','results','week','programs','reminders','sponsors'].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-sky-500/20 border border-sky-500/40 text-sky-300' : 'border border-white/7 bg-white/2 text-white/35 hover:text-white'}`}>
+              className={`rounded-xl px-4 py-2 text-sm font-black capitalize transition ${activeTab === tab ? 'bg-white/8 border border-white/10 text-white/70' : 'border border-white/7 bg-white/2 text-white/35 hover:text-white'}`}>
               {tab === 'week' ? 'Week Plan' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
@@ -1387,7 +1396,7 @@ async function handleLogout() {
 
         {loading ? (
           <div className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 p-6">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
             <p className="text-sm text-slate-400">Loading...</p>
           </div>
         ) : (
