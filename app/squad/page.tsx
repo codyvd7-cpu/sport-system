@@ -172,9 +172,9 @@ export default function SquadBoardPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {['All', ...ageGroups].map((ag) => (
                       <button key={ag} onClick={() => setAgeFilter(ag)}
-                        className={'rounded-full px-3 py-1 text-xs font-black transition '+
-                          ageFilter === ag ? 'bg-white/8 text-white/70 border border-white/10' : 'border border-white/8 bg-white/5 text-white/35 hover:text-white'
-                        +'}>{ag}</button>
+                        className="rounded-full px-3 py-1 text-xs font-black transition border"
+                        style={{background:ageFilter===ag?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.05)',borderColor:ageFilter===ag?'rgba(255,255,255,0.1)':'rgba(255,255,255,0.08)',color:ageFilter===ag?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.35)'}}>
+                        {ag}</button>
                     ))}
                   </div>
                 </div>

@@ -124,7 +124,7 @@ export default function TeamsPage() {
 
         {/* Team groups */}
         {loading ? (
-          <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportColor}}" /><p className="text-sm text-white/50">Loading...</p></div>
+          <div className="flex items-center gap-2"><div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportColor}} /><p className="text-sm text-white/50">Loading...</p></div>
         ) : (
           <StaggerList className="space-y-8" stagger={60}>
             {visibleTeamGroups.map((group) => {
