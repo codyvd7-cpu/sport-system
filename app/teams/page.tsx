@@ -113,7 +113,7 @@ export default function TeamsPage() {
             { label: 'Modified', value: totalModified, color: 'amber' },
           ].map((kpi) => (
             <div key={kpi.label} className="rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4"
-              style={{borderColor:kpi.color==='sky'?`${sportColor}33`:kpi.color==='emerald'?'rgba(16,185,129,0.2)':kpi.color==='red'?'rgba(248,113,113,0.2)':'rgba(251,191,36,0.2)'}}>
+              style={{borderColor:kpi.color==='sky'?sportColor+'33':kpi.color==='emerald'?'rgba(16,185,129,0.2)':kpi.color==='red'?'rgba(248,113,113,0.2)':'rgba(251,191,36,0.2)'}}>
               <CountUp value={kpi.value} className="text-3xl font-black block"
                 style={{color:kpi.color==='sky'?sportColor:kpi.color==='emerald'?'#10b981':kpi.color==='red'?'#f87171':'#fbbf24'}}/>
               <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{kpi.label}</p>
@@ -141,7 +141,7 @@ export default function TeamsPage() {
                         <div key={team} className="rounded-2xl border border-white/7 bg-white/2 p-4 opacity-40">
                           <div className="flex items-center justify-between mb-2">
                             <span className="rounded-full px-2.5 py-1 text-xs font-black"
-                              style={{background:`${accent}18`,color:accent}}>{team}</span>
+                              style={{background:accent+'18',color:accent}}>{team}</span>
                             <p className="text-lg font-black text-white/15">0</p>
                           </div>
                           <p className="text-xs text-white/15">No players assigned</p>
@@ -153,7 +153,7 @@ export default function TeamsPage() {
                           style={{borderColor:`${accent}28`,background:`${accent}08`}}>
                           <div className="flex items-center justify-between mb-3">
                             <span className="rounded-full px-2.5 py-1 text-xs font-black"
-                              style={{background:`${accent}18`,color:accent}}>{team}</span>
+                              style={{background:accent+'18',color:accent}}>{team}</span>
                             <p className="text-2xl font-black" style={{color:accent}}>{s.count}</p>
                           </div>
                           {/* Availability bar */}

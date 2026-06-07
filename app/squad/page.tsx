@@ -134,7 +134,7 @@ export default function SquadBoardPage() {
             <p className="text-3xl font-black" style={{color:pct===100?'#10b981':pct>50?sportColor:'#fbbf24'}}>{pct}%</p>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct===100?'#10b981':sportColor }} />
+            <div className="h-full rounded-full transition-all" style={{ width: pct+'%', background: pct===100?'#10b981':sportColor }} />
           </div>
           <p className="mt-2 text-xs text-white/25">{unassigned.length} players still unassigned</p>
         </div>
