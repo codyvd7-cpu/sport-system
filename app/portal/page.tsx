@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { SPORTS, type SportKey } from '@/lib/sports';
@@ -52,7 +53,7 @@ async function safeQuery<T>(
   }
 }
 
-export default function PortalPage() {
+function PortalInner() {
   const searchParams = useSearchParams();
   const sport = (searchParams.get('sport') || 'hockey') as SportKey;
   const sportCfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
@@ -592,5 +593,13 @@ function Skeleton({ color = '#38bdf8' }: { color?: string }) {
 function Empty({ text }: { text: string }) {
   return (
     <div className="rounded-2xl border border-white/6 bg-white/3 p-5 text-sm text-white/25">{text}</div>
+  );
+}
+
+export default function PortalPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#030810'}}/>}>
+      <PortalInner />
+    </Suspense>
   );
 }

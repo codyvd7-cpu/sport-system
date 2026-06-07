@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 
 const SPORT_CONFIG: Record<string, { label: string; color: string; colorClass: string; borderClass: string; bgClass: string }> = {
   hockey:    { label: 'Hockey',     color: '#38bdf8', colorClass: 'text-sky-400',    borderClass: 'border-sky-500/40',    bgClass: 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300' },
@@ -12,7 +13,7 @@ const SPORT_CONFIG: Record<string, { label: string; color: string; colorClass: s
   waterpolo: { label: 'Water Polo', color: '#06b6d4', colorClass: 'text-cyan-400',   borderClass: 'border-cyan-500/40',   bgClass: 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300' },
 };
 
-export default function PortalLoginPage() {
+function PortalLoginInner() {
   const searchParams = useSearchParams();
   const sport = searchParams.get('sport') || 'hockey';
   const cfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
@@ -77,5 +78,13 @@ export default function PortalLoginPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function PortalLoginPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#030810'}}/>}>
+      <PortalLoginInner />
+    </Suspense>
   );
 }
