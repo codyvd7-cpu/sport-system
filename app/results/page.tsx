@@ -14,7 +14,7 @@ type Result = {
 
 const TEAM_GROUPS = [
   { group:'Senior', accent:'#a78bfa', teams:['1sts','2nds','3rds','4ths','5ths'] },
-  { group:'U16',    accent:sportColor, teams:['U16A','U16B','U16C','U16D','U16E'] },
+  { group:'U16',    accent:'#38bdf8', teams:['U16A','U16B','U16C','U16D','U16E'] },
   { group:'U15',    accent:'#10b981', teams:['U15A','U15B','U15C','U15D','U15E'] },
   { group:'U14',    accent:'#f59e0b', teams:['U14A','U14B','U14C','U14D','U14E'] },
 ];
@@ -31,8 +31,8 @@ function parseScore(s: string) {
 export default function MatchHistoryPage() {
   const { teams: myTeams, canSeeAllTeams, sport } = useRole();
   
-  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
-  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const SPORT_COLORS: Record<string,string> = {hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || '#38bdf8';
   const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
   const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
     hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},

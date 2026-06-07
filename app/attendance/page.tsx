@@ -73,8 +73,8 @@ function LowAttendanceAlert({athletes,history}:{athletes:Row[];history:Row[]}) {
 export default function AttendancePage() {
   const {showToast} = useToast();
   const {canSeeAllTeams, teams:myTeams, loading:roleLoading, sport} = useRole();
-  const SPORT_COLORS: Record<string,string> = {hockey:sportColor,rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
-  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || sportColor;
+  const SPORT_COLORS: Record<string,string> = {hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[(sport||'hockey') as string] || '#38bdf8';
   const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport';
   const SCORE_TERMS: Record<string,{scorers:string;score:string}> = {
     hockey:{scorers:'Goal Scorers',score:'Goals'}, rugby:{scorers:'Try Scorers',score:'Tries'},
