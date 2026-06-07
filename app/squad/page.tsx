@@ -131,10 +131,10 @@ export default function SquadBoardPage() {
               <p className="text-xs font-black uppercase tracking-wide text-white/35">Assignment Progress</p>
               <p className="mt-0.5 text-2xl font-black text-white">{assigned} <span className="text-base font-semibold text-white/35">of {athletes.length} assigned</span></p>
             </div>
-            <p className={`text-3xl font-black ${pct === 100 ? 'text-emerald-400' : pct > 50 ? '' : 'text-amber-400'}`}>{pct}%</p>
+            <p className="text-3xl font-black" style={{color:pct===100?'#10b981':pct>50?sportColor:'#fbbf24'}}>{pct}%</p>
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-white/5">
-            <div className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-emerald-500' : ''}`} style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: pct===100?'#10b981':sportColor }} />
           </div>
           <p className="mt-2 text-xs text-white/25">{unassigned.length} players still unassigned</p>
         </div>

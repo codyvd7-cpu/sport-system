@@ -1372,7 +1372,8 @@ async function handleLogout() {
               <div className="flex rounded-xl border border-white/7 bg-white/3 p-0.5">
                 {(['hockey','rugby','cricket','rowing','swimming','waterpolo'] as SportKey[]).map(s => (
                   <button key={s} onClick={() => setActiveSport(s)}
-                    className={`rounded-lg px-3 py-2 text-[11px] font-black capitalize transition ${activeSport===s?'bg-white/8 text-white':'text-white/30 hover:text-white/60'}`}>
+                    className="rounded-lg px-3 py-2 text-[11px] font-black capitalize transition"
+                    style={{background:activeSport===s?'rgba(255,255,255,0.08)':'transparent',color:activeSport===s?'white':'rgba(255,255,255,0.3)'}}>
                     {SPORTS[s]?.icon} {SPORTS[s]?.label}
                   </button>
                 ))}

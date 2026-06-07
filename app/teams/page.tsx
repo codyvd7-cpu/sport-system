@@ -112,8 +112,10 @@ export default function TeamsPage() {
             { label: 'Injured', value: totalInjured, color: 'red' },
             { label: 'Modified', value: totalModified, color: 'amber' },
           ].map((kpi) => (
-            <div key={kpi.label} className={`rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4 ${kpi.color === 'sky' ? 'border-white/8' : kpi.color === 'emerald' ? 'border-emerald-500/20' : kpi.color === 'red' ? 'border-red-500/20' : 'border-amber-500/20'}`}>
-              <CountUp value={kpi.value} className={`text-3xl font-black block ${kpi.color === 'sky' ? '' : kpi.color === 'emerald' ? 'text-emerald-400' : kpi.color === 'red' ? 'text-red-400' : 'text-amber-400'}`}/>
+            <div key={kpi.label} className="rounded-2xl border bg-[rgba(255,255,255,0.025)] p-4"
+              style={{borderColor:kpi.color==='sky'?`${sportColor}33`:kpi.color==='emerald'?'rgba(16,185,129,0.2)':kpi.color==='red'?'rgba(248,113,113,0.2)':'rgba(251,191,36,0.2)'}}>
+              <CountUp value={kpi.value} className="text-3xl font-black block"
+                style={{color:kpi.color==='sky'?sportColor:kpi.color==='emerald'?'#10b981':kpi.color==='red'?'#f87171':'#fbbf24'}}/>
               <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{kpi.label}</p>
             </div>
           ))}
