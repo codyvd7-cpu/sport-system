@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
@@ -39,6 +40,7 @@ function initials(name: string) {
 
 export default function SquadBoardPage() {
   const { showToast } = useToast();
+  const { sport } = useRole();
   const [athletes, setAthletes] = useState<Athlete[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
