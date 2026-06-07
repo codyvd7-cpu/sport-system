@@ -18,7 +18,19 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') || '/dashboard';
-  const sport = searchParams.get('sport');
+  const sport = searchParams.get('sport') ||
+    (typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c=>c.trim().startsWith('portal_sport='))?.split('=')[1]
+      : null);
+  const SPORT_COLORS: Record<string,{color:string;label:string;gradient:string}> = {
+    hockey:{color:'#38bdf8',label:'Hockey',gradient:'rgba(14,165,233,0.15)'},
+    rugby:{color:'#f87171',label:'Rugby',gradient:'rgba(248,113,113,0.15)'},
+    cricket:{color:'#fbbf24',label:'Cricket',gradient:'rgba(251,191,36,0.12)'},
+    rowing:{color:'#34d399',label:'Rowing',gradient:'rgba(52,211,153,0.12)'},
+    swimming:{color:'#818cf8',label:'Swimming',gradient:'rgba(129,140,248,0.12)'},
+    waterpolo:{color:'#06b6d4',label:'Water Polo',gradient:'rgba(6,182,212,0.12)'},
+  };
+  const sportCfg = SPORT_COLORS[sport||'hockey'] || SPORT_COLORS.hockey;
 
   function storeSportAndRedirect(url: string) {
     if (sport) localStorage.setItem('activeSport', sport);
@@ -49,6 +61,24 @@ function LoginForm() {
       const result = await Promise.race([supabase.auth.signInWithPassword({ email: email.trim(), password }), timeout]);
       if (result.error) { setErrorMessage(cleanAuthError(result.error.message)); setStatus(''); setLoading(false); return; }
       if (!result.data.session) { setErrorMessage('Login failed. Please confirm this user exists in Supabase.'); setStatus(''); setLoading(false); return; }
+      setStatus('Checking access...');
+      // Verify the coach belongs to this sport
+      if (sport && sport !== 'all') {
+        const { data: staffRow } = await supabase
+          .from('staff_roles')
+          .select('sport, role')
+          .eq('email', email.trim().toLowerCase())
+          .eq('is_active', true)
+          .maybeSingle();
+        // Owner/HOS can access any sport
+        const isAdmin = staffRow && ['owner','head_of_sport','deputy_head_of_sport'].includes(staffRow.role);
+        // MIC/coach must match sport
+        if (!isAdmin && staffRow?.sport && staffRow.sport !== sport) {
+          await supabase.auth.signOut();
+          setErrorMessage(`This login is for ${sport.charAt(0).toUpperCase()+sport.slice(1)} staff only.`);
+          setStatus(''); setLoading(false); return;
+        }
+      }
       setStatus('Login successful. Opening admin...');
       storeSportAndRedirect(redirectTo);
     } catch (error) {
@@ -60,7 +90,7 @@ function LoginForm() {
   if (checkingSession) return (
     <main className="flex min-h-screen items-center justify-center bg-[#04060e] px-4 text-white">
       <div className="rounded-[2rem] border border-white/7 bg-[#04060e] p-6 text-center shadow-2xl">
-        <p className="text-xs font-black uppercase tracking-[0.24em] text-sky-400">St Benedict&apos;s Hockey</p>
+        <p className="text-xs font-black uppercase tracking-[0.24em]" style={{color:sportCfg.color}}>St Benedict's {sportCfg.label}</p>
         <h1 className="mt-3 text-2xl font-black">Checking session...</h1>
         <p className="mt-4 text-[10px] text-white/15">
           <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
@@ -73,7 +103,7 @@ function LoginForm() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#04060e] px-4 py-8 text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(14,165,233,0.15),transparent)]" />
+      <div className="absolute inset-0" style={{background:`radial-gradient(ellipse 80% 50% at 50% 0%, ${sportCfg.gradient}, transparent)`}} />
       <div className="absolute left-[-5%] top-[-5%] h-96 w-96 animate-pulse rounded-full bg-sky-500/25 blur-3xl" />
       <div className="absolute bottom-[-10%] right-[-5%] h-96 w-96 animate-pulse rounded-full bg-sky-400/15 blur-3xl" />
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMC4xIi8+PC9wYXR0ZXJuPjwvZGVmcz48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSJ1cmwoI2dyaWQpIi8+PC9zdmc+')] opacity-[0.03]" />
@@ -85,7 +115,7 @@ function LoginForm() {
           </div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">St Benedict&apos;s College</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-white">Coach Login</h1>
-          <p className="mt-3 text-sm leading-6 text-white/50">Secure staff access · Hockey Department</p>
+          <p className="mt-3 text-sm leading-6 text-white/50">Secure staff access · {sportCfg.label} Department</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
