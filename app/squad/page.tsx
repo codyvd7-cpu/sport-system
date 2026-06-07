@@ -242,7 +242,7 @@ export default function SquadBoardPage() {
                     return (
                       <div key={group.group}>
                         <div className="mb-2 flex items-center justify-between">
-                          <p className={'text-xs font-black uppercase tracking-[0.18em] '+col.text+'}>{group.group}</p>
+                          <p className="text-xs font-black uppercase tracking-[0.18em]" style={{color:col.text||sportColor}}>{group.group}</p>
                           <button onClick={() => bulkAssign(group.teams[0])} className="text-[10px] text-white/25 hover:text-white/50 transition">
                             bulk assign filtered →
                           </button>
@@ -271,7 +271,7 @@ export default function SquadBoardPage() {
                   <div className="mt-5 border-t border-white/6 pt-5">
                     <div className="mb-3 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className={'rounded-full px-2.5 py-1 text-xs font-black '+getColor(selectedTeam).badge+'}>{selectedTeam}</span>
+                        <span className="rounded-full px-2.5 py-1 text-xs font-black" style={{background:getColor(selectedTeam).bg,color:getColor(selectedTeam).text}}>{selectedTeam}</span>
                         <p className="text-sm text-white/50">{teamPlayers.length} players</p>
                       </div>
                       <button onClick={() => setSelectedTeam(null)} className="text-xs text-white/35 hover:text-white/70">✕ Close</button>
@@ -306,7 +306,7 @@ export default function SquadBoardPage() {
               const col = COLORS[group.color];
               return (
                 <div key={group.group}>
-                  <p className={'mb-3 text-xs font-black uppercase tracking-[0.2em] '+col.text+'}>{group.group}</p>
+                  <p className="mb-3 text-xs font-black uppercase tracking-[0.2em]" style={{color:col.text||sportColor}}>{group.group}</p>
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                     {group.teams.map((team) => {
                       const players = athletes.filter((a) => a.team === team);
@@ -316,8 +316,8 @@ export default function SquadBoardPage() {
                           className="cursor-pointer rounded-2xl border p-4 transition"
                           style={{borderColor:isSelected?'rgba(255,255,255,0.2)':'rgba(255,255,255,0.06)',background:isSelected?'rgba(255,255,255,0.06)':'rgba(255,255,255,0.025)'}}>
                           <div className="flex items-center justify-between mb-3">
-                            <span className={'rounded-full px-2.5 py-1 text-xs font-black '+col.badge+'}>{team}</span>
-                            <p className={'text-2xl font-black '+players.length > 0 ? col.text : 'text-white/15'+'}>{players.length}</p>
+                            <span className="rounded-full px-2.5 py-1 text-xs font-black" style={{background:col.bg,color:col.text}}>{team}</span>
+                            <p className="text-2xl font-black" style={{color:players.length>0?col.text:'rgba(255,255,255,0.15)'}}>{players.length}</p>
                           </div>
                           {isSelected && players.length > 0 && (
                             <div className="mt-2 space-y-1 border-t border-white/5 pt-2 max-h-40 overflow-y-auto">

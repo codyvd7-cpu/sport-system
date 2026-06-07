@@ -170,7 +170,7 @@ export default function TeamsPage() {
                               {s.modified > 0 && <span className="text-amber-400">{s.modified} mod</span>}
                             </div>
                             {s.attendanceRate !== null && (
-                              <span className={'font-black '+s.attendanceRate >= 80 ? 'text-emerald-400' : s.attendanceRate >= 60 ? 'text-amber-400' : 'text-red-400'+'}>{s.attendanceRate}% att</span>
+                              <span className="font-black" style={{color:s.attendanceRate >= 80 ? '#10b981' : s.attendanceRate >= 60 ? '#fbbf24' : '#f87171'}}>{s.attendanceRate}% att</span>
                             )}
                           </div>
                         </Link>
