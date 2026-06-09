@@ -162,12 +162,13 @@ function AthleteProgressChart({pbs}:{pbs:{test:string;pb:number;unit:string;tier
 }
 
 // ── SEASON STATS COMPONENT ───────────────────────────────────
-function SeasonStats({attendance,performance,matchResults,team,year}:{
+function SeasonStats({attendance,performance,matchResults,team,year,sportColor}:{
   attendance: Row[];
   performance: Row[];
   matchResults: Row[];
   team: string;
   year: number;
+  sportColor: string;
 }) {
   // ── Attendance stats ──
   const yearAtt = attendance.filter(a => a.session_date?.startsWith(String(year)));
@@ -862,6 +863,7 @@ export default function AthleteProfile({params}:PageProps) {
             matchResults={matchResults}
             team={rawAthlete.team||''}
             year={new Date().getFullYear()}
+            sportColor={sportColor}
           />
         )}
 
