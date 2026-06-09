@@ -314,14 +314,14 @@ export default function LandingPage() {
               Veritas In Caritate
             </p>
             <p className="text-[8px] text-white/10 font-medium mt-1">
-              KINETIQ Sport is a product of Altus (Pty) Ltd
+              KINETIQ Sport is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)
             </p>
             <div className="flex items-center gap-3 text-[8px] text-white/10 font-medium tracking-widest uppercase mt-1">
               <Link href="/privacy" className="hover:text-white/30 transition-colors">Privacy</Link>
               <span>·</span>
               <Link href="/terms" className="hover:text-white/30 transition-colors">Terms</Link>
               <span>·</span>
-              <span>© {new Date().getFullYear()} Altus (Pty) Ltd</span>
+              <span>© {new Date().getFullYear()} Altus (Pty) Ltd · Reg. 2026/424230/07</span>
             </div>
           </div>
         </div>

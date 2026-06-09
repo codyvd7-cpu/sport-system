@@ -21,7 +21,7 @@ export default function TermsOfUsePage() {
           <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0,fontSize:13}}>
               These Terms of Use ("Terms") govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform ("Platform"),
-              a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd</strong> ("Altus", "we", "us").
+              a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> ("Altus", "we", "us").
               By accessing or using the Platform, you agree to be bound by these Terms.
               If you do not agree, you must discontinue use immediately.
             </p>
@@ -105,7 +105,7 @@ export default function TermsOfUsePage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>11. Contact</h2>
           <div style={{padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
-            <p style={{margin:0}}><strong style={{color:'white'}}>Altus (Pty) Ltd</strong></p>
+            <p style={{margin:0}}><strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong></p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> KINETIQ Sport</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Contact:</strong> Cody Jason Van Dyk</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@kinetiqsport.co.za</p>
@@ -114,8 +114,8 @@ export default function TermsOfUsePage() {
 
         {/* Footer */}
         <div style={{marginTop:48,paddingTop:24,borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,0.2)'}}>
-          <span>KINETIQ Sport is a product of Altus (Pty) Ltd</span>
-          <span>© {year} Altus (Pty) Ltd</span>
+          <span>KINETIQ Sport is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</span>
+          <span>© {year} Altus (Pty) Ltd · Reg. 2026/424230/07</span>
         </div>
       </div>
     </main>
