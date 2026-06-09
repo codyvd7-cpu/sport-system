@@ -185,7 +185,7 @@ export default function PerformancePage() {
   return (
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <FadeUp delay={0}>
-      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-6">

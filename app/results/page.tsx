@@ -73,7 +73,7 @@ export default function MatchHistoryPage() {
         <div className="absolute top-32 right-0 h-48 w-48 rounded-full blur-[60px]" style={{background:'rgba(167,139,250,0.04)'}}/>
       </div>
 
-      <div className="relative mx-auto max-w-4xl px-4 py-6 sm:px-6 space-y-5">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6 space-y-5">
 
         {/* Header */}
         <FadeUp delay={0}>

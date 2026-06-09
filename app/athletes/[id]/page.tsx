@@ -28,13 +28,13 @@ const STATUS_STYLES: Record<string,string> = {
   present: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/20',
   late:    'bg-amber-500/15 text-amber-300 border-amber-500/20',
   absent:  'bg-red-500/15 text-red-300 border-red-500/20',
-  excused: 'bg-sky-500/15 text-sky-300 border-sky-500/20',
+  excused: 'bg-white/5 text-white/60 border-white/10',
 };
 const AVAIL_STYLES: Record<string,{label:string;color:string;bg:string;border:string}> = {
   'Available': { label:'Available', color:'text-emerald-300', bg:'bg-emerald-500/15', border:'border-emerald-500/30' },
   'Modified':  { label:'Modified',  color:'text-amber-300',   bg:'bg-amber-500/15',   border:'border-amber-500/30'   },
   'Injured':   { label:'Injured',   color:'text-red-300',     bg:'bg-red-500/15',     border:'border-red-500/30'     },
-  'Resting':   { label:'Resting',   color:'text-sky-300',     bg:'bg-sky-500/15',     border:'border-sky-500/30'     },
+  'Resting':   { label:'Resting',   color:'text-white/60',    bg:'bg-white/5',         border:'border-white/10'       },
 };
 const LOWER = ['Sprint','505','Bronco','RSA'];
 const BENCHMARKS: Record<string,{u1415:number[];u1618:number[]}> = {
@@ -49,7 +49,7 @@ const BENCHMARKS: Record<string,{u1415:number[];u1618:number[]}> = {
 };
 const TIERS = [
   {label:'Outstanding',color:'#10b981',bg:'rgba(16,185,129,0.12)',border:'rgba(16,185,129,0.3)'},
-  {label:'Strong',     color:'#38bdf8',bg:'rgba(56,189,248,0.12)',border:'rgba(56,189,248,0.3)'},
+  {label:'Strong',     color:'sportColorPlaceholder',bg:'sportBgPlaceholder',border:'sportBorderPlaceholder'},
   {label:'On Track',   color:'#a78bfa',bg:'rgba(167,139,250,0.12)',border:'rgba(167,139,250,0.3)'},
   {label:'Developing', color:'#fbbf24',bg:'rgba(251,191,36,0.12)',border:'rgba(251,191,36,0.3)'},
   {label:'Needs Work', color:'#94a3b8',bg:'rgba(148,163,184,0.10)',border:'rgba(148,163,184,0.25)'},
@@ -246,7 +246,7 @@ function SeasonStats({attendance,performance,matchResults,team,year}:{
           {[
             {label:'Present', val:present, color:'#10b981'},
             {label:'Absent',  val:absent,  color:absent>0?'#f87171':'rgba(255,255,255,0.2)'},
-            {label:'Excused', val:excused, color:'#38bdf8'},
+            {label:'Excused', val:excused, color:sportColor},
           ].map(s=>(
             <div key={s.label} className="p-3 text-center">
               <p className="text-lg font-black" style={{color:s.color}}>{s.val}</p>
@@ -282,7 +282,7 @@ function SeasonStats({attendance,performance,matchResults,team,year}:{
       {played > 0 && (
         <div className="rounded-2xl overflow-hidden" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
           <div className="px-5 py-3 border-b" style={{borderColor:'rgba(255,255,255,0.06)'}}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'rgba(56,189,248,0.7)'}}>Team Results · {team}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:sportColor+'b3'}}>Team Results · {team}</p>
           </div>
           <div className="grid grid-cols-4 divide-x" style={{borderColor:'rgba(255,255,255,0.06)'}}>
             {[
@@ -437,7 +437,7 @@ export default function AthleteProfile({params}:PageProps) {
 
   if(loading) return(
     <main className="flex min-h-screen items-center justify-center bg-[#04060e]">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportColor}}/>
     </main>
   );
   if(!rawAthlete) return(
@@ -452,6 +452,9 @@ export default function AthleteProfile({params}:PageProps) {
   const name = fStr(rawAthlete.full_name,rawAthlete.name)||'Unknown';
   const team = fStr(rawAthlete.team)||'Unassigned';
   const ageGroup = fStr(rawAthlete.age_group)||'—';
+  const athleteSport = fStr(rawAthlete.sport)||'hockey';
+  const SPORT_COLORS: Record<string,string> = {hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
+  const sportColor = SPORT_COLORS[athleteSport] || '#38bdf8';
   const position = fStr(rawAthlete.position)||'—';
   const playerCode = fStr(rawAthlete.player_code);
 
@@ -551,31 +554,38 @@ export default function AthleteProfile({params}:PageProps) {
 
   return(
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
-      <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
         {/* Back */}
-        <Link href="/athletes" className="mb-5 inline-flex items-center gap-1.5 text-[11px] font-medium text-white/30 hover:text-white/60 transition">
+        <Link href="/athletes" className="mb-6 inline-flex items-center gap-1.5 text-[11px] font-medium text-white/30 hover:text-white/60 transition">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3 w-3"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
           Athletes
         </Link>
 
         {/* ── PROFILE HEADER ── */}
-        <div className="mb-5 rounded-3xl overflow-hidden relative" style={{
-          background:'linear-gradient(135deg,rgba(56,189,248,0.07) 0%,rgba(255,255,255,0.015) 100%)',
-          border:'1px solid rgba(255,255,255,0.07)',
+        <div className="mb-6 rounded-3xl overflow-hidden relative" style={{
+          background:'linear-gradient(135deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.01) 100%)',
+          boxShadow:'0 0 0 1px rgba(255,255,255,0.08), 0 32px 64px rgba(0,0,0,0.3)',
         }}>
-          {/* Top accent */}
-          <div className="absolute top-0 left-0 right-0 h-px"
-            style={{background:'linear-gradient(90deg,transparent,rgba(56,189,248,0.6),rgba(167,139,250,0.4),transparent)'}}/>
-          {/* Glow */}
-          <div className="absolute -top-16 -right-16 h-40 w-40 rounded-full blur-[50px] pointer-events-none"
-            style={{background:'rgba(56,189,248,0.12)'}}/>
+          {/* Sport colour top bar */}
+          <div className="absolute top-0 left-0 right-0 h-[3px]"
+            style={{background:'linear-gradient(90deg,transparent,'+sportColor+'90,'+sportColor+','+sportColor+'90,transparent)'}}/>
+          {/* Background glow */}
+          <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full blur-[80px] pointer-events-none"
+            style={{background:sportColor+'18'}}/>
+          <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full blur-[60px] pointer-events-none"
+            style={{background:'rgba(167,139,250,0.08)'}}/>
 
-          {/* Top banner */}
-          <div className="relative px-5 pt-5 pb-4 flex items-start gap-4">
+          {/* Hero content */}
+          <div className="relative px-6 pt-8 pb-6 flex items-start gap-5">
             {/* Avatar */}
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-xl font-black text-sky-300"
-              style={{background:'linear-gradient(135deg,rgba(56,189,248,0.2),rgba(167,139,250,0.15))',border:'1px solid rgba(56,189,248,0.2)'}}>
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-2xl font-black"
+              style={{
+                background:'linear-gradient(135deg,'+sportColor+'25,rgba(167,139,250,0.15))',
+                border:'1px solid '+sportColor+'30',
+                color:sportColor,
+                boxShadow:'0 8px 32px '+sportColor+'20',
+              }}>
               {initials(name)}
             </div>
             {/* Info */}
@@ -583,18 +593,20 @@ export default function AthleteProfile({params}:PageProps) {
               {editingInfo ? (
                 <div className="space-y-2">
                   <input value={editName} onChange={e=>setEditName(e.target.value)} placeholder="Full name"
-                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2 text-sm text-white outline-none focus:border-sky-500"/>
+                    className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2 text-sm text-white outline-none"
+                    style={{borderColor:sportColor+'40'}}/>
                   <div className="grid grid-cols-3 gap-2">
                     <input value={editTeam} onChange={e=>setEditTeam(e.target.value)} placeholder="Team"
-                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
                     <input value={editAge} onChange={e=>setEditAge(e.target.value)} placeholder="Age group"
-                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
                     <input value={editPos} onChange={e=>setEditPos(e.target.value)} placeholder="Position"
-                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none focus:border-sky-500"/>
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={saveInfo} disabled={savingInfo}
-                      className="rounded-xl border border-sky-500/40 bg-sky-500/15 px-3 py-1.5 text-xs font-black text-sky-300 hover:bg-sky-500/25 transition disabled:opacity-50">
+                      className="rounded-xl px-3 py-1.5 text-xs font-black transition disabled:opacity-50"
+                      style={{border:'1px solid '+sportColor+'40',background:sportColor+'15',color:sportColor}}>
                       {savingInfo?'Saving…':'Save'}
                     </button>
                     <button onClick={()=>setEditingInfo(false)}
@@ -605,17 +617,18 @@ export default function AthleteProfile({params}:PageProps) {
                 </div>
               ) : (
                 <>
-                  <div className="flex items-start gap-2 flex-wrap">
-                    <h1 className="text-2xl font-black text-white leading-tight">{name}</h1>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-3xl font-black text-white leading-tight tracking-tight">{name}</h1>
                     <button onClick={()=>setEditingInfo(true)}
-                      className="mt-1 rounded-lg border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/35 hover:text-white transition">
+                      className="rounded-lg border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/35 hover:text-white transition">
                       Edit
                     </button>
                   </div>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{team}</span>
-                    {ageGroup!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{ageGroup}</span>}
-                    {position!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/65">{position}</span>}
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className="rounded-full px-3 py-1 text-[11px] font-black"
+                      style={{background:sportColor+'15',color:sportColor,border:'1px solid '+sportColor+'25'}}>{team}</span>
+                    {ageGroup!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/60 border border-white/8">{ageGroup}</span>}
+                    {position!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/60 border border-white/8">{position}</span>}
                   </div>
                   {/* Sport assignments */}
                   {sportAssignments.length > 0 && (
@@ -626,7 +639,7 @@ export default function AthleteProfile({params}:PageProps) {
                         return (
                           <span key={s.sport}
                             className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
-                            style={{background:`${col}14`,color:col,border:`1px solid ${col}28`}}>
+                            style={{background:col+'14',color:col,border:'1px solid '+col+'28'}}>
                             {sport?.icon} {sport?.label || s.sport}
                             {s.team && <span style={{opacity:0.6}}>· {s.team}</span>}
                             {s.is_specialist && <span style={{opacity:0.5}}>★</span>}
@@ -671,7 +684,7 @@ export default function AthleteProfile({params}:PageProps) {
               <button onClick={generateCode} disabled={genCode}
                 className="rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-50 hover:text-white"
                 style={{
-                  borderColor: playerCode ? 'rgba(251,191,36,0.25)' : 'rgba(56,189,248,0.25)',
+                  borderColor: playerCode ? 'rgba(251,191,36,0.25)' : sportColor+'40',
                   background:  playerCode ? 'rgba(251,191,36,0.06)' : 'rgba(56,189,248,0.06)',
                   color:       playerCode ? '#fde68a' : '#7dd3fc',
                 }}>

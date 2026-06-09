@@ -184,7 +184,7 @@ export default function AthletesPage() {
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute -top-40 left-1/4 h-96 w-96 rounded-full  blur-[120px]"/>
       </div>
-      <div className="relative mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
         {/* Header */}
         <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">

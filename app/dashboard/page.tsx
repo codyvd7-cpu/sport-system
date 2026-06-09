@@ -534,18 +534,23 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
 
       {/* ── STAT STRIP ── */}
       <FadeUp delay={80}>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            {label:'Squad',   val:total,          color:'white',   glow:'rgba(255,255,255,0.04)'},
-            {label:'Injured', val:injured.length, color:injured.length>0?'#f87171':'rgba(255,255,255,0.15)', glow:injured.length>0?'rgba(248,113,113,0.06)':'transparent'},
-            {label:'Modified',val:modified.length,color:modified.length>0?'#fbbf24':'rgba(255,255,255,0.15)', glow:modified.length>0?'rgba(251,191,36,0.06)':'transparent'},
-            {label:'Teams',   val:cards.length,   color:sportColor, glow:'rgba(56,189,248,0.06)'},
+            {label:'Squad',    val:total,           color:'white',    accent:'rgba(255,255,255,0.15)', icon:'👥'},
+            {label:'Injured',  val:injured.length,  color:injured.length>0?'#f87171':'rgba(255,255,255,0.15)',  accent:injured.length>0?'#f87171':'rgba(255,255,255,0.08)', icon:'🏥'},
+            {label:'Modified', val:modified.length, color:modified.length>0?'#fbbf24':'rgba(255,255,255,0.15)', accent:modified.length>0?'#fbbf24':'rgba(255,255,255,0.08)', icon:'⚡'},
+            {label:'Teams',    val:cards.length,    color:sportColor, accent:sportColor, icon:'🏆'},
           ].map(s=>(
-            <div key={s.label} className="relative overflow-hidden rounded-2xl border p-3 text-center"
-              style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)',boxShadow:`0 0 30px ${s.glow}`}}>
-              <CountUp value={s.val} className="text-[22px] font-black leading-none block" style={{color:s.color}}/>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.15em] mt-1 leading-tight"
-                style={{color:'rgba(255,255,255,0.25)'}}>{s.label}</p>
+            <div key={s.label} className="relative overflow-hidden rounded-2xl p-4"
+              style={{
+                background:'rgba(255,255,255,0.02)',
+                border:'1px solid transparent',
+                backgroundClip:'padding-box',
+                boxShadow:`0 0 0 1px ${s.accent}30, 0 8px 32px ${s.accent}10, inset 0 1px 0 rgba(255,255,255,0.05)`,
+              }}>
+              <div className="absolute inset-x-0 top-0 h-px" style={{background:`linear-gradient(90deg,transparent,${s.accent}60,transparent)`}}/>
+              <p className="text-[11px] mb-0.5" style={{color:s.accent === 'rgba(255,255,255,0.08)'?'rgba(255,255,255,0.2)':s.accent+'99'}}>{s.icon} {s.label}</p>
+              <CountUp value={s.val} className="text-4xl font-black leading-none block tracking-tight" style={{color:s.color}}/>
             </div>
           ))}
         </div>
@@ -613,7 +618,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
       <FadeUp delay={160}>
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>Quick Actions</p>
-        <StaggerList className="grid grid-cols-3 gap-2 sm:grid-cols-6" stagger={40}>
+        <StaggerList className="grid grid-cols-3 gap-3 sm:grid-cols-6" stagger={40}>
           {[
             {label:'Attendance',href:'/attendance',color:'#10b981',
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>},
@@ -629,20 +634,23 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
               icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/></svg>},
           ].map((a)=>(
             <StaggerItem key={a.href}>
-              <HoverCard>
-                <Link href={a.href}
-                  className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center block"
-                  style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl transition-all group-hover:scale-110"
-                    style={{background:`${a.color}12`,color:a.color}}>
-                    {a.icon}
-                  </div>
-                  <p className="text-[9px] font-bold uppercase tracking-[0.1em] leading-tight"
-                    style={{color:'rgba(255,255,255,0.35)'}}>
-                    {a.label}
-                  </p>
-                </Link>
-              </HoverCard>
+              <Link href={a.href}
+                className="group relative flex flex-col items-center gap-2.5 rounded-2xl p-4 text-center block transition-all duration-200 hover:-translate-y-0.5"
+                style={{
+                  background:'rgba(255,255,255,0.02)',
+                  boxShadow:'0 0 0 1px rgba(255,255,255,0.07)',
+                }}>
+                <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{background:`linear-gradient(90deg,transparent,${a.color}60,transparent)`}}/>
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl transition-all group-hover:scale-110"
+                  style={{background:a.color+'15',color:a.color,boxShadow:'0 4px 12px '+a.color+'20'}}>
+                  {a.icon}
+                </div>
+                <p className="text-[9px] font-bold uppercase tracking-[0.12em]"
+                  style={{color:'rgba(255,255,255,0.35)'}}>
+                  {a.label}
+                </p>
+              </Link>
             </StaggerItem>
           ))}
         </StaggerList>
@@ -652,34 +660,49 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
       <FadeUp delay={200}>
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>All Teams</p>
-        <StaggerList className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3" stagger={30}>
+        <StaggerList className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" stagger={25}>
           {cards.map(({team,count,rate,inj,mod,accent,dim,coach})=>(
             <StaggerItem key={team}>
               <HoverCard>
-                <Link href={`/teams/${team}`}
-                  className="group relative overflow-hidden rounded-2xl border block"
-                  style={{background:'rgba(255,255,255,0.015)',borderColor:'rgba(255,255,255,0.06)'}}>
-                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{background:`radial-gradient(ellipse at 50% 0%,${dim},transparent 70%)`}}/>
-                  <div className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity"
-                    style={{background:`linear-gradient(90deg,transparent,${accent}60,transparent)`}}/>
-                  <div className="relative flex items-center justify-between p-4">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[22px] font-black tracking-tight leading-none" style={{color:accent}}>{team}</p>
-                      <p className="text-[10px] font-medium mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{count} players</p>
-                      {coach&&<p className="text-[10px] mt-0.5 truncate" style={{color:'rgba(255,255,255,0.2)'}}>{coach}</p>}
-                      <div className="flex gap-1.5 mt-2 flex-wrap">
-                        {inj>0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{background:'rgba(248,113,113,0.1)',color:'#fca5a5'}}>{inj} inj</span>}
-                        {mod>0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{background:'rgba(251,191,36,0.1)',color:'#fde68a'}}>{mod} mod</span>}
-                        {inj===0&&mod===0&&<span className="rounded px-1.5 py-0.5 text-[9px] font-bold" style={{background:'rgba(16,185,129,0.08)',color:'#6ee7b7'}}>✓ clear</span>}
+                <Link href={'/teams/'+encodeURIComponent(team)}
+                  className="group relative overflow-hidden rounded-2xl block"
+                  style={{
+                    background:'rgba(255,255,255,0.015)',
+                    boxShadow:'0 0 0 1px rgba(255,255,255,0.07), 0 4px 24px rgba(0,0,0,0.2)',
+                  }}>
+                  {/* Top accent line */}
+                  <div className="absolute inset-x-0 top-0 h-[2px]"
+                    style={{background:`linear-gradient(90deg,transparent,${accent}80,transparent)`}}/>
+                  {/* Hover glow */}
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    style={{background:`radial-gradient(ellipse at 50% -20%,${accent}10,transparent 70%)`}}/>
+                  <div className="relative p-4">
+                    {/* Team name + rate */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div>
+                        <p className="text-2xl font-black tracking-tight leading-none" style={{color:accent}}>{team}</p>
+                        <p className="text-[10px] mt-1" style={{color:'rgba(255,255,255,0.3)'}}>{count} players{coach?' · '+coach:''}</p>
                       </div>
+                      {rate!==null&&(
+                        <div className="text-right">
+                          <p className="text-2xl font-black leading-none" style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>{rate}</p>
+                          <p className="text-[8px] font-bold" style={{color:'rgba(255,255,255,0.2)'}}>% ATT</p>
+                        </div>
+                      )}
                     </div>
-                    {rate!==null&&(
-                      <div className="text-right shrink-0 ml-3">
-                        <p className="text-[26px] font-black leading-none" style={{color:rate>=80?'#10b981':rate>=60?'#fbbf24':'#f87171'}}>{rate}</p>
-                        <p className="text-[9px] font-semibold" style={{color:'rgba(255,255,255,0.2)'}}>% att</p>
-                      </div>
-                    )}
+                    {/* Availability bar */}
+                    <div className="h-1 rounded-full overflow-hidden mb-3" style={{background:'rgba(255,255,255,0.06)'}}>
+                      <div className="h-full rounded-full" style={{
+                        width: count>0?((count-inj-mod)/count*100)+'%':'100%',
+                        background:'#10b981'
+                      }}/>
+                    </div>
+                    {/* Status badges */}
+                    <div className="flex gap-1.5 flex-wrap">
+                      {inj>0&&<span className="rounded-full px-2 py-0.5 text-[9px] font-bold" style={{background:'rgba(248,113,113,0.12)',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.2)'}}>{inj} inj</span>}
+                      {mod>0&&<span className="rounded-full px-2 py-0.5 text-[9px] font-bold" style={{background:'rgba(251,191,36,0.12)',color:'#fde68a',border:'1px solid rgba(251,191,36,0.2)'}}>{mod} mod</span>}
+                      {inj===0&&mod===0&&<span className="rounded-full px-2 py-0.5 text-[9px] font-bold" style={{background:'rgba(16,185,129,0.1)',color:'#6ee7b7',border:'1px solid rgba(16,185,129,0.2)'}}>✓ clear</span>}
+                    </div>
                   </div>
                 </Link>
               </HoverCard>
@@ -768,7 +791,7 @@ export default function DashboardPage() {
         <div className="absolute top-0 right-0 h-64 w-64 rounded-full blur-[80px]"
           style={{background:'rgba(167,139,250,0.04)'}}/>
       </div>
-      <div className="relative mx-auto max-w-3xl px-4 py-6 sm:px-6">
+      <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {isSingle&&singleTeam?(
           <MyTeamView
             teamName={singleTeam}

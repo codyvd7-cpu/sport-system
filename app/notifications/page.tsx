@@ -51,7 +51,7 @@ export default function NotificationsPage() {
   return (
     <main className="min-h-screen pb-24 text-white md:pb-8 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <FadeUp delay={0}>
-      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 space-y-5">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 space-y-5">
 
         {/* Header */}
           <div>
