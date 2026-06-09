@@ -313,12 +313,15 @@ export default function LandingPage() {
             <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/15">
               Veritas In Caritate
             </p>
-            <div className="flex items-center gap-3 text-[8px] text-white/10 font-medium tracking-widest uppercase">
+            <p className="text-[8px] text-white/10 font-medium mt-1">
+              KINETIQ Sport is a product of Altus (Pty) Ltd
+            </p>
+            <div className="flex items-center gap-3 text-[8px] text-white/10 font-medium tracking-widest uppercase mt-1">
               <Link href="/privacy" className="hover:text-white/30 transition-colors">Privacy</Link>
               <span>·</span>
               <Link href="/terms" className="hover:text-white/30 transition-colors">Terms</Link>
               <span>·</span>
-              <span>© {new Date().getFullYear()}</span>
+              <span>© {new Date().getFullYear()} Altus (Pty) Ltd</span>
             </div>
           </div>
         </div>

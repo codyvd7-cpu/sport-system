@@ -1,111 +1,121 @@
-export default function TermsOfUse() {
+export default function TermsOfUsePage() {
+  const year = new Date().getFullYear();
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-3xl px-6 py-16">
-        <div className="mb-10">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-400 mb-2">Legal</p>
-          <h1 className="text-4xl font-black text-white mb-3">Terms of Use</h1>
-          <p className="text-slate-500 text-sm">Last updated: May 2026 · St Benedict's College High Performance Operations Platform</p>
+    <main className="min-h-screen" style={{background:'#030810',color:'#f1f5f9',fontFamily:'system-ui,sans-serif'}}>
+      <div style={{maxWidth:760,margin:'0 auto',padding:'48px 24px'}}>
+
+        {/* Header */}
+        <div style={{marginBottom:40}}>
+          <p style={{fontSize:11,fontWeight:700,letterSpacing:'0.2em',textTransform:'uppercase',color:'rgba(56,189,248,0.7)',marginBottom:8}}>
+            Legal · Terms
+          </p>
+          <h1 style={{fontSize:32,fontWeight:900,color:'white',letterSpacing:'-0.02em',margin:0}}>Terms of Use</h1>
+          <p style={{marginTop:8,fontSize:13,color:'rgba(255,255,255,0.4)'}}>
+            KINETIQ Sport Platform · Last updated {new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
+          </p>
         </div>
 
-        <div className="space-y-10 text-slate-300 text-sm leading-relaxed">
+        <div style={{fontSize:14,lineHeight:1.8,color:'rgba(255,255,255,0.7)'}}>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">1. Acceptance of Terms</h2>
-            <p>By accessing or using the High Performance Operations Platform ("HPOS", "the Platform"), you agree to be bound by these Terms of Use. If you do not agree to these terms, you may not use the Platform.</p>
-            <p className="mt-3">Access to the Platform is granted exclusively to authorised staff members of St Benedict's College. Unauthorised access is strictly prohibited.</p>
+          {/* Intro */}
+          <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
+            <p style={{margin:0,fontSize:13}}>
+              These Terms of Use ("Terms") govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform ("Platform"),
+              a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd</strong> ("Altus", "we", "us").
+              By accessing or using the Platform, you agree to be bound by these Terms.
+              If you do not agree, you must discontinue use immediately.
+            </p>
           </section>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">2. Platform Purpose</h2>
-            <p>The Platform is an internal operational tool designed exclusively for:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['Management of sport department data at St Benedict\'s College', 'Athlete attendance and performance tracking', 'Team and squad administration', 'High performance class management for Grade 8 and Grade 9 learners', 'Coach communication and planning support'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-            <p className="mt-4">The Platform is not intended for personal use, commercial purposes, or use by any institution other than St Benedict's College without explicit written authorisation from the Platform developer.</p>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>1. The Platform</h2>
+          <p style={{marginBottom:24}}>
+            KINETIQ Sport is a proprietary sport operations and high-performance management platform designed for use by educational institutions.
+            The Platform provides tools for team management, athlete performance tracking, attendance recording, coaching staff administration, and parent and player communication portals.
+            All intellectual property in and to the Platform, including its source code, design, data models, and documentation, is owned exclusively by Altus (Pty) Ltd.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">3. Authorised Use</h2>
-            <p>Users of the Platform agree to:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['Use the Platform solely for its intended operational purpose', 'Keep login credentials confidential and not share access with unauthorised individuals', 'Ensure that data entered is accurate, relevant, and limited to what is necessary', 'Not attempt to access data beyond their assigned role and permissions', 'Report any suspected security breach or unauthorised access immediately', 'Comply with all applicable South African laws including POPIA'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>2. Licence</h2>
+          <p style={{marginBottom:24}}>
+            Access to the Platform is granted to authorised users under a licence agreement between Altus and the client institution ("Licence").
+            The Licence is non-exclusive, non-transferable, and limited to the scope agreed between Altus and the client institution.
+            Unauthorised access to the Platform, including access beyond the scope of the Licence, is strictly prohibited.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">4. Prohibited Conduct</h2>
-            <p>Users must not:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['Share, publish, or disclose any athlete or student data outside of authorised Platform use', 'Screenshot, export, or distribute personal information of learners for non-operational purposes', 'Attempt to circumvent security controls or access controls', 'Use the Platform to store information beyond its stated operational scope', 'Make medical, clinical, or diagnostic claims based on Platform data or AI-generated outputs', 'Use AI-generated summaries as a substitute for professional judgement'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>3. Authorised Users</h2>
+          <p>The Platform may only be used by:</p>
+          <ul style={{margin:'12px 0 24px 20px'}}>
+            <li style={{marginBottom:8}}>Coaching and administrative staff of the licensed institution who have been granted platform credentials.</li>
+            <li style={{marginBottom:8}}>Athletes and parents or guardians accessing the player portal via a valid player access code.</li>
+            <li style={{marginBottom:8}}>Altus personnel for platform administration and support purposes.</li>
+          </ul>
+          <p style={{marginBottom:24}}>
+            You are responsible for maintaining the confidentiality of your credentials and for all activity conducted under your account.
+            You must notify Altus or your institution's platform administrator immediately upon becoming aware of any unauthorised use.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">5. Data Responsibilities</h2>
-            <p>Users who enter data into the Platform are responsible for:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['Ensuring the accuracy of information entered', 'Only recording information that is operationally relevant and appropriate', 'Not entering sensitive personal information beyond the Platform\'s defined scope', 'Treating all athlete and student data with appropriate care and confidentiality'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>4. Acceptable Use</h2>
+          <p>You agree not to:</p>
+          <ul style={{margin:'12px 0 24px 20px'}}>
+            <li style={{marginBottom:8}}>Use the Platform for any unlawful purpose or in violation of applicable South African law.</li>
+            <li style={{marginBottom:8}}>Access, tamper with, or attempt to circumvent any security feature of the Platform.</li>
+            <li style={{marginBottom:8}}>Reverse engineer, decompile, or reproduce any part of the Platform's source code or design.</li>
+            <li style={{marginBottom:8}}>Share your access credentials with unauthorised persons.</li>
+            <li style={{marginBottom:8}}>Use the Platform to process data beyond the scope of your authorised role.</li>
+            <li style={{marginBottom:8}}>Upload or transmit any content that is unlawful, harmful, defamatory, or in violation of any third-party rights.</li>
+          </ul>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">6. AI Features Disclaimer</h2>
-            <p>The Platform includes AI-assisted features powered by OpenAI. By using these features, users acknowledge that:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['AI-generated content is for informational and coaching support purposes only', 'AI outputs do not constitute medical advice, clinical assessment, or professional diagnosis', 'The Platform developer and St Benedict\'s College accept no liability for decisions made solely on the basis of AI-generated content', 'Coaches and administrators remain fully responsible for all decisions affecting athletes and learners', 'AI outputs may contain errors or inaccuracies and should be reviewed critically'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>5. Data and Privacy</h2>
+          <p style={{marginBottom:24}}>
+            Your use of the Platform is subject to our Privacy Policy, which is incorporated into these Terms by reference.
+            The client institution is the responsible party for personal information entered into the Platform by its staff and athletes.
+            Altus processes such information as an operator on behalf of the institution in accordance with the Protection of Personal Information Act 4 of 2013 ("POPIA").
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">7. Intellectual Property</h2>
-            <p>The Platform, including its code, design, architecture, and features, is the intellectual property of Cody Jason Van Dyk ("the Developer"). St Benedict's College holds a licence to use the Platform for its internal operational purposes.</p>
-            <p className="mt-3">Nothing in these Terms grants St Benedict's College or any user ownership of the Platform or any of its components. The Developer retains all intellectual property rights including the right to license the Platform to other institutions.</p>
-            <p className="mt-3">Data entered into the Platform by St Benedict's College staff remains the property of St Benedict's College.</p>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>6. Intellectual Property</h2>
+          <p style={{marginBottom:24}}>
+            All rights, title, and interest in the KINETIQ Sport platform, including its name, branding, design, functionality, and all associated intellectual property, vest exclusively in Altus (Pty) Ltd.
+            No use, reproduction, or distribution of the Platform or any of its components is permitted without the prior written consent of Altus.
+            The name "KINETIQ Sport" and associated branding are the property of Altus (Pty) Ltd.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">8. Availability and Modifications</h2>
-            <p>The Platform is provided on an "as available" basis during its internal pilot phase. The Developer reserves the right to:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['Modify, update, or discontinue features at any time', 'Perform maintenance that may temporarily affect availability', 'Update these Terms of Use with reasonable notice to users'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>7. Availability and Modifications</h2>
+          <p style={{marginBottom:24}}>
+            Altus will endeavour to maintain reasonable Platform availability but does not guarantee uninterrupted access.
+            Scheduled and emergency maintenance may result in temporary unavailability.
+            Altus reserves the right to modify, update, or discontinue any feature of the Platform at any time, with reasonable notice to licensed client institutions where practicable.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">9. Limitation of Liability</h2>
-            <p>To the maximum extent permitted by law, the Developer shall not be liable for:</p>
-            <ul className="list-disc list-inside space-y-2 text-slate-400 mt-3">
-              {['Any loss or damage arising from reliance on AI-generated content', 'Data loss resulting from circumstances beyond reasonable control', 'Decisions made by coaches or administrators based on Platform data', 'Any indirect, incidental, or consequential loss arising from Platform use'].map(i => <li key={i}>{i}</li>)}
-            </ul>
-            <p className="mt-4">The Platform is a support tool. All coaching and administrative decisions remain the responsibility of authorised staff and the School.</p>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>8. Limitation of Liability</h2>
+          <p style={{marginBottom:24}}>
+            To the maximum extent permitted by applicable law, Altus shall not be liable for any indirect, incidental, consequential, or punitive damages arising from your use of or inability to use the Platform.
+            Altus's total liability to any party in connection with the Platform shall not exceed the licence fees paid by the client institution in the three months preceding the relevant claim.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">10. Termination of Access</h2>
-            <p>Access to the Platform may be revoked at any time by the Developer or authorised School management if a user is found to have violated these Terms, misused athlete data, or acted in a manner inconsistent with the Platform's intended purpose.</p>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>9. Governing Law</h2>
+          <p style={{marginBottom:24}}>
+            These Terms are governed by the laws of the Republic of South Africa.
+            Any disputes arising from these Terms or the use of the Platform shall be subject to the exclusive jurisdiction of the courts of South Africa.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">11. Governing Law</h2>
-            <p>These Terms of Use are governed by the laws of the Republic of South Africa, including but not limited to the Protection of Personal Information Act 4 of 2013 (POPIA) and the Electronic Communications and Transactions Act 25 of 2002 (ECT Act).</p>
-          </section>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>10. Amendments</h2>
+          <p style={{marginBottom:24}}>
+            Altus reserves the right to amend these Terms at any time. Updated Terms will be made available on the Platform.
+            Continued use of the Platform following the publication of amended Terms constitutes acceptance of the revised Terms.
+          </p>
 
-          <section>
-            <h2 className="text-lg font-black text-white mb-3">12. Contact</h2>
-            <p>For any questions relating to these Terms:</p>
-            <div className="mt-3 rounded-xl border border-slate-800 bg-slate-900 p-4">
-              <p className="text-white font-black">Cody Jason Van Dyk</p>
-              <p className="text-slate-400 mt-1">KINETIQ (Pty) Ltd (in registration)</p>
-              <p className="text-slate-400">Johannesburg, Gauteng, South Africa</p>
-            </div>
-          </section>
-
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>11. Contact</h2>
+          <div style={{padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
+            <p style={{margin:0}}><strong style={{color:'white'}}>Altus (Pty) Ltd</strong></p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> KINETIQ Sport</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Contact:</strong> Cody Jason Van Dyk</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@kinetiqsport.co.za</p>
+          </div>
         </div>
 
-        <div className="mt-16 border-t border-slate-800 pt-8 flex items-center justify-between flex-wrap gap-4">
-          <p className="text-xs text-slate-600">© 2026 KINETIQ · All rights reserved</p>
-          <a href="/privacy" className="text-xs text-sky-500 hover:text-sky-400">Privacy Policy →</a>
+        {/* Footer */}
+        <div style={{marginTop:48,paddingTop:24,borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,0.2)'}}>
+          <span>KINETIQ Sport is a product of Altus (Pty) Ltd</span>
+          <span>© {year} Altus (Pty) Ltd</span>
         </div>
       </div>
     </main>
