@@ -438,7 +438,7 @@ export default function AthleteProfile({params}:PageProps) {
 
   if(loading) return(
     <main className="flex min-h-screen items-center justify-center bg-[#04060e]">
-      <div className="h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportColor}}/>
+      <div className="h-6 w-6 animate-spin rounded-full border-2 border-sky-500 border-t-transparent"/>
     </main>
   );
   if(!rawAthlete) return(
