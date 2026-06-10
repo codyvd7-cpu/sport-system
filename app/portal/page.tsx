@@ -276,17 +276,23 @@ function PortalInner() {
                   return (
                     <button key={item.id} type="button" onClick={()=>setOpenWeekItemId(isOpen?null:itemId)}
                       className="group relative w-full overflow-hidden rounded-2xl border text-left transition-all duration-200"
-                      style={{borderColor:isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)',background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)'}}
-                      >
-                      <div className="absolute right-0 top-0 h-16 w-16 rounded-bl-3xl" style={{background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.03)'}}/>
-                      <div className="p-5">
-                        <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black"
-                          style={{background:isOpen?sportCfg.color+'25':'rgba(255,255,255,0.06)',color:isOpen?sportCfg.color:'rgba(255,255,255,0.4)'}}>
-                          
+                      style={{borderColor:isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)',background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)'}}>
+                      <div className="absolute inset-x-0 top-0 h-px" style={{background:isOpen?'linear-gradient(90deg,transparent,'+sportCfg.color+',transparent)':'none'}}/>
+                      <div className="flex items-start gap-4 p-5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black"
+                          style={{background:isOpen?sportCfg.color+'25':'rgba(255,255,255,0.06)',color:isOpen?sportCfg.color:'rgba(255,255,255,0.4)',border:'1px solid '+(isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.08)')}}>
+                          {String(item.sort_order||'').padStart(2,'0')||'—'}
                         </div>
-                        <p className="text-sm font-black text-white">{item.title}</p>
-                        {item.subtitle&&<p className="mt-0.5 text-xs text-white/35">{item.subtitle}</p>}
-                        {isOpen&&item.detail&&<p className="mt-3 text-sm leading-relaxed text-white/60">{item.detail}</p>}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-white">{item.title}</p>
+                          {item.subtitle&&<p className="mt-0.5 text-xs text-white/35">{item.subtitle}</p>}
+                          {isOpen&&item.detail&&<p className="mt-3 text-sm leading-relaxed text-white/60">{item.detail}</p>}
+                        </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                          className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-transform"
+                          style={{color:'rgba(255,255,255,0.25)',transform:isOpen?'rotate(90deg)':'none'}}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
                       </div>
                     </button>
                   );
@@ -472,16 +478,29 @@ function PortalInner() {
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2">
-                {programs.map((prog:Row)=>(
-                  <div key={prog.id} className="relative overflow-hidden rounded-2xl p-5"
-                    style={{background:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
-                    <div className="absolute inset-x-0 top-0 h-px" style={{background:'linear-gradient(90deg,transparent,'+sportCfg.color+'40,transparent)'}}/>
-                    
-                    <p className="text-base font-black text-white">{prog.title}</p>
-                    {prog.description&&<p className="mt-1 text-sm text-white/40">{prog.description}</p>}
-                    {prog.tag&&<span className="mt-3 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'15',color:sportCfg.color}}>{prog.tag}</span>}
-                  </div>
-                ))}
+                {programs.map((prog:Row)=>{
+                  const isOpen = openWeekItemId==='prog-'+prog.id;
+                  return (
+                    <button key={prog.id} type="button" onClick={()=>setOpenWeekItemId(isOpen?null:'prog-'+prog.id)}
+                      className="relative overflow-hidden rounded-2xl p-5 text-left transition-all w-full"
+                      style={{background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px '+(isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)')}}>
+                      <div className="absolute inset-x-0 top-0 h-px" style={{background:isOpen?'linear-gradient(90deg,transparent,'+sportCfg.color+',transparent)':'none'}}/>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-black text-white">{prog.title}</p>
+                          {prog.description&&<p className="mt-1 text-sm text-white/40">{prog.description}</p>}
+                          {isOpen&&prog.content&&<p className="mt-3 text-sm leading-relaxed text-white/60">{prog.content}</p>}
+                          {prog.tag&&<span className="mt-3 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'15',color:sportCfg.color}}>{prog.tag}</span>}
+                        </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                          className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-transform"
+                          style={{color:'rgba(255,255,255,0.25)',transform:isOpen?'rotate(90deg)':'none'}}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
