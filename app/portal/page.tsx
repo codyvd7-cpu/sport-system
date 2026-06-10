@@ -253,11 +253,11 @@ function PortalInner() {
 
         {/* ── WEEK AT A GLANCE ─────────────────────────── */}
         <section id="thisweek" className="mb-16 scroll-mt-8">
-          <Label text="This Week" />
+          <Label text="This Week" color={sportCfg.color} />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Week at a Glance</h2>
           <p className="mt-2 text-sm text-white/35">Tap any day to expand the full session plan.</p>
           <div className="mt-6">
-            {loadingWeek ? <Skeleton /> : weekItems.length === 0 ? <Empty text="No week plan published yet." /> : (
+            {loadingWeek ? <Skeleton color={sportCfg.color} /> : weekItems.length === 0 ? <Empty text="No week plan published yet." /> : (
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {weekItems.map((item: Row) => {
                   const itemId = String(item.id);
@@ -296,11 +296,11 @@ function PortalInner() {
 
         {/* ── FIXTURES ─────────────────────────────────── */}
         <section id="fixtures" className="mb-16 scroll-mt-8">
-          <Label text="Schedule" />
+          <Label text="Schedule" color={sportCfg.color} />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Fixtures</h2>
           <p className="mt-2 text-sm text-white/35">Upcoming matches and venues.</p>
           <div className="mt-6">
-            {loadingFixtures ? <Skeleton /> : fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
+            {loadingFixtures ? <Skeleton color={sportCfg.color} /> : fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
               <div className="space-y-3">
                 {Array.from(new Set(fixtures.map((f: Row) => f.fixture_date))).sort().map((date) => {
                   const dayFixtures = fixtures.filter((f: Row) => f.fixture_date === date);
@@ -348,11 +348,11 @@ function PortalInner() {
 
         {/* ── RESULTS ──────────────────────────────────── */}
         <section id="results" className="mb-16 scroll-mt-8">
-          <Label text="Latest" />
+          <Label text="Latest" color={sportCfg.color} />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Results</h2>
           <p className="mt-2 text-sm text-white/35">Recent match outcomes and scorers.</p>
           <div className="mt-6">
-            {loadingResults ? <Skeleton /> : results.length === 0 ? <Empty text="No results published yet." /> : (
+            {loadingResults ? <Skeleton color={sportCfg.color} /> : results.length === 0 ? <Empty text="No results published yet." /> : (
               <div className="space-y-3">
                 {Array.from(new Set(results.map((r: Row) => r.result_date))).sort().reverse().map((date) => {
                   const dayResults = results.filter((r: Row) => r.result_date === date);
@@ -415,11 +415,11 @@ function PortalInner() {
 
         {/* ── PROGRAMS ─────────────────────────────────── */}
         <section id="programs" className="mb-16 scroll-mt-8">
-          <Label text="Training" />
+          <Label text="Training" color={sportCfg.color} />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Programs</h2>
           <p className="mt-2 text-sm text-white/35">Current gym, mobility and recovery work.</p>
           <div className="mt-6">
-            {loadingPrograms ? <Skeleton /> : programs.length === 0 ? <Empty text="No programs published yet." /> : (
+            {loadingPrograms ? <Skeleton color={sportCfg.color} /> : programs.length === 0 ? <Empty text="No programs published yet." /> : (
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {programs.map((program: Row) => {
                   const catColors: Record<string, string> = {
@@ -461,11 +461,11 @@ function PortalInner() {
 
         {/* ── REMINDERS ────────────────────────────────── */}
         <section id="reminders" className="mb-16 scroll-mt-8">
-          <Label text="Notices" />
+          <Label text="Notices" color={sportCfg.color} />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Reminders</h2>
           <p className="mt-2 text-sm text-white/35">Key updates from the {sportCfg.label} department.</p>
           <div className="mt-6">
-            {loadingReminders ? <Skeleton /> : reminders.length === 0 ? <Empty text="No reminders published yet." /> : (
+            {loadingReminders ? <Skeleton color={sportCfg.color} /> : reminders.length === 0 ? <Empty text="No reminders published yet." /> : (
               <div className="grid gap-3 sm:grid-cols-2">
                 {reminders.map((reminder: Row) => (
                   <div key={reminder.id} className="flex gap-4 overflow-hidden rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/8 to-transparent p-5">
@@ -505,7 +505,7 @@ function PortalInner() {
                   </div>
                 </div>
 
-                {loadingLeaderboards ? <Skeleton /> : board.data.length === 0 ? <Empty text="No data yet." /> : (
+                {loadingLeaderboards ? <Skeleton color={sportCfg.color} /> : board.data.length === 0 ? <Empty text="No data yet." /> : (
                   <div className="space-y-2">
                     {board.data.slice(0,3).map((athlete: Row, i: number) => {
                       const podiumColors = [
@@ -570,18 +570,19 @@ function PortalInner() {
   );
 }
 
-function Label({ text }: { text: string }) {
+function Label({ text, color = '#38bdf8' }: { text: string; color?: string }) {
   return (
-    <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>
+    <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]"
+      style={{borderColor:color+'50',background:color+'18',color}}>
       {text}
     </span>
   );
 }
 
-function Skeleton() {
+function Skeleton({ color = '#38bdf8' }: { color?: string }) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/3 p-5">
-      <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color}} />
+      <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:color}} />
       <p className="text-sm text-white/25">Loading...</p>
     </div>
   );
