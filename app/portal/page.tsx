@@ -311,8 +311,7 @@ function PortalInner() {
           <Label text="Schedule" color={sportCfg.color} />
           <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Fixtures</h2>
           <p className="mt-2 text-sm text-white/35">Upcoming matches and venues.</p>
-          <div className="mt-6">
-            {loadingFixtures ? <Skeleton color={sportCfg.color} /> : fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
+          {loadingFixtures ? <div className="mt-6"><Skeleton color={sportCfg.color} /></div> : fixtures.length === 0 ? <div className="mt-6"><Empty text="No fixtures published yet." /></div> : (
           <div className="mt-6 space-y-3">
             {Array.from(new Set(fixtures.map((f:Row)=>f.fixture_date))).sort().map((date)=>{
               const dayFixtures = fixtures.filter((f:Row)=>f.fixture_date===date);
@@ -368,10 +367,7 @@ function PortalInner() {
               );
             })}
           </div>
-              </div>
-            )}
-          </div>
-        </section>
+          )}
 
         {/* ── RESULTS ──────────────────────────────────── */}
         <section id="results" className="mb-16 scroll-mt-8">
@@ -463,10 +459,7 @@ function PortalInner() {
                   );
                 })}
               </div>
-              </div>
-            )}
-          </div>
-        </section>
+          )}
 
         {/* ── PROGRAMS ─────────────────────────────────── */}
         <section id="programs" className="mb-16 scroll-mt-8">
