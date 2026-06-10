@@ -174,7 +174,7 @@ function PortalInner() {
           <div className="flex items-center justify-between py-5">
             <div className="flex items-center gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{background:sportCfg.color+'20'}}>
-                <span style={{fontSize:16}}>{sport==='rugby'?'🏉':sport==='cricket'?'🏏':sport==='swimming'?'🏊':sport==='rowing'?'🚣':'🏑'}</span>
+                <span style={{fontSize:12,color:sportCfg.color,fontWeight:900}}>{sportCfg.label[0]}</span>
               </div>
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>St Benedict's College</p>
@@ -282,7 +282,7 @@ function PortalInner() {
                       <div className="p-5">
                         <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black"
                           style={{background:isOpen?sportCfg.color+'25':'rgba(255,255,255,0.06)',color:isOpen?sportCfg.color:'rgba(255,255,255,0.4)'}}>
-                          {item.emoji||'📋'}
+                          
                         </div>
                         <p className="text-sm font-black text-white">{item.title}</p>
                         {item.subtitle&&<p className="mt-0.5 text-xs text-white/35">{item.subtitle}</p>}
@@ -347,7 +347,7 @@ function PortalInner() {
                                   {fixture.fixture_time&&<span className="text-[10px]" style={{color:'rgba(255,255,255,0.4)'}}>{fixture.fixture_time}</span>}
                                 </div>
                                 <p className="text-base font-black text-white">vs {fixture.opponent}</p>
-                                {fixture.venue&&<p className="mt-0.5 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>📍 {fixture.venue}</p>}
+                                {fixture.venue&&<p className="mt-0.5 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{fixture.venue}</p>}
                               </div>
                             </div>
                           ))}
@@ -438,7 +438,7 @@ function PortalInner() {
                                 {scorers.length>0&&(
                                   <div className="px-4 pb-3 border-t border-white/5">
                                     <p className="text-[10px] mt-2" style={{color:'rgba(255,255,255,0.35)'}}>
-                                      {sport==='rugby'?'🏉':'⚽'} {scorers.join(' · ')}
+                                      {scorers.join(' · ')}
                                     </p>
                                   </div>
                                 )}
@@ -476,7 +476,7 @@ function PortalInner() {
                   <div key={prog.id} className="relative overflow-hidden rounded-2xl p-5"
                     style={{background:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
                     <div className="absolute inset-x-0 top-0 h-px" style={{background:'linear-gradient(90deg,transparent,'+sportCfg.color+'40,transparent)'}}/>
-                    <p className="text-xl mb-1">{prog.emoji||'💪'}</p>
+                    
                     <p className="text-base font-black text-white">{prog.title}</p>
                     {prog.description&&<p className="mt-1 text-sm text-white/40">{prog.description}</p>}
                     {prog.tag&&<span className="mt-3 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'15',color:sportCfg.color}}>{prog.tag}</span>}
@@ -506,7 +506,7 @@ function PortalInner() {
               <div className="space-y-3">
                 {reminders.map((rem:Row)=>(
                   <div key={rem.id} className="flex gap-4 rounded-2xl p-5" style={{background:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base" style={{background:sportCfg.color+'15'}}>{rem.emoji||'📌'}</div>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{background:sportCfg.color+'15',color:sportCfg.color,fontWeight:900,fontSize:11}}>!</div>
                     <div>
                       <p className="text-sm font-black text-white">{rem.title}</p>
                       {rem.body&&<p className="mt-1 text-sm text-white/40">{rem.body}</p>}
