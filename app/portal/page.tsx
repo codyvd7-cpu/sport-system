@@ -162,7 +162,7 @@ function PortalInner() {
       {/* ── HERO ─────────────────────────────────────── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1022] to-[#06071a]" />
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-sky-500/40 to-transparent" />
+        <div style={{position:'absolute',inset:'0 0 auto',height:1,background:'linear-gradient(90deg,transparent,'+sportCfg.color+'66,transparent)'}} />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_60%_at_50%_0%,rgba(14,165,233,0.08),transparent)]" />
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
@@ -172,14 +172,14 @@ function PortalInner() {
             <div className="flex items-center gap-2.5">
               <span className="text-2xl"></span>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-sky-400">St Benedict's College</p>
-                <p className="text-[10px] uppercase tracking-widest text-white/50">Hockey Department</p>
+                <p className="text-xs font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>St Benedict's College</p>
+                <p className="text-[10px] uppercase tracking-widest" style={{color:sportCfg.color+'60'}}>{sportCfg.label} Department</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <a href="/" className="rounded-full border border-white/8/50 bg-[rgba(255,255,255,0.025)] px-3 py-1.5 text-xs font-black text-white/35 transition hover:text-white/70">← Departments</a>
               <a href={'/login?sport='+sport} className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
-              <a href="/player" className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">Player Login</a>
+              <a href="/player" className="rounded-full border px-3 py-1.5 text-xs font-black transition" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>Player Login</a>
             </div>
           </div>
 
@@ -190,7 +190,7 @@ function PortalInner() {
             <div>
               <h1 className="text-5xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
                 Player &amp; Parent<br />
-                <span className="bg-gradient-to-r from-sky-400 via-sky-300 to-sky-500 bg-clip-text text-transparent">Portal.</span>
+                <span style={{background:'linear-gradient(90deg,'+sportCfg.color+',white,'+sportCfg.color+')',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Portal.</span>
               </h1>
               <p className="mt-5 max-w-lg text-sm leading-relaxed text-white/35 sm:text-base">
                 Weekly plans, fixtures, results, programs and department updates — all in one place.
@@ -198,7 +198,7 @@ function PortalInner() {
               <div className="mt-7 flex flex-wrap gap-2">
                 {['This Week', 'Fixtures', 'Results', 'Programs', 'Reminders'].map((label) => (
                   <a key={label} href={`#${label.toLowerCase().replace(' ', '')}`}
-                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-white/50 transition hover:border-sky-500/40 hover:bg-sky-500/10 hover:text-white">
+                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-white/50 transition hover:text-white">
                     {label}
                   </a>
                 ))}
@@ -265,17 +265,17 @@ function PortalInner() {
                   return (
                     <button key={item.id} type="button" onClick={() => setOpenWeekItemId(isOpen ? null : itemId)}
                       className={`group relative w-full overflow-hidden rounded-2xl border text-left transition-all duration-200 ${
-                        isOpen ? 'border-sky-500/50 bg-gradient-to-br from-sky-500/10 to-sky-500/5 shadow-xl shadow-sky-500/10'
+                        isOpen ? 'shadow-xl border-white/15'
                           : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/6'
                       }`}>
-                      <div className={`absolute right-0 top-0 h-16 w-16 rounded-bl-3xl ${isOpen ? 'bg-sky-500/15' : 'bg-white/3'}`} />
+                      <div className={`absolute right-0 top-0 h-16 w-16 rounded-bl-3xl ${isOpen ? '' : 'bg-white/3'}`} />
                       <div className="p-5">
                         <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black ${
-                          isOpen ? 'bg-sky-500 text-white' : 'bg-white/8 text-white/50'
+                          isOpen ? '' : 'bg-white/8 text-white/50'
                         }`}>
                           {(item.day_label || 'D').slice(0, 2).toUpperCase()}
                         </div>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isOpen ? 'text-sky-400' : 'text-white/25'}`}>
+                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isOpen ? 'text-white' : 'text-white/25'}`}>
                           {item.day_label || 'Day'}
                         </p>
                         <p className="mt-1.5 text-sm font-black text-white">{item.title || 'Session'}</p>
@@ -283,7 +283,7 @@ function PortalInner() {
                           {item.details || 'Tap for details.'}
                         </p>
                         {!isOpen && (
-                          <p className="mt-3 text-[10px] font-black text-sky-600 transition group-hover:text-sky-500">EXPAND →</p>
+                          <p className="mt-3 text-[10px] font-black transition" style={{color:sportCfg.color}}>EXPAND →</p>
                         )}
                       </div>
                     </button>
@@ -307,7 +307,7 @@ function PortalInner() {
                   const isExpanded = expandedFixtureDate === date;
                   const d = new Date(date as string);
                   return (
-                    <div key={date as string} className="overflow-hidden rounded-2xl border border-white/8 bg-white/3 transition hover:border-sky-500/20">
+                    <div key={date as string} className="overflow-hidden rounded-2xl border border-white/8 bg-white/3 transition">
                       <button onClick={() => setExpandedFixtureDate(isExpanded ? null : date as string)}
                         className="flex w-full items-center gap-5 p-5 text-left">
                         <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
@@ -320,7 +320,7 @@ function PortalInner() {
                           <p className="mt-0.5 text-xs text-white/35">{dayFixtures.map((f: Row) => f.team).join(' · ')}</p>
                         </div>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
+                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90' : ''}`}>
                           <path d="M9 18l6-6-6-6"/>
                         </svg>
                       </button>
@@ -329,7 +329,7 @@ function PortalInner() {
                           {dayFixtures.map((fixture: Row) => (
                             <div key={fixture.id} className="rounded-xl border border-white/5 bg-white/3 p-3">
                               <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                <span className="rounded-full bg-sky-500/15 px-2.5 py-1 text-[10px] font-black text-sky-300">{fixture.team}</span>
+                                <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{background:sportCfg.colorDim,color:sportCfg.color}}>{fixture.team}</span>
                                 {fixture.fixture_time && <span className="text-[10px] text-white/35">{fixture.fixture_time}</span>}
                               </div>
                               <p className="text-sm font-black text-white">vs {fixture.opponent}</p>
@@ -378,7 +378,7 @@ function PortalInner() {
                           </div>
                         </div>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90 text-sky-400' : ''}`}>
+                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90' : ''}`}>
                           <path d="M9 18l6-6-6-6"/>
                         </svg>
                       </button>
@@ -425,7 +425,7 @@ function PortalInner() {
                   const catColors: Record<string, string> = {
                     Gym: 'from-violet-500/20 to-violet-500/5 border-violet-500/25',
                     Mobility: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/25',
-                    Recovery: 'from-sky-500/20 to-sky-500/5 border-sky-500/25',
+                    Recovery: 'from-white/8 to-white/3 border-white/10',
                   };
                   const gradient = catColors[program.category] || 'from-white/8 to-white/3 border-white/8';
                   return (
@@ -556,7 +556,7 @@ function PortalInner() {
       <footer className="border-t border-white/5 bg-[#030410] py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="flex flex-col items-center gap-3 text-center">
-            <p className="text-sm font-black text-white">St Benedict's College Hockey</p>
+            <p className="text-sm font-black text-white">St Benedict's College {sportCfg.label}</p>
             <p className="text-xs text-white/25">© {new Date().getFullYear()} — Built for excellence</p>
             <p className="text-[10px] text-white/15">
               <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
@@ -572,7 +572,7 @@ function PortalInner() {
 
 function Label({ text }: { text: string }) {
   return (
-    <span className="inline-block rounded-full border border-sky-500/25 bg-sky-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em] text-sky-400">
+    <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>
       {text}
     </span>
   );
@@ -581,7 +581,7 @@ function Label({ text }: { text: string }) {
 function Skeleton() {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/3 p-5">
-      <div className="h-4 w-4 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
+      <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color}} />
       <p className="text-sm text-white/25">Loading...</p>
     </div>
   );
