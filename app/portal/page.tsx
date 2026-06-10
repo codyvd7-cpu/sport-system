@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
@@ -37,7 +39,24 @@ async function safeQuery<T>(
   }
 }
 
-export default function PortalPage() {
+
+const SPORT_CONFIG: Record<string,{label:string;color:string;colorDim:string;accentBorder:string}> = {
+  hockey:   {label:'Hockey',    color:'#38bdf8',colorDim:'rgba(56,189,248,0.1)',  accentBorder:'rgba(56,189,248,0.3)'},
+  rugby:    {label:'Rugby',     color:'#f87171',colorDim:'rgba(248,113,113,0.1)',accentBorder:'rgba(248,113,113,0.3)'},
+  cricket:  {label:'Cricket',   color:'#fbbf24',colorDim:'rgba(251,191,36,0.1)', accentBorder:'rgba(251,191,36,0.3)'},
+  rowing:   {label:'Rowing',    color:'#34d399',colorDim:'rgba(52,211,153,0.1)', accentBorder:'rgba(52,211,153,0.3)'},
+  swimming: {label:'Swimming',  color:'#818cf8',colorDim:'rgba(129,140,248,0.1)',accentBorder:'rgba(129,140,248,0.3)'},
+  waterpolo:{label:'Water Polo',color:'#06b6d4',colorDim:'rgba(6,182,212,0.1)',  accentBorder:'rgba(6,182,212,0.3)'},
+};
+
+function PortalInner() {
+  const searchParams = useSearchParams();
+  const sport = (searchParams.get('sport') ||
+    (typeof document !== 'undefined'
+      ? document.cookie.split(';').find(c=>c.trim().startsWith('portal_sport='))?.split('=')[1]
+      : null) || 'hockey');
+  const sportCfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
+
   const [sponsors, setSponsors] = useState<Row[]>([]);
   const [activeSponsorIndex, setActiveSponsorIndex] = useState(0);
   const [weekItems, setWeekItems] = useState<Row[]>([]);
@@ -61,29 +80,29 @@ export default function PortalPage() {
   useEffect(() => {
     async function loadAll() {
       const sponsorsData = await safeQuery<Row[]>(
-        supabase.from('portal_sponsors').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_sponsors').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       const activePlanData = await safeQuery<Row[]>(
-        supabase.from('portal_week_plans').select('id').eq('published', true).order('created_at', { ascending: false }).limit(1), []
+        supabase.from('portal_week_plans').select('id').eq('published', true).eq('sport', sport).order('created_at', { ascending: false }).limit(1), []
       );
       const activePlanId = activePlanData[0]?.id ?? null;
       const weekData = activePlanId
         ? await safeQuery<Row[]>(supabase.from('portal_week_plan_items').select('*').eq('week_plan_id', activePlanId).order('sort_order', { ascending: true }), [])
         : [];
       const remindersData = await safeQuery<Row[]>(
-        supabase.from('portal_reminders').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_reminders').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       const fixturesData = await safeQuery<Row[]>(
-        supabase.from('portal_fixtures').select('*').eq('is_published', true).order('fixture_date', { ascending: true }), []
+        supabase.from('portal_fixtures').select('*').eq('is_published', true).eq('sport', sport).order('fixture_date', { ascending: true }), []
       );
       const resultsData = await safeQuery<Row[]>(
-        supabase.from('portal_results').select('*').eq('is_published', true).order('result_date', { ascending: false }), []
+        supabase.from('portal_results').select('*').eq('is_published', true).eq('sport', sport).order('result_date', { ascending: false }), []
       );
       const programsData = await safeQuery<Row[]>(
-        supabase.from('portal_programs').select('*').eq('is_published', true).order('sort_order', { ascending: true }), []
+        supabase.from('portal_programs').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       // Fetch leaderboard data via API route (bypasses RLS)
-      const lbRes = await fetch('/api/portal/leaderboard');
+      const lbRes = await fetch('/api/portal/leaderboard?sport='+sport);
       const lbData = lbRes.ok ? await lbRes.json() : { athletes: [], attendance: [], performance: [] };
       const athletes: Row[] = lbData.athletes || [];
       const attendance: Row[] = lbData.attendance || [];
@@ -159,7 +178,7 @@ export default function PortalPage() {
             </div>
             <div className="flex items-center gap-2">
               <a href="/" className="rounded-full border border-white/8/50 bg-[rgba(255,255,255,0.025)] px-3 py-1.5 text-xs font-black text-white/35 transition hover:text-white/70">← Departments</a>
-              <a href="/login" className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
+              <a href={'/login?sport='+sport} className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
               <a href="/player" className="rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1.5 text-xs font-black text-sky-300 transition hover:bg-sky-500/20">Player Login</a>
             </div>
           </div>
@@ -444,7 +463,7 @@ export default function PortalPage() {
         <section id="reminders" className="mb-16 scroll-mt-8">
           <Label text="Notices" />
           <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Reminders</h2>
-          <p className="mt-2 text-sm text-white/35">Key updates from the hockey department.</p>
+          <p className="mt-2 text-sm text-white/35">Key updates from the {sportCfg.label} department.</p>
           <div className="mt-6">
             {loadingReminders ? <Skeleton /> : reminders.length === 0 ? <Empty text="No reminders published yet." /> : (
               <div className="grid gap-3 sm:grid-cols-2">
@@ -474,7 +493,7 @@ export default function PortalPage() {
 
           <div className="mt-6 grid gap-8 xl:grid-cols-2">
             {[
-              { title: 'Gym & Attendance', sub: 'Sessions attended this season', data: gymLeaderboard, type: 'gym', accent: '#38bdf8' },
+              { title: 'Gym & Attendance', sub: 'Sessions attended this season', data: gymLeaderboard, type: 'gym', accent: sportCfg.color },
               { title: 'Performance Testing', sub: 'Fitness test scores', data: performanceLeaderboard, type: 'perf', accent: '#a78bfa' },
             ].map((board) => (
               <div key={board.title}>
@@ -571,5 +590,13 @@ function Skeleton() {
 function Empty({ text }: { text: string }) {
   return (
     <div className="rounded-2xl border border-white/6 bg-white/3 p-5 text-sm text-white/25">{text}</div>
+  );
+}
+
+export default function PortalPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#030810'}}/>}>
+      <PortalInner />
+    </Suspense>
   );
 }
