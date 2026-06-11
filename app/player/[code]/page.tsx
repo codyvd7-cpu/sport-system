@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ code: string }> };
@@ -180,7 +181,7 @@ export default function PlayerProfilePage({params}:PageProps){
         </div>
         <p style={{fontSize:20,fontWeight:900,marginBottom:8}}>Code not found</p>
         <p style={{color:'#475569',fontSize:14,marginBottom:24}}>Double-check your code and try again.</p>
-        <a href="/player" style={{background:'rgba(56,189,248,0.1)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',padding:'12px 28px',borderRadius:14,fontWeight:900,fontSize:14,textDecoration:'none'}}>← Try Again</Link>
+        <Link href="/player" style={{background:'rgba(56,189,248,0.1)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',padding:'12px 28px',borderRadius:14,fontWeight:900,fontSize:14,textDecoration:'none'}}>← Try Again</Link>
       </div>
     </main>
   );
@@ -489,7 +490,7 @@ export default function PlayerProfilePage({params}:PageProps){
         {/* Footer */}
         <div style={{...fade(320),textAlign:'center',paddingTop:24}}>
           <p style={{margin:'0 0 6px',fontSize:9,fontWeight:700,letterSpacing:'0.3em',textTransform:'uppercase',color:'#1e293b'}}>St Benedict&apos;s College Hockey</p>
-          <a href="/player" style={{fontSize:11,color:'#1e293b',textDecoration:'none'}}>← Back to code entry</Link>
+          <Link href="/player" style={{fontSize:11,color:'#1e293b',textDecoration:'none'}}>← Back to code entry</Link>
         </div>
 
       </div>
