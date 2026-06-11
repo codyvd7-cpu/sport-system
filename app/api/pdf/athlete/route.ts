@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { authenticateRequest } from '@/lib/serverAuth';
 
 export async function GET(req: NextRequest) {
+  const auth = await authenticateRequest(req);
+  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+
   const id = req.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 

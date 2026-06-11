@@ -19,6 +19,10 @@ async function sendPushNotification(subscription: any, payload: any, vapidKeys: 
 }
 
 export async function POST(req: NextRequest) {
+  // Require authenticated staff member
+  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic']);
+  if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
+
   const vapidPublic  = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
   const serviceKey   = process.env.SUPABASE_SERVICE_ROLE_KEY;

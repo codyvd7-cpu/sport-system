@@ -4,20 +4,22 @@
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
 
-// Clean up expired entries periodically
-if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, bucket] of buckets.entries()) {
-      if (bucket.resetAt < now) buckets.delete(key);
-    }
-  }, 60_000);
+// Lazy cleanup — runs on next request after 60s, not on a global interval
+let lastCleanup = Date.now();
+function maybeCleanup() {
+  const now = Date.now();
+  if (now - lastCleanup < 60_000) return;
+  lastCleanup = now;
+  for (const [key, bucket] of buckets.entries()) {
+    if (bucket.resetAt < now) buckets.delete(key);
+  }
 }
 
 export function rateLimit(
   identifier: string,
   options: { max: number; windowMs: number } = { max: 10, windowMs: 60_000 }
 ): { ok: boolean; remaining: number; resetIn: number } {
+  maybeCleanup();
   const now = Date.now();
   const bucket = buckets.get(identifier);
 

@@ -44,8 +44,21 @@ export function proxy(req: NextRequest) {
       return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
     }
     try {
+      const secret = process.env.HP_SESSION_SECRET;
+      if (!secret) return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
+
       const [payload, sig] = decodeURIComponent(portalCookie.value).split('.');
       if (!payload || !sig) return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
+
+      // Verify HMAC signature — prevents forged cookies
+      const crypto = require('crypto');
+      const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+      const sigBuf = Buffer.from(sig, 'hex');
+      const expBuf = Buffer.from(expected, 'hex');
+      if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+        return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
+      }
+
       const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
       if (!decoded.exp || decoded.exp < Date.now()) {
         return NextResponse.redirect(new URL(`/portal-login?sport=${sport}`, req.url));
