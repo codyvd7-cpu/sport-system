@@ -50,7 +50,7 @@ export default function TermsOfUsePage() {
           </ul>
           <p style={{marginBottom:24}}>
             You are responsible for maintaining the confidentiality of your credentials and for all activity conducted under your account.
-            You must notify Altus or your institution's platform administrator immediately upon becoming aware of any unauthorised use.
+            You must notify Altus or your institution&apos;s platform administrator immediately upon becoming aware of any unauthorised use.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>4. Acceptable Use</h2>
@@ -58,7 +58,7 @@ export default function TermsOfUsePage() {
           <ul style={{margin:'12px 0 24px 20px'}}>
             <li style={{marginBottom:8}}>Use the Platform for any unlawful purpose or in violation of applicable South African law.</li>
             <li style={{marginBottom:8}}>Access, tamper with, or attempt to circumvent any security feature of the Platform.</li>
-            <li style={{marginBottom:8}}>Reverse engineer, decompile, or reproduce any part of the Platform's source code or design.</li>
+            <li style={{marginBottom:8}}>Reverse engineer, decompile, or reproduce any part of the Platform&apos;s source code or design.</li>
             <li style={{marginBottom:8}}>Share your access credentials with unauthorised persons.</li>
             <li style={{marginBottom:8}}>Use the Platform to process data beyond the scope of your authorised role.</li>
             <li style={{marginBottom:8}}>Upload or transmit any content that is unlawful, harmful, defamatory, or in violation of any third-party rights.</li>
@@ -68,7 +68,7 @@ export default function TermsOfUsePage() {
           <p style={{marginBottom:24}}>
             Your use of the Platform is subject to our Privacy Policy, which is incorporated into these Terms by reference.
             The client institution is the responsible party for personal information entered into the Platform by its staff and athletes.
-            Altus processes such information as an operator on behalf of the institution in accordance with the Protection of Personal Information Act 4 of 2013 ("POPIA").
+            Altus processes such information as an operator on behalf of the institution in accordance with the Protection of Personal Information Act 4 of 2013 (&ldquo;POPIA&rdquo;).
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>6. Intellectual Property</h2>
@@ -88,7 +88,7 @@ export default function TermsOfUsePage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>8. Limitation of Liability</h2>
           <p style={{marginBottom:24}}>
             To the maximum extent permitted by applicable law, Altus shall not be liable for any indirect, incidental, consequential, or punitive damages arising from your use of or inability to use the Platform.
-            Altus's total liability to any party in connection with the Platform shall not exceed the licence fees paid by the client institution in the three months preceding the relevant claim.
+            Altus&apos;s total liability to any party in connection with the Platform shall not exceed the licence fees paid by the client institution in the three months preceding the relevant claim.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>9. Governing Law</h2>

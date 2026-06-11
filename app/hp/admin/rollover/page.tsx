@@ -293,7 +293,7 @@ export default function HPRolloverPage() {
             </div>
 
             <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 text-center">
-              <p className="text-xs text-slate-600 mb-3">Once all new Grade 8s are added, you're done for the year.</p>
+              <p className="text-xs text-slate-600 mb-3">Once all new Grade 8s are added, you are done for the year.</p>
               <a href="/hp" className="inline-block rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-6 py-2.5 text-sm font-black text-emerald-300 hover:bg-emerald-500/25 transition">
                 Back to HP Dashboard →
               </a>

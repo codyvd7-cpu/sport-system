@@ -51,7 +51,7 @@ export default function PrivacyPolicyPage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>3. Legal Basis for Processing</h2>
           <p style={{marginBottom:24}}>
             We process personal information on the basis of contractual necessity (to provide the platform to our licensed clients), legitimate interests (to maintain platform security and improve our services), and compliance with legal obligations under POPIA and other applicable South African legislation.
-            Where we process the personal information of minors (athletes under the age of 18), we do so only under the authority of the licensed school institution and in accordance with the school's data governance policies.
+            Where we process the personal information of minors (athletes under the age of 18), we do so only under the authority of the licensed school institution and in accordance with the school&apos;s data governance policies.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>4. Data Sharing and Disclosure</h2>
@@ -84,10 +84,10 @@ export default function PrivacyPolicyPage() {
             <li style={{marginBottom:8}}>Lodge a complaint with the Information Regulator of South Africa.</li>
           </ul>
 
-          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>8. Children's Privacy</h2>
+          <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>8. Children&apos;s Privacy</h2>
           <p style={{marginBottom:24}}>
             KINETIQ Sport processes personal information relating to minor athletes solely on behalf of and under the authority of the licensed school institution.
-            Parents or guardians wishing to exercise rights in respect of their child's personal information should contact their school's designated KINETIQ Sport administrator.
+            Parents or guardians wishing to exercise rights in respect of their child&apos;s personal information should contact their school&apos;s designated KINETIQ Sport administrator.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>9. Changes to This Policy</h2>

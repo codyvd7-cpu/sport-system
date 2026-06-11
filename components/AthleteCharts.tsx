@@ -250,7 +250,7 @@ export function BenchmarkBars({ trends, ageGroup }: { trends: { testType: string
       <div className="mb-5">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-sky-400">Fitness Profile</p>
         <h2 className="mt-0.5 text-lg font-black text-white">Benchmark Position</h2>
-        <p className="mt-1 text-xs text-slate-500">Where this athlete sits vs St Benedict's standards.</p>
+        <p className="mt-1 text-xs text-slate-500">Where this athlete sits vs St Benedict&apos;s standards.</p>
       </div>
       <div className="space-y-4">
         {trends.filter((t) => BENCHMARKS[t.testType] && t.latest !== null).map((trend) => {

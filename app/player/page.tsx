@@ -82,7 +82,7 @@ export default function PlayerPortalPage() {
             </button>
           </form>
 
-          <p className="mt-5 text-center text-xs text-slate-600">Don't have a code? Ask your coach.</p>
+          <p className="mt-5 text-center text-xs text-slate-600">Don&apos;t have a code? Ask your coach.</p>
         </div>
 
         {/* Portal link */}
