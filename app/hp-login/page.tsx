@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import * as React from 'react';
 import Image from 'next/image';
@@ -41,9 +42,9 @@ export default function HPLoginPage() {
       <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-emerald-900/50 bg-slate-950/95 p-6 shadow-2xl shadow-emerald-500/5 backdrop-blur-xl ring-1 ring-white/5 sm:p-8">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-2xl bg-white p-2 shadow-2xl shadow-emerald-500/20 ring-1 ring-emerald-500/20">
-            <Image src="/st-benedicts-logo.png" alt="St Benedict's College" width={96} height={96} className="h-full w-full object-contain" priority />
+            <Image src="/st-benedicts-logo.png" alt="St Benedict&apos;s College" width={96} height={96} className="h-full w-full object-contain" priority />
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-400">St Benedict's College</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-emerald-400">St Benedict&apos;s College</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-white">HP Access</h1>
           <p className="mt-2 text-sm text-slate-400">High Performance Department</p>
         </div>
@@ -73,7 +74,7 @@ export default function HPLoginPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-xs text-slate-600 hover:text-slate-400 transition">← Back to Departments</a>
+          <Link href="/" className="text-xs text-slate-600 hover:text-slate-400 transition">← Back to Departments</Link>
         </div>
       </section>
     </main>

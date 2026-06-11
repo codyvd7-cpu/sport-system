@@ -147,9 +147,10 @@ export default function ClassExport({ params }: PageProps) {
       <div className="page">
         {/* Header */}
         <div className="doc-header">
-          <img src="/sbc-logo.svg" alt="SBC"/>
+          // eslint-disable-next-line @next/next/no-img-element
+              <img src="/sbc-logo.svg" alt="SBC"/>
           <div>
-            <div className="doc-school">St Benedict's College</div>
+            <div className="doc-school">St Benedict&apos;s College</div>
             <div className="doc-sub">High Performance Programme · Class Report</div>
           </div>
           <div className="doc-right">
@@ -255,7 +256,7 @@ export default function ClassExport({ params }: PageProps) {
         </table>
 
         <div className="doc-footer">
-          <span>St Benedict's College · High Performance Programme</span>
+          <span>St Benedict&apos;s College · High Performance Programme</span>
           <span>Confidential · Coach and Administration Use Only</span>
           <span>Generated {new Date().toLocaleDateString('en-ZA')}</span>
         </div>

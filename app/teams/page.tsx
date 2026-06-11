@@ -62,7 +62,8 @@ export default function TeamsPage() {
       ...g,
       teams: g.teams.filter(t => myTeams.includes(t)),
     })).filter(g => g.teams.length > 0);
-  }, [canSeeAllTeams, myTeams.join(','), sport]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canSeeAllTeams, sport, myTeams.length]);
 
   const allTeams = visibleTeamGroups.flatMap(g => g.teams);
 

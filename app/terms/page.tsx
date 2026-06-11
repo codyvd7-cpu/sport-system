@@ -20,8 +20,8 @@ export default function TermsOfUsePage() {
           {/* Intro */}
           <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0,fontSize:13}}>
-              These Terms of Use ("Terms") govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform ("Platform"),
-              a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> ("Altus", "we", "us").
+              These Terms of Use (&quot;Terms&quot;) govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform ("Platform"),
+              a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> (&quot;Altus&quot;, &quot;we&quot;, &quot;us&quot;).
               By accessing or using the Platform, you agree to be bound by these Terms.
               If you do not agree, you must discontinue use immediately.
             </p>
@@ -36,7 +36,7 @@ export default function TermsOfUsePage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>2. Licence</h2>
           <p style={{marginBottom:24}}>
-            Access to the Platform is granted to authorised users under a licence agreement between Altus and the client institution ("Licence").
+            Access to the Platform is granted to authorised users under a licence agreement between Altus and the client institution (&quot;Licence&quot;).
             The Licence is non-exclusive, non-transferable, and limited to the scope agreed between Altus and the client institution.
             Unauthorised access to the Platform, including access beyond the scope of the Licence, is strictly prohibited.
           </p>
@@ -75,7 +75,7 @@ export default function TermsOfUsePage() {
           <p style={{marginBottom:24}}>
             All rights, title, and interest in the KINETIQ Sport platform, including its name, branding, design, functionality, and all associated intellectual property, vest exclusively in Altus (Pty) Ltd.
             No use, reproduction, or distribution of the Platform or any of its components is permitted without the prior written consent of Altus.
-            The name "KINETIQ Sport" and associated branding are the property of Altus (Pty) Ltd.
+            The name &quot;KINETIQ Sport&quot; and associated branding are the property of Altus (Pty) Ltd.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>7. Availability and Modifications</h2>

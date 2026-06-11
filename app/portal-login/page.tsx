@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Suspense } from 'react';
 
 const SPORT_CONFIG: Record<string, { label: string; color: string; colorClass: string; borderClass: string; bgClass: string }> = {
@@ -54,7 +55,7 @@ function PortalLoginInner() {
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl ring-1 ring-white/10">
             <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
           </div>
-          <p className={`text-xs font-black uppercase tracking-[0.28em] ${cfg.colorClass}`}>St Benedict's College</p>
+          <p className={`text-xs font-black uppercase tracking-[0.28em] ${cfg.colorClass}`}>St Benedict&apos;s College</p>
           <h1 className="mt-2 text-3xl font-black text-white">{cfg.label} Portal</h1>
           <p className="mt-2 text-sm text-white/50">Enter the portal access code to continue</p>
         </div>
@@ -77,7 +78,7 @@ function PortalLoginInner() {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/" className="text-xs text-white/25 hover:text-white/50 transition">← Back to Departments</a>
+          <Link href="/" className="text-xs text-white/25 hover:text-white/50 transition">← Back to Departments</Link>
         </div>
       </section>
     </main>

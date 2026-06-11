@@ -1,12 +1,27 @@
 'use client';
+import Link from 'next/link';
 
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { SPORTS, type SportKey } from '@/lib/sports';
 
 type Row = Record<string, any>;
+
+// Sport config for portal branding
+const SPORT_CONFIG: Record<string, {
+  label: string; color: string; accent: string;
+  colorDim: string; accentBorder: string; gradient: string; spinner: string;
+}> = {
+  hockey:    { label: 'Hockey',     color: '#38bdf8', accent: 'rgba(56,189,248,0.15)',  colorDim: 'rgba(56,189,248,0.1)',  accentBorder: 'rgba(56,189,248,0.3)',  gradient: 'from-sky-400 via-sky-300 to-sky-500',   spinner: 'border-sky-500' },
+  rugby:     { label: 'Rugby',      color: '#f87171', accent: 'rgba(248,113,113,0.15)', colorDim: 'rgba(248,113,113,0.1)', accentBorder: 'rgba(248,113,113,0.3)', gradient: 'from-red-400 via-red-300 to-red-500',   spinner: 'border-red-500' },
+  cricket:   { label: 'Cricket',    color: '#fbbf24', accent: 'rgba(251,191,36,0.15)',  colorDim: 'rgba(251,191,36,0.1)',  accentBorder: 'rgba(251,191,36,0.3)',  gradient: 'from-amber-400 via-amber-300 to-amber-500', spinner: 'border-amber-500' },
+  rowing:    { label: 'Rowing',     color: '#34d399', accent: 'rgba(52,211,153,0.15)',  colorDim: 'rgba(52,211,153,0.1)',  accentBorder: 'rgba(52,211,153,0.3)',  gradient: 'from-emerald-400 via-emerald-300 to-emerald-500', spinner: 'border-emerald-500' },
+  swimming:  { label: 'Swimming',   color: '#818cf8', accent: 'rgba(129,140,248,0.15)', colorDim: 'rgba(129,140,248,0.1)', accentBorder: 'rgba(129,140,248,0.3)', gradient: 'from-violet-400 via-violet-300 to-violet-500', spinner: 'border-violet-500' },
+  waterpolo: { label: 'Water Polo', color: '#06b6d4', accent: 'rgba(6,182,212,0.15)',   colorDim: 'rgba(6,182,212,0.1)',   accentBorder: 'rgba(6,182,212,0.3)',   gradient: 'from-cyan-400 via-cyan-300 to-cyan-500', spinner: 'border-cyan-500' },
+};
 
 function dateLabel(value?: string | null) {
   if (!value) return 'TBC';
@@ -39,22 +54,12 @@ async function safeQuery<T>(
   }
 }
 
-
-const SPORT_CONFIG: Record<string,{label:string;color:string;colorDim:string;accentBorder:string}> = {
-  hockey:   {label:'Hockey',    color:'#38bdf8',colorDim:'rgba(56,189,248,0.1)',  accentBorder:'rgba(56,189,248,0.3)'},
-  rugby:    {label:'Rugby',     color:'#f87171',colorDim:'rgba(248,113,113,0.1)',accentBorder:'rgba(248,113,113,0.3)'},
-  cricket:  {label:'Cricket',   color:'#fbbf24',colorDim:'rgba(251,191,36,0.1)', accentBorder:'rgba(251,191,36,0.3)'},
-  rowing:   {label:'Rowing',    color:'#34d399',colorDim:'rgba(52,211,153,0.1)', accentBorder:'rgba(52,211,153,0.3)'},
-  swimming: {label:'Swimming',  color:'#818cf8',colorDim:'rgba(129,140,248,0.1)',accentBorder:'rgba(129,140,248,0.3)'},
-  waterpolo:{label:'Water Polo',color:'#06b6d4',colorDim:'rgba(6,182,212,0.1)',  accentBorder:'rgba(6,182,212,0.3)'},
-};
-
 function PortalInner() {
   const searchParams = useSearchParams();
   const sport = (searchParams.get('sport') ||
     (typeof document !== 'undefined'
-      ? document.cookie.split(';').find(c=>c.trim().startsWith('portal_sport='))?.split('=')[1]
-      : null) || 'hockey');
+      ? document.cookie.split(';').find(c => c.trim().startsWith('portal_sport='))?.split('=')[1]
+      : null) || 'hockey') as SportKey;
   const sportCfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
 
   const [sponsors, setSponsors] = useState<Row[]>([]);
@@ -102,7 +107,7 @@ function PortalInner() {
         supabase.from('portal_programs').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
       // Fetch leaderboard data via API route (bypasses RLS)
-      const lbRes = await fetch('/api/portal/leaderboard?sport='+sport);
+      const lbRes = await fetch(`/api/portal/leaderboard?sport=${sport}`);
       const lbData = lbRes.ok ? await lbRes.json() : { athletes: [], attendance: [], performance: [] };
       const athletes: Row[] = lbData.athletes || [];
       const attendance: Row[] = lbData.attendance || [];
@@ -159,132 +164,136 @@ function PortalInner() {
   return (
     <main className="min-h-screen bg-[#06071a] text-white">
 
-      {/* ── HERO ─────────────────────────────────────── */}
+      {/* ── HERO ── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0c1022] to-[#06071a]" />
-        <div style={{position:'absolute',inset:'0 0 auto',height:1,background:'linear-gradient(90deg,transparent,'+sportCfg.color+'66,transparent)'}} />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_60%_at_50%_0%,rgba(14,165,233,0.08),transparent)]" />
+        <div className="absolute inset-0" style={{background:'linear-gradient(160deg,#070a14 0%,#0a0d1a 100%)'}}/>
+        <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 120% 80% at 60% -10%, '+sportCfg.color+'12, transparent 60%)'}}/>
+        <div className="absolute inset-x-0 top-0 h-[2px]" style={{background:'linear-gradient(90deg,transparent 0%,'+sportCfg.color+'80 30%,'+sportCfg.color+' 50%,'+sportCfg.color+'80 70%,transparent 100%)'}}/>
 
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-
-          {/* Top bar */}
-          <div className="flex items-center justify-between border-b border-white/5 py-4">
-            <div className="flex items-center gap-2.5">
-              <span className="text-2xl"></span>
+          {/* Nav */}
+          <div className="flex items-center justify-between py-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{background:sportCfg.color+'20'}}>
+                <span style={{fontSize:12,color:sportCfg.color,fontWeight:900}}>{sportCfg.label[0]}</span>
+              </div>
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>St Benedict's College</p>
-                <p className="text-[10px] uppercase tracking-widest" style={{color:sportCfg.color+'60'}}>{sportCfg.label} Department</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>St Benedict&apos;s College</p>
+                <p className="text-[9px] uppercase tracking-widest" style={{color:sportCfg.color+'60'}}>{sportCfg.label} Department</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <a href="/" className="rounded-full border border-white/8/50 bg-[rgba(255,255,255,0.025)] px-3 py-1.5 text-xs font-black text-white/35 transition hover:text-white/70">← Departments</a>
-              <a href={'/login?sport='+sport} className="rounded-full border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/70 transition hover:text-white">Coach Login</a>
-              <a href="/player" className="rounded-full border px-3 py-1.5 text-xs font-black transition" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>Player Login</a>
+              <Link href="/" className="rounded-full border border-white/8 px-3 py-1.5 text-[11px] font-black text-white/30 transition hover:text-white/60">← Home</Link>
+              <a href={'/login?sport='+sport} className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] font-black text-white/60 transition hover:text-white">Coach Login</a>
+              <Link href="/player" className="rounded-full px-3 py-1.5 text-[11px] font-black transition" style={{borderWidth:1,borderStyle:'solid',borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>Player Login</Link>
             </div>
           </div>
 
-          {/* Two column: heading + sponsor card */}
-          <div className="grid gap-8 py-10 sm:py-14 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-
-            {/* Left — Heading */}
+          {/* Hero */}
+          <div className="grid gap-10 py-12 sm:py-16 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
             <div>
-              <h1 className="text-5xl font-black leading-tight tracking-tight text-white sm:text-6xl lg:text-7xl">
-                Player &amp; Parent<br />
-                <span style={{background:'linear-gradient(90deg,'+sportCfg.color+',white,'+sportCfg.color+')',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Portal.</span>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim}}>
+                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{background:sportCfg.color}}/>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>Live Platform</span>
+              </div>
+              <h1 className="text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+                Player &amp;<br/>Parent<br/>
+                <span style={{background:'linear-gradient(135deg,'+sportCfg.color+' 0%,white 50%,'+sportCfg.color+' 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Portal.</span>
               </h1>
-              <p className="mt-5 max-w-lg text-sm leading-relaxed text-white/35 sm:text-base">
-                Weekly plans, fixtures, results, programs and department updates — all in one place.
+              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-white/40">
+                Fixtures, results, weekly programs and department updates for {sportCfg.label} players and parents.
               </p>
-              <div className="mt-7 flex flex-wrap gap-2">
-                {['This Week', 'Fixtures', 'Results', 'Programs', 'Reminders'].map((label) => (
-                  <a key={label} href={`#${label.toLowerCase().replace(' ', '')}`}
-                    className="rounded-full border border-white/8 bg-white/4 px-4 py-2 text-xs font-semibold text-white/50 transition hover:text-white">
+              <div className="mt-8 flex flex-wrap gap-2">
+                {['This Week','Fixtures','Results','Programs','Reminders'].map((label)=>(
+                  <a key={label} href={'#'+label.toLowerCase().replace(' ','')}
+                    className="rounded-full border border-white/8 bg-white/3 px-4 py-2 text-[11px] font-semibold text-white/40 transition hover:border-white/15 hover:text-white/80">
                     {label}
                   </a>
                 ))}
               </div>
             </div>
-
-            {/* Right — Sponsor card (original style) */}
-            <div className="rounded-[1.5rem] border border-white/6 bg-[rgba(255,255,255,0.01)]/70 p-4 shadow-xl">
-              <p className="text-xs font-black uppercase tracking-[0.24em] text-emerald-400">Sponsors</p>
-              <h2 className="mt-2 text-xl font-black">Supported by our partners</h2>
-              <div className="mt-4">
-                {loadingSponsors ? (
-                  <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.01)]/60 p-4 text-sm text-white/50">Loading sponsors...</div>
-                ) : sponsors.length === 0 ? (
-                  <div className="rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.01)]/60 p-4 text-sm text-white/50">Sponsor space available.</div>
-                ) : (
-                  <>
-                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg">
-                      <div className="flex h-44 w-full items-center justify-center overflow-hidden rounded-2xl bg-white p-4 sm:h-48">
-                        {activeSponsor?.image_url ? (
-                          <img
-                            src={activeSponsor.image_url}
-                            alt={activeSponsor.name || 'Sponsor'}
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        ) : (
-                          <p className="text-center text-lg font-black text-white/15">{activeSponsor?.name || 'Sponsor'}</p>
-                        )}
-                      </div>
+            {/* Sponsor */}
+            <div className="relative rounded-2xl p-5" style={{background:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px rgba(0,0,0,0.3)'}}>
+              <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl" style={{background:'linear-gradient(90deg,transparent,'+sportCfg.color+'40,transparent)'}}/>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">Sponsors</p>
+              <h2 className="text-base font-black text-white mb-4">Supported by our partners</h2>
+              {loadingSponsors ? (
+                <div className="h-36 rounded-xl border border-white/6 flex items-center justify-center">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
+                </div>
+              ) : sponsors.length === 0 ? (
+                <div className="h-36 rounded-xl border border-white/6 flex items-center justify-center">
+                  <p className="text-xs text-white/20">Sponsor space available</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                    <div className="flex h-40 w-full items-center justify-center p-4">
+                      {activeSponsor?.image_url
+                        ? <img src={activeSponsor.image_url} alt={activeSponsor.name||'Sponsor'} className="max-h-full max-w-full object-contain"/>
+                        : <p className="text-center text-lg font-black text-slate-800">{activeSponsor?.name||'Sponsor'}</p>}
                     </div>
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <p className="line-clamp-1 text-sm font-black text-white/85">{activeSponsor?.name || 'Sponsor'}</p>
-                      <div className="flex gap-1.5">
-                        {sponsors.map((_: Row, i: number) => (
-                          <button key={i} onClick={() => setActiveSponsorIndex(i)}
-                            className={`h-2.5 rounded-full transition-all ${i === activeSponsorIndex ? 'w-7 bg-emerald-400' : 'w-2.5 bg-white/8'}`}
-                            aria-label={`Show sponsor ${i + 1}`} />
-                        ))}
-                      </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-sm font-black text-white/80">{activeSponsor?.name||'Sponsor'}</p>
+                    <div className="flex gap-1.5">
+                      {sponsors.map((_:Row,i:number)=>(
+                        <button key={i} onClick={()=>setActiveSponsorIndex(i)}
+                          className="h-2 rounded-full transition-all"
+                          style={{width:i===activeSponsorIndex?28:8,background:i===activeSponsorIndex?sportCfg.color:'rgba(255,255,255,0.1)'}}/>
+                      ))}
                     </div>
-                  </>
-                )}
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* ── CONTENT ──────────────────────────────────── */}
+      {/* ── CONTENT ── */}
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
 
-        {/* ── WEEK AT A GLANCE ─────────────────────────── */}
+        {/* WEEK */}
         <section id="thisweek" className="mb-16 scroll-mt-8">
-          <Label text="This Week" color={sportCfg.color} />
-          <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Week at a Glance</h2>
-          <p className="mt-2 text-sm text-white/35">Tap any day to expand the full session plan.</p>
+          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>This Week</span>
+          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Week at a Glance</h2>
+          <p className="mt-2 text-sm text-white/35">The current training and match schedule.</p>
           <div className="mt-6">
-            {loadingWeek ? <Skeleton color={sportCfg.color} /> : weekItems.length === 0 ? <Empty text="No week plan published yet." /> : (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {weekItems.map((item: Row) => {
+            {loadingWeek ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
+                <p className="text-sm text-white/25">Loading...</p>
+              </div>
+            ) : weekItems.length === 0 ? (
+              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
+                <p className="text-white/20 text-sm">No week plan published yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {weekItems.map((item)=>{
                   const itemId = String(item.id);
-                  const isOpen = openWeekItemId === itemId;
+                  const isOpen = openWeekItemId===itemId;
                   return (
-                    <button key={item.id} type="button" onClick={() => setOpenWeekItemId(isOpen ? null : itemId)}
-                      className={`group relative w-full overflow-hidden rounded-2xl border text-left transition-all duration-200 ${
-                        isOpen ? 'shadow-xl border-white/15'
-                          : 'border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/6'
-                      }`}>
-                      <div className={`absolute right-0 top-0 h-16 w-16 rounded-bl-3xl ${isOpen ? '' : 'bg-white/3'}`} />
-                      <div className="p-5">
-                        <div className={`mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl text-sm font-black ${
-                          isOpen ? '' : 'bg-white/8 text-white/50'
-                        }`}>
-                          {(item.day_label || 'D').slice(0, 2).toUpperCase()}
+                    <button key={item.id} type="button" onClick={()=>setOpenWeekItemId(isOpen?null:itemId)}
+                      className="group relative w-full overflow-hidden rounded-2xl border text-left transition-all duration-200"
+                      style={{borderColor:isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)',background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)'}}>
+                      <div className="absolute inset-x-0 top-0 h-px" style={{background:isOpen?'linear-gradient(90deg,transparent,'+sportCfg.color+',transparent)':'none'}}/>
+                      <div className="flex items-start gap-4 p-5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black"
+                          style={{background:isOpen?sportCfg.color+'25':'rgba(255,255,255,0.06)',color:isOpen?sportCfg.color:'rgba(255,255,255,0.4)',border:'1px solid '+(isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.08)')}}>
+                          {String(item.sort_order||'').padStart(2,'0')||'—'}
                         </div>
-                        <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isOpen ? 'text-white' : 'text-white/25'}`}>
-                          {item.day_label || 'Day'}
-                        </p>
-                        <p className="mt-1.5 text-sm font-black text-white">{item.title || 'Session'}</p>
-                        <p className={`mt-2 text-xs leading-5 ${isOpen ? 'text-white/70' : 'line-clamp-2 text-white/25'}`}>
-                          {item.details || 'Tap for details.'}
-                        </p>
-                        {!isOpen && (
-                          <p className="mt-3 text-[10px] font-black transition" style={{color:sportCfg.color}}>EXPAND →</p>
-                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-black text-white">{item.title}</p>
+                          {item.subtitle&&<p className="mt-0.5 text-xs text-white/35">{item.subtitle}</p>}
+                          {isOpen&&item.detail&&<p className="mt-3 text-sm leading-relaxed text-white/60">{item.detail}</p>}
+                        </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                          className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-transform"
+                          style={{color:'rgba(255,255,255,0.25)',transform:isOpen?'rotate(90deg)':'none'}}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
                       </div>
                     </button>
                   );
@@ -294,46 +303,59 @@ function PortalInner() {
           </div>
         </section>
 
-        {/* ── FIXTURES ─────────────────────────────────── */}
+        {/* FIXTURES */}
         <section id="fixtures" className="mb-16 scroll-mt-8">
-          <Label text="Schedule" color={sportCfg.color} />
-          <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Fixtures</h2>
+          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Schedule</span>
+          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Fixtures</h2>
           <p className="mt-2 text-sm text-white/35">Upcoming matches and venues.</p>
           <div className="mt-6">
-            {loadingFixtures ? <Skeleton color={sportCfg.color} /> : fixtures.length === 0 ? <Empty text="No fixtures published yet." /> : (
+            {loadingFixtures ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
+                <p className="text-sm text-white/25">Loading...</p>
+              </div>
+            ) : fixtures.length === 0 ? (
+              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
+                <p className="text-white/20 text-sm">No fixtures published yet.</p>
+              </div>
+            ) : (
               <div className="space-y-3">
-                {Array.from(new Set(fixtures.map((f: Row) => f.fixture_date))).sort().map((date) => {
-                  const dayFixtures = fixtures.filter((f: Row) => f.fixture_date === date);
-                  const isExpanded = expandedFixtureDate === date;
+                {Array.from(new Set(fixtures.map((f:Row)=>f.fixture_date))).sort().map((date)=>{
+                  const dayFixtures = fixtures.filter((f:Row)=>f.fixture_date===date);
+                  const isExpanded = expandedFixtureDate===date;
                   const d = new Date(date as string);
                   return (
-                    <div key={date as string} className="overflow-hidden rounded-2xl border border-white/8 bg-white/3 transition">
-                      <button onClick={() => setExpandedFixtureDate(isExpanded ? null : date as string)}
-                        className="flex w-full items-center gap-5 p-5 text-left">
-                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
-                          <p className="text-xl font-black leading-none text-white">{d.getDate()}</p>
-                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{d.toLocaleDateString('en-ZA', { month: 'short' })}</p>
+                    <div key={date as string} className="overflow-hidden rounded-2xl transition-all"
+                      style={{background:isExpanded?sportCfg.colorDim:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px '+(isExpanded?sportCfg.accentBorder:'rgba(255,255,255,0.06)')}}>
+                      <button onClick={()=>setExpandedFixtureDate(isExpanded?null:date as string)}
+                        className="flex w-full items-center gap-4 p-5 text-left">
+                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl px-4 py-3 text-center min-w-[52px]"
+                          style={{background:isExpanded?sportCfg.color+'25':'rgba(255,255,255,0.05)',border:'1px solid '+(isExpanded?sportCfg.accentBorder:'rgba(255,255,255,0.08)')}}>
+                          <p className="text-2xl font-black leading-none" style={{color:isExpanded?sportCfg.color:'white'}}>{d.getDate()}</p>
+                          <p className="mt-0.5 text-[9px] font-black uppercase tracking-wide" style={{color:isExpanded?sportCfg.color+'99':'rgba(255,255,255,0.35)'}}>{d.toLocaleDateString('en-ZA',{month:'short'})}</p>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-black uppercase tracking-wide text-white/35 mb-1">{d.toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
-                          <p className="text-base font-black text-white">{dayFixtures.length} {dayFixtures.length === 1 ? 'match' : 'matches'}</p>
-                          <p className="mt-0.5 text-xs text-white/35">{dayFixtures.map((f: Row) => f.team).join(' · ')}</p>
+                          <p className="text-[10px] font-black uppercase tracking-wide mb-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{d.toLocaleDateString('en-ZA',{weekday:'long'})}</p>
+                          <p className="text-base font-black text-white">{dayFixtures.length} {dayFixtures.length===1?'Match':'Matches'}</p>
+                          <p className="mt-0.5 text-[11px]" style={{color:'rgba(255,255,255,0.3)'}}>{dayFixtures.map((f:Row)=>f.team).join(' · ')}</p>
                         </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90' : ''}`}>
-                          <path d="M9 18l6-6-6-6"/>
-                        </svg>
+                        <div className="flex items-center gap-2">
+                          <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{background:sportCfg.color+'20',color:sportCfg.color}}>{isExpanded?'Hide':'View'}</span>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5 transition-transform" style={{color:'rgba(255,255,255,0.3)',transform:isExpanded?'rotate(90deg)':'none'}}><path d="M9 18l6-6-6-6"/></svg>
+                        </div>
                       </button>
-                      {isExpanded && (
-                        <div className="border-t border-white/5 px-5 pb-4 pt-3 space-y-2">
-                          {dayFixtures.map((fixture: Row) => (
-                            <div key={fixture.id} className="rounded-xl border border-white/5 bg-white/3 p-3">
-                              <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                                <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{background:sportCfg.colorDim,color:sportCfg.color}}>{fixture.team}</span>
-                                {fixture.fixture_time && <span className="text-[10px] text-white/35">{fixture.fixture_time}</span>}
+                      {isExpanded&&(
+                        <div className="border-t px-5 pb-5 pt-4 space-y-3" style={{borderColor:sportCfg.accentBorder+'50'}}>
+                          {dayFixtures.map((fixture:Row)=>(
+                            <div key={fixture.id} className="flex items-center gap-4 rounded-xl p-4" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'20',color:sportCfg.color}}>{fixture.team}</span>
+                                  {fixture.fixture_time&&<span className="text-[10px]" style={{color:'rgba(255,255,255,0.4)'}}>{fixture.fixture_time}</span>}
+                                </div>
+                                <p className="text-base font-black text-white">vs {fixture.opponent}</p>
+                                {fixture.venue&&<p className="mt-0.5 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{fixture.venue}</p>}
                               </div>
-                              <p className="text-sm font-black text-white">vs {fixture.opponent}</p>
-                              {fixture.venue && <p className="mt-0.5 text-xs text-white/35">{fixture.venue}</p>}
                             </div>
                           ))}
                         </div>
@@ -346,60 +368,87 @@ function PortalInner() {
           </div>
         </section>
 
-        {/* ── RESULTS ──────────────────────────────────── */}
+        {/* RESULTS */}
         <section id="results" className="mb-16 scroll-mt-8">
-          <Label text="Latest" color={sportCfg.color} />
-          <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Results</h2>
+          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Latest</span>
+          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Results</h2>
           <p className="mt-2 text-sm text-white/35">Recent match outcomes and scorers.</p>
           <div className="mt-6">
-            {loadingResults ? <Skeleton color={sportCfg.color} /> : results.length === 0 ? <Empty text="No results published yet." /> : (
+            {loadingResults ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
+                <p className="text-sm text-white/25">Loading...</p>
+              </div>
+            ) : results.length === 0 ? (
+              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
+                <p className="text-white/20 text-sm">No results published yet.</p>
+              </div>
+            ) : (
               <div className="space-y-3">
-                {Array.from(new Set(results.map((r: Row) => r.result_date))).sort().reverse().map((date) => {
-                  const dayResults = results.filter((r: Row) => r.result_date === date);
-                  const isExpanded = expandedResultId === date;
-                  const wins = dayResults.filter((r: Row) => { const p = (r.final_score||'').split(/[-–]/); return p.length===2 && parseInt(p[0])>parseInt(p[1]); }).length;
-                  const losses = dayResults.filter((r: Row) => { const p = (r.final_score||'').split(/[-–]/); return p.length===2 && parseInt(p[0])<parseInt(p[1]); }).length;
-                  const draws = dayResults.filter((r: Row) => { const p = (r.final_score||'').split(/[-–]/); return p.length===2 && parseInt(p[0])===parseInt(p[1]); }).length;
+                {Array.from(new Set(results.map((r:Row)=>r.result_date))).sort().reverse().map((date)=>{
+                  const dayResults = results.filter((r:Row)=>r.result_date===date);
+                  const isExpanded = expandedResultId===date;
+                  const wins=dayResults.filter((r:Row)=>{const p=(r.final_score||'').split(/[-–]/);return p.length===2&&parseInt(p[0])>parseInt(p[1]);}).length;
+                  const losses=dayResults.filter((r:Row)=>{const p=(r.final_score||'').split(/[-–]/);return p.length===2&&parseInt(p[0])<parseInt(p[1]);}).length;
+                  const draws=dayResults.filter((r:Row)=>{const p=(r.final_score||'').split(/[-–]/);return p.length===2&&parseInt(p[0])===parseInt(p[1]);}).length;
                   return (
-                    <div key={date as string} className="overflow-hidden rounded-2xl border border-white/8 bg-white/3">
-                      <button onClick={() => setExpandedResultId(isExpanded ? null : date as string)}
-                        className="flex w-full items-center gap-5 p-5 text-left">
-                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl border border-white/8 bg-white/5 px-4 py-3 text-center">
-                          <p className="text-xl font-black leading-none text-white">{new Date(date as string).getDate()}</p>
-                          <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-white/35">{new Date(date as string).toLocaleDateString('en-ZA', { month: 'short' })}</p>
+                    <div key={date as string} className="overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
+                      <button onClick={()=>setExpandedResultId(isExpanded?null:date as string)}
+                        className="flex w-full items-center gap-4 p-5 text-left">
+                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl px-4 py-3 min-w-[52px]"
+                          style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                          <p className="text-2xl font-black leading-none text-white">{new Date(date as string).getDate()}</p>
+                          <p className="mt-0.5 text-[9px] font-black uppercase tracking-wide text-white/35">{new Date(date as string).toLocaleDateString('en-ZA',{month:'short'})}</p>
                         </div>
                         <div className="flex-1">
-                          <p className="text-xs text-white/35 mb-1">{new Date(date as string).toLocaleDateString('en-ZA', { weekday: 'long' })}</p>
-                          <p className="text-base font-black text-white">{dayResults.length} {dayResults.length === 1 ? 'match' : 'matches'}</p>
+                          <p className="text-[10px] font-black uppercase tracking-wide text-white/30 mb-0.5">{new Date(date as string).toLocaleDateString('en-ZA',{weekday:'long'})}</p>
+                          <p className="text-base font-black text-white">{dayResults.length} {dayResults.length===1?'Match':'Matches'}</p>
                           <div className="flex gap-3 mt-1">
-                            {wins > 0 && <span className="text-[10px] font-black text-emerald-400">{wins}W</span>}
-                            {draws > 0 && <span className="text-[10px] font-black text-white/50">{draws}D</span>}
-                            {losses > 0 && <span className="text-[10px] font-black text-red-400">{losses}L</span>}
+                            {wins>0&&<span className="text-[11px] font-black text-emerald-400">{wins}W</span>}
+                            {draws>0&&<span className="text-[11px] font-black text-white/40">{draws}D</span>}
+                            {losses>0&&<span className="text-[11px] font-black text-red-400">{losses}L</span>}
                           </div>
                         </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
-                          className={`h-4 w-4 shrink-0 text-white/35 transition ${isExpanded ? 'rotate-90' : ''}`}>
-                          <path d="M9 18l6-6-6-6"/>
-                        </svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5 transition-transform" style={{color:'rgba(255,255,255,0.3)',transform:isExpanded?'rotate(90deg)':'none'}}><path d="M9 18l6-6-6-6"/></svg>
                       </button>
-                      {isExpanded && (
-                        <div className="border-t border-white/5 px-5 pb-4 pt-3 space-y-2">
-                          {dayResults.map((result: Row) => {
-                            const score = result.final_score || '';
-                            const parts = score.split(/[-–]/);
-                            const our = parseInt(parts[0]) || 0;
-                            const their = parseInt(parts[1]) || 0;
-                            const won = parts.length === 2 && our > their;
-                            const drew = parts.length === 2 && our === their;
-                            const outcome = won ? 'WIN' : drew ? 'DRAW' : score ? 'LOSS' : '—';
+                      {isExpanded&&(
+                        <div className="border-t border-white/5 px-5 pb-5 pt-4 space-y-3">
+                          {dayResults.map((result:Row)=>{
+                            const score=result.final_score||'';
+                            const parts=score.split(/[-–]/);
+                            const our=parseInt(parts[0])||0;
+                            const their=parseInt(parts[1])||0;
+                            const won=parts.length===2&&our>their;
+                            const drew=parts.length===2&&our===their;
+                            const outcome=won?'WIN':drew?'DRAW':score?'LOSS':'—';
+                            const outcomeColor=won?'#10b981':drew?'rgba(255,255,255,0.4)':'#f87171';
+                            const outcomeBg=won?'rgba(16,185,129,0.1)':drew?'rgba(255,255,255,0.04)':'rgba(248,113,113,0.08)';
+                            const scorers=result.goal_scorers?.split(',').map((s:string)=>s.trim()).filter(Boolean)||[];
                             return (
-                              <div key={result.id} className={`flex items-center gap-3 rounded-xl border p-3 ${won ? 'border-emerald-500/20 bg-emerald-500/5' : drew ? 'border-white/5 bg-white/3' : 'border-red-500/15 bg-red-500/5'}`}>
-                                <span className={`shrink-0 rounded-lg px-2 py-1 text-[10px] font-black ${won ? 'bg-emerald-500/20 text-emerald-300' : drew ? 'bg-white/10 text-white/50' : 'bg-red-500/20 text-red-300'}`}>{outcome}</span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-black text-white">{result.team} vs {result.opponent}</p>
-                                  <p className="text-xs text-white/35">{score}</p>
-                                  {result.goal_scorers && <p className="text-[10px] text-white/35 mt-0.5">{result.goal_scorers}</p>}
+                              <div key={result.id} className="rounded-2xl overflow-hidden"
+                                style={{background:outcomeBg,boxShadow:'0 0 0 1px '+(won?'rgba(16,185,129,0.15)':drew?'rgba(255,255,255,0.06)':'rgba(248,113,113,0.12)')}}>
+                                <div className="flex items-center gap-4 p-4">
+                                  <div className="flex shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2.5 min-w-[52px]"
+                                    style={{background:won?'rgba(16,185,129,0.15)':drew?'rgba(255,255,255,0.05)':'rgba(248,113,113,0.12)'}}>
+                                    <p className="text-xs font-black" style={{color:outcomeColor}}>{outcome}</p>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-[10px] font-black" style={{color:sportCfg.color+'99'}}>{result.team}</span>
+                                    <p className="text-sm font-black text-white">vs {result.opponent}</p>
+                                  </div>
+                                  {score&&(
+                                    <div className="text-right shrink-0">
+                                      <p className="text-2xl font-black leading-none" style={{color:outcomeColor}}>{score}</p>
+                                    </div>
+                                  )}
                                 </div>
+                                {scorers.length>0&&(
+                                  <div className="px-4 pb-3 border-t border-white/5">
+                                    <p className="text-[10px] mt-2" style={{color:'rgba(255,255,255,0.35)'}}>
+                                      {scorers.join(' · ')}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -413,45 +462,44 @@ function PortalInner() {
           </div>
         </section>
 
-        {/* ── PROGRAMS ─────────────────────────────────── */}
+        {/* PROGRAMS */}
         <section id="programs" className="mb-16 scroll-mt-8">
-          <Label text="Training" color={sportCfg.color} />
-          <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Programs</h2>
+          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Training</span>
+          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Programs</h2>
           <p className="mt-2 text-sm text-white/35">Current gym, mobility and recovery work.</p>
           <div className="mt-6">
-            {loadingPrograms ? <Skeleton color={sportCfg.color} /> : programs.length === 0 ? <Empty text="No programs published yet." /> : (
-              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {programs.map((program: Row) => {
-                  const catColors: Record<string, string> = {
-                    Gym: 'from-violet-500/20 to-violet-500/5 border-violet-500/25',
-                    Mobility: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/25',
-                    Recovery: 'from-white/8 to-white/3 border-white/10',
-                  };
-                  const gradient = catColors[program.category] || 'from-white/8 to-white/3 border-white/8';
+            {loadingPrograms ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
+                <p className="text-sm text-white/25">Loading...</p>
+              </div>
+            ) : programs.length === 0 ? (
+              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
+                <p className="text-white/20 text-sm">No programs published yet.</p>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {programs.map((prog:Row)=>{
+                  const isOpen = openWeekItemId==='prog-'+prog.id;
                   return (
-                    <div key={program.id} className={`flex flex-col rounded-2xl border bg-gradient-to-br p-5 ${gradient}`}>
-                      {program.category && (
-                        <span className="mb-4 inline-block w-fit rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white">
-                          {program.category}
-                        </span>
-                      )}
-                      <p className="text-sm font-black text-white">{program.title}</p>
-                      <p className="mt-2 flex-1 text-xs leading-5 text-white/50">{program.details || 'No details added.'}</p>
-                      {program.file_url ? (
-                        <div className="mt-5 flex gap-2">
-                          <a href={program.file_url} target="_blank" rel="noreferrer"
-                            className="flex-1 rounded-xl bg-white/10 py-2.5 text-center text-xs font-black text-white transition hover:bg-white/15">
-                            Open PDF
-                          </a>
-                          <a href={program.file_url} download={program.file_name || `${program.title}.pdf`}
-                            className="flex-1 rounded-xl bg-white/5 py-2.5 text-center text-xs font-black text-white/70 transition hover:bg-white/10">
-                            Download
-                          </a>
+                    <button key={prog.id} type="button" onClick={()=>setOpenWeekItemId(isOpen?null:'prog-'+prog.id)}
+                      className="relative overflow-hidden rounded-2xl p-5 text-left transition-all w-full"
+                      style={{background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px '+(isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)')}}>
+                      <div className="absolute inset-x-0 top-0 h-px" style={{background:isOpen?'linear-gradient(90deg,transparent,'+sportCfg.color+',transparent)':'none'}}/>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-black text-white">{prog.title}</p>
+                          {prog.description&&<p className="mt-1 text-sm text-white/40">{prog.description}</p>}
+                          {isOpen&&prog.content&&<p className="mt-3 text-sm leading-relaxed text-white/60">{prog.content}</p>}
+                          {prog.tag&&<span className="mt-3 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'15',color:sportCfg.color}}>{prog.tag}</span>}
                         </div>
-                      ) : (
-                        <p className="mt-4 text-[10px] text-white/25">No PDF attached.</p>
-                      )}
-                    </div>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
+                          className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-transform"
+                          style={{color:'rgba(255,255,255,0.25)',transform:isOpen?'rotate(90deg)':'none'}}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      </div>
+                    </button>
                   );
                 })}
               </div>
@@ -459,24 +507,29 @@ function PortalInner() {
           </div>
         </section>
 
-        {/* ── REMINDERS ────────────────────────────────── */}
+        {/* REMINDERS */}
         <section id="reminders" className="mb-16 scroll-mt-8">
-          <Label text="Notices" color={sportCfg.color} />
-          <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Reminders</h2>
-          <p className="mt-2 text-sm text-white/35">Key updates from the {sportCfg.label} department.</p>
+          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Notices</span>
+          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Reminders</h2>
+          <p className="mt-2 text-sm text-white/35">Important notices and department updates.</p>
           <div className="mt-6">
-            {loadingReminders ? <Skeleton color={sportCfg.color} /> : reminders.length === 0 ? <Empty text="No reminders published yet." /> : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {reminders.map((reminder: Row) => (
-                  <div key={reminder.id} className="flex gap-4 overflow-hidden rounded-2xl border border-amber-500/15 bg-gradient-to-br from-amber-500/8 to-transparent p-5">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 text-amber-400">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                      </svg>
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-black text-white">{reminder.title}</p>
-                      <p className="mt-1.5 text-xs leading-5 text-white/50">{reminder.details || '—'}</p>
+            {loadingReminders ? (
+              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
+                <p className="text-sm text-white/25">Loading...</p>
+              </div>
+            ) : reminders.length === 0 ? (
+              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
+                <p className="text-white/20 text-sm">No reminders published yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {reminders.map((rem:Row)=>(
+                  <div key={rem.id} className="flex gap-4 rounded-2xl p-5" style={{background:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{background:sportCfg.color+'15',color:sportCfg.color,fontWeight:900,fontSize:11}}>!</div>
+                    <div>
+                      <p className="text-sm font-black text-white">{rem.title}</p>
+                      {rem.body&&<p className="mt-1 text-sm text-white/40">{rem.body}</p>}
                     </div>
                   </div>
                 ))}
@@ -485,64 +538,33 @@ function PortalInner() {
           </div>
         </section>
 
-        {/* ── LEADERBOARDS ─────────────────────────────── */}
+        {/* LEADERBOARDS */}
         <section id="leaderboards" className="mb-8 scroll-mt-8">
-          <Label text="Rankings" />
-          <h2 className="mt-2 text-3xl font-black text-white sm:text-4xl">Leaderboards</h2>
-          <p className="mt-2 text-sm text-white/35">Top performers across the squad.</p>
-
-          <div className="mt-6 grid gap-8 xl:grid-cols-2">
+          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Rankings</span>
+          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Leaderboards</h2>
+          <p className="mt-2 text-sm text-white/35">Top performers this season.</p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {[
-              { title: 'Gym & Attendance', sub: 'Sessions attended this season', data: gymLeaderboard, type: 'gym', accent: sportCfg.color },
-              { title: 'Performance Testing', sub: 'Fitness test scores', data: performanceLeaderboard, type: 'perf', accent: '#a78bfa' },
-            ].map((board) => (
-              <div key={board.title}>
-                {/* Board header */}
-                <div className="mb-4 flex items-end justify-between">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.25em]" style={{color:board.accent}}>{board.title}</p>
-                    <p className="text-[11px] text-white/25 mt-0.5">{board.sub}</p>
-                  </div>
-                </div>
-
-                {loadingLeaderboards ? <Skeleton color={sportCfg.color} /> : board.data.length === 0 ? <Empty text="No data yet." /> : (
+              {title:'Gym & Attendance',sub:'Sessions attended this season',data:gymLeaderboard},
+              {title:'Performance',sub:'Most active in testing',data:performanceLeaderboard},
+            ].map((board)=>(
+              <div key={board.title} className="rounded-2xl p-5" style={{background:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
+                <div className="absolute inset-x-0 top-0 h-px" style={{background:'linear-gradient(90deg,transparent,'+sportCfg.color+'40,transparent)'}}/>
+                <p className="text-sm font-black text-white mb-0.5">{board.title}</p>
+                <p className="text-[11px] text-white/35 mb-4">{board.sub}</p>
+                {loadingLeaderboards ? (
+                  <p className="text-sm text-white/25">Loading...</p>
+                ) : board.data.length === 0 ? (
+                  <p className="text-sm text-white/20">No data yet.</p>
+                ) : (
                   <div className="space-y-2">
-                    {board.data.slice(0,3).map((athlete: Row, i: number) => {
-                      const podiumColors = [
-                        {bg:'rgba(251,191,36,0.08)',border:'rgba(251,191,36,0.2)',rank:'#fbbf24',rankBg:'rgba(251,191,36,0.15)'},
-                        {bg:'rgba(148,163,184,0.06)',border:'rgba(148,163,184,0.15)',rank:'#94a3b8',rankBg:'rgba(148,163,184,0.1)'},
-                        {bg:'rgba(180,120,60,0.06)',border:'rgba(180,120,60,0.15)',rank:'#b45a1f',rankBg:'rgba(180,120,60,0.1)'},
-                      ];
-                      const p = podiumColors[i];
-                      const rankLabels = ['1st','2nd','3rd'];
-                      return(
-                        <div key={athlete.id} className="flex items-center gap-4 rounded-2xl border p-4 transition"
-                          style={{background:p.bg,borderColor:p.border}}>
-                          {/* Rank badge */}
-                          <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl"
-                            style={{background:p.rankBg}}>
-                            <span className="text-[9px] font-black uppercase" style={{color:p.rank}}>{rankLabels[i]}</span>
-                          </div>
-                          {/* Avatar */}
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/8 text-[11px] font-black text-white">
-                            {(athlete.name||'?').split(' ')[0]?.[0]?.toUpperCase()||'?'}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-black text-white">
-                              {(athlete.name||'').split(' ')[0]||'Athlete'}
-                            </p>
-                            <p className="text-[11px] text-white/35">{athlete.team}</p>
-                          </div>
-                          <div className="shrink-0 text-right">
-                            <p className="text-xl font-black" style={{color:board.accent}}>{athlete.score}</p>
-                            <p className="text-[10px] text-white/25">
-                              {board.type==='gym'?`${athlete.attendanceRate}% att`:athlete.days===null?'No tests':`${athlete.days}d ago`}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-
+                    {board.data.map((a:Row,i:number)=>(
+                      <div key={a.id} className="flex items-center gap-3">
+                        <span className="w-6 text-[10px] font-black text-center" style={{color:i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#b45309':'rgba(255,255,255,0.25)'}}>{MEDALS[i]}</span>
+                        <p className="flex-1 text-sm font-black text-white">{a.name}</p>
+                        <span className="text-[11px] font-black" style={{color:sportCfg.color}}>{a.score}pts</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -552,45 +574,15 @@ function PortalInner() {
 
       </div>
 
-      {/* ── FOOTER ───────────────────────────────────── */}
-      <footer className="border-t border-white/5 bg-[#030410] py-10">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-col items-center gap-3 text-center">
-            <p className="text-sm font-black text-white">St Benedict's College {sportCfg.label}</p>
-            <p className="text-xs text-white/25">© {new Date().getFullYear()} — Built for excellence</p>
-            <p className="text-[10px] text-white/15">
-              <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
-              <span className="mx-2">·</span>
-              <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
-            </p>
-          </div>
+      {/* FOOTER */}
+      <footer className="border-t border-white/5 py-8 text-center">
+        <div className="mx-auto max-w-6xl px-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{color:sportCfg.color+'60'}}>St Benedict&apos;s College · {sportCfg.label} Department</p>
+          <p className="mt-2 text-[10px] text-white/15">KINETIQ Sport is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</p>
         </div>
       </footer>
-</main>
-  );
-}
 
-function Label({ text, color = '#38bdf8' }: { text: string; color?: string }) {
-  return (
-    <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]"
-      style={{borderColor:color+'50',background:color+'18',color}}>
-      {text}
-    </span>
-  );
-}
-
-function Skeleton({ color = '#38bdf8' }: { color?: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/3 p-5">
-      <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:color}} />
-      <p className="text-sm text-white/25">Loading...</p>
-    </div>
-  );
-}
-
-function Empty({ text }: { text: string }) {
-  return (
-    <div className="rounded-2xl border border-white/6 bg-white/3 p-5 text-sm text-white/25">{text}</div>
+    </main>
   );
 }
 

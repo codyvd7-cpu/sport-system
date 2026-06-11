@@ -21,7 +21,7 @@ export default function PrivacyPolicyPage() {
           <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0,fontSize:13}}>
               <strong style={{color:'white'}}>KINETIQ Sport</strong> is a digital sport management platform operated by{' '}
-              <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> ("Altus", "we", "us", "our"), a company incorporated in the Republic of South Africa.
+              <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> (&quot;Altus&quot;, &quot;we&quot;, &quot;us&quot;, &quot;our&quot;), a company incorporated in the Republic of South Africa.
               Altus is the responsible party for the processing of personal information as defined under the Protection of Personal Information Act 4 of 2013 ("POPIA").
               This Privacy Policy applies to all users of the KINETIQ Sport platform, including coaches, athletic staff, school administrators, athletes, and parents or guardians who access the platform.
             </p>

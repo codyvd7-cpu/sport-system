@@ -127,9 +127,10 @@ export default function GradeExport({ params }: PageProps) {
 
       <div className="page">
         <div className="main-header">
-          <img src="/st-benedicts-logo.png" alt="SBC"/>
+          // eslint-disable-next-line @next/next/no-img-element
+              <img src="/st-benedicts-logo.png" alt="SBC"/>
           <div>
-            <h1>St Benedict's College — High Performance Programme</h1>
+            <h1>St Benedict&apos;s College — High Performance Programme</h1>
             <p>{grade} · Full Grade Performance Report · {year}</p>
           </div>
           <div className="main-header-right">
@@ -226,7 +227,7 @@ export default function GradeExport({ params }: PageProps) {
         })}
 
         <div className="footer">
-          <span>St Benedict's College — High Performance Programme</span>
+          <span>St Benedict&apos;s College — High Performance Programme</span>
           <span>Confidential — Coach Use Only</span>
           <span>Generated {new Date().toLocaleDateString('en-ZA')}</span>
         </div>

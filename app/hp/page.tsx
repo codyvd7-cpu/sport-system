@@ -93,7 +93,7 @@ export default function HPDashboard() {
         {/* ── HEADER ── */}
         <FadeUp delay={0}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:'rgba(16,185,129,0.7)'}}>
-            St Benedict's College
+            St Benedict&apos;s College
           </p>
           <div className="flex items-end justify-between gap-4">
             <h1 className="text-4xl font-black tracking-tight leading-none">

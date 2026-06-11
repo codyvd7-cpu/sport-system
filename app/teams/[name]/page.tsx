@@ -198,7 +198,7 @@ export default function TeamPage({ params }: PageProps) {
                   <p className="text-[11px] text-white/35">{fDate(nextFixture.fixture_date)}{nextFixture.fixture_time && ` · ${nextFixture.fixture_time}`}{nextFixture.venue && ` · ${nextFixture.venue}`}</p>
                 </div>
                 <div className="text-3xl font-black" style={{color:accent}}>
-                  {Math.max(0, Math.ceil((new Date(nextFixture.fixture_date).getTime() - Date.now()) / 86400000))}
+                  {Math.max(0, Math.ceil((new Date(nextFixture.fixture_date).getTime() - new Date().getTime()) / 86400000))}
                   <span className="text-base font-semibold text-white/25">d</span>
                 </div>
               </div>

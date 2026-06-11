@@ -134,7 +134,8 @@ export default function PlayerProfilePage({params}:PageProps){
   const present=attendance.filter(a=>['present','late'].includes(a.status?.toLowerCase()||'')).length;
   const absent=attendance.filter(a=>a.status?.toLowerCase()==='absent').length;
   const attRate=attendance.length>0?Math.round((present/attendance.length)*100):null;
-  const days=nextFixture?Math.max(0,Math.ceil((new Date(nextFixture.fixture_date).getTime()-Date.now())/86400000)):null;
+  const nowTs=React.useMemo(()=>Date.now(),[]);
+  const days=nextFixture?Math.max(0,Math.ceil((new Date(nextFixture.fixture_date).getTime()-nowTs)/86400000)):null;
 
   const pbs=React.useMemo(()=>{
     const map=new Map<string,{vals:number[];unit:string}>();
@@ -179,7 +180,7 @@ export default function PlayerProfilePage({params}:PageProps){
         </div>
         <p style={{fontSize:20,fontWeight:900,marginBottom:8}}>Code not found</p>
         <p style={{color:'#475569',fontSize:14,marginBottom:24}}>Double-check your code and try again.</p>
-        <a href="/player" style={{background:'rgba(56,189,248,0.1)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',padding:'12px 28px',borderRadius:14,fontWeight:900,fontSize:14,textDecoration:'none'}}>← Try Again</a>
+        <a href="/player" style={{background:'rgba(56,189,248,0.1)',border:'1px solid rgba(56,189,248,0.25)',color:'#38bdf8',padding:'12px 28px',borderRadius:14,fontWeight:900,fontSize:14,textDecoration:'none'}}>← Try Again</Link>
       </div>
     </main>
   );
@@ -198,12 +199,12 @@ export default function PlayerProfilePage({params}:PageProps){
         {/* School header */}
         <div style={{...fade(0),display:'flex',alignItems:'center',justifyContent:'space-between',padding:'24px 0 20px',borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
           <div>
-            <p style={{margin:0,fontSize:10,fontWeight:700,letterSpacing:'0.3em',textTransform:'uppercase',color:'#38bdf8'}}>St Benedict's College</p>
+            <p style={{margin:0,fontSize:10,fontWeight:700,letterSpacing:'0.3em',textTransform:'uppercase',color:'#38bdf8'}}>St Benedict&apos;s College</p>
             <p style={{margin:'2px 0 0',fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:'#1e293b'}}>Hockey · Player Portal</p>
           </div>
           <a href="/portal" style={{fontSize:11,color:'#334155',textDecoration:'none',padding:'6px 14px',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,background:'rgba(255,255,255,0.02)',fontWeight:600}}>
             Portal →
-          </a>
+          </Link>
         </div>
 
         {/* ── HERO ── */}
@@ -487,8 +488,8 @@ export default function PlayerProfilePage({params}:PageProps){
 
         {/* Footer */}
         <div style={{...fade(320),textAlign:'center',paddingTop:24}}>
-          <p style={{margin:'0 0 6px',fontSize:9,fontWeight:700,letterSpacing:'0.3em',textTransform:'uppercase',color:'#1e293b'}}>St Benedict's College Hockey</p>
-          <a href="/player" style={{fontSize:11,color:'#1e293b',textDecoration:'none'}}>← Back to code entry</a>
+          <p style={{margin:'0 0 6px',fontSize:9,fontWeight:700,letterSpacing:'0.3em',textTransform:'uppercase',color:'#1e293b'}}>St Benedict&apos;s College Hockey</p>
+          <a href="/player" style={{fontSize:11,color:'#1e293b',textDecoration:'none'}}>← Back to code entry</Link>
         </div>
 
       </div>

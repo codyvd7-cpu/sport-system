@@ -47,7 +47,7 @@ export default function PlayerPortalPage() {
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl ring-1 ring-white/10">
             <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-400">St Benedict's College</p>
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-sky-400">St Benedict&apos;s College</p>
           <h1 className="mt-2 text-3xl font-black text-white">Player & Parent</h1>
           <p className="mt-2 text-sm text-slate-400">Enter your personal access code</p>
         </div>

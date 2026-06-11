@@ -61,7 +61,7 @@ export default function HPNav() {
           <Link href="/hp" className="flex items-center gap-2.5 shrink-0">
             <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
             <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict's</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict&apos;s</p>
               <p className="text-sm font-black text-white leading-none">High Performance</p>
             </div>
           </Link>
@@ -92,7 +92,7 @@ export default function HPNav() {
           <Link href="/hp" className="flex items-center gap-2">
             <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
             <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict's</p>
+              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict&apos;s</p>
               <p className="text-sm font-black text-white leading-none">High Performance</p>
             </div>
           </Link>

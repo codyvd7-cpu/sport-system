@@ -99,7 +99,8 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
   const late    = squad.filter(a=>statuses[a.id]==='Late').length;
   const unavail = squad.filter(a=>a.availability&&a.availability!=='Available');
   const next    = fixtures.find(f=>f.fixture_date>=today());
-  const daysTo  = next?Math.max(0,Math.ceil((new Date(next.fixture_date).getTime()-Date.now())/86400000)):null;
+  const nowTs = React.useMemo(()=>Date.now(),[]);
+  const daysTo  = next?Math.max(0,Math.ceil((new Date(next.fixture_date).getTime()-nowTs)/86400000)):null;
 
   const fade = (d:number) => ({
     opacity:mounted?1:0,

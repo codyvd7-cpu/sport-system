@@ -233,9 +233,10 @@ export default function AttendanceExportPage() {
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,paddingBottom:14,borderBottom:'2.5px solid #111827'}}>
             <div style={{display:'flex',alignItems:'center',gap:14}}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
+              // eslint-disable-next-line @next/next/no-img-element
               <img src="/st-benedicts-logo.png" alt="SBC" style={{width:44,height:44,objectFit:'contain'}}/>
               <div>
-                <div style={{fontSize:17,fontWeight:900,lineHeight:1.2}}>St Benedict's College</div>
+                <div style={{fontSize:17,fontWeight:900,lineHeight:1.2}}>St Benedict&apos;s College</div>
                 <div style={{fontSize:10,color:'#6b7280',marginTop:2,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:500}}>
                   Hockey Programme · Attendance {exportMode === 'register' ? 'Register' : 'History'}
                 </div>
@@ -393,7 +394,7 @@ export default function AttendanceExportPage() {
 
           {/* Footer */}
           <div style={{marginTop:24,paddingTop:12,borderTop:'1px solid #e5e7eb',display:'flex',justifyContent:'space-between',fontSize:9,color:'#9ca3af'}}>
-            <span>St Benedict's College · Hockey Programme · {selTeam}</span>
+            <span>St Benedict&apos;s College · Hockey Programme · {selTeam}</span>
             <span>Confidential · Head of Hockey Use Only</span>
             <span>Generated {new Date().toLocaleDateString('en-ZA')}</span>
           </div>
