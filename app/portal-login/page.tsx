@@ -1,17 +1,19 @@
 'use client';
 import * as React from 'react';
 import Image from 'next/image';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 
-const SPORT_CONFIG: Record<string, { label: string; color: string; colorClass: string; borderClass: string; bgClass: string }> = {
-  hockey:    { label: 'Hockey',     color: '#38bdf8', colorClass: 'text-sky-400',    borderClass: 'border-sky-500/40',    bgClass: 'bg-sky-500/15 hover:bg-sky-500/25 text-sky-300' },
-  rugby:     { label: 'Rugby',      color: '#f87171', colorClass: 'text-red-400',    borderClass: 'border-red-500/40',    bgClass: 'bg-red-500/15 hover:bg-red-500/25 text-red-300' },
-  cricket:   { label: 'Cricket',    color: '#fbbf24', colorClass: 'text-amber-400',  borderClass: 'border-amber-500/40',  bgClass: 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300' },
-  rowing:    { label: 'Rowing',     color: '#34d399', colorClass: 'text-emerald-400',borderClass: 'border-emerald-500/40',bgClass: 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300' },
-  swimming:  { label: 'Swimming',   color: '#818cf8', colorClass: 'text-violet-400', borderClass: 'border-violet-500/40', bgClass: 'bg-violet-500/15 hover:bg-violet-500/25 text-violet-300' },
-  waterpolo: { label: 'Water Polo', color: '#06b6d4', colorClass: 'text-cyan-400',   borderClass: 'border-cyan-500/40',   bgClass: 'bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300' },
+const SPORT_CONFIG: Record<string, {
+  label: string; color: string; colorDim: string;
+  btnGradient: string; btnShadow: string; inputFocus: string;
+}> = {
+  hockey:   { label:'Hockey',    color:'#3b82f6', colorDim:'rgba(59,130,246,0.15)',  btnGradient:'linear-gradient(135deg,#1d4ed8,#3b82f6)', btnShadow:'0 8px 32px rgba(59,130,246,0.4)',  inputFocus:'rgba(59,130,246,0.5)' },
+  rugby:    { label:'Rugby',     color:'#f87171', colorDim:'rgba(248,113,113,0.15)', btnGradient:'linear-gradient(135deg,#b91c1c,#f87171)', btnShadow:'0 8px 32px rgba(248,113,113,0.4)', inputFocus:'rgba(248,113,113,0.5)' },
+  cricket:  { label:'Cricket',   color:'#fbbf24', colorDim:'rgba(251,191,36,0.15)',  btnGradient:'linear-gradient(135deg,#92400e,#fbbf24)', btnShadow:'0 8px 32px rgba(251,191,36,0.4)',  inputFocus:'rgba(251,191,36,0.5)' },
+  swimming: { label:'Swimming',  color:'#818cf8', colorDim:'rgba(129,140,248,0.15)', btnGradient:'linear-gradient(135deg,#4338ca,#818cf8)', btnShadow:'0 8px 32px rgba(129,140,248,0.4)', inputFocus:'rgba(129,140,248,0.5)' },
+  rowing:   { label:'Rowing',    color:'#34d399', colorDim:'rgba(52,211,153,0.15)',  btnGradient:'linear-gradient(135deg,#065f46,#34d399)', btnShadow:'0 8px 32px rgba(52,211,153,0.4)',  inputFocus:'rgba(52,211,153,0.5)' },
 };
 
 function PortalLoginInner() {
@@ -21,14 +23,15 @@ function PortalLoginInner() {
       ? document.cookie.split(';').find(c => c.trim().startsWith('portal_sport='))?.split('=')[1]
       : null) || 'hockey';
   const cfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
+
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
+  const [focused, setFocused] = React.useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
       const res = await fetch('/api/portal/login', {
         method: 'POST',
@@ -45,49 +48,320 @@ function PortalLoginInner() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center bg-[#06071a] px-4 text-white overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(14,165,233,0.08),transparent)]"/>
-      <div className="absolute left-[5%] top-[10%] h-64 w-64 rounded-full bg-sky-500/8 blur-3xl"/>
-      <div className="absolute bottom-[10%] right-[5%] h-64 w-64 rounded-full bg-violet-500/8 blur-3xl"/>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { font-family: 'Inter', sans-serif; }
 
-      <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-white/6 bg-[rgba(255,255,255,0.01)]/95 p-8 shadow-2xl ring-1 ring-white/5">
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl ring-1 ring-white/10">
-            <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
+        .portal-card {
+          position: relative;
+          overflow: hidden;
+        }
+        .portal-card::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 24px;
+          background: linear-gradient(140deg,
+            rgba(255,255,255,0.1) 0%,
+            rgba(255,255,255,0.02) 40%,
+            transparent 70%
+          );
+          pointer-events: none;
+          z-index: 1;
+        }
+        .portal-card::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 15%; right: 15%;
+          height: 1px;
+          background: linear-gradient(90deg,
+            transparent,
+            rgba(255,255,255,0.6) 40%,
+            rgba(255,255,255,0.9) 50%,
+            rgba(255,255,255,0.6) 60%,
+            transparent
+          );
+          pointer-events: none;
+          z-index: 2;
+        }
+
+        .access-btn {
+          transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+        }
+        .access-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          filter: brightness(1.1);
+        }
+        .access-btn:active:not(:disabled) {
+          transform: translateY(0);
+        }
+      `}</style>
+
+      <main style={{
+        minHeight:'100vh',
+        background:'#030b1a',
+        display:'flex',
+        flexDirection:'column',
+        alignItems:'center',
+        justifyContent:'center',
+        padding:'24px 16px',
+        position:'relative',
+        overflow:'hidden',
+      }}>
+
+        {/* Background glow */}
+        <div style={{
+          position:'absolute', inset:0, pointerEvents:'none',
+          background:`radial-gradient(ellipse 70% 60% at 50% 30%, ${cfg.colorDim}, transparent)`,
+        }}/>
+        <div style={{
+          position:'absolute',
+          top:'20%', left:'50%',
+          transform:'translate(-50%,-50%)',
+          width:600, height:400,
+          background:`radial-gradient(ellipse, ${cfg.color}08, transparent 70%)`,
+          pointerEvents:'none',
+        }}/>
+        {/* Subtle line texture */}
+        <div style={{
+          position:'absolute', inset:0, pointerEvents:'none', opacity:0.03,
+          backgroundImage:`repeating-linear-gradient(0deg, transparent, transparent 48px, rgba(255,255,255,0.8) 48px, rgba(255,255,255,0.8) 49px)`,
+        }}/>
+
+        {/* Card */}
+        <div className="portal-card" style={{
+          position:'relative', zIndex:10,
+          width:'100%', maxWidth:480,
+          background:'rgba(8,18,48,0.72)',
+          backdropFilter:'blur(24px) saturate(180%)',
+          WebkitBackdropFilter:'blur(24px) saturate(180%)',
+          border:`1px solid rgba(255,255,255,0.1)`,
+          borderRadius:24,
+          boxShadow:`0 32px 80px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.1)`,
+          padding:'44px 40px 36px',
+        }}>
+          {/* Top accent glow on card */}
+          <div style={{
+            position:'absolute', top:0, left:'10%', right:'10%',
+            height:1,
+            background:`linear-gradient(90deg, transparent, ${cfg.color}80, ${cfg.color}, ${cfg.color}80, transparent)`,
+            zIndex:3,
+          }}/>
+
+          {/* Content */}
+          <div style={{position:'relative', zIndex:2, textAlign:'center'}}>
+
+            {/* Logo */}
+            <div style={{marginBottom:20, display:'flex', justifyContent:'center'}}>
+              <Image
+                src="/st-benedicts-logo.png"
+                alt="St Benedict's College"
+                width={72} height={72}
+                style={{
+                  objectFit:'contain',
+                  filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.6))',
+                }}
+                priority
+              />
+            </div>
+
+            {/* School name */}
+            <p style={{
+              fontSize:11, fontWeight:500,
+              letterSpacing:'0.22em',
+              color:'rgba(255,255,255,0.6)',
+              marginBottom:10,
+            }}>
+              ST BENEDICT&apos;S COLLEGE
+            </p>
+
+            {/* Heading */}
+            <h1 style={{
+              fontSize:32, fontWeight:800,
+              letterSpacing:'0.01em',
+              lineHeight:1.1,
+              marginBottom:12,
+            }}>
+              <span style={{color:'white'}}>{cfg.label.toUpperCase()} </span>
+              <span style={{color:cfg.color}}>PORTAL</span>
+            </h1>
+
+            {/* Divider */}
+            <div style={{
+              width:40, height:2,
+              background:`linear-gradient(90deg, transparent, ${cfg.color}, transparent)`,
+              margin:'0 auto 16px',
+            }}/>
+
+            {/* Subtitle */}
+            <p style={{
+              fontSize:13, fontWeight:400,
+              color:'rgba(255,255,255,0.45)',
+              marginBottom:28,
+              lineHeight:1.5,
+            }}>
+              Enter the portal access code to continue
+            </p>
+
+            {/* Access code label */}
+            <p style={{
+              fontSize:10, fontWeight:700,
+              letterSpacing:'0.2em',
+              color:cfg.color,
+              textAlign:'left',
+              marginBottom:8,
+            }}>
+              ACCESS CODE
+            </p>
+
+            {/* Input */}
+            <form onSubmit={handleSubmit}>
+              <div style={{
+                position:'relative',
+                marginBottom:12,
+              }}>
+                {/* Lock icon */}
+                <div style={{
+                  position:'absolute', left:16, top:'50%',
+                  transform:'translateY(-50%)',
+                  pointerEvents:'none',
+                }}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth={1.8} style={{width:18,height:18}}>
+                    <rect x="3" y="11" width="18" height="11" rx="2"/>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <input
+                  type="password"
+                  required
+                  value={code}
+                  onChange={e => setCode(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder="Enter access code"
+                  autoComplete="off"
+                  style={{
+                    width:'100%',
+                    background:'rgba(255,255,255,0.05)',
+                    border:`1px solid ${focused ? cfg.color+'80' : 'rgba(255,255,255,0.1)'}`,
+                    borderRadius:12,
+                    padding:'14px 16px 14px 46px',
+                    color:'white',
+                    fontSize:14,
+                    outline:'none',
+                    transition:'border-color 0.2s ease, box-shadow 0.2s ease',
+                    boxShadow: focused ? `0 0 0 3px ${cfg.color}20` : 'none',
+                    boxSizing:'border-box',
+                  }}
+                />
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div style={{
+                  background:'rgba(239,68,68,0.1)',
+                  border:'1px solid rgba(239,68,68,0.25)',
+                  borderRadius:10,
+                  padding:'10px 14px',
+                  fontSize:13,
+                  color:'#fca5a5',
+                  textAlign:'center',
+                  marginBottom:12,
+                }}>
+                  {error}
+                </div>
+              )}
+
+              {/* Button */}
+              <button
+                type="submit"
+                disabled={loading || !code.trim()}
+                className="access-btn"
+                style={{
+                  width:'100%',
+                  background: loading || !code.trim() ? 'rgba(255,255,255,0.08)' : cfg.btnGradient,
+                  boxShadow: loading || !code.trim() ? 'none' : cfg.btnShadow,
+                  border:'none',
+                  borderRadius:12,
+                  padding:'15px 24px',
+                  color:'white',
+                  fontSize:15,
+                  fontWeight:700,
+                  cursor: loading || !code.trim() ? 'not-allowed' : 'pointer',
+                  display:'flex',
+                  alignItems:'center',
+                  justifyContent:'center',
+                  gap:10,
+                  opacity: loading || !code.trim() ? 0.5 : 1,
+                  transition:'opacity 0.2s ease',
+                  letterSpacing:'0.01em',
+                }}
+              >
+                {loading ? 'Checking...' : (
+                  <>
+                    Access Portal
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:16,height:16}}>
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Back link */}
+            <div style={{marginTop:24}}>
+              <Link href="/" style={{
+                fontSize:13,
+                color:'rgba(255,255,255,0.35)',
+                textDecoration:'none',
+                transition:'color 0.2s ease',
+              }}>
+                ← Back to Departments
+              </Link>
+            </div>
           </div>
-          <p className={`text-xs font-black uppercase tracking-[0.28em] ${cfg.colorClass}`}>St Benedict&apos;s College</p>
-          <h1 className="mt-2 text-3xl font-black text-white">{cfg.label} Portal</h1>
-          <p className="mt-2 text-sm text-white/50">Enter the portal access code to continue</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="password" required
-            value={code} onChange={e => setCode(e.target.value)}
-            placeholder="Access code"
-            autoComplete="off"
-            className="w-full rounded-2xl border border-white/8 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-center text-lg tracking-widest text-white outline-none placeholder:text-white/25 focus:border-sky-500 transition"
-          />
-          {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-sm text-red-300 text-center">{error}</div>
-          )}
-          <button type="submit" disabled={loading || !code.trim()}
-            className={`w-full rounded-2xl border py-3 text-sm font-black transition disabled:opacity-50 ${cfg.borderClass} ${cfg.bgClass}`}>
-            {loading ? 'Checking...' : 'Enter Portal'}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <Link href="/" className="text-xs text-white/25 hover:text-white/50 transition">← Back to Departments</Link>
+        {/* Footer */}
+        <div style={{
+          position:'relative', zIndex:10,
+          marginTop:32,
+          textAlign:'center',
+        }}>
+          <p style={{
+            fontSize:9, fontWeight:700,
+            letterSpacing:'0.45em',
+            color:`${cfg.color}60`,
+            textTransform:'uppercase',
+            marginBottom:8,
+          }}>
+            Veritas In Caritate
+          </p>
+          <div style={{
+            display:'flex', flexWrap:'wrap',
+            justifyContent:'center', gap:'6px 8px',
+            fontSize:9,
+            color:'rgba(255,255,255,0.2)',
+          }}>
+            <span>KINETIQ Sport is a product of Altus (Pty) Ltd. Reg. 2026/424230/07</span>
+            <span>·</span>
+            <Link href="/privacy" style={{color:'inherit'}}>Privacy</Link>
+            <span>·</span>
+            <Link href="/terms" style={{color:'inherit'}}>Terms</Link>
+            <span>·</span>
+            <span>© {new Date().getFullYear()} All rights reserved.</span>
+          </div>
         </div>
-      </section>
-    </main>
+
+      </main>
+    </>
   );
 }
 
 export default function PortalLoginPage() {
   return (
-    <Suspense fallback={<div style={{minHeight:'100vh',background:'#030810'}}/>}>
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#030b1a'}}/>}>
       <PortalLoginInner />
     </Suspense>
   );
