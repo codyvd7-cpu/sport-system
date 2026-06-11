@@ -275,7 +275,7 @@ export default function LandingPage() {
                           filter: dept.available
                             ? 'brightness(0) saturate(100%) invert(75%) sepia(50%) saturate(500%) hue-rotate(185deg) brightness(115%)'
                             : 'grayscale(1) brightness(0.6)',
-                          dropShadow: dept.available ? `0 4px 16px ${dept.accent}` : 'none',
+
                         }}
                       />
                     </div>
