@@ -16,7 +16,7 @@ const DEPARTMENTS = [
     icon: '/icon-hockey.svg',
     accent: '#38bdf8',
     glow: 'rgba(56,189,248,0.35)',
-    hoverBg: 'rgba(56,189,248,0.08)',
+    hoverBg: 'rgba(56,189,248,0.18)',
     bottomGlow: 'rgba(56,189,248,0.7)',
   },
   {
@@ -28,7 +28,7 @@ const DEPARTMENTS = [
     icon: '/icon-hp.svg',
     accent: '#34d399',
     glow: 'rgba(52,211,153,0.35)',
-    hoverBg: 'rgba(52,211,153,0.08)',
+    hoverBg: 'rgba(52,211,153,0.18)',
     bottomGlow: 'rgba(52,211,153,0.7)',
   },
   {
@@ -40,7 +40,7 @@ const DEPARTMENTS = [
     icon: '/icon-rugby.svg',
     accent: '#f87171',
     glow: 'rgba(248,113,113,0.35)',
-    hoverBg: 'rgba(248,113,113,0.08)',
+    hoverBg: 'rgba(248,113,113,0.18)',
     bottomGlow: 'rgba(248,113,113,0.7)',
   },
   {
@@ -179,7 +179,7 @@ export default function LandingPage() {
           {PHOTOS.map((src, i) => (
             <div key={i} className="relative overflow-hidden">
               <Image src={src} alt="" fill className="object-cover object-center"
-                style={{filter:'saturate(0.4) brightness(0.28)'}} priority={i===0}/>
+                style={{filter:'saturate(0.55) brightness(0.38)'}} priority={i===0}/>
               {i > 0 && <div className="absolute inset-y-0 left-0 w-px bg-white/5"/>}
             </div>
           ))}
@@ -189,16 +189,16 @@ export default function LandingPage() {
             <div key={i} className="absolute inset-0 transition-opacity duration-1000"
               style={{opacity: i === activePhoto ? 1 : 0}}>
               <Image src={src} alt="" fill className="object-cover object-center"
-                style={{filter:'saturate(0.4) brightness(0.28)'}} priority={i===0}/>
+                style={{filter:'saturate(0.55) brightness(0.38)'}} priority={i===0}/>
             </div>
           ))}
         </div>
 
         {/* Overlays */}
         <div className="absolute inset-0 pointer-events-none"
-          style={{background:'linear-gradient(to bottom, rgba(4,8,16,0.75) 0%, rgba(4,8,16,0.15) 40%, rgba(4,8,16,0.85) 100%)'}}/>
+          style={{background:'linear-gradient(to bottom, rgba(4,8,16,0.78) 0%, rgba(4,8,16,0.1) 35%, rgba(4,8,16,0.55) 100%)'}}/>
         <div className="absolute inset-0 pointer-events-none"
-          style={{background:'radial-gradient(ellipse 55% 65% at 50% 42%, rgba(4,8,16,0.3), transparent)'}}/>
+          style={{background:'radial-gradient(ellipse 50% 55% at 50% 38%, rgba(4,8,16,0.25), transparent)'}}/>
 
         {/* ── CONTENT ── */}
         <div className="relative z-10 flex flex-1 flex-col items-center justify-between px-4 py-10 sm:py-12">
@@ -283,11 +283,11 @@ export default function LandingPage() {
                       '--card-accent': dept.accent,
                       '--card-glow': dept.glow,
                       '--card-hover-bg': dept.hoverBg,
-                      background: 'rgba(255,255,255,0.045)',
-                      backdropFilter: 'blur(32px) saturate(200%) brightness(1.05)',
-                      WebkitBackdropFilter: 'blur(32px) saturate(200%) brightness(1.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
+                      background: 'rgba(8,16,40,0.35)',
+                      backdropFilter: 'blur(20px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      boxShadow: '0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.15), inset 0 -1px 0 rgba(0,0,0,0.08)',
                       padding: '28px 18px 22px',
                       minHeight: 215,
                     } as React.CSSProperties}
