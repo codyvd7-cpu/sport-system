@@ -20,7 +20,7 @@ export default function TermsOfUsePage() {
           {/* Intro */}
           <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0,fontSize:13}}>
-              These Terms of Use (&quot;Terms&quot;) govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform ("Platform"),
+              These Terms of Use (&quot;Terms&quot;) govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform (&quot;Platform&quot;),
               a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> (&quot;Altus&quot;, &quot;we&quot;, &quot;us&quot;).
               By accessing or using the Platform, you agree to be bound by these Terms.
               If you do not agree, you must discontinue use immediately.

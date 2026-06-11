@@ -180,7 +180,7 @@ export default function StudentExport({ params }: PageProps) {
         {/* Header */}
         <div className="doc-header">
           <div className="doc-header-left">
-            // eslint-disable-next-line @next/next/no-img-element
+            {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/st-benedicts-logo.png" alt="SBC"/>
             <div>
               <div className="doc-school">St Benedict&apos;s College</div>

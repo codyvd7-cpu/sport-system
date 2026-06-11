@@ -127,7 +127,7 @@ export default function GradeExport({ params }: PageProps) {
 
       <div className="page">
         <div className="main-header">
-          // eslint-disable-next-line @next/next/no-img-element
+          {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/st-benedicts-logo.png" alt="SBC"/>
           <div>
             <h1>St Benedict&apos;s College — High Performance Programme</h1>

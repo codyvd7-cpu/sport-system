@@ -147,7 +147,7 @@ export default function ClassExport({ params }: PageProps) {
       <div className="page">
         {/* Header */}
         <div className="doc-header">
-          // eslint-disable-next-line @next/next/no-img-element
+          {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/sbc-logo.svg" alt="SBC"/>
           <div>
             <div className="doc-school">St Benedict&apos;s College</div>

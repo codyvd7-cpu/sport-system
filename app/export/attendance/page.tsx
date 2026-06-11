@@ -233,7 +233,7 @@ export default function AttendanceExportPage() {
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,paddingBottom:14,borderBottom:'2.5px solid #111827'}}>
             <div style={{display:'flex',alignItems:'center',gap:14}}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              // eslint-disable-next-line @next/next/no-img-element
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/st-benedicts-logo.png" alt="SBC" style={{width:44,height:44,objectFit:'contain'}}/>
               <div>
                 <div style={{fontSize:17,fontWeight:900,lineHeight:1.2}}>St Benedict&apos;s College</div>

@@ -194,7 +194,7 @@ export default function LandingPage() {
             {/* School name */}
             <div className={`mb-6 ${mounted ? 'hero-in' : 'opacity-0'}`} style={{animationDelay:'80ms'}}>
               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/50">
-                St Benedict's College
+                St Benedict&apos;s College
               </p>
               <p className="mt-1 text-[8px] font-medium uppercase tracking-[0.25em] text-white/20">
                 Est. 1958 &nbsp;·&nbsp; Bedfordview

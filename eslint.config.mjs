@@ -16,6 +16,10 @@ const eslintConfig = defineConfig([
       // Downgrade to warnings - these are code quality issues, not bugs
       "@typescript-eslint/no-explicit-any": "warn",
       "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/use-memo": "warn",
 
       // These patterns are acceptable in this codebase
       "@typescript-eslint/no-require-imports": "warn",

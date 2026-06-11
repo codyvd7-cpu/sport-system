@@ -598,11 +598,11 @@ export default function AthleteProfile({params}:PageProps) {
                     style={{borderColor:sportColor+'40'}}/>
                   <div className="grid grid-cols-3 gap-2">
                     <input value={editTeam} onChange={e=>setEditTeam(e.target.value)} placeholder="Team"
-                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
+                      className=&ldquo;rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none&rdquo;/>
                     <input value={editAge} onChange={e=>setEditAge(e.target.value)} placeholder="Age group"
-                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
+                      className=&ldquo;rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none&rdquo;/>
                     <input value={editPos} onChange={e=>setEditPos(e.target.value)} placeholder="Position"
-                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
+                      className=&ldquo;rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none&rdquo;/>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={saveInfo} disabled={savingInfo}
@@ -611,7 +611,7 @@ export default function AthleteProfile({params}:PageProps) {
                       {savingInfo?'Saving…':'Save'}
                     </button>
                     <button onClick={()=>setEditingInfo(false)}
-                      className="rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/50 hover:text-white transition">
+                      className=&ldquo;rounded-xl border border-white/8 bg-white/5 px-3 py-1.5 text-xs font-black text-white/50 hover:text-white transition&rdquo;>
                       Cancel
                     </button>
                   </div>
@@ -621,7 +621,7 @@ export default function AthleteProfile({params}:PageProps) {
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="text-3xl font-black text-white leading-tight tracking-tight">{name}</h1>
                     <button onClick={()=>setEditingInfo(true)}
-                      className="rounded-lg border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/35 hover:text-white transition">
+                      className=&ldquo;rounded-lg border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/35 hover:text-white transition&rdquo;>
                       Edit
                     </button>
                   </div>
@@ -807,7 +807,7 @@ export default function AthleteProfile({params}:PageProps) {
                       {savingFb?'Saving…':'Save Feedback'}
                     </button>
                     <button onClick={()=>setEditFb(false)}
-                      className="rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-xs font-black text-white/50 hover:text-white transition">
+                      className=&ldquo;rounded-xl border border-white/8 bg-white/5 px-4 py-2 text-xs font-black text-white/50 hover:text-white transition&rdquo;>
                       Cancel
                     </button>
                   </div>
@@ -844,9 +844,9 @@ export default function AthleteProfile({params}:PageProps) {
                     <p className="text-sm text-slate-200 leading-relaxed">{aiText}</p>
                     <div className="mt-3 flex gap-2">
                       <button onClick={()=>navigator.clipboard.writeText(aiText)}
-                        className="rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition">Copy</button>
+                        className=&ldquo;rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition&rdquo;>Copy</button>
                       <button onClick={()=>setAiText('')}
-                        className="rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition">Clear</button>
+                        className=&ldquo;rounded-lg border border-white/8 bg-white/5 px-3 py-1.5 text-[10px] font-black text-white/50 hover:text-white transition&rdquo;>Clear</button>
                     </div>
                   </div>
                 ):<p className="text-sm text-white/25">Click Generate to create an AI-assisted athlete summary for coach or parent use.</p>}
@@ -874,7 +874,7 @@ export default function AthleteProfile({params}:PageProps) {
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Add Session</p>
               <form onSubmit={addAttendance} className="grid gap-3 sm:grid-cols-3">
                 <input type="date" value={attDate} onChange={e=>setAttDate(e.target.value)}
-                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500"/>
+                  className=&ldquo;rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500&rdquo;/>
                 <select value={attType} onChange={e=>setAttType(e.target.value)}
                   className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
                   {['Training','Match','Gym','Fitness','Other'].map(t=><option key={t}>{t}</option>)}
@@ -929,16 +929,16 @@ export default function AthleteProfile({params}:PageProps) {
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Add Result</p>
               <form onSubmit={addPerformance} className="grid gap-3 sm:grid-cols-3">
                 <input type="date" value={perfDate} onChange={e=>setPerfDate(e.target.value)}
-                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                  className=&ldquo;rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500&rdquo;/>
                 <input value={perfTest} onChange={e=>setPerfTest(e.target.value)} placeholder="Test type e.g. SBJ"
                   list="test-suggestions"
-                  className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                  className=&ldquo;rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500&rdquo;/>
                 <datalist id="test-suggestions">
                   {['SBJ','10m Sprint','30m Sprint','505 Left','505 Right','Push-Ups','Pull-Ups','Yo-Yo IR1','Bronco','RSA Sdec%'].map(t=><option key={t} value={t}/>)}
                 </datalist>
                 <div className="flex gap-2">
                   <input value={perfVal} onChange={e=>setPerfVal(e.target.value)} placeholder="Value" type="number" step="any"
-                    className="flex-1 rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
+                    className=&ldquo;flex-1 rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500&rdquo;/>
                   <input value={perfUnit} onChange={e=>setPerfUnit(e.target.value)} placeholder="Unit" style={{width:70}}
                     className="rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500"/>
                 </div>
