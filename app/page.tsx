@@ -354,8 +354,8 @@ export default function LandingPage() {
                       {dept.available ? (
                         <div className="glass-cta" style={{
                           width:38, height:38, borderRadius:'50%',
-                          background: `linear-gradient(145deg, ${dept.accent}, ${dept.accent}bb)`,
-                          boxShadow: `0 4px 18px ${dept.glow}, inset 0 1px 0 rgba(255,255,255,0.35)`,
+                          background: 'rgba(255,255,255,0.12)',
+                          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 8px rgba(0,0,0,0.2)',
                           display:'flex', alignItems:'center', justifyContent:'center',
                         }}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}
