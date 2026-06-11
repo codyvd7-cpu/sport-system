@@ -14,7 +14,10 @@ const DEPARTMENTS = [
     href: '/portal?sport=hockey',
     available: true,
     icon: '/icon-hockey.svg',
-    accent: 'rgba(56,189,248,0.6)',
+    accent: '#38bdf8',
+    glow: 'rgba(56,189,248,0.35)',
+    hoverBg: 'rgba(56,189,248,0.08)',
+    bottomGlow: 'rgba(56,189,248,0.7)',
   },
   {
     id: 'hp',
@@ -23,7 +26,10 @@ const DEPARTMENTS = [
     href: '/hp-login',
     available: true,
     icon: '/icon-hp.svg',
-    accent: 'rgba(52,211,153,0.6)',
+    accent: '#34d399',
+    glow: 'rgba(52,211,153,0.35)',
+    hoverBg: 'rgba(52,211,153,0.08)',
+    bottomGlow: 'rgba(52,211,153,0.7)',
   },
   {
     id: 'rugby',
@@ -32,7 +38,10 @@ const DEPARTMENTS = [
     href: '/portal?sport=rugby',
     available: true,
     icon: '/icon-rugby.svg',
-    accent: 'rgba(248,113,113,0.6)',
+    accent: '#f87171',
+    glow: 'rgba(248,113,113,0.35)',
+    hoverBg: 'rgba(248,113,113,0.08)',
+    bottomGlow: 'rgba(248,113,113,0.7)',
   },
   {
     id: 'cricket',
@@ -42,6 +51,9 @@ const DEPARTMENTS = [
     available: false,
     icon: '/icon-cricket.svg',
     accent: 'rgba(255,255,255,0.15)',
+    glow: 'transparent',
+    hoverBg: 'transparent',
+    bottomGlow: 'transparent',
   },
 ];
 
@@ -67,61 +79,96 @@ export default function LandingPage() {
         @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
         .anton { font-family: 'Anton', Impact, sans-serif; }
 
-        /* Liquid glass card */
+        /* ── LIQUID GLASS CARDS ── */
         .glass-card {
           position: relative;
-          border-radius: 22px;
+          border-radius: 24px;
           overflow: hidden;
-          transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
-                      box-shadow 0.3s ease;
           cursor: pointer;
+          transition:
+            transform 0.35s cubic-bezier(0.34,1.56,0.64,1),
+            box-shadow 0.35s ease,
+            border-color 0.35s ease,
+            background 0.35s ease;
         }
+
+        /* Specular surface sheen — diagonal light catch */
         .glass-card::before {
           content: '';
           position: absolute;
           inset: 0;
-          border-radius: 22px;
+          border-radius: 24px;
           background: linear-gradient(
-            135deg,
-            rgba(255,255,255,0.18) 0%,
-            rgba(255,255,255,0.04) 40%,
-            rgba(255,255,255,0.08) 100%
-          );
-          pointer-events: none;
-          z-index: 1;
-        }
-        .glass-card::after {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0;
-          height: 1px;
-          background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(255,255,255,0.5) 30%,
-            rgba(255,255,255,0.7) 50%,
-            rgba(255,255,255,0.5) 70%,
-            transparent 100%
+            140deg,
+            rgba(255,255,255,0.22) 0%,
+            rgba(255,255,255,0.05) 35%,
+            transparent 60%,
+            rgba(255,255,255,0.04) 100%
           );
           pointer-events: none;
           z-index: 2;
+          transition: opacity 0.35s ease;
         }
-        .glass-card:hover {
-          transform: translateY(-6px) scale(1.02);
-          box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.15);
+
+        /* Top rim — bright white edge light */
+        .glass-card::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 12%; right: 12%;
+          height: 1px;
+          background: linear-gradient(90deg,
+            transparent,
+            rgba(255,255,255,0.9) 40%,
+            rgba(255,255,255,1) 50%,
+            rgba(255,255,255,0.9) 60%,
+            transparent
+          );
+          pointer-events: none;
+          z-index: 3;
         }
-        .glass-card.locked {
-          cursor: default;
+
+        /* Hover — lift + sport colour bleed */
+        .glass-card:not(.locked):hover {
+          transform: translateY(-8px) scale(1.025);
+          background: var(--card-hover-bg) !important;
+          border-color: var(--card-accent) !important;
+          box-shadow:
+            0 28px 70px rgba(0,0,0,0.55),
+            0 0 0 1px var(--card-accent),
+            0 0 40px var(--card-glow),
+            inset 0 1px 0 rgba(255,255,255,0.2);
         }
-        .glass-card.locked:hover {
-          transform: none;
-          box-shadow: none;
+
+        /* Hover — icon glow */
+        .glass-card:not(.locked):hover .glass-icon {
+          filter: brightness(0) saturate(100%) invert(75%) sepia(50%) saturate(600%) hue-rotate(185deg) brightness(130%);
+          drop-shadow: 0 0 16px var(--card-accent);
         }
+
+        /* Hover — specular intensifies */
+        .glass-card:not(.locked):hover::before {
+          opacity: 1.4;
+        }
+
+        .glass-card.locked { cursor: default; }
+        .glass-card.locked:hover { transform: none; }
+
         .glass-cta {
-          transition: transform 0.25s ease, filter 0.25s ease;
+          transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), filter 0.25s ease;
         }
         .glass-card:not(.locked):hover .glass-cta {
-          transform: scale(1.12);
-          filter: brightness(1.15);
+          transform: scale(1.15);
+          filter: brightness(1.2) saturate(1.2);
+        }
+
+        /* Bottom accent glow pulse on hover */
+        .glass-glow {
+          transition: opacity 0.35s ease, transform 0.35s ease;
+          opacity: 0.25;
+        }
+        .glass-card:not(.locked):hover .glass-glow {
+          opacity: 0.7;
+          transform: translateX(-50%) scaleX(1.3);
         }
       `}</style>
 
@@ -233,88 +280,84 @@ export default function LandingPage() {
                   <div
                     className={`glass-card${dept.available ? '' : ' locked'} flex flex-col items-center text-center`}
                     style={{
-                      background: dept.available
-                        ? 'rgba(255,255,255,0.06)'
-                        : 'rgba(255,255,255,0.03)',
-                      backdropFilter: 'blur(28px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+                      '--card-accent': dept.accent,
+                      '--card-glow': dept.glow,
+                      '--card-hover-bg': dept.hoverBg,
+                      background: 'rgba(255,255,255,0.045)',
+                      backdropFilter: 'blur(32px) saturate(200%) brightness(1.05)',
+                      WebkitBackdropFilter: 'blur(32px) saturate(200%) brightness(1.05)',
                       border: '1px solid rgba(255,255,255,0.1)',
-                      boxShadow: dept.available
-                        ? `0 8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12), 0 0 0 0.5px rgba(255,255,255,0.06)`
-                        : '0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06)',
-                      padding: '26px 18px 20px',
-                      minHeight: 210,
-                    }}
+                      boxShadow: '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.1)',
+                      padding: '28px 18px 22px',
+                      minHeight: 215,
+                    } as React.CSSProperties}
                   >
-                    {/* Accent glow at bottom */}
+                    {/* Bottom sport colour glow */}
                     {dept.available && (
-                      <div style={{
+                      <div className="glass-glow" style={{
                         position:'absolute',
-                        bottom:0, left:'50%',
+                        bottom:-8, left:'50%',
                         transform:'translateX(-50%)',
-                        width:'70%', height:40,
-                        background:dept.accent,
-                        filter:'blur(20px)',
+                        width:'65%', height:50,
+                        background: dept.bottomGlow,
+                        filter:'blur(24px)',
                         borderRadius:'50%',
-                        opacity:0.35,
                         pointerEvents:'none',
                         zIndex:0,
                       }}/>
                     )}
 
                     {/* Icon */}
-                    <div style={{flex:1, display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14, position:'relative', zIndex:1}}>
+                    <div style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center',marginBottom:14,position:'relative',zIndex:1}}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={dept.icon}
                         alt={dept.label}
+                        className="glass-icon"
                         style={{
-                          width:60, height:60,
+                          width:58, height:58,
                           objectFit:'contain',
-                          opacity: dept.available ? 1 : 0.2,
+                          opacity: dept.available ? 1 : 0.18,
                           filter: dept.available
                             ? 'brightness(0) saturate(100%) invert(75%) sepia(50%) saturate(500%) hue-rotate(185deg) brightness(115%)'
-                            : 'grayscale(1) brightness(0.6)',
-
+                            : 'grayscale(1) brightness(0.5)',
+                          transition:'filter 0.35s ease',
                         }}
                       />
                     </div>
 
                     {/* Label */}
                     <p style={{
-                      fontSize:14,
-                      fontWeight:800,
+                      fontSize:14,fontWeight:800,
                       letterSpacing:'0.1em',
-                      color: dept.available ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.25)',
+                      color: dept.available ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.22)',
                       marginBottom:6,
-                      position:'relative', zIndex:1,
+                      position:'relative',zIndex:1,
                     }}>
                       {dept.label}
                     </p>
 
                     {/* Sub-text */}
-                    <div style={{marginBottom:18, minHeight:34, position:'relative', zIndex:1}}>
+                    <div style={{marginBottom:18,minHeight:34,position:'relative',zIndex:1}}>
                       {dept.lines.map((line, i) => (
                         <p key={i} style={{
                           fontSize:10.5,
-                          color:'rgba(255,255,255,0.38)',
+                          color:'rgba(255,255,255,0.35)',
                           lineHeight:1.65,
                           letterSpacing:'0.02em',
-                        }}>
-                          {line}
-                        </p>
+                        }}>{line}</p>
                       ))}
                     </div>
 
                     {/* CTA */}
-                    <div style={{position:'relative', zIndex:1}}>
+                    <div style={{position:'relative',zIndex:1}}>
                       {dept.available ? (
-                        <div className="glass-cta flex items-center justify-center rounded-full"
-                          style={{
-                            width:38, height:38,
-                            background:'linear-gradient(135deg,#38bdf8,#0ea5e9)',
-                            boxShadow:'0 4px 16px rgba(56,189,248,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
-                          }}>
+                        <div className="glass-cta" style={{
+                          width:38, height:38, borderRadius:'50%',
+                          background: `linear-gradient(145deg, ${dept.accent}, ${dept.accent}bb)`,
+                          boxShadow: `0 4px 18px ${dept.glow}, inset 0 1px 0 rgba(255,255,255,0.35)`,
+                          display:'flex', alignItems:'center', justifyContent:'center',
+                        }}>
                           <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5}
                             style={{width:15,height:15}}>
                             <path d="M5 12h14M12 5l7 7-7 7"/>
