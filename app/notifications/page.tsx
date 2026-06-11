@@ -118,6 +118,7 @@ export default function NotificationsPage() {
         {title && body && (
           <div className="rounded-2xl p-4 flex items-start gap-3"
             style={{background:'rgba(56,189,248,0.05)',border:'1px solid rgba(56,189,248,0.15)'}}>
+            /* eslint-disable-next-line @next/next/no-img-element */
             <img src="/icons/icon-192.png" alt="" className="h-10 w-10 rounded-xl shrink-0"/>
             <div>
               <p className="text-[13px] font-black text-white">{title}</p>
@@ -136,7 +137,7 @@ export default function NotificationsPage() {
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"/>
               Sending…
             </span>
-          ) : '🔔 Send to All Devices'}
+          ) : &apos;🔔 Send to All Devices&apos;}
         </button>
 
         {sent && (
