@@ -816,7 +816,7 @@ export default function AthleteProfile({params}:PageProps) {
                 <div className="p-5 space-y-3">
                   {latestFeedback.strengths&&<div className="rounded-xl border border-emerald-500/15 bg-emerald-500/5 p-4"><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-emerald-400">Strengths</p><p className="text-sm text-slate-200 leading-relaxed">{latestFeedback.strengths}</p></div>}
                   {latestFeedback.current_focus&&<div className="rounded-xl border border-amber-500/15 bg-amber-500/5 p-4"><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-amber-400">Current Focus</p><p className="text-sm text-slate-200 leading-relaxed">{latestFeedback.current_focus}</p></div>}
-                  {latestFeedback.coach_comment&&<div className='rounded-xl border border-sky-500/15 bg-sky-500/5 p-4'><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p><p className="text-sm text-slate-200 leading-relaxed italic">"{latestFeedback.coach_comment}"</p></div>}
+                  {latestFeedback.coach_comment&&<div className='rounded-xl border border-sky-500/15 bg-sky-500/5 p-4'><p className="mb-1 text-[10px] font-black uppercase tracking-wide text-sky-400">Comment</p><p className="text-sm text-slate-200 leading-relaxed italic">&ldquo;{latestFeedback.coach_comment}&rdquo;</p></div>}
                 </div>
               ):(
                 <div className="px-5 py-8 text-center">

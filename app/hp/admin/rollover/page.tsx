@@ -168,7 +168,7 @@ export default function HPRolloverPage() {
                   </span>
                 ))}
               </div>
-              <p className="mt-3 text-[11px] text-slate-600">All test results and attendance history carry over. Training groups will reset — you'll re-assign after new testing.</p>
+              <p className="mt-3 text-[11px] text-slate-600">All test results and attendance history carry over. Training groups will reset — you will re-assign after new testing.</p>
             </div>
 
             <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
