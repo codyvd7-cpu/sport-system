@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
   if (targetEmails?.length) query = query.in('email', targetEmails);
 
   const { data: subs, error: subErr } = await query;
-  console.log('[Send] subs found:', subs?.length, 'error:', subErr?.message);
   if (!subs?.length) return NextResponse.json({ ok: true, sent: 0, debug: subErr?.message });
 
   const payload = { title, body, url: url || '/dashboard', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' };
@@ -55,10 +54,8 @@ export async function POST(req: NextRequest) {
       console.log('[Send] Sending to endpoint:', sub.endpoint.slice(0, 50));
       await sendPushNotification(sub, payload, vapidKeys);
       sent++;
-      console.log('[Send] Success');
     } catch (e: any) {
       failed++;
-      console.log('[Send] Failed:', e.statusCode, e.message);
       if (e.statusCode === 410 || e.statusCode === 404) {
         staleEndpoints.push(sub.endpoint);
       }

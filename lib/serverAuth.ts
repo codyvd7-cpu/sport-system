@@ -112,6 +112,7 @@ export function verifyHpCookie(req: NextRequest): boolean {
     if (!payload || !sig) return false;
 
     // Verify HMAC signature
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crypto = require('crypto');
     const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     if (sig !== expected) return false;

@@ -2,8 +2,8 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/Toast';
 import { useRole } from '@/lib/useRole';
+import { useToast } from '@/components/Toast';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Coach = { id: string; email: string; full_name: string; role: string; teams?: string[]; is_active?: boolean };
@@ -17,7 +17,7 @@ const TEAM_GROUPS = [
 
 const ROLE_STYLE: Record<string,{label:string;bg:string;color:string}> = {
   owner:          { label:'Owner',          bg:'bg-rose-500/15',   color:'text-rose-300'  },
-  head_of_hockey: { label:'Head of Sport', bg:'bg-amber-500/15',  color:'text-amber-300' },
+  head_of_hockey: { label:'Head of Hockey', bg:'bg-amber-500/15',  color:'text-amber-300' },
   coach:          { label:'Coach',          bg:'bg-white/5',     color:'text-white/50' },
 };
 
@@ -111,7 +111,7 @@ export default function CoachesPage() {
   return (
     <FadeUp delay={0}>
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">
@@ -146,7 +146,7 @@ export default function CoachesPage() {
               {(['coach','head_of_hockey'] as const).map(r => (
                 <button key={r} onClick={() => setInviteRole(r)}
                   className={`rounded-xl border px-4 py-2 text-xs font-black transition ${inviteRole === r ? 'border-amber-500/40 bg-amber-500/15 text-amber-300' : 'border-white/8 bg-[rgba(255,255,255,0.025)] text-white/35 hover:text-white'}`}>
-                  {r === 'coach' ? 'Coach' : 'MIC'}
+                  {r === 'coach' ? 'Coach' : 'Head of Hockey'}
                 </button>
               ))}
             </div>

@@ -80,7 +80,6 @@ function ClassProfileInner({params}:PageProps) {
       setLoading(false); return;
     }
     const d = await res.json();
-    console.log('HP Class data:', d.students?.length, 'students');
     const squad = d.students || [];
     setStudents(squad);
     setAttendance(d.attendance || []);
