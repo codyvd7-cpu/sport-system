@@ -203,7 +203,7 @@ export default function PlayerProfilePage({params}:PageProps){
             <p style={{margin:0,fontSize:10,fontWeight:700,letterSpacing:'0.3em',textTransform:'uppercase',color:'#38bdf8'}}>St Benedict&apos;s College</p>
             <p style={{margin:'2px 0 0',fontSize:9,letterSpacing:'0.2em',textTransform:'uppercase',color:'#1e293b'}}>Hockey · Player Portal</p>
           </div>
-          <a href="/portal" style={{fontSize:11,color:'#334155',textDecoration:'none',padding:'6px 14px',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,background:'rgba(255,255,255,0.02)',fontWeight:600}}>
+          <Link href="/portal" style={{fontSize:11,color:'#334155',textDecoration:'none',padding:'6px 14px',border:'1px solid rgba(255,255,255,0.06)',borderRadius:10,background:'rgba(255,255,255,0.02)',fontWeight:600}}>
             Portal →
           </Link>
         </div>
