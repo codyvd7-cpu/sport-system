@@ -375,12 +375,11 @@ function PortalInner() {
                 </div>
               </div>
               <div style={{padding:'0 18px 18px'}}>
-                <button
-                  onClick={()=>document.getElementById('section-fixtures')?.scrollIntoView({behavior:'smooth',block:'start'})}
-                  style={{width:'100%',background:`linear-gradient(135deg,${C}cc,${C})`,border:'none',borderRadius:10,padding:'12px',color:'white',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:`0 6px 20px ${C}35`}}>
+                <Link href={`/portal/fixtures?date=${nextFixture.fixture_date}&sport=${sport}`}
+                  style={{width:'100%',background:`linear-gradient(135deg,${C}cc,${C})`,border:'none',borderRadius:10,padding:'12px',color:'white',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:`0 6px 20px ${C}35`,textDecoration:'none'}}>
                   View Fixture
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
+                </Link>
               </div>
             </div>
           ) : (
