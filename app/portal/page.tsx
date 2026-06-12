@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 
+import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -161,424 +162,407 @@ function PortalInner() {
   const activeSponsor = sponsors[activeSponsorIndex];
   const MEDALS = ['1st', '2nd', '3rd', '4th', '5th'];
 
+  // ── derived ──────────────────────────────────────────────────────────────
+  const today = new Date().toISOString().split('T')[0];
+  const nextFixture = fixtures.find(f => f.fixture_date >= today) || fixtures[0] || null;
+  const upcomingFixtures = fixtures.filter(f => f.fixture_date >= today).slice(0, 3);
+  const latestResults = results.slice(0, 3);
+  const [activeTab, setActiveTab] = React.useState<string>('week');
+
+  function outcomeOf(score: string) {
+    if (!score) return null;
+    const parts = score.split(/[-–]/);
+    if (parts.length !== 2) return null;
+    const a = parseInt(parts[0]), b = parseInt(parts[1]);
+    if (a > b) return 'WIN';
+    if (a < b) return 'LOSS';
+    return 'DRAW';
+  }
+  function outcomeColor(o: string | null) {
+    if (o === 'WIN') return '#22c55e';
+    if (o === 'DRAW') return '#fbbf24';
+    if (o === 'LOSS') return '#f87171';
+    return 'rgba(255,255,255,0.3)';
+  }
+
+  const C = sportCfg.color;
+  const BG = '#0a0f1e';
+  const CARD = 'rgba(255,255,255,0.03)';
+  const BORDER = 'rgba(255,255,255,0.07)';
+
+  function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+    return (
+      <div style={{borderRadius:16,background:CARD,border:`1px solid ${BORDER}`,overflow:'hidden',...style}}>
+        {children}
+      </div>
+    );
+  }
+  function SectionHeader({ title, sub, link, linkLabel }: { title: string; sub?: string; link?: string; linkLabel?: string }) {
+    return (
+      <div style={{padding:'20px 22px 14px',borderBottom:`1px solid ${BORDER}`}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <p style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:C,textTransform:'uppercase'}}>{title}</p>
+          {link && <a href={link} style={{fontSize:11,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:4,opacity:0.8}}>
+            {linkLabel||'View all'} <span>›</span>
+          </a>}
+        </div>
+        {sub && <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:3}}>{sub}</p>}
+      </div>
+    );
+  }
+
+  function DateBlock({ dateStr }: { dateStr: string }) {
+    const d = new Date(dateStr);
+    const day = d.getDate().toString().padStart(2,'0');
+    const mon = d.toLocaleDateString('en-ZA',{month:'short'}).toUpperCase();
+    return (
+      <div style={{minWidth:44,textAlign:'center'}}>
+        <p style={{fontSize:24,fontWeight:800,lineHeight:1,color:'white'}}>{day}</p>
+        <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.4)',letterSpacing:'0.05em'}}>{mon}</p>
+      </div>
+    );
+  }
+  function TeamInitial({ name }: { name: string }) {
+    const initials = name.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    return (
+      <div style={{width:36,height:36,borderRadius:'50%',background:'rgba(255,255,255,0.08)',border:`1px solid rgba(255,255,255,0.12)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.7)',flexShrink:0}}>
+        {initials}
+      </div>
+    );
+  }
+
+  const TABS = ['week','fixtures','results','programs','reminders'];
+  const TAB_LABELS: Record<string,string> = {week:'This Week',fixtures:'Fixtures',results:'Results',programs:'Programs',reminders:'Reminders'};
+
   return (
-    <main className="min-h-screen bg-[#06071a] text-white">
+    <main style={{minHeight:'100vh',background:BG,color:'white',fontFamily:'Inter,system-ui,sans-serif'}}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        * { font-family: 'Inter', system-ui, sans-serif; box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .portal-link:hover { color: rgba(255,255,255,0.8) !important; }
+        .tab-btn:hover { background: rgba(255,255,255,0.06) !important; }
+        .fixture-row:hover { background: rgba(255,255,255,0.04) !important; }
+        .prog-row:hover { background: rgba(255,255,255,0.04) !important; }
+        input[type=password] { -webkit-text-security: disc; }
+      `}</style>
 
-      {/* ── HERO ── */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0" style={{background:'linear-gradient(160deg,#070a14 0%,#0a0d1a 100%)'}}/>
-        <div className="absolute inset-0" style={{background:'radial-gradient(ellipse 120% 80% at 60% -10%, '+sportCfg.color+'12, transparent 60%)'}}/>
-        <div className="absolute inset-x-0 top-0 h-[2px]" style={{background:'linear-gradient(90deg,transparent 0%,'+sportCfg.color+'80 30%,'+sportCfg.color+' 50%,'+sportCfg.color+'80 70%,transparent 100%)'}}/>
-
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          {/* Nav */}
-          <div className="flex items-center justify-between py-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{background:sportCfg.color+'20'}}>
-                <span style={{fontSize:12,color:sportCfg.color,fontWeight:900}}>{sportCfg.label[0]}</span>
-              </div>
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>St Benedict&apos;s College</p>
-                <p className="text-[9px] uppercase tracking-widest" style={{color:sportCfg.color+'60'}}>{sportCfg.label} Department</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/" className="rounded-full border border-white/8 px-3 py-1.5 text-[11px] font-black text-white/30 transition hover:text-white/60">← Home</Link>
-              <a href={'/login?sport='+sport} className="rounded-full border border-white/8 bg-white/4 px-3 py-1.5 text-[11px] font-black text-white/60 transition hover:text-white">Coach Login</a>
-              <Link href="/player" className="rounded-full px-3 py-1.5 text-[11px] font-black transition" style={{borderWidth:1,borderStyle:'solid',borderColor:sportCfg.accentBorder,background:sportCfg.colorDim,color:sportCfg.color}}>Player Login</Link>
+      {/* ── NAV ── */}
+      <nav style={{borderBottom:`1px solid ${BORDER}`,background:'rgba(10,15,30,0.95)',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',position:'sticky',top:0,zIndex:50}}>
+        <div style={{maxWidth:1120,margin:'0 auto',padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',height:60}}>
+          <div style={{display:'flex',alignItems:'center',gap:12}}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/st-benedicts-logo.png" alt="SBC" style={{width:36,height:36,objectFit:'contain'}}/>
+            <div>
+              <p style={{fontSize:14,fontWeight:700,color:'white',lineHeight:1}}>ST BENEDICT&apos;S COLLEGE</p>
+              <p style={{fontSize:10,fontWeight:500,color:C,letterSpacing:'0.05em',marginTop:2,textTransform:'uppercase'}}>{sportCfg.label} Department</p>
             </div>
           </div>
-
-          {/* Hero */}
-          <div className="grid gap-10 py-12 sm:py-16 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border px-3 py-1.5" style={{borderColor:sportCfg.accentBorder,background:sportCfg.colorDim}}>
-                <span className="h-1.5 w-1.5 rounded-full animate-pulse" style={{background:sportCfg.color}}/>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{color:sportCfg.color}}>Live Platform</span>
-              </div>
-              <h1 className="text-5xl font-black leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
-                Player &amp;<br/>Parent<br/>
-                <span style={{background:'linear-gradient(135deg,'+sportCfg.color+' 0%,white 50%,'+sportCfg.color+' 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text'}}>Portal.</span>
-              </h1>
-              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-white/40">
-                Fixtures, results, weekly programs and department updates for {sportCfg.label} players and parents.
-              </p>
-              <div className="mt-8 flex flex-wrap gap-2">
-                {['This Week','Fixtures','Results','Programs','Reminders'].map((label)=>(
-                  <a key={label} href={'#'+label.toLowerCase().replace(' ','')}
-                    className="rounded-full border border-white/8 bg-white/3 px-4 py-2 text-[11px] font-semibold text-white/40 transition hover:border-white/15 hover:text-white/80">
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
-            {/* Sponsor */}
-            <div className="relative rounded-2xl p-5" style={{background:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px rgba(255,255,255,0.08), 0 24px 48px rgba(0,0,0,0.3)'}}>
-              <div className="absolute inset-x-0 top-0 h-px rounded-t-2xl" style={{background:'linear-gradient(90deg,transparent,'+sportCfg.color+'40,transparent)'}}/>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">Sponsors</p>
-              <h2 className="text-base font-black text-white mb-4">Supported by our partners</h2>
-              {loadingSponsors ? (
-                <div className="h-36 rounded-xl border border-white/6 flex items-center justify-center">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
-                </div>
-              ) : sponsors.length === 0 ? (
-                <div className="h-36 rounded-xl border border-white/6 flex items-center justify-center">
-                  <p className="text-xs text-white/20">Sponsor space available</p>
-                </div>
-              ) : (
-                <>
-                  <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    <div className="flex h-40 w-full items-center justify-center p-4">
-                      {activeSponsor?.image_url
-                        ? <img src={activeSponsor.image_url} alt={activeSponsor.name||'Sponsor'} className="max-h-full max-w-full object-contain"/>
-                        : <p className="text-center text-lg font-black text-slate-800">{activeSponsor?.name||'Sponsor'}</p>}
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <p className="text-sm font-black text-white/80">{activeSponsor?.name||'Sponsor'}</p>
-                    <div className="flex gap-1.5">
-                      {sponsors.map((_:Row,i:number)=>(
-                        <button key={i} onClick={()=>setActiveSponsorIndex(i)}
-                          className="h-2 rounded-full transition-all"
-                          style={{width:i===activeSponsorIndex?28:8,background:i===activeSponsorIndex?sportCfg.color:'rgba(255,255,255,0.1)'}}/>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <Link href="/" className="portal-link" style={{fontSize:13,color:'rgba(255,255,255,0.5)',textDecoration:'none',padding:'6px 12px',display:'flex',alignItems:'center',gap:6}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{width:14,height:14}}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              Home
+            </Link>
+            <Link href={`/login?sport=${sport}`} className="portal-link" style={{fontSize:13,color:'rgba(255,255,255,0.5)',textDecoration:'none',padding:'6px 12px',display:'flex',alignItems:'center',gap:6}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{width:14,height:14}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Coach Login
+            </Link>
+            <Link href="/player" style={{background:`linear-gradient(135deg,${C}cc,${C})`,color:'white',fontSize:13,fontWeight:600,textDecoration:'none',padding:'7px 14px',borderRadius:8,display:'flex',alignItems:'center',gap:6,boxShadow:`0 4px 14px ${C}40`}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{width:14,height:14}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Player Login
+            </Link>
           </div>
         </div>
-      </section>
+      </nav>
 
-      {/* ── CONTENT ── */}
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+      <div style={{maxWidth:1120,margin:'0 auto',padding:'32px 24px 64px'}}>
 
-        {/* WEEK */}
-        <section id="thisweek" className="mb-16 scroll-mt-8">
-          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>This Week</span>
-          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Week at a Glance</h2>
-          <p className="mt-2 text-sm text-white/35">The current training and match schedule.</p>
-          <div className="mt-6">
-            {loadingWeek ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
-                <p className="text-sm text-white/25">Loading...</p>
-              </div>
-            ) : weekItems.length === 0 ? (
-              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
-                <p className="text-white/20 text-sm">No week plan published yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {weekItems.map((item)=>{
-                  const itemId = String(item.id);
-                  const isOpen = openWeekItemId===itemId;
-                  return (
-                    <button key={item.id} type="button" onClick={()=>setOpenWeekItemId(isOpen?null:itemId)}
-                      className="group relative w-full overflow-hidden rounded-2xl border text-left transition-all duration-200"
-                      style={{borderColor:isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)',background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)'}}>
-                      <div className="absolute inset-x-0 top-0 h-px" style={{background:isOpen?'linear-gradient(90deg,transparent,'+sportCfg.color+',transparent)':'none'}}/>
-                      <div className="flex items-start gap-4 p-5">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-black"
-                          style={{background:isOpen?sportCfg.color+'25':'rgba(255,255,255,0.06)',color:isOpen?sportCfg.color:'rgba(255,255,255,0.4)',border:'1px solid '+(isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.08)')}}>
-                          {String(item.sort_order||'').padStart(2,'0')||'—'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-black text-white">{item.title}</p>
-                          {item.subtitle&&<p className="mt-0.5 text-xs text-white/35">{item.subtitle}</p>}
-                          {isOpen&&item.detail&&<p className="mt-3 text-sm leading-relaxed text-white/60">{item.detail}</p>}
-                        </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-                          className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-transform"
-                          style={{color:'rgba(255,255,255,0.25)',transform:isOpen?'rotate(90deg)':'none'}}>
-                          <path d="M9 18l6-6-6-6"/>
-                        </svg>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+        {/* ── HERO ── */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 420px',gap:24,marginBottom:28,alignItems:'start'}}>
+          {/* Left */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16}}>
+              <span style={{width:8,height:8,borderRadius:'50%',background:C,display:'inline-block',boxShadow:`0 0 8px ${C}`}}/>
+              <span style={{fontSize:11,fontWeight:700,letterSpacing:'0.2em',color:C,textTransform:'uppercase'}}>Live Platform</span>
+            </div>
+            <h1 style={{fontSize:52,fontWeight:800,lineHeight:1.05,marginBottom:16,letterSpacing:'-0.02em'}}>
+              <span style={{color:'white'}}>Player &amp; Parent<br/></span>
+              <span style={{color:C}}>Portal.</span>
+            </h1>
+            <p style={{fontSize:14,color:'rgba(255,255,255,0.45)',lineHeight:1.7,marginBottom:28,maxWidth:420}}>
+              Fixtures, results, weekly programs and department updates for {sportCfg.label} players and parents.
+            </p>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+              {TABS.map(t=>(
+                <button key={t} className="tab-btn"
+                  onClick={()=>setActiveTab(t)}
+                  style={{
+                    border:'none',borderRadius:20,padding:'8px 18px',fontSize:13,fontWeight:600,cursor:'pointer',
+                    transition:'all 0.15s',letterSpacing:'0.01em',
+                    background:activeTab===t ? C : 'rgba(255,255,255,0.06)',
+                    color:activeTab===t ? 'white' : 'rgba(255,255,255,0.5)',
+                  }}>
+                  {TAB_LABELS[t]}
+                </button>
+              ))}
+            </div>
           </div>
-        </section>
-
-        {/* FIXTURES */}
-        <section id="fixtures" className="mb-16 scroll-mt-8">
-          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Schedule</span>
-          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Fixtures</h2>
-          <p className="mt-2 text-sm text-white/35">Upcoming matches and venues.</p>
-          <div className="mt-6">
-            {loadingFixtures ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
-                <p className="text-sm text-white/25">Loading...</p>
+          {/* Right: next fixture */}
+          {nextFixture ? (
+            <div style={{borderRadius:16,border:`1px solid ${C}30`,background:`rgba(255,255,255,0.03)`,overflow:'hidden'}}>
+              <div style={{padding:'14px 18px',borderBottom:`1px solid rgba(255,255,255,0.06)`}}>
+                <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.2em',color:C,textTransform:'uppercase'}}>Next Fixture</p>
               </div>
-            ) : fixtures.length === 0 ? (
-              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
-                <p className="text-white/20 text-sm">No fixtures published yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {Array.from(new Set(fixtures.map((f:Row)=>f.fixture_date))).sort().map((date)=>{
-                  const dayFixtures = fixtures.filter((f:Row)=>f.fixture_date===date);
-                  const isExpanded = expandedFixtureDate===date;
-                  const d = new Date(date as string);
-                  return (
-                    <div key={date as string} className="overflow-hidden rounded-2xl transition-all"
-                      style={{background:isExpanded?sportCfg.colorDim:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px '+(isExpanded?sportCfg.accentBorder:'rgba(255,255,255,0.06)')}}>
-                      <button onClick={()=>setExpandedFixtureDate(isExpanded?null:date as string)}
-                        className="flex w-full items-center gap-4 p-5 text-left">
-                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl px-4 py-3 text-center min-w-[52px]"
-                          style={{background:isExpanded?sportCfg.color+'25':'rgba(255,255,255,0.05)',border:'1px solid '+(isExpanded?sportCfg.accentBorder:'rgba(255,255,255,0.08)')}}>
-                          <p className="text-2xl font-black leading-none" style={{color:isExpanded?sportCfg.color:'white'}}>{d.getDate()}</p>
-                          <p className="mt-0.5 text-[9px] font-black uppercase tracking-wide" style={{color:isExpanded?sportCfg.color+'99':'rgba(255,255,255,0.35)'}}>{d.toLocaleDateString('en-ZA',{month:'short'})}</p>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] font-black uppercase tracking-wide mb-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{d.toLocaleDateString('en-ZA',{weekday:'long'})}</p>
-                          <p className="text-base font-black text-white">{dayFixtures.length} {dayFixtures.length===1?'Match':'Matches'}</p>
-                          <p className="mt-0.5 text-[11px]" style={{color:'rgba(255,255,255,0.3)'}}>{dayFixtures.map((f:Row)=>f.team).join(' · ')}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="rounded-full px-2.5 py-1 text-[10px] font-black" style={{background:sportCfg.color+'20',color:sportCfg.color}}>{isExpanded?'Hide':'View'}</span>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5 transition-transform" style={{color:'rgba(255,255,255,0.3)',transform:isExpanded?'rotate(90deg)':'none'}}><path d="M9 18l6-6-6-6"/></svg>
-                        </div>
-                      </button>
-                      {isExpanded&&(
-                        <div className="border-t px-5 pb-5 pt-4 space-y-3" style={{borderColor:sportCfg.accentBorder+'50'}}>
-                          {dayFixtures.map((fixture:Row)=>(
-                            <div key={fixture.id} className="flex items-center gap-4 rounded-xl p-4" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'20',color:sportCfg.color}}>{fixture.team}</span>
-                                  {fixture.fixture_time&&<span className="text-[10px]" style={{color:'rgba(255,255,255,0.4)'}}>{fixture.fixture_time}</span>}
-                                </div>
-                                <p className="text-base font-black text-white">vs {fixture.opponent}</p>
-                                {fixture.venue&&<p className="mt-0.5 text-[11px]" style={{color:'rgba(255,255,255,0.35)'}}>{fixture.venue}</p>}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* RESULTS */}
-        <section id="results" className="mb-16 scroll-mt-8">
-          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Latest</span>
-          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Results</h2>
-          <p className="mt-2 text-sm text-white/35">Recent match outcomes and scorers.</p>
-          <div className="mt-6">
-            {loadingResults ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
-                <p className="text-sm text-white/25">Loading...</p>
-              </div>
-            ) : results.length === 0 ? (
-              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
-                <p className="text-white/20 text-sm">No results published yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {Array.from(new Set(results.map((r:Row)=>r.result_date))).sort().reverse().map((date)=>{
-                  const dayResults = results.filter((r:Row)=>r.result_date===date);
-                  const isExpanded = expandedResultId===date;
-                  const wins=dayResults.filter((r:Row)=>{const p=(r.final_score||'').split(/[-–]/);return p.length===2&&parseInt(p[0])>parseInt(p[1]);}).length;
-                  const losses=dayResults.filter((r:Row)=>{const p=(r.final_score||'').split(/[-–]/);return p.length===2&&parseInt(p[0])<parseInt(p[1]);}).length;
-                  const draws=dayResults.filter((r:Row)=>{const p=(r.final_score||'').split(/[-–]/);return p.length===2&&parseInt(p[0])===parseInt(p[1]);}).length;
-                  return (
-                    <div key={date as string} className="overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
-                      <button onClick={()=>setExpandedResultId(isExpanded?null:date as string)}
-                        className="flex w-full items-center gap-4 p-5 text-left">
-                        <div className="flex shrink-0 flex-col items-center justify-center rounded-xl px-4 py-3 min-w-[52px]"
-                          style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)'}}>
-                          <p className="text-2xl font-black leading-none text-white">{new Date(date as string).getDate()}</p>
-                          <p className="mt-0.5 text-[9px] font-black uppercase tracking-wide text-white/35">{new Date(date as string).toLocaleDateString('en-ZA',{month:'short'})}</p>
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-[10px] font-black uppercase tracking-wide text-white/30 mb-0.5">{new Date(date as string).toLocaleDateString('en-ZA',{weekday:'long'})}</p>
-                          <p className="text-base font-black text-white">{dayResults.length} {dayResults.length===1?'Match':'Matches'}</p>
-                          <div className="flex gap-3 mt-1">
-                            {wins>0&&<span className="text-[11px] font-black text-emerald-400">{wins}W</span>}
-                            {draws>0&&<span className="text-[11px] font-black text-white/40">{draws}D</span>}
-                            {losses>0&&<span className="text-[11px] font-black text-red-400">{losses}L</span>}
-                          </div>
-                        </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-3.5 w-3.5 transition-transform" style={{color:'rgba(255,255,255,0.3)',transform:isExpanded?'rotate(90deg)':'none'}}><path d="M9 18l6-6-6-6"/></svg>
-                      </button>
-                      {isExpanded&&(
-                        <div className="border-t border-white/5 px-5 pb-5 pt-4 space-y-3">
-                          {dayResults.map((result:Row)=>{
-                            const score=result.final_score||'';
-                            const parts=score.split(/[-–]/);
-                            const our=parseInt(parts[0])||0;
-                            const their=parseInt(parts[1])||0;
-                            const won=parts.length===2&&our>their;
-                            const drew=parts.length===2&&our===their;
-                            const outcome=won?'WIN':drew?'DRAW':score?'LOSS':'—';
-                            const outcomeColor=won?'#10b981':drew?'rgba(255,255,255,0.4)':'#f87171';
-                            const outcomeBg=won?'rgba(16,185,129,0.1)':drew?'rgba(255,255,255,0.04)':'rgba(248,113,113,0.08)';
-                            const scorers=result.goal_scorers?.split(',').map((s:string)=>s.trim()).filter(Boolean)||[];
-                            return (
-                              <div key={result.id} className="rounded-2xl overflow-hidden"
-                                style={{background:outcomeBg,boxShadow:'0 0 0 1px '+(won?'rgba(16,185,129,0.15)':drew?'rgba(255,255,255,0.06)':'rgba(248,113,113,0.12)')}}>
-                                <div className="flex items-center gap-4 p-4">
-                                  <div className="flex shrink-0 flex-col items-center justify-center rounded-xl px-3 py-2.5 min-w-[52px]"
-                                    style={{background:won?'rgba(16,185,129,0.15)':drew?'rgba(255,255,255,0.05)':'rgba(248,113,113,0.12)'}}>
-                                    <p className="text-xs font-black" style={{color:outcomeColor}}>{outcome}</p>
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <span className="text-[10px] font-black" style={{color:sportCfg.color+'99'}}>{result.team}</span>
-                                    <p className="text-sm font-black text-white">vs {result.opponent}</p>
-                                  </div>
-                                  {score&&(
-                                    <div className="text-right shrink-0">
-                                      <p className="text-2xl font-black leading-none" style={{color:outcomeColor}}>{score}</p>
-                                    </div>
-                                  )}
-                                </div>
-                                {scorers.length>0&&(
-                                  <div className="px-4 pb-3 border-t border-white/5">
-                                    <p className="text-[10px] mt-2" style={{color:'rgba(255,255,255,0.35)'}}>
-                                      {scorers.join(' · ')}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* PROGRAMS */}
-        <section id="programs" className="mb-16 scroll-mt-8">
-          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Training</span>
-          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Programs</h2>
-          <p className="mt-2 text-sm text-white/35">Current gym, mobility and recovery work.</p>
-          <div className="mt-6">
-            {loadingPrograms ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
-                <p className="text-sm text-white/25">Loading...</p>
-              </div>
-            ) : programs.length === 0 ? (
-              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
-                <p className="text-white/20 text-sm">No programs published yet.</p>
-              </div>
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {programs.map((prog:Row)=>{
-                  const isOpen = openWeekItemId==='prog-'+prog.id;
-                  return (
-                    <button key={prog.id} type="button" onClick={()=>setOpenWeekItemId(isOpen?null:'prog-'+prog.id)}
-                      className="relative overflow-hidden rounded-2xl p-5 text-left transition-all w-full"
-                      style={{background:isOpen?sportCfg.colorDim:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px '+(isOpen?sportCfg.accentBorder:'rgba(255,255,255,0.07)')}}>
-                      <div className="absolute inset-x-0 top-0 h-px" style={{background:isOpen?'linear-gradient(90deg,transparent,'+sportCfg.color+',transparent)':'none'}}/>
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-base font-black text-white">{prog.title}</p>
-                          {prog.description&&<p className="mt-1 text-sm text-white/40">{prog.description}</p>}
-                          {isOpen&&prog.content&&<p className="mt-3 text-sm leading-relaxed text-white/60">{prog.content}</p>}
-                          {prog.tag&&<span className="mt-3 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-black" style={{background:sportCfg.color+'15',color:sportCfg.color}}>{prog.tag}</span>}
-                        </div>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}
-                          className="h-3.5 w-3.5 shrink-0 mt-0.5 transition-transform"
-                          style={{color:'rgba(255,255,255,0.25)',transform:isOpen?'rotate(90deg)':'none'}}>
-                          <path d="M9 18l6-6-6-6"/>
-                        </svg>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* REMINDERS */}
-        <section id="reminders" className="mb-16 scroll-mt-8">
-          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Notices</span>
-          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Reminders</h2>
-          <p className="mt-2 text-sm text-white/35">Important notices and department updates.</p>
-          <div className="mt-6">
-            {loadingReminders ? (
-              <div className="flex items-center gap-3 rounded-2xl border border-white/6 bg-white/2 p-5">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" style={{borderColor:sportCfg.color+' transparent transparent transparent'}}/>
-                <p className="text-sm text-white/25">Loading...</p>
-              </div>
-            ) : reminders.length === 0 ? (
-              <div className="rounded-2xl border border-white/6 bg-white/2 p-8 text-center">
-                <p className="text-white/20 text-sm">No reminders published yet.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {reminders.map((rem:Row)=>(
-                  <div key={rem.id} className="flex gap-4 rounded-2xl p-5" style={{background:'rgba(255,255,255,0.02)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{background:sportCfg.color+'15',color:sportCfg.color,fontWeight:900,fontSize:11}}>!</div>
-                    <div>
-                      <p className="text-sm font-black text-white">{rem.title}</p>
-                      {rem.body&&<p className="mt-1 text-sm text-white/40">{rem.body}</p>}
-                    </div>
+              <div style={{padding:'20px 18px'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:20,marginBottom:20}}>
+                  {/* Home team */}
+                  <div style={{textAlign:'center'}}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/st-benedicts-logo.png" alt="SBC" style={{width:52,height:52,objectFit:'contain',marginBottom:6}}/>
+                    <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.6)',letterSpacing:'0.05em',maxWidth:70,lineHeight:1.3}}>ST BENEDICT&apos;S COLLEGE</p>
                   </div>
-                ))}
+                  <span style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.4)'}}>VS</span>
+                  {/* Away team */}
+                  <div style={{textAlign:'center'}}>
+                    <div style={{width:52,height:52,borderRadius:'50%',background:'rgba(255,255,255,0.08)',border:'1px solid rgba(255,255,255,0.12)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:800,color:'rgba(255,255,255,0.6)',marginBottom:6,margin:'0 auto 6px'}}>
+                      {(nextFixture.opponent||'?').split(' ').slice(0,2).map((w:string)=>w[0]).join('').toUpperCase()}
+                    </div>
+                    <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.6)',letterSpacing:'0.05em',maxWidth:70,lineHeight:1.3}}>{(nextFixture.opponent||'TBC').toUpperCase()}</p>
+                  </div>
+                </div>
+                <div style={{borderTop:'1px solid rgba(255,255,255,0.06)',paddingTop:14,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div>
+                    <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.1em'}}>{new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{weekday:'long'})}</p>
+                    <p style={{fontSize:22,fontWeight:800,color:'white',lineHeight:1.1}}>{new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{day:'2-digit',month:'long'}).toUpperCase()}</p>
+                    <p style={{fontSize:14,fontWeight:600,color:C,marginTop:2}}>{nextFixture.fixture_time||'TBC'}</p>
+                    {nextFixture.venue&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginTop:2}}>📍 {nextFixture.venue}</p>}
+                  </div>
+                  <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.08em',padding:'4px 10px',borderRadius:20,background:nextFixture.venue?.toLowerCase().includes('home')||nextFixture.home_away==='home' ? `${C}20` : 'rgba(255,255,255,0.06)',color:nextFixture.venue?.toLowerCase().includes('home')||nextFixture.home_away==='home' ? C : 'rgba(255,255,255,0.4)'}}>
+                    {nextFixture.home_away?.toUpperCase()||'TBC'}
+                  </span>
+                </div>
               </div>
-            )}
-          </div>
-        </section>
+              <div style={{padding:'0 18px 18px'}}>
+                <button style={{width:'100%',background:`linear-gradient(135deg,${C}cc,${C})`,border:'none',borderRadius:10,padding:'12px',color:'white',fontSize:14,fontWeight:700,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:8,boxShadow:`0 6px 20px ${C}35`}}>
+                  View Fixture
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{borderRadius:16,border:`1px solid ${BORDER}`,background:CARD,padding:'32px',textAlign:'center'}}>
+              <p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No upcoming fixtures published.</p>
+            </div>
+          )}
+        </div>
 
-        {/* LEADERBOARDS */}
-        <section id="leaderboards" className="mb-8 scroll-mt-8">
-          <span className="inline-block rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-[0.25em]" style={{borderColor:sportCfg.accentBorder+'80',background:sportCfg.colorDim,color:sportCfg.color}}>Rankings</span>
-          <h2 className="mt-2 text-4xl font-black text-white tracking-tight">Leaderboards</h2>
-          <p className="mt-2 text-sm text-white/35">Top performers this season.</p>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {[
-              {title:'Gym & Attendance',sub:'Sessions attended this season',data:gymLeaderboard},
-              {title:'Performance',sub:'Most active in testing',data:performanceLeaderboard},
-            ].map((board)=>(
-              <div key={board.title} className="rounded-2xl p-5" style={{background:'rgba(255,255,255,0.025)',boxShadow:'0 0 0 1px rgba(255,255,255,0.07)'}}>
-                <div className="absolute inset-x-0 top-0 h-px" style={{background:'linear-gradient(90deg,transparent,'+sportCfg.color+'40,transparent)'}}/>
-                <p className="text-sm font-black text-white mb-0.5">{board.title}</p>
-                <p className="text-[11px] text-white/35 mb-4">{board.sub}</p>
-                {loadingLeaderboards ? (
-                  <p className="text-sm text-white/25">Loading...</p>
-                ) : board.data.length === 0 ? (
-                  <p className="text-sm text-white/20">No data yet.</p>
+        {/* ── WEEK AT A GLANCE ── */}
+        {(activeTab==='week'||activeTab==='fixtures') && (
+          <div style={{marginBottom:24}}>
+            <Section>
+              <SectionHeader title="Week at a Glance" sub="Your training and match schedule." link="#" linkLabel="View full schedule"/>
+              <div style={{padding:'20px 22px',overflowX:'auto'}}>
+                {loadingWeek ? (
+                  <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'20px 0'}}>Loading...</p>
+                ) : weekItems.length === 0 ? (
+                  <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'20px 0'}}>No week plan published yet.</p>
                 ) : (
-                  <div className="space-y-2">
-                    {board.data.map((a:Row,i:number)=>(
-                      <div key={a.id} className="flex items-center gap-3">
-                        <span className="w-6 text-[10px] font-black text-center" style={{color:i===0?'#fbbf24':i===1?'#94a3b8':i===2?'#b45309':'rgba(255,255,255,0.25)'}}>{MEDALS[i]}</span>
-                        <p className="flex-1 text-sm font-black text-white">{a.name}</p>
-                        <span className="text-[11px] font-black" style={{color:sportCfg.color}}>{a.score}pts</span>
-                      </div>
-                    ))}
+                  <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(weekItems.length,5)}, 1fr)`,gap:0,minWidth:600,position:'relative'}}>
+                    {/* Timeline line */}
+                    <div style={{position:'absolute',top:36,left:'10%',right:'10%',height:1,background:`linear-gradient(90deg,transparent,rgba(255,255,255,0.1),rgba(255,255,255,0.1),transparent)`,zIndex:0}}/>
+                    {weekItems.slice(0,5).map((item,i)=>{
+                      const isMatch = item.title?.toLowerCase().includes('match')||item.title?.toLowerCase().includes('fixture')||item.title?.toLowerCase().includes('game');
+                      return (
+                        <div key={item.id} style={{position:'relative',zIndex:1,textAlign:'center',padding:'0 8px'}}>
+                          {/* Day label */}
+                          <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.12em',color:isMatch?C:'rgba(255,255,255,0.35)',textTransform:'uppercase',marginBottom:2}}>
+                            {item.day||['MON','TUE','WED','THU','FRI','SAT','SUN'][i%7]}
+                          </p>
+                          <p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:10}}>
+                            {item.date||''}
+                          </p>
+                          {/* Timeline dot */}
+                          <div style={{width:10,height:10,borderRadius:'50%',background:isMatch?C:'rgba(255,255,255,0.2)',border:`2px solid ${isMatch?C:'rgba(255,255,255,0.1)'}`,margin:'0 auto 12px',boxShadow:isMatch?`0 0 8px ${C}`:'none'}}/>
+                          {/* Content */}
+                          <p style={{fontSize:12,fontWeight:700,color:isMatch?C:'white',marginBottom:4,lineHeight:1.3}}>{item.title}</p>
+                          {item.subtitle&&<p style={{fontSize:10,color:'rgba(255,255,255,0.35)',lineHeight:1.5}}>{item.subtitle}</p>}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            ))}
+            </Section>
           </div>
-        </section>
+        )}
+
+        {/* ── FIXTURES + RESULTS ── */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24}}>
+
+          {/* Fixtures */}
+          <Section>
+            <SectionHeader title="Upcoming Fixtures" link="#fixtures" linkLabel="View all"/>
+            <div>
+              {loadingFixtures ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+              ) : upcomingFixtures.length === 0 ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No upcoming fixtures.</p></div>
+              ) : upcomingFixtures.map((f,i)=>(
+                <div key={f.id} className="fixture-row" style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<upcomingFixtures.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s'}}>
+                  <DateBlock dateStr={f.fixture_date}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{fontSize:10,color:'rgba(255,255,255,0.3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>
+                      {new Date(f.fixture_date).toLocaleDateString('en-ZA',{weekday:'long'})} · {f.fixture_time||'TBC'}
+                    </p>
+                    <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>vs {f.opponent}</p>
+                    <p style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>{f.team} {f.home_away&&`· ${f.home_away}`}</p>
+                  </div>
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/st-benedicts-logo.png" alt="SBC" style={{width:28,height:28,objectFit:'contain'}}/>
+                    <span style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.3)'}}>VS</span>
+                    <TeamInitial name={f.opponent||'?'}/>
+                  </div>
+                  <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',padding:'4px 9px',borderRadius:20,background:`${C}18`,color:C,whiteSpace:'nowrap'}}>UPCOMING</span>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
+              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                View all fixtures
+              </a>
+            </div>
+          </Section>
+
+          {/* Results */}
+          <Section>
+            <SectionHeader title="Latest Results" link="#results" linkLabel="View all"/>
+            <div>
+              {loadingResults ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+              ) : latestResults.length === 0 ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No results yet.</p></div>
+              ) : latestResults.map((r,i)=>{
+                const outcome = outcomeOf(r.final_score||'');
+                const oc = outcomeColor(outcome);
+                return (
+                  <div key={r.id} className="fixture-row" style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<latestResults.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s'}}>
+                    <DateBlock dateStr={r.result_date}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>vs {r.opponent}</p>
+                      <p style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>{r.team}</p>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <p style={{fontSize:22,fontWeight:800,color:oc,lineHeight:1,marginBottom:3}}>{r.final_score||'—'}</p>
+                      {outcome&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',padding:'3px 8px',borderRadius:20,background:`${oc}18`,color:oc}}>{outcome}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
+              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                View all results
+              </a>
+            </div>
+          </Section>
+        </div>
+
+        {/* ── PROGRAMS + REMINDERS ── */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24}}>
+
+          {/* Programs */}
+          <Section>
+            <SectionHeader title="Programs" sub="Current gym, mobility and recovery work." link="#" linkLabel="View all"/>
+            <div>
+              {loadingPrograms ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+              ) : programs.length === 0 ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No programs yet.</p></div>
+              ) : programs.slice(0,3).map((p,i)=>(
+                <div key={p.id} className="prog-row" style={{display:'flex',alignItems:'center',gap:12,padding:'13px 22px',borderBottom:i<Math.min(programs.length,3)-1?`1px solid ${BORDER}`:'none',cursor:'pointer',transition:'background 0.15s'}}>
+                  <div style={{width:40,height:40,borderRadius:10,background:`${C}18`,border:`1px solid ${C}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={1.8} style={{width:18,height:18}}><path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/></svg>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>{p.title}</p>
+                    {p.description&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.description}</p>}
+                  </div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={2} style={{width:14,height:14,flexShrink:0}}><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
+              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+                View all programs
+              </a>
+            </div>
+          </Section>
+
+          {/* Reminders */}
+          <Section>
+            <SectionHeader title="Reminders" sub="Important notices and department updates." link="#" linkLabel="View all"/>
+            <div>
+              {loadingReminders ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+              ) : reminders.length === 0 ? (
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No reminders yet.</p></div>
+              ) : reminders.slice(0,3).map((r,i)=>(
+                <div key={r.id} className="prog-row" style={{display:'flex',alignItems:'center',gap:12,padding:'13px 22px',borderBottom:i<Math.min(reminders.length,3)-1?`1px solid ${BORDER}`:'none',cursor:'pointer',transition:'background 0.15s'}}>
+                  <div style={{width:40,height:40,borderRadius:10,background:'rgba(251,191,36,0.12)',border:'1px solid rgba(251,191,36,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth={1.8} style={{width:18,height:18}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>{r.title}</p>
+                    {(r.body||r.date)&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.body||r.date}</p>}
+                  </div>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={2} style={{width:14,height:14,flexShrink:0}}><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              ))}
+            </div>
+            <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
+              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+                View all reminders
+              </a>
+            </div>
+          </Section>
+        </div>
+
+        {/* ── PARTNERS ── */}
+        {sponsors.length > 0 && (
+          <Section>
+            <SectionHeader title="Our Partners" sub="Thank you to our partners for their continued support."/>
+            <div style={{padding:'24px 22px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:40}}>
+              {sponsors.map((s:Row)=>(
+                <div key={s.id} style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:100,maxWidth:160}}>
+                  {s.image_url
+                    ? /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={s.image_url} alt={s.name||'Sponsor'} style={{maxHeight:40,maxWidth:140,objectFit:'contain',filter:'brightness(0.8) grayscale(0.3)'}}/>
+                    : <p style={{fontSize:16,fontWeight:800,color:'rgba(255,255,255,0.5)',letterSpacing:'0.08em'}}>{s.name}</p>
+                  }
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
 
       </div>
 
-      {/* FOOTER */}
-      <footer className="border-t border-white/5 py-8 text-center">
-        <div className="mx-auto max-w-6xl px-4">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em]" style={{color:sportCfg.color+'60'}}>St Benedict&apos;s College · {sportCfg.label} Department</p>
-          <p className="mt-2 text-[10px] text-white/15">KINETIQ Sport is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</p>
+      {/* ── FOOTER ── */}
+      <footer style={{borderTop:`1px solid ${BORDER}`,padding:'28px 24px',textAlign:'center'}}>
+        <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.45em',color:`${C}55`,textTransform:'uppercase',marginBottom:8}}>Veritas In Caritate</p>
+        <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'4px 10px',fontSize:10,color:'rgba(255,255,255,0.2)'}}>
+          <span>© {new Date().getFullYear()} St Benedict&apos;s College {sportCfg.label} Department</span>
+          <span>·</span>
+          <Link href="/privacy" style={{color:'inherit',textDecoration:'none'}}>Privacy Policy</Link>
+          <span>·</span>
+          <Link href="/terms" style={{color:'inherit',textDecoration:'none'}}>Terms &amp; Conditions</Link>
         </div>
       </footer>
 
@@ -588,7 +572,7 @@ function PortalInner() {
 
 export default function PortalPage() {
   return (
-    <Suspense fallback={<div style={{minHeight:'100vh',background:'#030810'}}/>}>
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#0a0f1e'}}/>}>
       <PortalInner />
     </Suspense>
   );
