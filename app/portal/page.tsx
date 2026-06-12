@@ -398,111 +398,90 @@ function PortalInner() {
                 <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'24px 0'}}>Loading...</p>
               ) : (
                 <>
-                  {/* ── Day selector ── */}
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:5,padding:'14px 0 14px',position:'relative'}}>
+                  {/* ── 7-day selector ── */}
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:5,padding:'14px 0 12px'}}>
                     {weekDates.map((d,i) => {
-                      const isToday   = i === todayDow;
+                      const isToday    = i === todayDow;
                       const isSelected = i === selectedDay;
-                      const hasItems  = !!(itemsByDay[i]?.length);
+                      const hasItems   = !!(itemsByDay[i]?.length);
                       return (
-                        <button key={i} onClick={()=>setSelectedDay(i)}
-                          style={{
-                            display:'flex',flexDirection:'column',alignItems:'center',gap:5,
-                            padding:'11px 4px 9px',borderRadius:14,border:'none',cursor:'pointer',
-                            transition:'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
-                            position:'relative',overflow:'hidden',
-                            background: isSelected
-                              ? `linear-gradient(160deg,${C}ee,${C}99)`
-                              : isToday
-                              ? `${C}14`
-                              : 'rgba(255,255,255,0.04)',
-                            boxShadow: isSelected
-                              ? `0 4px 20px ${C}55, inset 0 1px 0 rgba(255,255,255,0.3)`
-                              : isToday
-                              ? `0 0 0 1px ${C}40`
-                              : '0 0 0 1px rgba(255,255,255,0.06)',
-                            transform: isSelected ? 'translateY(-2px)' : 'none',
-                          }}>
-                          {/* Specular for selected */}
-                          {isSelected && <div style={{position:'absolute',top:0,left:0,right:0,height:'50%',background:'linear-gradient(to bottom,rgba(255,255,255,0.15),transparent)',pointerEvents:'none'}}/>}
-                          {/* TODAY label */}
-                          {isToday && !isSelected && (
-                            <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',fontSize:7,fontWeight:800,letterSpacing:'0.1em',color:C,background:`${C}20`,padding:'1px 5px',borderRadius:'0 0 4px 4px'}}>TODAY</div>
-                          )}
-                          <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',color:isSelected?'rgba(255,255,255,0.85)':isToday?C:'rgba(255,255,255,0.38)',textTransform:'uppercase',marginTop:isToday&&!isSelected?6:0}}>
-                            {DAY_NAMES[i]}
-                          </span>
-                          <span style={{fontSize:20,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.75)'}}>
-                            {d.getDate()}
-                          </span>
-                          {/* Activity dot */}
-                          <div style={{
-                            width:hasItems?20:6,height:5,borderRadius:3,
-                            transition:'width 0.25s ease',
-                            background:hasItems
-                              ? (isSelected?'rgba(255,255,255,0.7)':C)
-                              : 'rgba(255,255,255,0.1)',
-                          }}/>
+                        <button key={i} onClick={()=>setSelectedDay(i)} style={{
+                          display:'flex',flexDirection:'column',alignItems:'center',gap:4,
+                          padding:'10px 4px 8px',borderRadius:14,border:'none',cursor:'pointer',
+                          transition:'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                          background: isSelected ? `linear-gradient(160deg,${C}dd,${C}88)` : isToday ? `${C}14` : 'rgba(255,255,255,0.04)',
+                          boxShadow: isSelected ? `0 4px 18px ${C}50, inset 0 1px 0 rgba(255,255,255,0.25)` : isToday ? `0 0 0 1px ${C}45` : '0 0 0 1px rgba(255,255,255,0.06)',
+                          transform: isSelected ? 'translateY(-2px)' : 'none',
+                          position:'relative', overflow:'hidden',
+                        }}>
+                          {isSelected && <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(255,255,255,0.12),transparent)',pointerEvents:'none'}}/>}
+                          {isToday && !isSelected && <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',fontSize:7,fontWeight:800,color:C,background:`${C}22`,padding:'1px 5px',borderRadius:'0 0 5px 5px',letterSpacing:'0.05em'}}>TODAY</div>}
+                          <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:isToday&&!isSelected?6:0,color:isSelected?'rgba(255,255,255,0.8)':isToday?C:'rgba(255,255,255,0.35)'}}>{DAY_NAMES[i]}</span>
+                          <span style={{fontSize:20,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.7)'}}>{d.getDate()}</span>
+                          <div style={{width:hasItems?18:5,height:4,borderRadius:2,background:hasItems?(isSelected?'rgba(255,255,255,0.65)':C):'rgba(255,255,255,0.1)',transition:'width 0.2s ease'}}/>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* ── Content panel ── */}
-                  <div style={{
-                    borderRadius:14,
-                    border:`1px solid ${C}22`,
-                    background:`linear-gradient(135deg,${C}0a,rgba(255,255,255,0.02))`,
-                    padding:'16px',
-                    minHeight:80,
-                    position:'relative',
-                    overflow:'hidden',
-                  }}>
-                    {/* Accent left bar */}
-                    <div style={{position:'absolute',top:12,bottom:12,left:0,width:3,background:`linear-gradient(to bottom,${C},${C}44)`,borderRadius:'0 3px 3px 0'}}/>
-                    {/* Day label in content */}
-                    <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.15em',color:`${C}90`,textTransform:'uppercase',marginBottom:10,paddingLeft:12}}>
-                      {DAY_NAMES[selectedDay]} · {weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}
-                    </p>
+                  {/* ── Selected day: Game Plan style ── */}
+                  <div style={{borderRadius:14,border:`1px solid ${C}28`,background:`linear-gradient(135deg,${C}08,rgba(255,255,255,0.02))`,overflow:'hidden'}}>
 
-                    {!itemsByDay[selectedDay]?.length ? (
-                      <div style={{display:'flex',alignItems:'center',gap:10,paddingLeft:12,opacity:0.4}}>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={1.5} style={{width:16,height:16,flexShrink:0}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                        <p style={{fontSize:13,color:'white'}}>Rest day — no sessions scheduled.</p>
+                    {/* Day header bar */}
+                    <div style={{background:`linear-gradient(90deg,${C}30,${C}12)`,borderBottom:`1px solid ${C}25`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                      <div>
+                        <p style={{fontSize:13,fontWeight:800,color:'white',letterSpacing:'0.06em',textTransform:'uppercase'}}>{DAY_NAMES[selectedDay]}</p>
+                        <p style={{fontSize:10,color:`${C}cc`,marginTop:1}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}</p>
                       </div>
-                    ) : (
-                      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:10,paddingLeft:12}}>
-                        {itemsByDay[selectedDay].map((item)=>{
-                          const isMatch = (item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game');
-                          const isGym   = (item.title||'').toLowerCase().includes('gym')||(item.title||'').toLowerCase().includes('conditioning')||(item.subtitle||'').toLowerCase().includes('gym');
-                          const isRecov = (item.title||'').toLowerCase().includes('recov')||(item.title||'').toLowerCase().includes('mobility')||(item.title||'').toLowerCase().includes('rest');
-                          const iconCol = isMatch ? C : isGym ? '#f97316' : isRecov ? '#a78bfa' : 'rgba(255,255,255,0.5)';
-                          return (
-                            <div key={item.id} style={{
-                              display:'flex',alignItems:'flex-start',gap:10,
-                              padding:'11px 12px',borderRadius:10,
-                              background:isMatch?`${C}12`:'rgba(255,255,255,0.04)',
-                              border:`1px solid ${isMatch?C+'25':'rgba(255,255,255,0.07)'}`,
-                            }}>
-                              <div style={{width:32,height:32,borderRadius:8,background:`${iconCol}18`,border:`1px solid ${iconCol}30`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                                {isMatch
-                                  ? <svg viewBox="0 0 24 24" fill="none" stroke={iconCol} strokeWidth={2} style={{width:14,height:14}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                  : isGym
-                                  ? <svg viewBox="0 0 24 24" fill="none" stroke={iconCol} strokeWidth={2} style={{width:14,height:14}}><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-                                  : isRecov
-                                  ? <svg viewBox="0 0 24 24" fill="none" stroke={iconCol} strokeWidth={2} style={{width:14,height:14}}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                                  : <svg viewBox="0 0 24 24" fill="none" stroke={iconCol} strokeWidth={2} style={{width:14,height:14}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                }
+                      {itemsByDay[selectedDay]?.length > 0 && (
+                        <span style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`}}>
+                          {itemsByDay[selectedDay].length} {itemsByDay[selectedDay].length===1?'session':'sessions'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Content */}
+                    <div style={{padding:'14px 16px'}}>
+                      {!itemsByDay[selectedDay]?.length ? (
+                        <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'16px 0',fontStyle:'italic'}}>Rest day — no sessions scheduled.</p>
+                      ) : (
+                        <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                          {itemsByDay[selectedDay].map((item, idx) => {
+                            const bullets = (item.detail||'').split(/\n/).map((s:string)=>s.trim()).filter(Boolean);
+                            const isMatch = (item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game');
+                            return (
+                              <div key={item.id||idx} style={{
+                                borderRadius:10,
+                                border:`1px solid ${isMatch?C+'35':'rgba(255,255,255,0.07)'}`,
+                                background:isMatch?`${C}0d`:'rgba(255,255,255,0.03)',
+                                overflow:'hidden',
+                              }}>
+                                {/* Session header */}
+                                <div style={{padding:'9px 12px',borderBottom:`1px solid ${isMatch?C+'25':'rgba(255,255,255,0.06)'}`,background:isMatch?`${C}12`:'rgba(255,255,255,0.03)'}}>
+                                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
+                                    <p style={{fontSize:13,fontWeight:800,color:isMatch?C:'white'}}>{item.title}</p>
+                                    {item.subtitle && (
+                                      <span style={{fontSize:12,fontWeight:700,color:C,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'}}>{item.subtitle}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                {/* Team/activity bullets */}
+                                {bullets.length > 0 && (
+                                  <div style={{padding:'8px 12px',display:'flex',flexDirection:'column',gap:4}}>
+                                    {bullets.map((b:string,bi:number)=>(
+                                      <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                                        <div style={{width:5,height:5,borderRadius:'50%',background:C,flexShrink:0,marginTop:5}}/>
+                                        <p style={{fontSize:12,color:'rgba(255,255,255,0.7)',lineHeight:1.5}}>{b}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
-                              <div style={{flex:1,minWidth:0}}>
-                                <p style={{fontSize:12,fontWeight:700,color:isMatch?C:'white',marginBottom:2,lineHeight:1.3}}>{item.title}</p>
-                                {item.subtitle&&<p style={{fontSize:10,color:'rgba(255,255,255,0.45)',lineHeight:1.5,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.subtitle}</p>}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
