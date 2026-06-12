@@ -165,8 +165,8 @@ function PortalInner() {
   // ── derived ──────────────────────────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
   const nextFixture = fixtures.find(f => f.fixture_date >= today) || fixtures[0] || null;
-  const upcomingFixtures = fixtures.filter(f => f.fixture_date >= today).slice(0, 3);
-  const latestResults = results.slice(0, 3);
+  const upcomingFixtures = expandedFixtureDate==='all' ? fixtures.filter(f => f.fixture_date >= today) : fixtures.filter(f => f.fixture_date >= today).slice(0, 3);
+  const latestResults = expandedResultId==='all' ? results : results.slice(0, 3);
   const [activeTab, setActiveTab] = React.useState<string>('week');
 
   function outcomeOf(score: string) {
@@ -190,10 +190,20 @@ function PortalInner() {
   const CARD = 'rgba(255,255,255,0.03)';
   const BORDER = 'rgba(255,255,255,0.07)';
 
-  function Section({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  function Section({ children, style, id }: { children: React.ReactNode; style?: React.CSSProperties; id?: string }) {
     return (
-      <div style={{borderRadius:16,background:CARD,border:`1px solid ${BORDER}`,overflow:'hidden',...style}}>
-        {children}
+      <div id={id} style={{
+        position:'relative', borderRadius:18, overflow:'hidden',
+        background:'rgba(255,255,255,0.035)',
+        backdropFilter:'blur(20px) saturate(180%)',
+        WebkitBackdropFilter:'blur(20px) saturate(180%)',
+        border:'1px solid rgba(255,255,255,0.08)',
+        boxShadow:'0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+        ...style,
+      }}>
+        {/* Glass specular */}
+        <div style={{position:'absolute',top:0,left:0,right:0,height:1,background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.2) 30%,rgba(255,255,255,0.35) 50%,rgba(255,255,255,0.2) 70%,transparent)',pointerEvents:'none',zIndex:2}}/>
+        <div style={{position:'relative',zIndex:1}}>{children}</div>
       </div>
     );
   }
@@ -296,16 +306,17 @@ function PortalInner() {
             </p>
             <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
               {TABS.map(t=>(
-                <button key={t} className="tab-btn"
-                  onClick={()=>setActiveTab(t)}
+                <a key={t} href={`#section-${t}`}
+                  className="tab-btn"
                   style={{
-                    border:'none',borderRadius:20,padding:'8px 18px',fontSize:13,fontWeight:600,cursor:'pointer',
-                    transition:'all 0.15s',letterSpacing:'0.01em',
-                    background:activeTab===t ? C : 'rgba(255,255,255,0.06)',
-                    color:activeTab===t ? 'white' : 'rgba(255,255,255,0.5)',
+                    border:'1px solid rgba(255,255,255,0.08)',
+                    borderRadius:20,padding:'8px 18px',fontSize:13,fontWeight:600,cursor:'pointer',
+                    transition:'all 0.15s',letterSpacing:'0.01em',textDecoration:'none',display:'inline-block',
+                    background: t==='week' ? C : 'rgba(255,255,255,0.04)',
+                    color: t==='week' ? 'white' : 'rgba(255,255,255,0.55)',
                   }}>
                   {TAB_LABELS[t]}
-                </button>
+                </a>
               ))}
             </div>
           </div>
@@ -359,47 +370,42 @@ function PortalInner() {
         </div>
 
         {/* ── WEEK AT A GLANCE ── */}
-        {(activeTab==='week'||activeTab==='fixtures') && (
-          <div style={{marginBottom:24}}>
-            <Section>
-              <SectionHeader title="Week at a Glance" sub="Your training and match schedule." link="#" linkLabel="View full schedule"/>
-              <div style={{padding:'20px 22px',overflowX:'auto'}}>
-                {loadingWeek ? (
-                  <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'20px 0'}}>Loading...</p>
-                ) : weekItems.length === 0 ? (
-                  <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'20px 0'}}>No week plan published yet.</p>
-                ) : (
-                  <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(weekItems.length,5)}, 1fr)`,gap:0,minWidth:600,position:'relative'}}>
-                    {/* Timeline line */}
-                    <div style={{position:'absolute',top:36,left:'10%',right:'10%',height:1,background:`linear-gradient(90deg,transparent,rgba(255,255,255,0.1),rgba(255,255,255,0.1),transparent)`,zIndex:0}}/>
-                    {weekItems.slice(0,5).map((item,i)=>{
-                      const isMatch = item.title?.toLowerCase().includes('match')||item.title?.toLowerCase().includes('fixture')||item.title?.toLowerCase().includes('game');
-                      return (
-                        <div key={item.id} style={{position:'relative',zIndex:1,textAlign:'center',padding:'0 8px'}}>
-                          {/* Day label */}
-                          <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.12em',color:isMatch?C:'rgba(255,255,255,0.35)',textTransform:'uppercase',marginBottom:2}}>
-                            {item.day||['MON','TUE','WED','THU','FRI','SAT','SUN'][i%7]}
-                          </p>
-                          <p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:10}}>
-                            {item.date||''}
-                          </p>
-                          {/* Timeline dot */}
-                          <div style={{width:10,height:10,borderRadius:'50%',background:isMatch?C:'rgba(255,255,255,0.2)',border:`2px solid ${isMatch?C:'rgba(255,255,255,0.1)'}`,margin:'0 auto 12px',boxShadow:isMatch?`0 0 8px ${C}`:'none'}}/>
-                          {/* Content */}
-                          <p style={{fontSize:12,fontWeight:700,color:isMatch?C:'white',marginBottom:4,lineHeight:1.3}}>{item.title}</p>
-                          {item.subtitle&&<p style={{fontSize:10,color:'rgba(255,255,255,0.35)',lineHeight:1.5}}>{item.subtitle}</p>}
+        <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
+          <Section>
+            <SectionHeader title="Week at a Glance" sub="Your training and match schedule."/>
+            <div style={{padding:'16px 20px'}}>
+              {loadingWeek ? (
+                <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'16px 0'}}>Loading...</p>
+              ) : weekItems.length === 0 ? (
+                <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'16px 0'}}>No week plan published yet.</p>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                  {weekItems.map((item)=>{
+                    const isMatch = (item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game');
+                    return (
+                      <div key={item.id} style={{display:'flex',alignItems:'center',gap:14,padding:'12px 14px',borderRadius:12,background:isMatch?`${C}10`:'rgba(255,255,255,0.03)',border:`1px solid ${isMatch?C+'30':'rgba(255,255,255,0.06)'}`}}>
+                        <div style={{width:36,height:36,borderRadius:10,background:isMatch?`${C}20`:'rgba(255,255,255,0.06)',border:`1px solid ${isMatch?C+'30':'rgba(255,255,255,0.08)'}`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                          {isMatch
+                            ? <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={2} style={{width:16,height:16}}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                            : <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={2} style={{width:16,height:16}}><path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/></svg>
+                          }
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </Section>
-          </div>
-        )}
+                        <div style={{flex:1,minWidth:0}}>
+                          <p style={{fontSize:13,fontWeight:700,color:isMatch?C:'white',marginBottom:2}}>{item.title}</p>
+                          {item.subtitle&&<p style={{fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.5}}>{item.subtitle}</p>}
+                        </div>
+                        {item.detail&&<p style={{fontSize:11,color:'rgba(255,255,255,0.3)',flexShrink:0}}>{item.detail}</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </Section>
+        </div>
 
         {/* ── FIXTURES + RESULTS ── */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24}}>
+        <div id="section-fixtures" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
 
           {/* Fixtures */}
           <Section>
@@ -430,10 +436,10 @@ function PortalInner() {
               ))}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+              <button onClick={()=>setExpandedFixtureDate('all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                View all fixtures
-              </a>
+                {expandedFixtureDate==='all' ? 'Show less' : 'View all fixtures'}
+              </button>
             </div>
           </Section>
 
@@ -464,16 +470,16 @@ function PortalInner() {
               })}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+              <button onClick={()=>setExpandedResultId(expandedResultId==='all'?null:'all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                View all results
-              </a>
+                {expandedResultId==='all' ? 'Show less' : 'View all results'}
+              </button>
             </div>
           </Section>
         </div>
 
         {/* ── PROGRAMS + REMINDERS ── */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24}}>
+        <div id="section-programs" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
 
           {/* Programs */}
           <Section>
@@ -483,7 +489,8 @@ function PortalInner() {
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
               ) : programs.length === 0 ? (
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No programs yet.</p></div>
-              ) : programs.slice(0,3).map((p,i)=>(
+              ) : (openWeekItemId==='programs-all' ? programs : programs.slice(0,3)).map((p,i)=>(
+                
                 <div key={p.id} className="prog-row" style={{display:'flex',alignItems:'center',gap:12,padding:'13px 22px',borderBottom:i<Math.min(programs.length,3)-1?`1px solid ${BORDER}`:'none',cursor:'pointer',transition:'background 0.15s'}}>
                   <div style={{width:40,height:40,borderRadius:10,background:`${C}18`,border:`1px solid ${C}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                     <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={1.8} style={{width:18,height:18}}><path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/></svg>
@@ -497,22 +504,23 @@ function PortalInner() {
               ))}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+              <button onClick={()=>setOpenWeekItemId(openWeekItemId==='programs-all'?null:'programs-all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
-                View all programs
-              </a>
+                {openWeekItemId==='programs-all' ? 'Show less' : 'View all programs'}
+              </button>
             </div>
           </Section>
 
           {/* Reminders */}
-          <Section>
+          <Section id="section-reminders">
             <SectionHeader title="Reminders" sub="Important notices and department updates." link="#" linkLabel="View all"/>
             <div>
               {loadingReminders ? (
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
               ) : reminders.length === 0 ? (
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No reminders yet.</p></div>
-              ) : reminders.slice(0,3).map((r,i)=>(
+              ) : (openWeekItemId==='reminders-all' ? reminders : reminders.slice(0,3)).map((r,i)=>(
+                
                 <div key={r.id} className="prog-row" style={{display:'flex',alignItems:'center',gap:12,padding:'13px 22px',borderBottom:i<Math.min(reminders.length,3)-1?`1px solid ${BORDER}`:'none',cursor:'pointer',transition:'background 0.15s'}}>
                   <div style={{width:40,height:40,borderRadius:10,background:'rgba(251,191,36,0.12)',border:'1px solid rgba(251,191,36,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                     <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth={1.8} style={{width:18,height:18}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -526,10 +534,10 @@ function PortalInner() {
               ))}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <a href="#" style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5}}>
+              <button onClick={()=>setOpenWeekItemId(openWeekItemId==='reminders-all'?null:'reminders-all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
-                View all reminders
-              </a>
+                {openWeekItemId==='reminders-all' ? 'Show less' : 'View all reminders'}
+              </button>
             </div>
           </Section>
         </div>
@@ -538,13 +546,13 @@ function PortalInner() {
         {sponsors.length > 0 && (
           <Section>
             <SectionHeader title="Our Partners" sub="Thank you to our partners for their continued support."/>
-            <div style={{padding:'24px 22px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:40}}>
+            <div style={{padding:'28px 24px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:48}}>
               {sponsors.map((s:Row)=>(
-                <div key={s.id} style={{display:'flex',alignItems:'center',justifyContent:'center',minWidth:100,maxWidth:160}}>
+                <div key={s.id} style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'0 16px'}}>
                   {s.image_url
                     ? /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={s.image_url} alt={s.name||'Sponsor'} style={{maxHeight:40,maxWidth:140,objectFit:'contain',filter:'brightness(0.8) grayscale(0.3)'}}/>
-                    : <p style={{fontSize:16,fontWeight:800,color:'rgba(255,255,255,0.5)',letterSpacing:'0.08em'}}>{s.name}</p>
+                      <img src={s.image_url} alt={s.name||'Sponsor'} style={{maxHeight:64,maxWidth:180,objectFit:'contain',opacity:0.85}}/>
+                    : <p style={{fontSize:20,fontWeight:800,color:'rgba(255,255,255,0.6)',letterSpacing:'0.12em'}}>{s.name}</p>
                   }
                 </div>
               ))}
