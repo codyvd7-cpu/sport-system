@@ -392,86 +392,124 @@ function PortalInner() {
         {/* ── WEEK AT A GLANCE ── */}
         <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
-            <SectionHeader title="Week at a Glance" sub="Your training and match schedule."/>
-            <div style={{padding:'0 20px 20px'}}>
+            <div style={{padding:'20px'}}>
               {loadingWeek ? (
                 <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'24px 0'}}>Loading...</p>
               ) : (
                 <>
-                  {/* ── 7-day selector ── */}
-                  <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:5,padding:'14px 0 12px'}}>
-                    {weekDates.map((d,i) => {
+                  {/* ── Week strip ── */}
+                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:16,justifyContent:'center'}}>
+                    {weekDates.map((d,i)=>{
                       const isToday    = i === todayDow;
                       const isSelected = i === selectedDay;
                       const hasItems   = !!(itemsByDay[i]?.length);
                       return (
                         <button key={i} onClick={()=>setSelectedDay(i)} style={{
-                          display:'flex',flexDirection:'column',alignItems:'center',gap:4,
-                          padding:'10px 4px 8px',borderRadius:14,border:'none',cursor:'pointer',
-                          transition:'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
-                          background: isSelected ? `linear-gradient(160deg,${C}dd,${C}88)` : isToday ? `${C}14` : 'rgba(255,255,255,0.04)',
-                          boxShadow: isSelected ? `0 4px 18px ${C}50, inset 0 1px 0 rgba(255,255,255,0.25)` : isToday ? `0 0 0 1px ${C}45` : '0 0 0 1px rgba(255,255,255,0.06)',
-                          transform: isSelected ? 'translateY(-2px)' : 'none',
-                          position:'relative', overflow:'hidden',
+                          display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+                          padding:'8px 10px',borderRadius:12,border:'none',cursor:'pointer',
+                          background: isSelected ? C : 'transparent',
+                          transition:'all 0.2s ease',
+                          boxShadow: isSelected ? `0 4px 14px ${C}50` : 'none',
+                          minWidth:38,
                         }}>
-                          {isSelected && <div style={{position:'absolute',inset:0,background:'linear-gradient(to bottom,rgba(255,255,255,0.12),transparent)',pointerEvents:'none'}}/>}
-                          {isToday && !isSelected && <div style={{position:'absolute',top:0,left:'50%',transform:'translateX(-50%)',fontSize:7,fontWeight:800,color:C,background:`${C}22`,padding:'1px 5px',borderRadius:'0 0 5px 5px',letterSpacing:'0.05em'}}>TODAY</div>}
-                          <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',marginTop:isToday&&!isSelected?6:0,color:isSelected?'rgba(255,255,255,0.8)':isToday?C:'rgba(255,255,255,0.35)'}}>{DAY_NAMES[i]}</span>
-                          <span style={{fontSize:20,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.7)'}}>{d.getDate()}</span>
-                          <div style={{width:hasItems?18:5,height:4,borderRadius:2,background:hasItems?(isSelected?'rgba(255,255,255,0.65)':C):'rgba(255,255,255,0.1)',transition:'width 0.2s ease'}}/>
+                          <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.06em',color:isSelected?'white':isToday?C:'rgba(255,255,255,0.35)',textTransform:'uppercase'}}>{DAY_NAMES[i].slice(0,1)}</span>
+                          <span style={{fontSize:14,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.55)'}}>{d.getDate()}</span>
+                          <div style={{width:4,height:4,borderRadius:'50%',background:hasItems?(isSelected?'rgba(255,255,255,0.7)':isToday?C:`${C}80`):'transparent'}}/>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* ── Selected day: Game Plan style ── */}
-                  <div style={{borderRadius:14,border:`1px solid ${C}28`,background:`linear-gradient(135deg,${C}08,rgba(255,255,255,0.02))`,overflow:'hidden'}}>
+                  {/* ── Day card ── */}
+                  <div style={{
+                    borderRadius:20,overflow:'hidden',
+                    background:`linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)`,
+                    border:`1px solid rgba(255,255,255,0.1)`,
+                    boxShadow:`0 8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)`,
+                    backdropFilter:'blur(20px)',
+                    WebkitBackdropFilter:'blur(20px)',
+                  }}>
+                    {/* Top accent */}
+                    <div style={{height:3,background:`linear-gradient(90deg,transparent,${C},transparent)`}}/>
 
-                    {/* Day header bar */}
-                    <div style={{background:`linear-gradient(90deg,${C}30,${C}12)`,borderBottom:`1px solid ${C}25`,padding:'10px 16px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                    {/* Day hero */}
+                    <div style={{
+                      padding:'20px 24px 16px',
+                      background:`linear-gradient(135deg,${C}18 0%,transparent 60%)`,
+                      borderBottom:'1px solid rgba(255,255,255,0.07)',
+                      display:'flex',alignItems:'center',justifyContent:'space-between',
+                    }}>
                       <div>
-                        <p style={{fontSize:13,fontWeight:800,color:'white',letterSpacing:'0.06em',textTransform:'uppercase'}}>{DAY_NAMES[selectedDay]}</p>
-                        <p style={{fontSize:10,color:`${C}cc`,marginTop:1}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}</p>
+                        {todayDow === selectedDay && (
+                          <div style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:6}}>
+                            <div style={{width:6,height:6,borderRadius:'50%',background:C,boxShadow:`0 0 8px ${C}`}}/>
+                            <span style={{fontSize:9,fontWeight:800,letterSpacing:'0.2em',color:C,textTransform:'uppercase'}}>Today</span>
+                          </div>
+                        )}
+                        <p style={{fontSize:28,fontWeight:900,color:'white',lineHeight:1,letterSpacing:'-0.02em',textTransform:'uppercase'}}>
+                          {DAY_NAMES[selectedDay]}
+                        </p>
+                        <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3,fontWeight:500}}>
+                          {weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
+                        </p>
                       </div>
-                      {itemsByDay[selectedDay]?.length > 0 && (
-                        <span style={{fontSize:10,fontWeight:600,padding:'3px 10px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`}}>
-                          {itemsByDay[selectedDay].length} {itemsByDay[selectedDay].length===1?'session':'sessions'}
-                        </span>
-                      )}
+                      <div style={{display:'flex',gap:6}}>
+                        <button onClick={()=>setSelectedDay(d=>Math.max(0,d-1))} disabled={selectedDay===0}
+                          style={{width:34,height:34,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:selectedDay===0?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',opacity:selectedDay===0?0.3:1,transition:'all 0.15s'}}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M15 18l-6-6 6-6"/></svg>
+                        </button>
+                        <button onClick={()=>setSelectedDay(d=>Math.min(6,d+1))} disabled={selectedDay===6}
+                          style={{width:34,height:34,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:selectedDay===6?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',opacity:selectedDay===6?0.3:1,transition:'all 0.15s'}}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M9 18l6-6-6-6"/></svg>
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Content */}
-                    <div style={{padding:'14px 16px'}}>
+                    {/* Sessions */}
+                    <div style={{padding:'16px 24px 20px'}}>
                       {!itemsByDay[selectedDay]?.length ? (
-                        <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'16px 0',fontStyle:'italic'}}>Rest day — no sessions scheduled.</p>
+                        <div style={{textAlign:'center',padding:'28px 0'}}>
+                          <div style={{fontSize:28,marginBottom:10}}></div>
+                          <p style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.35)'}}>Rest Day</p>
+                          <p style={{fontSize:12,color:'rgba(255,255,255,0.2)',marginTop:4}}>No sessions scheduled</p>
+                        </div>
                       ) : (
                         <div style={{display:'flex',flexDirection:'column',gap:12}}>
-                          {itemsByDay[selectedDay].map((item, idx) => {
-                            const bullets = (item.detail||'').split(/\n/).map((s:string)=>s.trim()).filter(Boolean);
+                          {itemsByDay[selectedDay].map((item,idx)=>{
+                            const bullets = (item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
                             const isMatch = (item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game');
                             return (
                               <div key={item.id||idx} style={{
-                                borderRadius:10,
-                                border:`1px solid ${isMatch?C+'35':'rgba(255,255,255,0.07)'}`,
-                                background:isMatch?`${C}0d`:'rgba(255,255,255,0.03)',
+                                borderRadius:14,
+                                border:`1px solid ${isMatch?C+'40':'rgba(255,255,255,0.07)'}`,
+                                background:isMatch?`${C}10`:'rgba(255,255,255,0.03)',
                                 overflow:'hidden',
                               }}>
                                 {/* Session header */}
-                                <div style={{padding:'9px 12px',borderBottom:`1px solid ${isMatch?C+'25':'rgba(255,255,255,0.06)'}`,background:isMatch?`${C}12`:'rgba(255,255,255,0.03)'}}>
-                                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8}}>
-                                    <p style={{fontSize:13,fontWeight:800,color:isMatch?C:'white'}}>{item.title}</p>
-                                    {item.subtitle && (
-                                      <span style={{fontSize:12,fontWeight:700,color:C,whiteSpace:'nowrap',fontVariantNumeric:'tabular-nums'}}>{item.subtitle}</span>
-                                    )}
+                                <div style={{
+                                  padding:'11px 14px',
+                                  background:isMatch?`${C}15`:'rgba(255,255,255,0.04)',
+                                  borderBottom:`1px solid ${isMatch?C+'25':'rgba(255,255,255,0.05)'}`,
+                                  display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,
+                                }}>
+                                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                    <div style={{width:3,height:28,borderRadius:2,background:isMatch?C:'rgba(255,255,255,0.2)',flexShrink:0}}/>
+                                    <div>
+                                      <p style={{fontSize:13,fontWeight:800,color:isMatch?C:'white',lineHeight:1.2}}>{item.title}</p>
+                                      {item.subtitle && <p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginTop:2}}>{item.subtitle}</p>}
+                                    </div>
                                   </div>
+                                  {isMatch && (
+                                    <span style={{fontSize:9,fontWeight:800,letterSpacing:'0.12em',padding:'3px 8px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`,whiteSpace:'nowrap'}}>MATCH DAY</span>
+                                  )}
                                 </div>
-                                {/* Team/activity bullets */}
+                                {/* Bullets */}
                                 {bullets.length > 0 && (
-                                  <div style={{padding:'8px 12px',display:'flex',flexDirection:'column',gap:4}}>
+                                  <div style={{padding:'10px 14px',display:'flex',flexDirection:'column',gap:5}}>
                                     {bullets.map((b:string,bi:number)=>(
-                                      <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:8}}>
-                                        <div style={{width:5,height:5,borderRadius:'50%',background:C,flexShrink:0,marginTop:5}}/>
-                                        <p style={{fontSize:12,color:'rgba(255,255,255,0.7)',lineHeight:1.5}}>{b}</p>
+                                      <div key={bi} style={{display:'flex',alignItems:'center',gap:8}}>
+                                        <div style={{width:5,height:5,borderRadius:'50%',background:C,flexShrink:0,opacity:0.7}}/>
+                                        <p style={{fontSize:12,color:'rgba(255,255,255,0.75)',lineHeight:1.4,fontWeight:500}}>{b}</p>
                                       </div>
                                     ))}
                                   </div>
