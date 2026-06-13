@@ -598,88 +598,114 @@ function PortalInner() {
         </div>
 
         {/* ── PROGRAMS + REMINDERS ── */}
+        {/* ── PROGRAMS + REMINDERS ── */}
         <div id="section-programs" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
 
           {/* Programs */}
           <Section>
-            <SectionHeader title="Programs" sub="Current gym, mobility and recovery work." link="#" linkLabel="View all"/>
-            <div>
+            <SectionHeader title="Programs" sub="Current gym, mobility and recovery work."/>
+            <div style={{padding:'8px 0'}}>
               {loadingPrograms ? (
-                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
               ) : programs.length === 0 ? (
-                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No programs yet.</p></div>
-              ) : (openWeekItemId==='programs-all' ? programs : programs.slice(0,3)).map((p,i)=>(
-                
-                <div key={p.id} className="prog-row" style={{display:'flex',alignItems:'center',gap:12,padding:'13px 22px',borderBottom:i<Math.min(programs.length,3)-1?`1px solid ${BORDER}`:'none',cursor:'pointer',transition:'background 0.15s'}}>
-                  <div style={{width:40,height:40,borderRadius:10,background:`${C}18`,border:`1px solid ${C}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={1.8} style={{width:18,height:18}}><path d="M6.5 6.5h11M6.5 17.5h11M3 12h18"/></svg>
+                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No programs published yet.</p></div>
+              ) : (openWeekItemId==='programs-all' ? programs : programs.slice(0,3)).map((p,i,arr)=>(
+                <div key={p.id} style={{padding:'14px 20px',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none'}}>
+                  <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+                    <div style={{width:38,height:38,borderRadius:10,background:`${C}14`,border:`1px solid ${C}22`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={1.8} style={{width:17,height:17}}><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      {(p.category||p.tag)&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:`${C}80`,display:'block',marginBottom:3}}>{p.category||p.tag}</span>}
+                      <p style={{fontSize:13,fontWeight:700,color:'white',lineHeight:1.3,marginBottom:(p.details||p.description)?4:0}}>{p.title}</p>
+                      {(p.details||p.description)&&<p style={{fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.5,marginBottom:p.file_url?8:0}}>{p.details||p.description}</p>}
+                      {p.file_url&&(
+                        <a href={p.file_url} target="_blank" rel="noreferrer"
+                          style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:11,fontWeight:700,color:C,textDecoration:'none',padding:'5px 10px',borderRadius:8,background:`${C}14`,border:`1px solid ${C}28`}}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:12,height:12}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                          Download PDF
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>{p.title}</p>
-                    {p.description&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.description}</p>}
-                  </div>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={2} style={{width:14,height:14,flexShrink:0}}><path d="M9 18l6-6-6-6"/></svg>
                 </div>
               ))}
             </div>
-            <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <button onClick={()=>setOpenWeekItemId(openWeekItemId==='programs-all'?null:'programs-all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
-                {openWeekItemId==='programs-all' ? 'Show less' : 'View all programs'}
-              </button>
-            </div>
+            {programs.length > 3 && (
+              <div style={{padding:'10px 20px',borderTop:`1px solid ${BORDER}`}}>
+                <button onClick={()=>setOpenWeekItemId(openWeekItemId==='programs-all'?null:'programs-all')}
+                  style={{fontSize:12,fontWeight:600,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
+                  {openWeekItemId==='programs-all'?'Show less':'View all programs'}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{width:12,height:12}}><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+            )}
           </Section>
 
           {/* Reminders */}
           <Section id="section-reminders">
-            <SectionHeader title="Reminders" sub="Important notices and department updates." link="#" linkLabel="View all"/>
-            <div>
+            <SectionHeader title="Reminders" sub="Important notices and department updates."/>
+            <div style={{padding:'8px 0'}}>
               {loadingReminders ? (
-                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
               ) : reminders.length === 0 ? (
-                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No reminders yet.</p></div>
-              ) : (openWeekItemId==='reminders-all' ? reminders : reminders.slice(0,3)).map((r,i)=>(
-                
-                <div key={r.id} className="prog-row" style={{display:'flex',alignItems:'center',gap:12,padding:'13px 22px',borderBottom:i<Math.min(reminders.length,3)-1?`1px solid ${BORDER}`:'none',cursor:'pointer',transition:'background 0.15s'}}>
-                  <div style={{width:40,height:40,borderRadius:10,background:'rgba(251,191,36,0.12)',border:'1px solid rgba(251,191,36,0.2)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth={1.8} style={{width:18,height:18}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No reminders yet.</p></div>
+              ) : (openWeekItemId==='reminders-all' ? reminders : reminders.slice(0,3)).map((r,i,arr)=>{
+                const det=r.details||r.body||'';
+                return (
+                  <div key={r.id} style={{padding:'14px 20px',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none'}}>
+                    <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+                      <div style={{width:38,height:38,borderRadius:10,background:'rgba(251,191,36,0.1)',border:'1px solid rgba(251,191,36,0.18)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth={1.8} style={{width:17,height:17}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                      </div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <p style={{fontSize:13,fontWeight:700,color:'white',lineHeight:1.3,marginBottom:det?5:0}}>{r.title}</p>
+                        {det&&<p style={{fontSize:12,color:'rgba(255,255,255,0.45)',lineHeight:1.6}}>{det}</p>}
+                        {r.date&&<p style={{fontSize:10,fontWeight:600,color:'#fbbf24',marginTop:5,letterSpacing:'0.03em'}}>{r.date}</p>}
+                      </div>
+                    </div>
                   </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>{r.title}</p>
-                    {(r.body||r.date)&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{r.body||r.date}</p>}
-                  </div>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={2} style={{width:14,height:14,flexShrink:0}}><path d="M9 18l6-6-6-6"/></svg>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <button onClick={()=>setOpenWeekItemId(openWeekItemId==='reminders-all'?null:'reminders-all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
-                {openWeekItemId==='reminders-all' ? 'Show less' : 'View all reminders'}
-              </button>
-            </div>
+            {reminders.length > 3 && (
+              <div style={{padding:'10px 20px',borderTop:`1px solid ${BORDER}`}}>
+                <button onClick={()=>setOpenWeekItemId(openWeekItemId==='reminders-all'?null:'reminders-all')}
+                  style={{fontSize:12,fontWeight:600,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
+                  {openWeekItemId==='reminders-all'?'Show less':'View all reminders'}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{width:12,height:12}}><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+              </div>
+            )}
           </Section>
         </div>
 
         {/* ── PARTNERS ── */}
         {sponsors.length > 0 && (
-          <Section>
-            <SectionHeader title="Our Partners" sub="Thank you to our partners for their continued support."/>
-            <div style={{padding:'28px 24px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:48}}>
-              {sponsors.map((s:Row)=>(
-                <div key={s.id} style={{display:'flex',alignItems:'center',justifyContent:'center',padding:'0 16px'}}>
-                  {s.image_url
-                    ? /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={s.image_url} alt={s.name||'Sponsor'} style={{maxHeight:64,maxWidth:180,objectFit:'contain',opacity:0.85}}/>
-                    : <p style={{fontSize:20,fontWeight:800,color:'rgba(255,255,255,0.6)',letterSpacing:'0.12em'}}>{s.name}</p>
-                  }
+          <div style={{marginBottom:24}}>
+            <Section>
+              <div style={{padding:'22px 24px 28px'}}>
+                <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:3}}>Our Partners</p>
+                <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:28}}>Thank you to our partners for their continued support.</p>
+                <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center'}}>
+                  {sponsors.map((s:Row,i:number)=>(
+                    <div key={s.id} style={{padding:'12px 36px',borderRight:i<sponsors.length-1?`1px solid rgba(255,255,255,0.07)`:'none',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                      {s.image_url
+                        ? /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={s.image_url} alt={s.name||'Sponsor'}
+                            style={{maxHeight:44,maxWidth:160,objectFit:'contain',filter:'brightness(0) invert(1)',opacity:0.5,transition:'opacity 0.2s'}}
+                            onMouseOver={e=>(e.currentTarget.style.opacity='0.9')}
+                            onMouseOut={e=>(e.currentTarget.style.opacity='0.5')}
+                          />
+                        : <p style={{fontSize:16,fontWeight:800,color:'rgba(255,255,255,0.4)',letterSpacing:'0.18em',textTransform:'uppercase'}}>{s.name}</p>
+                      }
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </Section>
+              </div>
+            </Section>
+          </div>
         )}
-
-      </div>
 
       {/* ── FOOTER ── */}
       <footer style={{borderTop:`1px solid ${BORDER}`,padding:'28px 24px',textAlign:'center'}}>
