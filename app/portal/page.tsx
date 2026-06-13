@@ -397,95 +397,83 @@ function PortalInner() {
 
         {/* ── WEEK AT A GLANCE ── */}
         {/* ── WEEK AT A GLANCE ── */}
+        {/* ── WEEK AT A GLANCE ── */}
         <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
-            <div style={{padding:'20px 22px'}}>
+            <div style={{padding:'18px 20px 20px'}}>
+              <p style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:C,textTransform:'uppercase',marginBottom:4}}>Week at a Glance</p>
+              <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:16}}>
+                {weekDates[0].toLocaleDateString('en-ZA',{day:'numeric',month:'short'})} — {weekDates[5].toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}
+              </p>
 
-              {/* Header row */}
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
-                <div>
-                  <p style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:C,textTransform:'uppercase'}}>Week at a Glance</p>
-                  <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:2}}>
-                    {weekDates[0].toLocaleDateString('en-ZA',{day:'numeric',month:'short'})} – {weekDates[5].toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}
-                  </p>
-                </div>
-                <div style={{display:'flex',gap:6}}>
-                  <button onClick={()=>setSelectedDay(d=>Math.max(0,d-1))} disabled={selectedDay===0}
-                    style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',cursor:selectedDay===0?'not-allowed':'pointer',opacity:selectedDay===0?0.3:1,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:13,height:13}}><path d="M15 18l-6-6 6-6"/></svg>
-                  </button>
-                  <button onClick={()=>setSelectedDay(d=>Math.min(6,d+1))} disabled={selectedDay===6}
-                    style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',cursor:selectedDay===6?'not-allowed':'pointer',opacity:selectedDay===6?0.3:1,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:13,height:13}}><path d="M9 18l6-6-6-6"/></svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Day pills */}
-              <div style={{display:'flex',gap:4,marginBottom:20}}>
-                {weekDates.map((d,i)=>{
-                  const isToday=i===todayDow, isSelected=i===selectedDay, hasItems=!!(itemsByDay[i]?.length);
-                  return (
-                    <button key={i} onClick={()=>setSelectedDay(i)} style={{
-                      flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,
-                      padding:'8px 4px',borderRadius:10,border:'none',cursor:'pointer',
-                      transition:'all 0.18s ease',
-                      background:isSelected?C:isToday?`${C}18`:'rgba(255,255,255,0.04)',
-                      boxShadow:isSelected?`0 4px 16px ${C}45`:'none',
-                      outline:!isSelected&&isToday?`1px solid ${C}50`:'none',
-                    }}>
-                      <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:isSelected?'rgba(255,255,255,0.75)':isToday?C:'rgba(255,255,255,0.3)'}}>{DAY_NAMES[i]}</span>
-                      <span style={{fontSize:16,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.65)'}}>{d.getDate()}</span>
-                      <div style={{width:4,height:4,borderRadius:'50%',background:hasItems?(isSelected?'rgba(255,255,255,0.6)':C):'rgba(255,255,255,0.1)'}}/>
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Separator */}
-              <div style={{height:1,background:`linear-gradient(90deg,${C}50,rgba(255,255,255,0.05),transparent)`,marginBottom:16}}/>
-
-              {/* Selected day label */}
-              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
-                <p style={{fontSize:20,fontWeight:900,color:'white',letterSpacing:'-0.01em',textTransform:'uppercase'}}>{DAY_NAMES[selectedDay]}</p>
-                <p style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long'})}</p>
-                {todayDow===selectedDay&&<span style={{fontSize:9,fontWeight:800,letterSpacing:'0.1em',padding:'2px 8px',borderRadius:20,background:`${C}20`,color:C,border:`1px solid ${C}35`}}>TODAY</span>}
-              </div>
-
-              {/* Content */}
               {loadingWeek ? (
                 <p style={{fontSize:13,color:'rgba(255,255,255,0.2)'}}>Loading...</p>
-              ) : !itemsByDay[selectedDay]?.length ? (
-                <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
-                  <div style={{width:2,height:32,borderRadius:2,background:'rgba(255,255,255,0.08)'}}/>
-                  <div>
-                    <p style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.3)'}}>Rest Day</p>
-                    <p style={{fontSize:12,color:'rgba(255,255,255,0.18)',marginTop:2}}>No sessions scheduled</p>
-                  </div>
-                </div>
               ) : (
-                <div style={{display:'flex',flexDirection:'column'}}>
-                  {itemsByDay[selectedDay].map((item,idx,arr)=>{
-                    const bullets=(item.details||item.detail||'').split('\n').map((s: string)=>s.trim()).filter(Boolean);
-                    const isMatch=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game')||(item.title||'').toLowerCase().includes('vs ');
+                <div
+                  ref={(el)=>{ if(el){ const today=el.querySelector('[data-today="true"]'); today?.scrollIntoView({inline:'center',block:'nearest',behavior:'smooth'}); }}}
+                  style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:6,scrollSnapType:'x mandatory'}}
+                >
+                  <style>{`.week-scroll::-webkit-scrollbar{height:3px}.week-scroll::-webkit-scrollbar-thumb{background:${C}40;border-radius:2px}`}</style>
+                  {[0,1,2,3,4,5].map(i=>{
+                    const isToday   = i === todayDow;
+                    const dayItems  = itemsByDay[i] || [];
+                    const hasMatch  = dayItems.some(it=>(it.title||'').toLowerCase().includes('match')||(it.title||'').toLowerCase().includes('fixture')||(it.title||'').toLowerCase().includes('vs '));
                     return (
-                      <div key={item.id||idx} style={{display:'flex',gap:14,paddingBottom:idx<arr.length-1?16:0}}>
-                        {/* Timeline */}
-                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingTop:4}}>
-                          <div style={{width:8,height:8,borderRadius:'50%',background:isMatch?C:'rgba(255,255,255,0.2)',border:`2px solid ${isMatch?C+'40':'rgba(255,255,255,0.08)'}`,flexShrink:0,boxShadow:isMatch?`0 0 8px ${C}60`:'none'}}/>
-                          {idx<arr.length-1&&<div style={{width:1,flex:1,background:'rgba(255,255,255,0.07)',minHeight:16,marginTop:4}}/>}
+                      <div key={i} data-today={isToday}
+                        style={{
+                          flexShrink:0, width:210, borderRadius:16, overflow:'hidden',
+                          border:`1px solid ${isToday?C:'rgba(255,255,255,0.08)'}`,
+                          background: isToday ? `rgba(255,255,255,0.05)` : 'rgba(255,255,255,0.025)',
+                          boxShadow: isToday ? `0 0 0 1px ${C}30, 0 8px 32px rgba(0,0,0,0.3)` : '0 4px 16px rgba(0,0,0,0.2)',
+                          scrollSnapAlign:'start',
+                          transition:'box-shadow 0.2s',
+                        }}>
+
+                        {/* Card header */}
+                        <div style={{
+                          padding:'12px 14px 10px',
+                          background: isToday ? `linear-gradient(135deg,${C}22,${C}08)` : 'rgba(255,255,255,0.03)',
+                          borderBottom:`1px solid ${isToday?C+'30':'rgba(255,255,255,0.06)'}`,
+                        }}>
+                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:2}}>
+                            <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:isToday?C:'rgba(255,255,255,0.35)'}}>{DAY_NAMES[i]}</p>
+                            {isToday&&<span style={{fontSize:8,fontWeight:800,letterSpacing:'0.12em',padding:'2px 6px',borderRadius:20,background:`${C}25`,color:C,border:`1px solid ${C}40`}}>TODAY</span>}
+                            {hasMatch&&!isToday&&<span style={{fontSize:8,fontWeight:800,letterSpacing:'0.08em',padding:'2px 6px',borderRadius:20,background:'rgba(248,113,113,0.15)',color:'#f87171',border:'1px solid rgba(248,113,113,0.3)'}}>MATCH</span>}
+                          </div>
+                          <p style={{fontSize:22,fontWeight:900,color:isToday?'white':'rgba(255,255,255,0.7)',lineHeight:1,letterSpacing:'-0.02em'}}>
+                            {weekDates[i].getDate()} <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.4)',letterSpacing:0}}>{weekDates[i].toLocaleDateString('en-ZA',{month:'short'})}</span>
+                          </p>
                         </div>
-                        {/* Content */}
-                        <div style={{flex:1,paddingBottom:4}}>
-                          <p style={{fontSize:14,fontWeight:800,color:isMatch?C:'white',marginBottom:bullets.length?8:0,lineHeight:1.3}}>{item.title}</p>
-                          {bullets.length>0&&(
-                            <div style={{display:'flex',flexDirection:'column',gap:4}}>
-                              {bullets.map((b:string,bi:number)=>(
-                                <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:8}}>
-                                  <span style={{color:`${C}70`,fontWeight:700,lineHeight:'18px',flexShrink:0,fontSize:11}}>—</span>
-                                  <p style={{fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.5,fontWeight:500}}>{b}</p>
-                                </div>
-                              ))}
+
+                        {/* Card body */}
+                        <div style={{padding:'10px 14px 14px',minHeight:80}}>
+                          {dayItems.length===0 ? (
+                            <p style={{fontSize:11,color:'rgba(255,255,255,0.18)',fontStyle:'italic',paddingTop:8}}>Rest day</p>
+                          ) : (
+                            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                              {dayItems.map((item,si)=>{
+                                const bullets = (item.details||item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
+                                const isMatch = (item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('vs ');
+                                const timeColor = isMatch ? '#f87171' : C;
+                                return (
+                                  <div key={item.id||si}>
+                                    {si>0&&<div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:10}}/>}
+                                    {/* Session name */}
+                                    <p style={{fontSize:12,fontWeight:800,color:isMatch?'#f87171':'white',marginBottom:4,lineHeight:1.3}}>{item.title}</p>
+                                    {/* Bullet list */}
+                                    {bullets.length>0&&(
+                                      <div style={{display:'flex',flexDirection:'column',gap:2}}>
+                                        {bullets.map((b:string,bi:number)=>(
+                                          <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:6}}>
+                                            <span style={{color:timeColor,fontWeight:700,fontSize:10,lineHeight:'17px',flexShrink:0}}>·</span>
+                                            <p style={{fontSize:11,color:'rgba(255,255,255,0.55)',lineHeight:1.5}}>{b}</p>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
@@ -494,7 +482,6 @@ function PortalInner() {
                   })}
                 </div>
               )}
-
             </div>
           </Section>
         </div>
