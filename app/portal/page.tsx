@@ -373,7 +373,7 @@ function PortalInner() {
                     <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.1em'}}>{new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{weekday:'long'})}</p>
                     <p style={{fontSize:22,fontWeight:800,color:'white',lineHeight:1.1}}>{new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{day:'2-digit',month:'long'}).toUpperCase()}</p>
                     <p style={{fontSize:14,fontWeight:600,color:C,marginTop:2}}>{nextFixture.fixture_time||'TBC'}</p>
-                    {nextFixture.venue&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginTop:2}}>📍 {nextFixture.venue}</p>}
+                    {nextFixture.venue&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginTop:2}}}>{nextFixture.venue}</p>}
                   </div>
                   <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.08em',padding:'4px 10px',borderRadius:20,background:nextFixture.venue?.toLowerCase().includes('home')||nextFixture.home_away==='home' ? `${C}20` : 'rgba(255,255,255,0.06)',color:nextFixture.venue?.toLowerCase().includes('home')||nextFixture.home_away==='home' ? C : 'rgba(255,255,255,0.4)'}}>
                     {nextFixture.home_away?.toUpperCase()||'TBC'}
@@ -395,11 +395,6 @@ function PortalInner() {
           )}
         </div>
 
-        {/* ── WEEK AT A GLANCE ── */}
-        {/* ── WEEK AT A GLANCE ── */}
-        {/* ── WEEK AT A GLANCE ── */}
-        {/* ── WEEK AT A GLANCE ── */}
-        {/* ── WEEK AT A GLANCE ── */}
         {/* ── WEEK AT A GLANCE ── */}
         <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
@@ -564,7 +559,7 @@ function PortalInner() {
 
           {/* Results */}
           <Section>
-            <SectionHeader title="Latest Results" link="#results" linkLabel="View all"/>
+            <SectionHeader title="Latest Results"/>
             <div>
               {loadingResults ? (
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
@@ -589,26 +584,25 @@ function PortalInner() {
               })}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <button onClick={()=>setExpandedResultId(expandedResultId==='all'?null:'all')} style={{fontSize:12,color:C,background:'none',border:'none',cursor:'pointer',display:'flex',alignItems:'center',gap:5,padding:0}}>
+              <Link href={`/portal/fixtures/season?sport=${sport}`} style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5,fontWeight:600}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                {expandedResultId==='all' ? 'Show less' : 'View all results'}
-              </button>
+                View full season results
+              </Link>
             </div>
           </Section>
         </div>
 
-        {/* ── PROGRAMS + REMINDERS ── */}
         {/* ── PROGRAMS + REMINDERS ── */}
         <div id="section-programs" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
 
           {/* Programs */}
           <Section>
             <SectionHeader title="Programs" sub="Current gym, mobility and recovery work."/>
-            <div style={{padding:'8px 0'}}>
+            <div>
               {loadingPrograms ? (
-                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
               ) : programs.length === 0 ? (
-                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No programs published yet.</p></div>
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No programs published yet.</p></div>
               ) : (openWeekItemId==='programs-all' ? programs : programs.slice(0,3)).map((p,i,arr)=>(
                 <div key={p.id} style={{padding:'14px 20px',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none'}}>
                   <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
@@ -645,11 +639,11 @@ function PortalInner() {
           {/* Reminders */}
           <Section id="section-reminders">
             <SectionHeader title="Reminders" sub="Important notices and department updates."/>
-            <div style={{padding:'8px 0'}}>
+            <div>
               {loadingReminders ? (
-                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p></div>
               ) : reminders.length === 0 ? (
-                <div style={{padding:'16px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No reminders yet.</p></div>
+                <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No reminders yet.</p></div>
               ) : (openWeekItemId==='reminders-all' ? reminders : reminders.slice(0,3)).map((r,i,arr)=>{
                 const det=r.details||r.body||'';
                 return (
@@ -683,27 +677,33 @@ function PortalInner() {
         {/* ── PARTNERS ── */}
         {sponsors.length > 0 && (
           <div style={{marginBottom:24}}>
-            <Section>
-              <div style={{padding:'22px 24px 28px'}}>
-                <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:3}}>Our Partners</p>
-                <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginBottom:28}}>Thank you to our partners for their continued support.</p>
-                <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center'}}>
-                  {sponsors.map((s:Row,i:number)=>(
-                    <div key={s.id} style={{padding:'12px 36px',borderRight:i<sponsors.length-1?`1px solid rgba(255,255,255,0.07)`:'none',display:'flex',alignItems:'center',justifyContent:'center'}}>
-                      {s.image_url
-                        ? /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={s.image_url} alt={s.name||'Sponsor'}
-                            style={{maxHeight:44,maxWidth:160,objectFit:'contain',filter:'brightness(0) invert(1)',opacity:0.5,transition:'opacity 0.2s'}}
-                            onMouseOver={e=>(e.currentTarget.style.opacity='0.9')}
-                            onMouseOut={e=>(e.currentTarget.style.opacity='0.5')}
-                          />
-                        : <p style={{fontSize:16,fontWeight:800,color:'rgba(255,255,255,0.4)',letterSpacing:'0.18em',textTransform:'uppercase'}}>{s.name}</p>
-                      }
-                    </div>
-                  ))}
+            <div style={{borderRadius:18,overflow:'hidden',border:`1px solid rgba(255,255,255,0.07)`,background:'rgba(255,255,255,0.025)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.07)'}}>
+              <div style={{padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <div>
+                  <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:2}}>Our Partners</p>
+                  <p style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>Proudly supported by</p>
                 </div>
               </div>
-            </Section>
+              <div style={{padding:'28px 24px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:0}}>
+                {sponsors.map((s:Row,i:number)=>(
+                  <div key={s.id} style={{
+                    padding:'20px 40px',
+                    borderRight:i<sponsors.length-1?'1px solid rgba(255,255,255,0.07)':'none',
+                    display:'flex',alignItems:'center',justifyContent:'center',
+                    minWidth:160,
+                  }}>
+                    {s.image_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={s.image_url} alt={s.name||'Sponsor'}
+                        style={{maxHeight:56,maxWidth:180,objectFit:'contain',opacity:0.9}}
+                      />
+                    ) : (
+                      <p style={{fontSize:18,fontWeight:900,color:'rgba(255,255,255,0.7)',letterSpacing:'0.2em',textTransform:'uppercase'}}>{s.name}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
