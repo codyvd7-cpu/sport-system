@@ -171,20 +171,26 @@ function PortalInner() {
 
   // ── week days ─────────────────────────────────────────────────────────────
   const DAY_NAMES = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const DAY_LABEL_MAP: Record<string,number> = {
+    monday:0,tuesday:1,wednesday:2,thursday:3,friday:4,saturday:5,sunday:6,
+    mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6,
+  };
   const todayDate = new Date();
-  const todayDowRaw = todayDate.getDay(); // 0=Sun
-  const todayDow = todayDowRaw === 0 ? 6 : todayDowRaw - 1; // 0=Mon..6=Sun
+  const todayDowRaw = todayDate.getDay();
+  const todayDow = todayDowRaw === 0 ? 6 : todayDowRaw - 1;
   const monday = new Date(todayDate);
   monday.setDate(todayDate.getDate() - todayDow);
   const weekDates = Array.from({length:7}, (_,i) => {
     const d = new Date(monday); d.setDate(monday.getDate()+i); return d;
   });
-  // Map items to days by sort_order (0=Mon..6=Sun)
   const itemsByDay: Record<number, Row[]> = {};
-  weekItems.forEach((item, idx) => {
-    const dayIdx = typeof item.sort_order === 'number' ? item.sort_order : idx;
-    if (!itemsByDay[dayIdx]) itemsByDay[dayIdx] = [];
-    itemsByDay[dayIdx].push(item);
+  weekItems.forEach((item) => {
+    const label = (item.day_label||'').toLowerCase().trim();
+    const dayIdx = DAY_LABEL_MAP[label] ?? -1;
+    if (dayIdx >= 0) {
+      if (!itemsByDay[dayIdx]) itemsByDay[dayIdx] = [];
+      itemsByDay[dayIdx].push(item);
+    }
   });
   const [selectedDay, setSelectedDay] = React.useState<number>(todayDow);
 
@@ -390,144 +396,109 @@ function PortalInner() {
         </div>
 
         {/* ── WEEK AT A GLANCE ── */}
+        {/* ── WEEK AT A GLANCE ── */}
         <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
-            <div style={{padding:'20px'}}>
-              {loadingWeek ? (
-                <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',textAlign:'center',padding:'24px 0'}}>Loading...</p>
-              ) : (
-                <>
-                  {/* ── Week strip ── */}
-                  <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:16,justifyContent:'center'}}>
-                    {weekDates.map((d,i)=>{
-                      const isToday    = i === todayDow;
-                      const isSelected = i === selectedDay;
-                      const hasItems   = !!(itemsByDay[i]?.length);
-                      return (
-                        <button key={i} onClick={()=>setSelectedDay(i)} style={{
-                          display:'flex',flexDirection:'column',alignItems:'center',gap:3,
-                          padding:'8px 10px',borderRadius:12,border:'none',cursor:'pointer',
-                          background: isSelected ? C : 'transparent',
-                          transition:'all 0.2s ease',
-                          boxShadow: isSelected ? `0 4px 14px ${C}50` : 'none',
-                          minWidth:38,
-                        }}>
-                          <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.06em',color:isSelected?'white':isToday?C:'rgba(255,255,255,0.35)',textTransform:'uppercase'}}>{DAY_NAMES[i].slice(0,1)}</span>
-                          <span style={{fontSize:14,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.55)'}}>{d.getDate()}</span>
-                          <div style={{width:4,height:4,borderRadius:'50%',background:hasItems?(isSelected?'rgba(255,255,255,0.7)':isToday?C:`${C}80`):'transparent'}}/>
-                        </button>
-                      );
-                    })}
-                  </div>
+            <div style={{padding:'20px 22px'}}>
 
-                  {/* ── Day card ── */}
-                  <div style={{
-                    borderRadius:20,overflow:'hidden',
-                    background:`linear-gradient(145deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.025) 100%)`,
-                    border:`1px solid rgba(255,255,255,0.1)`,
-                    boxShadow:`0 8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)`,
-                    backdropFilter:'blur(20px)',
-                    WebkitBackdropFilter:'blur(20px)',
-                  }}>
-                    {/* Top accent */}
-                    <div style={{height:3,background:`linear-gradient(90deg,transparent,${C},transparent)`}}/>
+              {/* Header row */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                <div>
+                  <p style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:C,textTransform:'uppercase'}}>Week at a Glance</p>
+                  <p style={{fontSize:12,color:'rgba(255,255,255,0.35)',marginTop:2}}>
+                    {weekDates[0].toLocaleDateString('en-ZA',{day:'numeric',month:'short'})} – {weekDates[5].toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}
+                  </p>
+                </div>
+                <div style={{display:'flex',gap:6}}>
+                  <button onClick={()=>setSelectedDay(d=>Math.max(0,d-1))} disabled={selectedDay===0}
+                    style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',cursor:selectedDay===0?'not-allowed':'pointer',opacity:selectedDay===0?0.3:1,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:13,height:13}}><path d="M15 18l-6-6 6-6"/></svg>
+                  </button>
+                  <button onClick={()=>setSelectedDay(d=>Math.min(6,d+1))} disabled={selectedDay===6}
+                    style={{width:32,height:32,borderRadius:8,border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',cursor:selectedDay===6?'not-allowed':'pointer',opacity:selectedDay===6?0.3:1,display:'flex',alignItems:'center',justifyContent:'center',transition:'all 0.15s'}}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:13,height:13}}><path d="M9 18l6-6-6-6"/></svg>
+                  </button>
+                </div>
+              </div>
 
-                    {/* Day hero */}
-                    <div style={{
-                      padding:'20px 24px 16px',
-                      background:`linear-gradient(135deg,${C}18 0%,transparent 60%)`,
-                      borderBottom:'1px solid rgba(255,255,255,0.07)',
-                      display:'flex',alignItems:'center',justifyContent:'space-between',
+              {/* Day pills */}
+              <div style={{display:'flex',gap:4,marginBottom:20}}>
+                {weekDates.map((d,i)=>{
+                  const isToday=i===todayDow, isSelected=i===selectedDay, hasItems=!!(itemsByDay[i]?.length);
+                  return (
+                    <button key={i} onClick={()=>setSelectedDay(i)} style={{
+                      flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:3,
+                      padding:'8px 4px',borderRadius:10,border:'none',cursor:'pointer',
+                      transition:'all 0.18s ease',
+                      background:isSelected?C:isToday?`${C}18`:'rgba(255,255,255,0.04)',
+                      boxShadow:isSelected?`0 4px 16px ${C}45`:'none',
+                      outline:!isSelected&&isToday?`1px solid ${C}50`:'none',
                     }}>
-                      <div>
-                        {todayDow === selectedDay && (
-                          <div style={{display:'inline-flex',alignItems:'center',gap:5,marginBottom:6}}>
-                            <div style={{width:6,height:6,borderRadius:'50%',background:C,boxShadow:`0 0 8px ${C}`}}/>
-                            <span style={{fontSize:9,fontWeight:800,letterSpacing:'0.2em',color:C,textTransform:'uppercase'}}>Today</span>
-                          </div>
-                        )}
-                        <p style={{fontSize:28,fontWeight:900,color:'white',lineHeight:1,letterSpacing:'-0.02em',textTransform:'uppercase'}}>
-                          {DAY_NAMES[selectedDay]}
-                        </p>
-                        <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginTop:3,fontWeight:500}}>
-                          {weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
-                        </p>
-                      </div>
-                      <div style={{display:'flex',gap:6}}>
-                        <button onClick={()=>setSelectedDay(d=>Math.max(0,d-1))} disabled={selectedDay===0}
-                          style={{width:34,height:34,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:selectedDay===0?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',opacity:selectedDay===0?0.3:1,transition:'all 0.15s'}}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M15 18l-6-6 6-6"/></svg>
-                        </button>
-                        <button onClick={()=>setSelectedDay(d=>Math.min(6,d+1))} disabled={selectedDay===6}
-                          style={{width:34,height:34,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.05)',cursor:selectedDay===6?'not-allowed':'pointer',display:'flex',alignItems:'center',justifyContent:'center',opacity:selectedDay===6?0.3:1,transition:'all 0.15s'}}>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M9 18l6-6-6-6"/></svg>
-                        </button>
-                      </div>
-                    </div>
+                      <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.06em',textTransform:'uppercase',color:isSelected?'rgba(255,255,255,0.75)':isToday?C:'rgba(255,255,255,0.3)'}}>{DAY_NAMES[i]}</span>
+                      <span style={{fontSize:16,fontWeight:800,lineHeight:1,color:isSelected?'white':isToday?C:'rgba(255,255,255,0.65)'}}>{d.getDate()}</span>
+                      <div style={{width:4,height:4,borderRadius:'50%',background:hasItems?(isSelected?'rgba(255,255,255,0.6)':C):'rgba(255,255,255,0.1)'}}/>
+                    </button>
+                  );
+                })}
+              </div>
 
-                    {/* Sessions */}
-                    <div style={{padding:'16px 24px 20px'}}>
-                      {!itemsByDay[selectedDay]?.length ? (
-                        <div style={{textAlign:'center',padding:'28px 0'}}>
-                          <div style={{fontSize:28,marginBottom:10}}></div>
-                          <p style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.35)'}}>Rest Day</p>
-                          <p style={{fontSize:12,color:'rgba(255,255,255,0.2)',marginTop:4}}>No sessions scheduled</p>
-                        </div>
-                      ) : (
-                        <div style={{display:'flex',flexDirection:'column',gap:12}}>
-                          {itemsByDay[selectedDay].map((item,idx)=>{
-                            const bullets = (item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
-                            const isMatch = (item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game');
-                            return (
-                              <div key={item.id||idx} style={{
-                                borderRadius:14,
-                                border:`1px solid ${isMatch?C+'40':'rgba(255,255,255,0.07)'}`,
-                                background:isMatch?`${C}10`:'rgba(255,255,255,0.03)',
-                                overflow:'hidden',
-                              }}>
-                                {/* Session header */}
-                                <div style={{
-                                  padding:'11px 14px',
-                                  background:isMatch?`${C}15`:'rgba(255,255,255,0.04)',
-                                  borderBottom:`1px solid ${isMatch?C+'25':'rgba(255,255,255,0.05)'}`,
-                                  display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,
-                                }}>
-                                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                    <div style={{width:3,height:28,borderRadius:2,background:isMatch?C:'rgba(255,255,255,0.2)',flexShrink:0}}/>
-                                    <div>
-                                      <p style={{fontSize:13,fontWeight:800,color:isMatch?C:'white',lineHeight:1.2}}>{item.title}</p>
-                                      {item.subtitle && <p style={{fontSize:10,color:'rgba(255,255,255,0.4)',marginTop:2}}>{item.subtitle}</p>}
-                                    </div>
-                                  </div>
-                                  {isMatch && (
-                                    <span style={{fontSize:9,fontWeight:800,letterSpacing:'0.12em',padding:'3px 8px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`,whiteSpace:'nowrap'}}>MATCH DAY</span>
-                                  )}
-                                </div>
-                                {/* Bullets */}
-                                {bullets.length > 0 && (
-                                  <div style={{padding:'10px 14px',display:'flex',flexDirection:'column',gap:5}}>
-                                    {bullets.map((b:string,bi:number)=>(
-                                      <div key={bi} style={{display:'flex',alignItems:'center',gap:8}}>
-                                        <div style={{width:5,height:5,borderRadius:'50%',background:C,flexShrink:0,opacity:0.7}}/>
-                                        <p style={{fontSize:12,color:'rgba(255,255,255,0.75)',lineHeight:1.4,fontWeight:500}}>{b}</p>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+              {/* Separator */}
+              <div style={{height:1,background:`linear-gradient(90deg,${C}50,rgba(255,255,255,0.05),transparent)`,marginBottom:16}}/>
+
+              {/* Selected day label */}
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+                <p style={{fontSize:20,fontWeight:900,color:'white',letterSpacing:'-0.01em',textTransform:'uppercase'}}>{DAY_NAMES[selectedDay]}</p>
+                <p style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long'})}</p>
+                {todayDow===selectedDay&&<span style={{fontSize:9,fontWeight:800,letterSpacing:'0.1em',padding:'2px 8px',borderRadius:20,background:`${C}20`,color:C,border:`1px solid ${C}35`}}>TODAY</span>}
+              </div>
+
+              {/* Content */}
+              {loadingWeek ? (
+                <p style={{fontSize:13,color:'rgba(255,255,255,0.2)'}}>Loading...</p>
+              ) : !itemsByDay[selectedDay]?.length ? (
+                <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
+                  <div style={{width:2,height:32,borderRadius:2,background:'rgba(255,255,255,0.08)'}}/>
+                  <div>
+                    <p style={{fontSize:14,fontWeight:600,color:'rgba(255,255,255,0.3)'}}>Rest Day</p>
+                    <p style={{fontSize:12,color:'rgba(255,255,255,0.18)',marginTop:2}}>No sessions scheduled</p>
                   </div>
-                </>
+                </div>
+              ) : (
+                <div style={{display:'flex',flexDirection:'column'}}>
+                  {itemsByDay[selectedDay].map((item,idx,arr)=>{
+                    const bullets=(item.details||item.detail||'').split('\n').map((s: string)=>s.trim()).filter(Boolean);
+                    const isMatch=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('game')||(item.title||'').toLowerCase().includes('vs ');
+                    return (
+                      <div key={item.id||idx} style={{display:'flex',gap:14,paddingBottom:idx<arr.length-1?16:0}}>
+                        {/* Timeline */}
+                        <div style={{display:'flex',flexDirection:'column',alignItems:'center',paddingTop:4}}>
+                          <div style={{width:8,height:8,borderRadius:'50%',background:isMatch?C:'rgba(255,255,255,0.2)',border:`2px solid ${isMatch?C+'40':'rgba(255,255,255,0.08)'}`,flexShrink:0,boxShadow:isMatch?`0 0 8px ${C}60`:'none'}}/>
+                          {idx<arr.length-1&&<div style={{width:1,flex:1,background:'rgba(255,255,255,0.07)',minHeight:16,marginTop:4}}/>}
+                        </div>
+                        {/* Content */}
+                        <div style={{flex:1,paddingBottom:4}}>
+                          <p style={{fontSize:14,fontWeight:800,color:isMatch?C:'white',marginBottom:bullets.length?8:0,lineHeight:1.3}}>{item.title}</p>
+                          {bullets.length>0&&(
+                            <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                              {bullets.map((b:string,bi:number)=>(
+                                <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                                  <span style={{color:`${C}70`,fontWeight:700,lineHeight:'18px',flexShrink:0,fontSize:11}}>—</span>
+                                  <p style={{fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.5,fontWeight:500}}>{b}</p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
+
             </div>
           </Section>
         </div>
 
-        {/* ── FIXTURES + RESULTS ── */}
         <div id="section-fixtures" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
 
           {/* Fixtures */}
