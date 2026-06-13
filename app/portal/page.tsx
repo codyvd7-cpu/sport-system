@@ -72,8 +72,7 @@ function PortalInner() {
   const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [results, setResults] = useState<Row[]>([]);
   const [programs, setPrograms] = useState<Row[]>([]);
-  const [gymLeaderboard, setGymLeaderboard] = useState<Row[]>([]);
-  const [performanceLeaderboard, setPerformanceLeaderboard] = useState<Row[]>([]);
+  const [spotlight, setSpotlight] = useState<Row[]>([]);
   const [openWeekItemId, setOpenWeekItemId] = useState<string | null>(null);
   const [loadingSponsors, setLoadingSponsors] = useState(true);
   const [loadingWeek, setLoadingWeek] = useState(true);
@@ -81,7 +80,7 @@ function PortalInner() {
   const [loadingFixtures, setLoadingFixtures] = useState(true);
   const [loadingResults, setLoadingResults] = useState(true);
   const [loadingPrograms, setLoadingPrograms] = useState(true);
-  const [loadingLeaderboards, setLoadingLeaderboards] = useState(true);
+  const [loadingSpotlight, setLoadingSpotlight] = useState(true);
 
   useEffect(() => {
     async function loadAll() {
@@ -107,30 +106,9 @@ function PortalInner() {
       const programsData = await safeQuery<Row[]>(
         supabase.from('portal_programs').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
       );
-      // Fetch leaderboard data via API route (bypasses RLS)
-      const lbRes = await fetch(`/api/portal/leaderboard?sport=${sport}`);
-      const lbData = lbRes.ok ? await lbRes.json() : { athletes: [], attendance: [], performance: [] };
-      const athletes: Row[] = lbData.athletes || [];
-      const attendance: Row[] = lbData.attendance || [];
-      const performance: Row[] = lbData.performance || [];
-
-      const gym = athletes.map((athlete) => {
-        const records = attendance.filter((r) => r.athlete_id === athlete.id);
-        const total = records.length;
-        const positive = records.filter((r) => ['present', 'late'].includes(String(r.status).toLowerCase())).length;
-        const gymSessions = records.filter((r) => String(r.session_type).toLowerCase() === 'gym').length;
-        const attendanceRate = total ? Math.round((positive / total) * 100) : 0;
-        const score = Math.round(attendanceRate * 0.7 + Math.min(gymSessions * 6, 30));
-        return { ...athlete, name: athlete.firstName || 'Athlete', attendanceRate, gymSessions, score };
-      }).filter((a) => a.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
-
-      const perf = athletes.map((athlete) => {
-        const records = performance.filter((r) => r.athlete_id === athlete.id);
-        const latest = [...records].sort((a, b) => new Date(b.test_date).getTime() - new Date(a.test_date).getTime())[0];
-        const days = latest ? daysSince(latest.test_date) : null;
-        const recency = days === null ? 0 : days <= 7 ? 40 : days <= 14 ? 30 : days <= 30 ? 20 : 5;
-        return { ...athlete, name: athlete.firstName || 'Athlete', testCount: records.length, days, score: records.length * 10 + recency };
-      }).filter((a) => a.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
+      const spotlightData = await safeQuery<Row[]>(
+        supabase.from('portal_spotlight').select('*').eq('is_published', true).eq('sport', sport).order('sort_order', { ascending: true }), []
+      );
 
       setSponsors(sponsorsData);
       setWeekItems(weekData);
@@ -138,15 +116,14 @@ function PortalInner() {
       setFixtures(fixturesData);
       setResults(resultsData);
       setPrograms(programsData.slice(0, 4));
-      setGymLeaderboard(gym);
-      setPerformanceLeaderboard(perf);
+      setSpotlight(spotlightData);
       setLoadingSponsors(false);
       setLoadingWeek(false);
       setLoadingReminders(false);
       setLoadingFixtures(false);
       setLoadingResults(false);
       setLoadingPrograms(false);
-      setLoadingLeaderboards(false);
+      setLoadingSpotlight(false);
     }
     loadAll();
   }, []);
@@ -160,7 +137,6 @@ function PortalInner() {
   }, [sponsors]);
 
   const activeSponsor = sponsors[activeSponsorIndex];
-  const MEDALS = ['1st', '2nd', '3rd', '4th', '5th'];
 
   // ── derived ──────────────────────────────────────────────────────────────
   const today = new Date().toISOString().split('T')[0];
@@ -347,7 +323,14 @@ function PortalInner() {
           </div>
           {/* Right: next fixture */}
           {nextFixture ? (
-            <div style={{borderRadius:16,border:`1px solid ${C}30`,background:`rgba(255,255,255,0.03)`,overflow:'hidden'}}>
+            <div style={{borderRadius:16,border:`1px solid ${C}30`,overflow:'hidden',position:'relative'}}>
+              {/* Background photo */}
+              <div style={{position:'absolute',inset:0,zIndex:0}}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/sbc-photo-4.jpg" alt="" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center',filter:'brightness(0.18) saturate(0.4)'}}/>
+              </div>
+              <div style={{position:'absolute',inset:0,background:`linear-gradient(135deg,${C}15,rgba(4,8,16,0.85))`,zIndex:1}}/>
+              <div style={{position:'relative',zIndex:2}}>
               <div style={{padding:'14px 18px',borderBottom:`1px solid rgba(255,255,255,0.06)`}}>
                 <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.2em',color:C,textTransform:'uppercase'}}>Next Fixture</p>
               </div>
@@ -387,6 +370,7 @@ function PortalInner() {
                   <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </Link>
               </div>
+              </div>{/* end z-index wrapper */}
             </div>
           ) : (
             <div style={{borderRadius:16,border:`1px solid ${BORDER}`,background:CARD,padding:'32px',textAlign:'center'}}>
@@ -676,40 +660,75 @@ function PortalInner() {
           </Section>
         </div>
 
+        {/* ── PLAYER SPOTLIGHT ── */}
+        <div style={{marginBottom:24}}>
+          <div style={{borderRadius:18,overflow:'hidden',border:`1px solid rgba(255,255,255,0.07)`,background:'rgba(255,255,255,0.025)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.07)'}}>
+            <div style={{padding:'18px 22px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <div>
+                <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:2}}>Player Spotlight</p>
+                <p style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>Recognised players this week</p>
+              </div>
+            </div>
+            <div style={{padding:'16px 20px'}}>
+              {loadingSpotlight ? (
+                <p style={{fontSize:13,color:'rgba(255,255,255,0.2)'}}>Loading...</p>
+              ) : spotlight.length === 0 ? (
+                <p style={{fontSize:13,color:'rgba(255,255,255,0.2)',padding:'8px 0'}}>No spotlight published yet.</p>
+              ) : (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
+                  {spotlight.map((s,i)=>{
+                    const icons = [
+                      <svg key="s" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:18,height:18}}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+                      <svg key="t" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:18,height:18}}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
+                      <svg key="u" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:18,height:18}}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+                    ];
+                    const iconColors = [C,'#34d399','#a78bfa'];
+                    const iconCol = iconColors[i] || C;
+                    const labels = ['Player of the Week','Most Improved','Attendance Leader'];
+                    return (
+                      <div key={s.id} style={{borderRadius:14,background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,255,255,0.07)',padding:'14px',display:'flex',gap:12,alignItems:'flex-start'}}>
+                        <div style={{width:40,height:40,borderRadius:11,background:`${iconCol}18`,border:`1px solid ${iconCol}25`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,color:iconCol}}>
+                          {icons[i]||icons[0]}
+                        </div>
+                        <div>
+                          <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.12em',color:`${iconCol}99`,textTransform:'uppercase',marginBottom:3}}>{s.type?.replace(/_/g,' ')||labels[i]}</p>
+                          <p style={{fontSize:14,fontWeight:800,color:'white',marginBottom:2,lineHeight:1.2}}>{s.player_name||'—'}</p>
+                          {s.description&&<p style={{fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.4}}>{s.description}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* ── PARTNERS ── */}
         {sponsors.length > 0 && (
-          <div style={{marginBottom:24}}>
-            <div style={{borderRadius:18,overflow:'hidden',border:`1px solid rgba(255,255,255,0.07)`,background:'rgba(255,255,255,0.025)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',boxShadow:'inset 0 1px 0 rgba(255,255,255,0.07)'}}>
-              <div style={{padding:'20px 24px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-                <div>
-                  <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:2}}>Our Partners</p>
-                  <p style={{fontSize:12,color:'rgba(255,255,255,0.35)'}}>Proudly supported by</p>
-                </div>
-              </div>
-              <div style={{padding:'28px 24px',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:0}}>
-                {sponsors.map((s:Row,i:number)=>(
-                  <div key={s.id} style={{
-                    padding:'20px 40px',
-                    borderRight:i<sponsors.length-1?'1px solid rgba(255,255,255,0.07)':'none',
-                    display:'flex',alignItems:'center',justifyContent:'center',
-                    minWidth:160,
-                  }}>
-                    {s.image_url ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
+          <div style={{marginBottom:24,textAlign:'center'}}>
+            <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:`${C}60`,textTransform:'uppercase',marginBottom:20}}>Our Partners</p>
+            <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:0}}>
+              {sponsors.map((s:Row,i:number)=>(
+                <div key={s.id} style={{
+                  padding:'8px 40px',
+                  borderRight:i<sponsors.length-1?'1px solid rgba(255,255,255,0.08)':'none',
+                  display:'flex',alignItems:'center',justifyContent:'center',
+                }}>
+                  {s.image_url
+                    ? /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={s.image_url} alt={s.name||'Sponsor'}
-                        style={{maxHeight:56,maxWidth:180,objectFit:'contain',opacity:0.9}}
+                        style={{maxHeight:40,maxWidth:160,objectFit:'contain',opacity:0.65,filter:'brightness(0) invert(1)',transition:'opacity 0.2s'}}
+                        onMouseOver={e=>(e.currentTarget.style.opacity='1')}
+                        onMouseOut={e=>(e.currentTarget.style.opacity='0.65')}
                       />
-                    ) : (
-                      <p style={{fontSize:18,fontWeight:900,color:'rgba(255,255,255,0.7)',letterSpacing:'0.2em',textTransform:'uppercase'}}>{s.name}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    : <p style={{fontSize:16,fontWeight:900,color:'rgba(255,255,255,0.5)',letterSpacing:'0.2em',textTransform:'uppercase'}}>{s.name}</p>
+                  }
+                </div>
+              ))}
             </div>
           </div>
         )}
-
-      </div>
 
       {/* ── FOOTER ── */}
       <footer style={{borderTop:`1px solid ${BORDER}`,padding:'28px 24px',textAlign:'center'}}>
