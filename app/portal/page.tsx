@@ -569,22 +569,24 @@ function PortalInner() {
                 const outcome = outcomeOf(r.final_score||'');
                 const oc = outcomeColor(outcome);
                 return (
-                  <div key={r.id} className="fixture-row" style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<latestResults.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s'}}>
+                  <Link key={r.id} href={`/portal/fixtures/season?sport=${sport}&tab=results`}
+                    className="fixture-row"
+                    style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<latestResults.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s',textDecoration:'none',color:'inherit',cursor:'pointer'}}>
                     <DateBlock dateStr={r.result_date}/>
                     <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:10,color:'rgba(255,255,255,0.3)',textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>{r.team}</p>
                       <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>vs {r.opponent}</p>
-                      <p style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>{r.team}</p>
                     </div>
-                    <div style={{textAlign:'right'}}>
-                      <p style={{fontSize:22,fontWeight:800,color:oc,lineHeight:1,marginBottom:3}}>{r.final_score||'—'}</p>
-                      {outcome&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',padding:'3px 8px',borderRadius:20,background:`${oc}18`,color:oc}}>{outcome}</span>}
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:4}}>
+                      <p style={{fontSize:22,fontWeight:800,color:oc,lineHeight:1}}>{r.final_score||'—'}</p>
+                      {outcome&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',padding:'3px 8px',borderRadius:20,background:`${oc}18`,color:oc,border:`1px solid ${oc}25`}}>{outcome}</span>}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
-              <Link href={`/portal/fixtures/season?sport=${sport}`} style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5,fontWeight:600}}>
+              <Link href={`/portal/fixtures/season?sport=${sport}&tab=results`} style={{fontSize:12,color:C,textDecoration:'none',display:'flex',alignItems:'center',gap:5,fontWeight:600}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 View full season results
               </Link>

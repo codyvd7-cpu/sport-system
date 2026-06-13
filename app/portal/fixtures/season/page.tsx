@@ -32,6 +32,7 @@ function outcomeColor(o: string | null) {
 function SeasonInner() {
   const searchParams = useSearchParams();
   const sport = searchParams.get('sport') || 'hockey';
+  const initialTab = (searchParams.get('tab') as 'upcoming'|'results') || 'upcoming';
   const cfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
   const C = cfg.color;
   const BG = '#0a0f1e';
@@ -40,7 +41,7 @@ function SeasonInner() {
   const [fixtures, setFixtures] = React.useState<Row[]>([]);
   const [results,  setResults]  = React.useState<Row[]>([]);
   const [loading,  setLoading]  = React.useState(true);
-  const [tab, setTab] = React.useState<'upcoming'|'results'>('upcoming');
+  const [tab, setTab] = React.useState<'upcoming'|'results'>(initialTab);
 
   const today = new Date().toISOString().split('T')[0];
 
