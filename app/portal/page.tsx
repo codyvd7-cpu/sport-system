@@ -707,6 +707,8 @@ function PortalInner() {
           </div>
         )}
 
+      </div>
+
       {/* ── FOOTER ── */}
       <footer style={{borderTop:`1px solid ${BORDER}`,padding:'28px 24px',textAlign:'center'}}>
         <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.45em',color:`${C}55`,textTransform:'uppercase',marginBottom:8}}>Veritas In Caritate</p>
