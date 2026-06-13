@@ -373,7 +373,7 @@ function PortalInner() {
                     <p style={{fontSize:10,fontWeight:600,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.1em'}}>{new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{weekday:'long'})}</p>
                     <p style={{fontSize:22,fontWeight:800,color:'white',lineHeight:1.1}}>{new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{day:'2-digit',month:'long'}).toUpperCase()}</p>
                     <p style={{fontSize:14,fontWeight:600,color:C,marginTop:2}}>{nextFixture.fixture_time||'TBC'}</p>
-                    {nextFixture.venue&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginTop:2}}}>{nextFixture.venue}</p>}
+                    {nextFixture.venue&&<p style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginTop:2}}>{nextFixture.venue}</p>}
                   </div>
                   <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.08em',padding:'4px 10px',borderRadius:20,background:nextFixture.venue?.toLowerCase().includes('home')||nextFixture.home_away==='home' ? `${C}20` : 'rgba(255,255,255,0.06)',color:nextFixture.venue?.toLowerCase().includes('home')||nextFixture.home_away==='home' ? C : 'rgba(255,255,255,0.4)'}}>
                     {nextFixture.home_away?.toUpperCase()||'TBC'}
