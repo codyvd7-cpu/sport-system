@@ -399,118 +399,122 @@ function PortalInner() {
         {/* ── WEEK AT A GLANCE ── */}
         {/* ── WEEK AT A GLANCE ── */}
         {/* ── WEEK AT A GLANCE ── */}
+        {/* ── WEEK AT A GLANCE ── */}
         <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
             <div style={{padding:'20px 22px 22px'}}>
 
               {/* Header */}
-              <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',marginBottom:18}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20}}>
                 <div>
                   <p style={{fontSize:11,fontWeight:700,letterSpacing:'0.18em',color:C,textTransform:'uppercase',marginBottom:3}}>Week at a Glance</p>
-                  <p style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.55)'}}>
+                  <p style={{fontSize:12,color:'rgba(255,255,255,0.4)'}}>
                     {weekDates[0].toLocaleDateString('en-ZA',{day:'numeric',month:'long'})} — {weekDates[5].toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
                   </p>
                 </div>
-                <div style={{textAlign:'right'}}>
-                  <p style={{fontSize:10,color:'rgba(255,255,255,0.3)',letterSpacing:'0.05em'}}>{weekItems.length} sessions</p>
-                  <p style={{fontSize:10,color:`${C}80`,marginTop:2,fontWeight:600}}>Swipe to browse</p>
+                {/* Prev / Next */}
+                <div style={{display:'flex',gap:6}}>
+                  {[{dir:-1,path:'M15 18l-6-6 6-6'},{dir:1,path:'M9 18l6-6-6-6'}].map(({dir,path})=>(
+                    <button key={dir}
+                      onClick={()=>setSelectedDay(d=>Math.min(5,Math.max(0,d+dir)))}
+                      disabled={(dir===-1&&selectedDay===0)||(dir===1&&selectedDay===5)}
+                      style={{
+                        width:34,height:34,borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',
+                        background:'rgba(255,255,255,0.05)',cursor:'pointer',
+                        display:'flex',alignItems:'center',justifyContent:'center',
+                        opacity:(dir===-1&&selectedDay===0)||(dir===1&&selectedDay===5)?0.25:1,
+                        transition:'all 0.15s',
+                      }}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{width:14,height:14}}><path d={path}/></svg>
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              <style>{`
-                .wag-scroll { display:flex; gap:12px; overflow-x:auto; padding-bottom:8px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
-                .wag-scroll::-webkit-scrollbar { height:2px; }
-                .wag-scroll::-webkit-scrollbar-track { background:rgba(255,255,255,0.04); border-radius:1px; }
-                .wag-scroll::-webkit-scrollbar-thumb { background:${C}50; border-radius:1px; }
-                .wag-card { flex-shrink:0; width:clamp(200px,72vw,240px); scroll-snap-align:start; border-radius:20px; overflow:hidden; cursor:default; position:relative; transition:transform 0.2s ease, box-shadow 0.2s ease; }
-                @media(min-width:640px){ .wag-card { width:220px; } }
-                @media(min-width:900px){ .wag-card { width:210px; } }
-                .wag-card::before { content:''; position:absolute; inset:0; border-radius:20px; background:linear-gradient(140deg,rgba(255,255,255,0.13) 0%,rgba(255,255,255,0.03) 40%,transparent 70%); pointer-events:none; z-index:1; }
-                .wag-card::after { content:''; position:absolute; top:0; left:15%; right:15%; height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 40%,rgba(255,255,255,0.8) 50%,rgba(255,255,255,0.5) 60%,transparent); pointer-events:none; z-index:2; }
-                .wag-card.is-today { transform:translateY(-3px); }
-                .wag-bullet-dot { width:5px; height:5px; border-radius:50%; flex-shrink:0; margin-top:5px; }
-              `}</style>
-
-              {loadingWeek ? (
-                <div style={{height:180,display:'flex',alignItems:'center',justifyContent:'center'}}>
-                  <div style={{width:20,height:20,borderRadius:'50%',border:`2px solid ${C}`,borderTopColor:'transparent',animation:'spin 0.8s linear infinite'}}/>
-                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-                </div>
-              ) : (
-                <div className="wag-scroll" ref={(el)=>{
-                  if(el){
-                    const t=el.querySelector('.is-today') as HTMLElement;
-                    if(t) setTimeout(()=>t.scrollIntoView({inline:'start',block:'nearest',behavior:'smooth'}),100);
-                  }
+              {/* Carousel viewport */}
+              <div style={{overflow:'hidden',borderRadius:20,position:'relative'}}>
+                <div style={{
+                  display:'flex',
+                  transform:`translateX(calc(${selectedDay} * -100%))`,
+                  transition:'transform 0.45s cubic-bezier(0.4,0,0.2,1)',
                 }}>
                   {[0,1,2,3,4,5].map(i=>{
                     const isToday  = i===todayDow;
                     const dayItems = itemsByDay[i]||[];
                     const hasMatch = dayItems.some(it=>{const t=(it.title||'').toLowerCase();return t.includes('match')||t.includes('fixture')||t.includes('vs ');});
-                    const isEmpty  = dayItems.length===0;
                     return (
-                      <div key={i} className={`wag-card${isToday?' is-today':''}`}
-                        style={{
-                          background: isToday
-                            ? `rgba(255,255,255,0.07)`
-                            : 'rgba(255,255,255,0.03)',
-                          backdropFilter:'blur(20px) saturate(180%)',
-                          WebkitBackdropFilter:'blur(20px) saturate(180%)',
-                          border: `1px solid ${isToday?C+'55':'rgba(255,255,255,0.09)'}`,
-                          boxShadow: isToday
-                            ? `0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px ${C}25, inset 0 1px 0 rgba(255,255,255,0.12)`
-                            : '0 4px 20px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06)',
-                        }}>
-
-                        {/* Top sport-colour accent line for today */}
+                      <div key={i} style={{
+                        flexShrink:0,width:'100%',
+                        borderRadius:20,overflow:'hidden',
+                        position:'relative',
+                        background: isToday ? 'rgba(255,255,255,0.07)' : 'rgba(255,255,255,0.03)',
+                        backdropFilter:'blur(24px) saturate(180%)',
+                        WebkitBackdropFilter:'blur(24px) saturate(180%)',
+                        border:`1px solid ${isToday?C+'50':'rgba(255,255,255,0.08)'}`,
+                        boxShadow: isToday
+                          ? `0 16px 48px rgba(0,0,0,0.45), 0 0 0 1px ${C}20, inset 0 1px 0 rgba(255,255,255,0.15)`
+                          : '0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)',
+                      }}>
+                        {/* Glass specular */}
+                        <div style={{position:'absolute',inset:0,borderRadius:20,background:'linear-gradient(140deg,rgba(255,255,255,0.12) 0%,rgba(255,255,255,0.03) 35%,transparent 65%)',pointerEvents:'none',zIndex:1}}/>
+                        <div style={{position:'absolute',top:0,left:'12%',right:'12%',height:1,background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.5) 40%,rgba(255,255,255,0.85) 50%,rgba(255,255,255,0.5) 60%,transparent)',pointerEvents:'none',zIndex:2}}/>
                         {isToday && <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${C},transparent)`,zIndex:3}}/>}
 
-                        {/* Card header */}
+                        {/* Header */}
                         <div style={{
-                          position:'relative',zIndex:1,
-                          padding:'16px 16px 12px',
-                          background: isToday ? `linear-gradient(160deg,${C}20,${C}05)` : 'transparent',
-                          borderBottom:`1px solid ${isToday?C+'20':'rgba(255,255,255,0.05)'}`,
+                          position:'relative',zIndex:2,
+                          padding:'22px 24px 18px',
+                          background:isToday?`linear-gradient(160deg,${C}22,transparent)`:'transparent',
+                          borderBottom:`1px solid ${isToday?C+'25':'rgba(255,255,255,0.06)'}`,
+                          display:'flex',alignItems:'flex-end',justifyContent:'space-between',
                         }}>
-                          {/* Day + badges */}
-                          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
-                            <span style={{fontSize:10,fontWeight:700,letterSpacing:'0.12em',textTransform:'uppercase',color:isToday?C:'rgba(255,255,255,0.35)'}}>{DAY_NAMES[i]}</span>
-                            <div style={{display:'flex',gap:4}}>
-                              {isToday && <span style={{fontSize:8,fontWeight:800,letterSpacing:'0.1em',padding:'2px 7px',borderRadius:20,background:`${C}25`,color:C,border:`1px solid ${C}40`}}>TODAY</span>}
-                              {hasMatch && <span style={{fontSize:8,fontWeight:800,letterSpacing:'0.08em',padding:'2px 7px',borderRadius:20,background:'rgba(251,191,36,0.15)',color:'#fbbf24',border:'1px solid rgba(251,191,36,0.3)'}}>MATCH</span>}
-                            </div>
+                          <div>
+                            <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.15em',textTransform:'uppercase',color:isToday?C:'rgba(255,255,255,0.4)',marginBottom:6}}>{DAY_NAMES[i]}</p>
+                            <p style={{fontSize:42,fontWeight:900,lineHeight:1,letterSpacing:'-0.03em',color:isToday?'white':'rgba(255,255,255,0.75)'}}>
+                              {weekDates[i].getDate()}
+                              <span style={{fontSize:18,fontWeight:600,color:'rgba(255,255,255,0.4)',letterSpacing:'0.02em',marginLeft:8}}>
+                                {weekDates[i].toLocaleDateString('en-ZA',{month:'long'})}
+                              </span>
+                            </p>
                           </div>
-                          {/* Big date */}
-                          <div style={{display:'flex',alignItems:'baseline',gap:6}}>
-                            <span style={{fontSize:36,fontWeight:900,lineHeight:1,letterSpacing:'-0.03em',color:isToday?'white':'rgba(255,255,255,0.7)'}}>{weekDates[i].getDate()}</span>
-                            <span style={{fontSize:13,fontWeight:600,color:'rgba(255,255,255,0.35)',letterSpacing:'0.02em'}}>{weekDates[i].toLocaleDateString('en-ZA',{month:'short'}).toUpperCase()}</span>
+                          <div style={{display:'flex',flexDirection:'column',gap:4,alignItems:'flex-end'}}>
+                            {isToday && <span style={{fontSize:9,fontWeight:800,letterSpacing:'0.12em',padding:'3px 9px',borderRadius:20,background:`${C}25`,color:C,border:`1px solid ${C}45`}}>TODAY</span>}
+                            {hasMatch && <span style={{fontSize:9,fontWeight:800,letterSpacing:'0.1em',padding:'3px 9px',borderRadius:20,background:'rgba(251,191,36,0.15)',color:'#fbbf24',border:'1px solid rgba(251,191,36,0.3)'}}>MATCH DAY</span>}
+                            {!hasMatch && !isToday && dayItems.length>0 && <span style={{fontSize:9,fontWeight:700,letterSpacing:'0.08em',padding:'3px 9px',borderRadius:20,background:'rgba(255,255,255,0.06)',color:'rgba(255,255,255,0.35)',border:'1px solid rgba(255,255,255,0.08)'}}>{dayItems.length} SESSION{dayItems.length>1?'S':''}</span>}
                           </div>
                         </div>
 
-                        {/* Card body */}
-                        <div style={{position:'relative',zIndex:1,padding:'12px 16px 16px',minHeight:100}}>
-                          {isEmpty ? (
-                            <div style={{paddingTop:8,display:'flex',alignItems:'center',gap:8}}>
-                              <div style={{width:2,height:28,borderRadius:1,background:'rgba(255,255,255,0.07)'}}/>
-                              <p style={{fontSize:12,color:'rgba(255,255,255,0.2)',fontStyle:'italic'}}>Rest day</p>
+                        {/* Body */}
+                        <div style={{position:'relative',zIndex:2,padding:'18px 24px 22px',minHeight:140}}>
+                          {dayItems.length===0 ? (
+                            <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 0'}}>
+                              <div style={{width:2,height:36,borderRadius:1,background:'rgba(255,255,255,0.08)'}}/>
+                              <div>
+                                <p style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.25)'}}>Rest Day</p>
+                                <p style={{fontSize:12,color:'rgba(255,255,255,0.15)',marginTop:3}}>No sessions scheduled</p>
+                              </div>
                             </div>
                           ) : (
-                            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                            <div style={{display:'flex',flexDirection:'column',gap:14}}>
                               {dayItems.map((item,si)=>{
                                 const bullets=(item.details||item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
                                 const isMatch=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('vs ');
-                                const titleColor = isMatch ? '#fbbf24' : isToday ? C : 'white';
-                                const dotColor   = isMatch ? '#fbbf24' : C;
+                                const accentCol = isMatch?'#fbbf24':C;
                                 return (
                                   <div key={item.id||si}>
-                                    {si>0 && <div style={{height:1,background:'rgba(255,255,255,0.06)',marginBottom:10}}/>}
-                                    <p style={{fontSize:12,fontWeight:800,color:titleColor,marginBottom:bullets.length?5:0,lineHeight:1.3}}>{item.title}</p>
-                                    {bullets.map((b:string,bi:number)=>(
-                                      <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:3}}>
-                                        <div className="wag-bullet-dot" style={{background:dotColor,opacity:0.6}}/>
-                                        <p style={{fontSize:11,color:'rgba(255,255,255,0.55)',lineHeight:1.5,fontWeight:400}}>{b}</p>
+                                    {si>0&&<div style={{height:1,background:'rgba(255,255,255,0.06)',marginBottom:14}}/>}
+                                    <div style={{display:'flex',alignItems:'flex-start',gap:12}}>
+                                      <div style={{width:3,flexShrink:0,borderRadius:2,marginTop:2,background:`linear-gradient(to bottom,${accentCol},${accentCol}44)`,alignSelf:'stretch',minHeight:20}}/>
+                                      <div style={{flex:1}}>
+                                        <p style={{fontSize:14,fontWeight:800,color:isMatch?'#fbbf24':isToday?C:'white',marginBottom:bullets.length?8:0,lineHeight:1.3}}>{item.title}</p>
+                                        {bullets.map((b:string,bi:number)=>(
+                                          <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:8,marginBottom:5}}>
+                                            <div style={{width:5,height:5,borderRadius:'50%',background:accentCol,flexShrink:0,marginTop:5,opacity:0.65}}/>
+                                            <p style={{fontSize:12,color:'rgba(255,255,255,0.6)',lineHeight:1.55,fontWeight:400}}>{b}</p>
+                                          </div>
+                                        ))}
                                       </div>
-                                    ))}
+                                    </div>
                                   </div>
                                 );
                               })}
@@ -521,7 +525,29 @@ function PortalInner() {
                     );
                   })}
                 </div>
-              )}
+              </div>
+
+              {/* Dot indicators */}
+              <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,marginTop:14}}>
+                {[0,1,2,3,4,5].map(i=>{
+                  const isActive  = i===selectedDay;
+                  const isToday   = i===todayDow;
+                  const hasItems  = !!(itemsByDay[i]?.length);
+                  return (
+                    <button key={i} onClick={()=>setSelectedDay(i)}
+                      style={{
+                        width:isActive?24:hasItems?7:5,
+                        height:isActive?7:hasItems?7:5,
+                        borderRadius:4,border:'none',cursor:'pointer',
+                        transition:'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+                        background:isActive?C:isToday?`${C}60`:hasItems?'rgba(255,255,255,0.2)':'rgba(255,255,255,0.08)',
+                        boxShadow:isActive?`0 2px 8px ${C}60`:'none',
+                        padding:0,
+                      }}/>
+                  );
+                })}
+              </div>
+
             </div>
           </Section>
         </div>
