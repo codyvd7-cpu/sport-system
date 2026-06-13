@@ -678,18 +678,18 @@ function PortalInner() {
             <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:12}}>
               {sponsors.map((s:Row)=>(
                 <div key={s.id} style={{
-                  background:'white',borderRadius:12,
-                  padding:'12px 24px',
+                  background:'white',borderRadius:14,
+                  padding:'16px 32px',
                   display:'flex',alignItems:'center',justifyContent:'center',
-                  minWidth:120,height:56,
-                  boxShadow:'0 2px 12px rgba(0,0,0,0.3)',
+                  minWidth:160,height:72,
+                  boxShadow:'0 4px 16px rgba(0,0,0,0.35)',
                 }}>
                   {s.image_url
                     ? /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={s.image_url} alt={s.name||'Sponsor'}
-                        style={{maxHeight:32,maxWidth:140,objectFit:'contain'}}
+                        style={{maxHeight:44,maxWidth:160,objectFit:'contain'}}
                       />
-                    : <p style={{fontSize:13,fontWeight:900,color:'#0a0f1e',letterSpacing:'0.15em',textTransform:'uppercase'}}>{s.name}</p>
+                    : <p style={{fontSize:15,fontWeight:900,color:'#0a0f1e',letterSpacing:'0.15em',textTransform:'uppercase'}}>{s.name}</p>
                   }
                 </div>
               ))}
