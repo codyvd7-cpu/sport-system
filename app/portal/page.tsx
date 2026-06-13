@@ -718,9 +718,9 @@ function PortalInner() {
                   {s.image_url
                     ? /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={s.image_url} alt={s.name||'Sponsor'}
-                        style={{maxHeight:40,maxWidth:160,objectFit:'contain',opacity:0.65,filter:'brightness(0) invert(1)',transition:'opacity 0.2s'}}
+                        style={{maxHeight:40,maxWidth:160,objectFit:'contain',opacity:0.85,transition:'opacity 0.2s'}}
                         onMouseOver={e=>(e.currentTarget.style.opacity='1')}
-                        onMouseOut={e=>(e.currentTarget.style.opacity='0.65')}
+                        onMouseOut={e=>(e.currentTarget.style.opacity='0.85')}
                       />
                     : <p style={{fontSize:16,fontWeight:900,color:'rgba(255,255,255,0.5)',letterSpacing:'0.2em',textTransform:'uppercase'}}>{s.name}</p>
                   }
