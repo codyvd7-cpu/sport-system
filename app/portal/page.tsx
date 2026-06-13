@@ -380,120 +380,87 @@ function PortalInner() {
         </div>
 
         {/* ── WEEK AT A GLANCE ── */}
+        {/* ── WEEK AT A GLANCE ── */}
         <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
-            <div style={{padding:'22px 22px 20px'}}>
+            <div style={{padding:'18px 20px 20px'}}>
 
-              {/* Header row */}
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18}}>
-                <div>
-                  <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:3}}>Week at a Glance</p>
-                  <p style={{fontSize:12,fontWeight:500,color:'rgba(255,255,255,0.35)',letterSpacing:'0.01em'}}>
-                    {weekDates[0].toLocaleDateString('en-ZA',{day:'numeric',month:'long'})} — {weekDates[5].toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
-                  </p>
-                </div>
-                <div style={{display:'flex',gap:5}}>
-                  {[{d:-1,p:'M15 18l-6-6 6-6'},{d:1,p:'M9 18l6-6-6-6'}].map(({d,p})=>(
-                    <button key={d} onClick={()=>setSelectedDay(s=>Math.min(5,Math.max(0,s+d)))}
-                      disabled={(d===-1&&selectedDay===0)||(d===1&&selectedDay===5)}
-                      style={{width:32,height:32,borderRadius:9,border:'1px solid rgba(255,255,255,0.09)',background:'rgba(255,255,255,0.04)',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer',transition:'all 0.15s',opacity:(d===-1&&selectedDay===0)||(d===1&&selectedDay===5)?0.2:1}}>
-                      <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth={2.5} style={{width:13,height:13}}><path d={p}/></svg>
+              {/* Label */}
+              <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:14}}>Week at a Glance</p>
+
+              {/* Day strip — all 6 visible */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:4,marginBottom:16}}>
+                {[0,1,2,3,4,5].map(i=>{
+                  const isToday=i===todayDow, isSel=i===selectedDay, has=!!(itemsByDay[i]?.length);
+                  return (
+                    <button key={i} onClick={()=>setSelectedDay(i)} style={{
+                      display:'flex',flexDirection:'column',alignItems:'center',gap:2,
+                      padding:'8px 4px 6px',borderRadius:10,border:'none',cursor:'pointer',
+                      transition:'all 0.18s ease',
+                      background:isSel?C:isToday?`${C}15`:'rgba(255,255,255,0.03)',
+                      outline:!isSel&&isToday?`1.5px solid ${C}45`:'none',
+                      boxShadow:isSel?`0 4px 14px ${C}40`:'none',
+                    }}>
+                      <span style={{fontSize:8,fontWeight:700,letterSpacing:'0.1em',textTransform:'uppercase',color:isSel?'rgba(255,255,255,0.7)':isToday?C:'rgba(255,255,255,0.3)'}}>{DAY_NAMES[i]}</span>
+                      <span style={{fontSize:17,fontWeight:800,lineHeight:1,color:isSel?'white':isToday?C:'rgba(255,255,255,0.6)'}}>{weekDates[i].getDate()}</span>
+                      <div style={{width:has?16:4,height:3,borderRadius:2,background:has?(isSel?'rgba(255,255,255,0.55)':C):'rgba(255,255,255,0.08)',transition:'width 0.2s'}}/>
                     </button>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
 
-              {/* Carousel */}
-              <div style={{overflow:'hidden',borderRadius:18}}>
-                <div style={{display:'flex',transition:'transform 0.4s cubic-bezier(0.4,0,0.2,1)',transform:`translateX(calc(${selectedDay} * -100%))`}}>
-                  {[0,1,2,3,4,5].map(i=>{
-                    const isToday=i===todayDow;
-                    const items=itemsByDay[i]||[];
-                    const isMatch=items.some(it=>{const t=(it.title||'').toLowerCase();return t.includes('match')||t.includes('fixture')||t.includes('vs ');});
-                    return (
-                      <div key={i} style={{flexShrink:0,width:'100%',borderRadius:18,overflow:'hidden',position:'relative',
-                        background:isToday?`linear-gradient(160deg,${C}18 0%,rgba(255,255,255,0.04) 50%,rgba(255,255,255,0.02) 100%)`:'rgba(255,255,255,0.025)',
-                        backdropFilter:'blur(24px)',WebkitBackdropFilter:'blur(24px)',
-                        border:`1px solid ${isToday?C+'40':'rgba(255,255,255,0.07)'}`,
-                        boxShadow:isToday?`0 20px 60px rgba(0,0,0,0.4),0 0 0 1px ${C}15,inset 0 1px 0 rgba(255,255,255,0.12)`:'0 8px 32px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.06)',
-                      }}>
-                        {/* Specular */}
-                        <div style={{position:'absolute',inset:0,borderRadius:18,background:'linear-gradient(135deg,rgba(255,255,255,0.08) 0%,transparent 50%)',pointerEvents:'none'}}/>
-                        {isToday&&<div style={{position:'absolute',top:0,left:'20%',right:'20%',height:1.5,background:`linear-gradient(90deg,transparent,${C}90,${C},${C}90,transparent)`,zIndex:2}}/>}
-
-                        {/* Head */}
-                        <div style={{padding:'24px 24px 20px',display:'flex',alignItems:'flex-start',justifyContent:'space-between',borderBottom:`1px solid ${isToday?C+'18':'rgba(255,255,255,0.05)'}`}}>
-                          <div>
-                            <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.2em',color:isToday?C:'rgba(255,255,255,0.3)',textTransform:'uppercase',marginBottom:6}}>{DAY_NAMES[i]}</p>
-                            <div style={{display:'flex',alignItems:'baseline',gap:8}}>
-                              <span style={{fontSize:52,fontWeight:900,lineHeight:1,letterSpacing:'-0.04em',color:isToday?'white':'rgba(255,255,255,0.6)',fontVariantNumeric:'tabular-nums'}}>{weekDates[i].getDate()}</span>
-                              <span style={{fontSize:15,fontWeight:600,color:'rgba(255,255,255,0.3)',letterSpacing:'0.03em',textTransform:'uppercase'}}>{weekDates[i].toLocaleDateString('en-ZA',{month:'short'})}</span>
-                            </div>
-                          </div>
-                          <div style={{display:'flex',flexDirection:'column',gap:5,alignItems:'flex-end',paddingTop:4}}>
-                            {isToday&&<span style={{fontSize:8,fontWeight:900,letterSpacing:'0.15em',padding:'3px 10px',borderRadius:20,background:`${C}20`,color:C,border:`1px solid ${C}40`}}>TODAY</span>}
-                            {isMatch&&<span style={{fontSize:8,fontWeight:900,letterSpacing:'0.12em',padding:'3px 10px',borderRadius:20,background:'rgba(251,191,36,0.12)',color:'#fbbf24',border:'1px solid rgba(251,191,36,0.25)'}}>MATCH DAY</span>}
-                            {items.length>0&&!isMatch&&<span style={{fontSize:8,fontWeight:700,letterSpacing:'0.1em',padding:'3px 10px',borderRadius:20,background:'rgba(255,255,255,0.05)',color:'rgba(255,255,255,0.3)',border:'1px solid rgba(255,255,255,0.07)'}}>{items.length} SESSION{items.length>1?'S':''}</span>}
-                          </div>
-                        </div>
-
-                        {/* Body */}
-                        <div style={{padding:'18px 24px 24px',minHeight:130}}>
-                          {!items.length?(
-                            <div style={{display:'flex',alignItems:'center',gap:14,paddingTop:8}}>
-                              <div style={{width:2,height:40,borderRadius:1,background:'rgba(255,255,255,0.07)',flexShrink:0}}/>
-                              <div>
-                                <p style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.2)'}}>Rest Day</p>
-                                <p style={{fontSize:11,color:'rgba(255,255,255,0.12)',marginTop:3}}>No sessions scheduled</p>
+              {/* Detail panel */}
+              {loadingWeek ? (
+                <p style={{fontSize:12,color:'rgba(255,255,255,0.2)',padding:'8px 0'}}>Loading...</p>
+              ) : (
+                <div style={{borderRadius:12,border:`1px solid ${C}20`,background:`${C}07`,padding:'14px 16px',minHeight:64}}>
+                  {/* Day label */}
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                    <p style={{fontSize:12,fontWeight:700,color:C,textTransform:'uppercase',letterSpacing:'0.1em'}}>{DAY_NAMES[selectedDay]}</p>
+                    <p style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long'})}</p>
+                    {todayDow===selectedDay&&<span style={{fontSize:8,fontWeight:800,letterSpacing:'0.1em',padding:'2px 7px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`}}>TODAY</span>}
+                  </div>
+                  {!itemsByDay[selectedDay]?.length ? (
+                    <p style={{fontSize:12,color:'rgba(255,255,255,0.22)',fontStyle:'italic'}}>Rest day — no sessions scheduled.</p>
+                  ) : (
+                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                      {itemsByDay[selectedDay].map((item,si,arr)=>{
+                        const bullets=(item.details||item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
+                        const isMDay=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('vs ');
+                        const ac=isMDay?'#fbbf24':C;
+                        return (
+                          <div key={item.id||si}>
+                            {si>0&&<div style={{height:1,background:'rgba(255,255,255,0.06)',marginBottom:10}}/>}
+                            <div style={{display:'flex',gap:10}}>
+                              <div style={{width:2,flexShrink:0,borderRadius:1,background:`linear-gradient(to bottom,${ac},${ac}30)`,alignSelf:'stretch',minHeight:16}}/>
+                              <div style={{flex:1}}>
+                                <p style={{fontSize:13,fontWeight:700,color:isMDay?'#fbbf24':'white',marginBottom:bullets.length?5:0}}>{item.title}</p>
+                                {bullets.map((b:string,bi:number)=>(
+                                  <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:3}}>
+                                    <div style={{width:3,height:3,borderRadius:'50%',background:ac,flexShrink:0,marginTop:6,opacity:0.5}}/>
+                                    <p style={{fontSize:11,color:'rgba(255,255,255,0.5)',lineHeight:1.55}}>{b}</p>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ):(
-                            <div style={{display:'flex',flexDirection:'column',gap:14}}>
-                              {items.map((item,si)=>{
-                                const lines=(item.details||item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
-                                const isMDay=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('vs ');
-                                const ac=isMDay?'#fbbf24':C;
-                                return (
-                                  <div key={item.id||si}>
-                                    {si>0&&<div style={{height:1,background:'rgba(255,255,255,0.05)',marginBottom:14}}/>}
-                                    <div style={{display:'flex',gap:12}}>
-                                      <div style={{width:2.5,borderRadius:2,background:`linear-gradient(to bottom,${ac},${ac}30)`,flexShrink:0,alignSelf:'stretch',minHeight:18}}/>
-                                      <div style={{flex:1}}>
-                                        <p style={{fontSize:13,fontWeight:800,color:isMDay?'#fbbf24':isToday?'white':'rgba(255,255,255,0.85)',marginBottom:lines.length?7:0,letterSpacing:'0.01em'}}>{item.title}</p>
-                                        <div style={{display:'flex',flexDirection:'column',gap:3}}>
-                                          {lines.map((b:string,bi:number)=>(
-                                            <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:7}}>
-                                              <div style={{width:4,height:4,borderRadius:'50%',background:ac,flexShrink:0,marginTop:6,opacity:0.55}}/>
-                                              <p style={{fontSize:12,color:'rgba(255,255,255,0.5)',lineHeight:1.6}}>{b}</p>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
-              {/* Dots */}
-              <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:5,marginTop:14}}>
+              {/* Dot nav */}
+              <div style={{display:'flex',justifyContent:'center',gap:4,marginTop:12}}>
                 {[0,1,2,3,4,5].map(i=>(
-                  <button key={i} onClick={()=>setSelectedDay(i)} style={{
-                    width:i===selectedDay?22:5,height:5,padding:0,border:'none',cursor:'pointer',borderRadius:3,
-                    transition:'all 0.3s cubic-bezier(0.34,1.56,0.64,1)',
-                    background:i===selectedDay?C:i===todayDow?`${C}50`:itemsByDay[i]?.length?'rgba(255,255,255,0.18)':'rgba(255,255,255,0.07)',
-                    boxShadow:i===selectedDay?`0 2px 8px ${C}55`:'none',
+                  <div key={i} style={{
+                    width:i===selectedDay?20:4,height:3,borderRadius:2,
+                    transition:'all 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+                    background:i===selectedDay?C:i===todayDow?`${C}55`:itemsByDay[i]?.length?'rgba(255,255,255,0.15)':'rgba(255,255,255,0.06)',
                   }}/>
                 ))}
               </div>
-
             </div>
           </Section>
         </div>
@@ -706,23 +673,23 @@ function PortalInner() {
 
         {/* ── PARTNERS ── */}
         {sponsors.length > 0 && (
-          <div style={{marginBottom:24,textAlign:'center'}}>
-            <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:`${C}60`,textTransform:'uppercase',marginBottom:20}}>Our Partners</p>
-            <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:0}}>
-              {sponsors.map((s:Row,i:number)=>(
+          <div style={{marginBottom:24}}>
+            <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:`${C}55`,textTransform:'uppercase',marginBottom:16,textAlign:'center'}}>Our Partners</p>
+            <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'center',gap:12}}>
+              {sponsors.map((s:Row)=>(
                 <div key={s.id} style={{
-                  padding:'8px 40px',
-                  borderRight:i<sponsors.length-1?'1px solid rgba(255,255,255,0.08)':'none',
+                  background:'white',borderRadius:12,
+                  padding:'12px 24px',
                   display:'flex',alignItems:'center',justifyContent:'center',
+                  minWidth:120,height:56,
+                  boxShadow:'0 2px 12px rgba(0,0,0,0.3)',
                 }}>
                   {s.image_url
                     ? /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={s.image_url} alt={s.name||'Sponsor'}
-                        style={{maxHeight:40,maxWidth:160,objectFit:'contain',opacity:0.85,transition:'opacity 0.2s'}}
-                        onMouseOver={e=>(e.currentTarget.style.opacity='1')}
-                        onMouseOut={e=>(e.currentTarget.style.opacity='0.85')}
+                        style={{maxHeight:32,maxWidth:140,objectFit:'contain'}}
                       />
-                    : <p style={{fontSize:16,fontWeight:900,color:'rgba(255,255,255,0.5)',letterSpacing:'0.2em',textTransform:'uppercase'}}>{s.name}</p>
+                    : <p style={{fontSize:13,fontWeight:900,color:'#0a0f1e',letterSpacing:'0.15em',textTransform:'uppercase'}}>{s.name}</p>
                   }
                 </div>
               ))}
