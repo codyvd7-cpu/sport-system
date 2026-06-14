@@ -308,7 +308,7 @@ export default function PlayerProfilePage() {
                   {!dataReady?<p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p>:
                   weekItems.length===0&&fixtures.length===0?<p style={{fontSize:13,color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>No schedule published yet.</p>:
                   <div style={{display:'flex',flexDirection:'column',gap:0}}>
-                    {[...weekItems.map(w=>({...w,_t:'session'})),...fixtures.map(f=>({...f,_t:'fixture'}))].map((item,i,arr)=>{
+                    {([...weekItems.map(w=>({...w,_t:'session'})),...fixtures.map(f=>({...f,_t:'fixture'}))] as Row[]).map((item,i,arr)=>{
                       const isF=item._t==='fixture';
                       return (
                         <div key={item.id||i} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 0',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none'}}>
