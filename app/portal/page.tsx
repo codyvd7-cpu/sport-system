@@ -68,8 +68,6 @@ function PortalInner() {
   const [weekItems, setWeekItems] = useState<Row[]>([]);
   const [reminders, setReminders] = useState<Row[]>([]);
   const [fixtures, setFixtures] = useState<Row[]>([]);
-  const [expandedFixtureDate, setExpandedFixtureDate] = useState<string | null>(null);
-  const [expandedResultId, setExpandedResultId] = useState<string | null>(null);
   const [results, setResults] = useState<Row[]>([]);
   const [programs, setPrograms] = useState<Row[]>([]);
   const [spotlight, setSpotlight] = useState<Row[]>([]);

@@ -35,7 +35,7 @@ const DEPARTMENTS = [
     id: 'rugby',
     label: 'RUGBY',
     lines: ['Teams · Attendance', 'Performance'],
-    href: '/portal?sport=rugby',
+    href: '/portal-login?sport=rugby',
     available: true,
     icon: '/icon-rugby.svg',
     accent: '#f87171',
