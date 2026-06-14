@@ -16,6 +16,7 @@ import { ProgramsSection } from './sections/ProgramsSection';
 import { RemindersSection } from './sections/RemindersSection';
 import { SponsorsSection } from './sections/SponsorsSection';
 import { SpotlightSection } from './sections/SpotlightSection';
+import { PlayerProfilesSection } from './sections/PlayerProfilesSection';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type GenericRow = Record<string, any>;
@@ -1420,7 +1421,7 @@ async function handleLogout() {
         </div>
 
         <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
-          {['fixtures','results','week','programs','reminders','sponsors','spotlight'].map((tab) => (
+          {['fixtures','results','week','programs','reminders','sponsors','spotlight','players'].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className="rounded-xl px-4 py-2 text-sm font-black capitalize transition border"
               style={{background:activeTab===tab?sportColor+'20':'rgba(255,255,255,0.02)',borderColor:activeTab===tab?sportColor+'66':'rgba(255,255,255,0.07)',color:activeTab===tab?'white':'rgba(255,255,255,0.35)'}}>
@@ -1445,6 +1446,7 @@ async function handleLogout() {
             {activeTab === 'reminders' && <RemindersSection reminders={reminders} busy={busy} newReminderTitle={newReminderTitle} setNewReminderTitle={setNewReminderTitle} newReminderDetails={newReminderDetails} setNewReminderDetails={setNewReminderDetails} newReminderPublished={newReminderPublished} setNewReminderPublished={setNewReminderPublished} handleCreateReminder={handleCreateReminder} editingReminderId={editingReminderId} editReminderTitle={editReminderTitle} setEditReminderTitle={setEditReminderTitle} editReminderDetails={editReminderDetails} setEditReminderDetails={setEditReminderDetails} editReminderPublished={editReminderPublished} setEditReminderPublished={setEditReminderPublished} handleSaveReminder={handleSaveReminder} cancelEditReminder={cancelEditReminder} startEditReminder={startEditReminder} handleDeleteReminder={handleDeleteReminder} moveItem={moveItem} />}
             {activeTab === 'sponsors' && <SponsorsSection sponsors={sponsors} busy={busy} newSponsorName={newSponsorName} setNewSponsorName={setNewSponsorName} newSponsorLink={newSponsorLink} setNewSponsorLink={setNewSponsorLink} newSponsorPublished={newSponsorPublished} setNewSponsorPublished={setNewSponsorPublished} newSponsorImage={newSponsorImage} setNewSponsorImage={setNewSponsorImage} handleCreateSponsor={handleCreateSponsor} editingSponsorId={editingSponsorId} editSponsorName={editSponsorName} setEditSponsorName={setEditSponsorName} editSponsorLink={editSponsorLink} setEditSponsorLink={setEditSponsorLink} editSponsorPublished={editSponsorPublished} setEditSponsorPublished={setEditSponsorPublished} editSponsorImage={editSponsorImage} setEditSponsorImage={setEditSponsorImage} handleSaveSponsor={handleSaveSponsor} resetSponsorEditFields={resetSponsorEditFields} startEditSponsor={startEditSponsor} handleDeleteSponsor={handleDeleteSponsor} moveItem={moveItem} />}
             {activeTab === 'spotlight' && <SpotlightSection sport={sport} />}
+            {activeTab === 'players' && <PlayerProfilesSection />}
           </div>
         )}
       </div>
