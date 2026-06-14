@@ -281,7 +281,7 @@ export default function PlayerProfilePage() {
                 <div style={{ padding: '8px 0' }}>
                   {dataLoading ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '16px 18px' }}>Loading...</p>
                     : weekItems.length === 0 && fixtures.length === 0 ? <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)', padding: '16px 18px', fontStyle: 'italic' }}>No schedule published yet.</p>
-                    : [...weekItems.slice(0, 3).map(w => ({ type: 'session', ...w })), ...fixtures.slice(0, 2).map(f => ({ type: 'fixture', ...f }))].slice(0, 5).map((item, i) => {
+                    : ([...weekItems.slice(0, 3).map(w => ({ type: 'session', ...w })), ...fixtures.slice(0, 2).map(f => ({ type: 'fixture', ...f }))] as Row[]).slice(0, 5).map((item, i) => {
                       const isMatch = item.type === 'fixture';
                       const C = isMatch ? '#fbbf24' : primaryCfg.color;
                       return (
