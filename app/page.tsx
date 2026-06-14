@@ -85,7 +85,7 @@ const DEPARTMENTS = [
     lines: ['Coming Soon'],
     href: '#',
     available: false,
-    icon: '/icon-athletics.svg',
+    icon: '/icon-athletics.png',
     accent: 'rgba(255,255,255,0.15)',
     glow: 'transparent',
     hoverBg: 'transparent',
