@@ -9,8 +9,8 @@ const SPORT_CONFIG: Record<string, {
   label: string; color: string; colorDim: string;
   btnGradient: string; btnShadow: string; photo: string;
 }> = {
-  hockey:   { label:'Hockey',   color:'#3b82f6', colorDim:'rgba(59,130,246,0.12)',  btnGradient:'linear-gradient(135deg,#1d4ed8,#3b82f6)', btnShadow:'0 8px 32px rgba(59,130,246,0.45)',  photo:'/sbc-photo-4.jpg' },
-  rugby:    { label:'Rugby',    color:'#f87171', colorDim:'rgba(248,113,113,0.12)', btnGradient:'linear-gradient(135deg,#b91c1c,#f87171)', btnShadow:'0 8px 32px rgba(248,113,113,0.45)', photo:'/sbc-photo-2.jpg' },
+  hockey:   { label:'Hockey',   color:'#3b82f6', colorDim:'rgba(59,130,246,0.12)',  btnGradient:'linear-gradient(135deg,#1d4ed8,#3b82f6)', btnShadow:'0 8px 32px rgba(59,130,246,0.45)',  photo:'/sbc-hockey-1.jpg' },
+  rugby:    { label:'Rugby',    color:'#f87171', colorDim:'rgba(248,113,113,0.12)', btnGradient:'linear-gradient(135deg,#b91c1c,#f87171)', btnShadow:'0 8px 32px rgba(248,113,113,0.45)', photo:'/sbc-rugby-1.jpg' },
   cricket:  { label:'Cricket',  color:'#fbbf24', colorDim:'rgba(251,191,36,0.12)',  btnGradient:'linear-gradient(135deg,#92400e,#fbbf24)', btnShadow:'0 8px 32px rgba(251,191,36,0.45)',  photo:'/sbc-photo-3.jpg' },
   swimming: { label:'Swimming', color:'#818cf8', colorDim:'rgba(129,140,248,0.12)', btnGradient:'linear-gradient(135deg,#4338ca,#818cf8)', btnShadow:'0 8px 32px rgba(129,140,248,0.45)', photo:'/sbc-photo-1.jpg' },
   rowing:   { label:'Rowing',   color:'#34d399', colorDim:'rgba(52,211,153,0.12)',  btnGradient:'linear-gradient(135deg,#065f46,#34d399)', btnShadow:'0 8px 32px rgba(52,211,153,0.45)',  photo:'/sbc-photo-1.jpg' },

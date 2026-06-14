@@ -138,36 +138,50 @@ function PortalInner() {
 
   const activeSponsor = sponsors[activeSponsorIndex];
 
-  // ── derived ──────────────────────────────────────────────────────────────
-  const today = new Date().toISOString().split('T')[0];
-  const nextFixture = fixtures.find(f => f.fixture_date >= today) || fixtures[0] || null;
-  const upcomingFixtures = expandedFixtureDate==='all' ? fixtures.filter(f => f.fixture_date >= today) : fixtures.filter(f => f.fixture_date >= today).slice(0, 3);
-  const latestResults = expandedResultId==='all' ? results : results.slice(0, 3);
-  const [activeTab, setActiveTab] = React.useState<string>('week');
-
-  // ── week days ─────────────────────────────────────────────────────────────
+  // ── stable derived values (memoized to prevent re-animation) ─────────────
   const DAY_NAMES = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
-  const DAY_LABEL_MAP: Record<string,number> = {
+  const DAY_LABEL_MAP: Record<string,number> = React.useMemo(()=>({
     monday:0,tuesday:1,wednesday:2,thursday:3,friday:4,saturday:5,sunday:6,
     mon:0,tue:1,wed:2,thu:3,fri:4,sat:5,sun:6,
-  };
-  const todayDate = new Date();
-  const todayDowRaw = todayDate.getDay();
-  const todayDow = todayDowRaw === 0 ? 6 : todayDowRaw - 1;
-  const monday = new Date(todayDate);
-  monday.setDate(todayDate.getDate() - todayDow);
-  const weekDates = Array.from({length:7}, (_,i) => {
-    const d = new Date(monday); d.setDate(monday.getDate()+i); return d;
-  });
-  const itemsByDay: Record<number, Row[]> = {};
-  weekItems.forEach((item) => {
-    const label = (item.day_label||'').toLowerCase().trim();
-    const dayIdx = DAY_LABEL_MAP[label] ?? -1;
-    if (dayIdx >= 0) {
-      if (!itemsByDay[dayIdx]) itemsByDay[dayIdx] = [];
-      itemsByDay[dayIdx].push(item);
-    }
-  });
+  }),[]);
+
+  const { today, todayDow, weekDates } = React.useMemo(()=>{
+    const d = new Date();
+    const raw = d.getDay();
+    const dow = raw === 0 ? 6 : raw - 1;
+    const mon = new Date(d);
+    mon.setDate(d.getDate() - dow);
+    return {
+      today: d.toISOString().split('T')[0],
+      todayDow: dow,
+      weekDates: Array.from({length:7}, (_,i) => {
+        const dd = new Date(mon); dd.setDate(mon.getDate()+i); return dd;
+      }),
+    };
+  },[]);
+
+  const itemsByDay = React.useMemo(()=>{
+    const map: Record<number, Row[]> = {};
+    weekItems.forEach(item => {
+      const idx = DAY_LABEL_MAP[(item.day_label||'').toLowerCase().trim()] ?? -1;
+      if (idx >= 0) { if (!map[idx]) map[idx]=[]; map[idx].push(item); }
+    });
+    return map;
+  },[weekItems, DAY_LABEL_MAP]);
+
+  const nextFixture = React.useMemo(()=>
+    fixtures.find(f => f.fixture_date >= today) || fixtures[0] || null
+  ,[fixtures, today]);
+
+  const upcomingFixtures = React.useMemo(()=>
+    fixtures.filter(f => f.fixture_date >= today).slice(0, 3)
+  ,[fixtures, today]);
+
+  const latestResults = React.useMemo(()=>
+    results.slice(0, 3)
+  ,[results]);
+
+  const [activeTab, setActiveTab] = React.useState<string>('week');
   const [selectedDay, setSelectedDay] = React.useState<number>(todayDow);
 
   function outcomeOf(score: string) {
@@ -344,7 +358,7 @@ function PortalInner() {
               {/* Background photo */}
               <div style={{position:'absolute',inset:0,zIndex:0}}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/sbc-photo-4.jpg" alt="" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center',filter:'brightness(0.18) saturate(0.4)'}}/>
+                <img src="/sbc-hockey-1.jpg" alt="" style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'center top',filter:'brightness(0.22) saturate(0.5)'}}/>
               </div>
               <div style={{position:'absolute',inset:0,background:`linear-gradient(135deg,${C}15,rgba(4,8,16,0.85))`,zIndex:1}}/>
               <div style={{position:'relative',zIndex:2}}>
@@ -430,13 +444,13 @@ function PortalInner() {
               {loadingWeek ? (
                 <p style={{fontSize:12,color:'rgba(255,255,255,0.2)',padding:'8px 0'}}>Loading...</p>
               ) : (
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="popLayout">
                   <motion.div
                     key={selectedDay}
-                    initial={{opacity:0, y:8}}
-                    animate={{opacity:1, y:0}}
-                    exit={{opacity:0, y:-8}}
-                    transition={{duration:0.2, ease:[0.4,0,0.2,1]}}
+                    initial={{opacity:0, x:10}}
+                    animate={{opacity:1, x:0}}
+                    exit={{opacity:0, x:-10}}
+                    transition={{duration:0.18, ease:'easeOut'}}
                     style={{borderRadius:12,border:`1px solid ${C}20`,background:`${C}07`,padding:'14px 16px',minHeight:64}}>
                     {/* Day label */}
                     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
@@ -502,8 +516,8 @@ function PortalInner() {
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No upcoming fixtures.</p></div>
               ) : fixtures.filter(f=>f.fixture_date>=today).slice(0,3).map((f,i,arr)=>(
                 <motion.div key={f.id}
-                  initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
-                  transition={{delay:i*0.07,duration:0.3,ease:[0.4,0,0.2,1]}}>
+                  initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
+                  transition={{delay:i*0.05,duration:0.25}} layout="position">
                 <Link href={`/portal/fixtures?date=${f.fixture_date}&sport=${sport}`}
                   className="fixture-row"
                   style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s',textDecoration:'none',color:'inherit',cursor:'pointer'}}>
@@ -550,8 +564,8 @@ function PortalInner() {
                 const oc = outcomeColor(outcome);
                 return (
                   <motion.div key={r.id}
-                    initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
-                    transition={{delay:i*0.07,duration:0.3,ease:[0.4,0,0.2,1]}}>
+                    initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}
+                    transition={{delay:i*0.05,duration:0.25}} layout="position">
                   <Link href={`/portal/fixtures/season?sport=${sport}&tab=results`}
                     className="fixture-row"
                     style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<latestResults.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s',textDecoration:'none',color:'inherit',cursor:'pointer'}}>
