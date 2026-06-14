@@ -6,6 +6,40 @@ import { supabase } from '@/lib/supabase';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
+
+type FieldProps = {
+  label: string; type: string; value: string;
+  onChange: (v: string) => void; icon: React.ReactNode; right?: React.ReactNode;
+};
+
+function Field({ label, type, value, onChange, icon, right }: FieldProps) {
+  const [focused, setFocused] = React.useState(false);
+  const C = '#3b82f6';
+  return (
+    <div>
+      <label style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.75)', display: 'block', marginBottom: 8 }}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>{icon}</div>
+        <input
+          type={type} value={value} required
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            background: 'rgba(255,255,255,0.05)',
+            border: `1px solid ${focused ? C + '70' : 'rgba(255,255,255,0.12)'}`,
+            borderRadius: 10, padding: right ? '13px 44px 13px 42px' : '13px 14px 13px 42px',
+            color: 'white', fontSize: 14, outline: 'none',
+            transition: 'border-color 0.2s, box-shadow 0.2s',
+            boxShadow: focused ? `0 0 0 3px ${C}20` : 'none',
+          }}
+        />
+        {right && <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>{right}</div>}
+      </div>
+    </div>
+  );
+}
+
 export default function PlayerAuthPage() {
   const router = useRouter();
   const [mode, setMode]           = React.useState<Mode>('signin');
@@ -75,36 +109,6 @@ export default function PlayerAuthPage() {
   }
 
   const C = '#3b82f6';
-
-  function Field({ label, type, value, onChange, icon, right }: {
-    label: string; type: string; value: string;
-    onChange: (v: string) => void; icon: React.ReactNode; right?: React.ReactNode;
-  }) {
-    const [focused, setFocused] = React.useState(false);
-    return (
-      <div>
-        <label style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.75)', display: 'block', marginBottom: 8 }}>{label}</label>
-        <div style={{ position: 'relative' }}>
-          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>{icon}</div>
-          <input
-            type={type} value={value} required
-            onChange={e => onChange(e.target.value)}
-            onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-            style={{
-              width: '100%', boxSizing: 'border-box',
-              background: 'rgba(255,255,255,0.05)',
-              border: `1px solid ${focused ? C + '70' : 'rgba(255,255,255,0.12)'}`,
-              borderRadius: 10, padding: right ? '13px 44px 13px 42px' : '13px 14px 13px 42px',
-              color: 'white', fontSize: 14, outline: 'none',
-              transition: 'border-color 0.2s, box-shadow 0.2s',
-              boxShadow: focused ? `0 0 0 3px ${C}20` : 'none',
-            }}
-          />
-          {right && <div style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)' }}>{right}</div>}
-        </div>
-      </div>
-    );
-  }
 
   const iconProps = { viewBox: '0 0 24 24', fill: 'none', stroke: 'rgba(255,255,255,0.35)', strokeWidth: 1.8, style: { width: 16, height: 16 } };
 
