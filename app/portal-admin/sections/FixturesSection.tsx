@@ -9,6 +9,10 @@ type Props = {
   newFixtureDate: string; setNewFixtureDate: (v: string) => void;
   newFixtureTime: string; setNewFixtureTime: (v: string) => void;
   newFixtureVenue: string; setNewFixtureVenue: (v: string) => void;
+  newFixtureCoach: string; setNewFixtureCoach: (v: string) => void;
+  newFixtureUmpire: string; setNewFixtureUmpire: (v: string) => void;
+  newFixtureNotes: string; setNewFixtureNotes: (v: string) => void;
+  newFixtureHomeAway: string; setNewFixtureHomeAway: (v: string) => void;
   newFixturePublished: boolean; setNewFixturePublished: (v: boolean) => void;
   handleCreateFixture: (e: React.FormEvent) => void;
   editingFixtureId: string | null;
@@ -26,7 +30,7 @@ type Props = {
   formatDate: (d?: string | null) => string;
 };
 
-export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureTeam, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
+export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureTeam, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixtureCoach, setNewFixtureCoach, newFixtureUmpire, setNewFixtureUmpire, newFixtureNotes, setNewFixtureNotes, newFixtureHomeAway, setNewFixtureHomeAway, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixtureCoach, setEditFixtureCoach, editFixtureUmpire, setEditFixtureUmpire, editFixtureNotes, setEditFixtureNotes, editFixtureHomeAway, setEditFixtureHomeAway, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {/* Create */}
@@ -42,6 +46,14 @@ export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureT
             <input type="date" value={newFixtureDate} onChange={(e) => setNewFixtureDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input type="time" value={newFixtureTime} onChange={(e) => setNewFixtureTime(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input value={newFixtureVenue} onChange={(e) => setNewFixtureVenue(e.target.value)} placeholder="Venue" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+            <select value={newFixtureHomeAway} onChange={(e) => setNewFixtureHomeAway(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+              <option value="home">Home</option>
+              <option value="away">Away</option>
+              <option value="neutral">Neutral</option>
+            </select>
+            <input value={newFixtureCoach} onChange={(e) => setNewFixtureCoach(e.target.value)} placeholder="Coach" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+            <input value={newFixtureUmpire} onChange={(e) => setNewFixtureUmpire(e.target.value)} placeholder="Umpire" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+            <input value={newFixtureNotes} onChange={(e) => setNewFixtureNotes(e.target.value)} placeholder="Notes (optional)" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
           </div>
           <label className="flex items-center gap-3 text-sm text-slate-300">
             <input type="checkbox" checked={newFixturePublished} onChange={(e) => setNewFixturePublished(e.target.checked)} className="h-4 w-4" /> Published
@@ -70,6 +82,14 @@ export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureT
                         <input type="date" value={editFixtureDate} onChange={(e) => setEditFixtureDate(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                         <input type="time" value={editFixtureTime} onChange={(e) => setEditFixtureTime(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                         <input value={editFixtureVenue} onChange={(e) => setEditFixtureVenue(e.target.value)} placeholder="Venue" className="col-span-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
+                        <select value={editFixtureHomeAway} onChange={(e) => setEditFixtureHomeAway(e.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none">
+                          <option value="home">Home</option>
+                          <option value="away">Away</option>
+                          <option value="neutral">Neutral</option>
+                        </select>
+                        <input value={editFixtureCoach} onChange={(e) => setEditFixtureCoach(e.target.value)} placeholder="Coach" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
+                        <input value={editFixtureUmpire} onChange={(e) => setEditFixtureUmpire(e.target.value)} placeholder="Umpire" className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
+                        <input value={editFixtureNotes} onChange={(e) => setEditFixtureNotes(e.target.value)} placeholder="Notes" className="col-span-2 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white outline-none" />
                       </div>
                       <label className="flex items-center gap-2 text-sm text-slate-300"><input type="checkbox" checked={editFixturePublished} onChange={(e) => setEditFixturePublished(e.target.checked)} className="h-4 w-4" /> Published</label>
                       <div className="flex gap-2">

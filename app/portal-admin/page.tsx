@@ -15,6 +15,7 @@ import { WeekSection } from './sections/WeekSection';
 import { ProgramsSection } from './sections/ProgramsSection';
 import { RemindersSection } from './sections/RemindersSection';
 import { SponsorsSection } from './sections/SponsorsSection';
+import { SpotlightSection } from './sections/SpotlightSection';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type GenericRow = Record<string, any>;
@@ -219,6 +220,12 @@ async function handleLogout() {
   const [newReminderPublished, setNewReminderPublished] = useState(true);
   const [newReminderSortOrder, setNewReminderSortOrder] = useState('1');
 
+  // Spotlight
+  const [spotlight, setSpotlight] = useState<any[]>([]);
+  const [newSpotlightType, setNewSpotlightType] = useState('player_of_week');
+  const [newSpotlightName, setNewSpotlightName] = useState('');
+  const [newSpotlightDesc, setNewSpotlightDesc] = useState('');
+
   const [newFixtureTeam, setNewFixtureTeam] = useState('');
   const [newFixtureOpponent, setNewFixtureOpponent] = useState('');
   const [newFixtureDate, setNewFixtureDate] = useState('');
@@ -226,6 +233,10 @@ async function handleLogout() {
   const [newFixtureVenue, setNewFixtureVenue] = useState('');
   const [newFixturePublished, setNewFixturePublished] = useState(true);
   const [newFixtureSortOrder, setNewFixtureSortOrder] = useState('1');
+  const [newFixtureCoach, setNewFixtureCoach] = useState('');
+  const [newFixtureUmpire, setNewFixtureUmpire] = useState('');
+  const [newFixtureNotes, setNewFixtureNotes] = useState('');
+  const [newFixtureHomeAway, setNewFixtureHomeAway] = useState('home');
 
   const [newResultTeam, setNewResultTeam] = useState('');
   const [newResultOpponent, setNewResultOpponent] = useState('');
@@ -266,6 +277,10 @@ async function handleLogout() {
   const [editReminderSortOrder, setEditReminderSortOrder] = useState('1');
 
   const [editingFixtureId, setEditingFixtureId] = useState<string | null>(null);
+  const [editFixtureCoach, setEditFixtureCoach] = useState('');
+  const [editFixtureUmpire, setEditFixtureUmpire] = useState('');
+  const [editFixtureNotes, setEditFixtureNotes] = useState('');
+  const [editFixtureHomeAway, setEditFixtureHomeAway] = useState('home');
   const [editFixtureTeam, setEditFixtureTeam] = useState('');
   const [editFixtureOpponent, setEditFixtureOpponent] = useState('');
   const [editFixtureDate, setEditFixtureDate] = useState('');
@@ -710,6 +725,10 @@ async function handleLogout() {
           venue: newFixtureVenue.trim(),
           is_published: newFixturePublished,
           sort_order: Number(newFixtureSortOrder) || 0,
+          coach: newFixtureCoach.trim() || null,
+          umpire: newFixtureUmpire.trim() || null,
+          notes: newFixtureNotes.trim() || null,
+          home_away: newFixtureHomeAway,
           sport: activeSport,
         },
       ]);
@@ -726,6 +745,10 @@ async function handleLogout() {
       setNewFixtureVenue('');
       setNewFixturePublished(true);
       setNewFixtureSortOrder('1');
+      setNewFixtureCoach('');
+      setNewFixtureUmpire('');
+      setNewFixtureNotes('');
+      setNewFixtureHomeAway('home');
       showToast('Fixture created.');
       await loadPortalAdminData();
     });
@@ -1043,6 +1066,10 @@ async function handleLogout() {
     setEditFixtureDate(fixture.fixture_date);
     setEditFixtureTime(fixture.fixture_time);
     setEditFixtureVenue(fixture.venue);
+    setEditFixtureCoach((fixture as any).coach || '');
+    setEditFixtureUmpire((fixture as any).umpire || '');
+    setEditFixtureNotes((fixture as any).notes || '');
+    setEditFixtureHomeAway((fixture as any).home_away || 'home');
     setEditFixturePublished(fixture.is_published);
     setEditFixtureSortOrder(String(fixture.sort_order));
   }
@@ -1054,6 +1081,10 @@ async function handleLogout() {
     setEditFixtureDate('');
     setEditFixtureTime('');
     setEditFixtureVenue('');
+    setEditFixtureCoach('');
+    setEditFixtureUmpire('');
+    setEditFixtureNotes('');
+    setEditFixtureHomeAway('home');
     setEditFixturePublished(true);
     setEditFixtureSortOrder('1');
   }
@@ -1073,6 +1104,10 @@ async function handleLogout() {
           fixture_date: editFixtureDate,
           fixture_time: editFixtureTime.trim(),
           venue: editFixtureVenue.trim(),
+          home_away: editFixtureHomeAway,
+          coach: editFixtureCoach.trim() || null,
+          umpire: editFixtureUmpire.trim() || null,
+          notes: editFixtureNotes.trim() || null,
           is_published: editFixturePublished,
           sort_order: Number(editFixtureSortOrder) || 0,
         })
@@ -1385,7 +1420,7 @@ async function handleLogout() {
         </div>
 
         <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
-          {['fixtures','results','week','programs','reminders','sponsors'].map((tab) => (
+          {['fixtures','results','week','programs','reminders','sponsors','spotlight'].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className="rounded-xl px-4 py-2 text-sm font-black capitalize transition border"
               style={{background:activeTab===tab?sportColor+'20':'rgba(255,255,255,0.02)',borderColor:activeTab===tab?sportColor+'66':'rgba(255,255,255,0.07)',color:activeTab===tab?'white':'rgba(255,255,255,0.35)'}}>
@@ -1403,12 +1438,13 @@ async function handleLogout() {
           </div>
         ) : (
           <div>
-            {activeTab === 'fixtures' && <FixturesSection fixtures={fixtures} busy={busy} newFixtureTeam={newFixtureTeam} setNewFixtureTeam={setNewFixtureTeam} newFixtureOpponent={newFixtureOpponent} setNewFixtureOpponent={setNewFixtureOpponent} newFixtureDate={newFixtureDate} setNewFixtureDate={setNewFixtureDate} newFixtureTime={newFixtureTime} setNewFixtureTime={setNewFixtureTime} newFixtureVenue={newFixtureVenue} setNewFixtureVenue={setNewFixtureVenue} newFixturePublished={newFixturePublished} setNewFixturePublished={setNewFixturePublished} handleCreateFixture={handleCreateFixture} editingFixtureId={editingFixtureId} editFixtureTeam={editFixtureTeam} setEditFixtureTeam={setEditFixtureTeam} editFixtureOpponent={editFixtureOpponent} setEditFixtureOpponent={setEditFixtureOpponent} editFixtureDate={editFixtureDate} setEditFixtureDate={setEditFixtureDate} editFixtureTime={editFixtureTime} setEditFixtureTime={setEditFixtureTime} editFixtureVenue={editFixtureVenue} setEditFixtureVenue={setEditFixtureVenue} editFixturePublished={editFixturePublished} setEditFixturePublished={setEditFixturePublished} handleSaveFixture={handleSaveFixture} cancelEditFixture={cancelEditFixture} startEditFixture={startEditFixture} handleDeleteFixture={handleDeleteFixture} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
+            {activeTab === 'fixtures' && <FixturesSection fixtures={fixtures} busy={busy} newFixtureTeam={newFixtureTeam} setNewFixtureTeam={setNewFixtureTeam} newFixtureOpponent={newFixtureOpponent} setNewFixtureOpponent={setNewFixtureOpponent} newFixtureDate={newFixtureDate} setNewFixtureDate={setNewFixtureDate} newFixtureTime={newFixtureTime} setNewFixtureTime={setNewFixtureTime} newFixtureVenue={newFixtureVenue} setNewFixtureVenue={setNewFixtureVenue} newFixtureCoach={newFixtureCoach} setNewFixtureCoach={setNewFixtureCoach} newFixtureUmpire={newFixtureUmpire} setNewFixtureUmpire={setNewFixtureUmpire} newFixtureNotes={newFixtureNotes} setNewFixtureNotes={setNewFixtureNotes} newFixtureHomeAway={newFixtureHomeAway} setNewFixtureHomeAway={setNewFixtureHomeAway} newFixturePublished={newFixturePublished} setNewFixturePublished={setNewFixturePublished} handleCreateFixture={handleCreateFixture} editingFixtureId={editingFixtureId} editFixtureTeam={editFixtureTeam} setEditFixtureTeam={setEditFixtureTeam} editFixtureOpponent={editFixtureOpponent} setEditFixtureOpponent={setEditFixtureOpponent} editFixtureDate={editFixtureDate} setEditFixtureDate={setEditFixtureDate} editFixtureTime={editFixtureTime} setEditFixtureTime={setEditFixtureTime} editFixtureVenue={editFixtureVenue} setEditFixtureVenue={setEditFixtureVenue} editFixtureCoach={editFixtureCoach} setEditFixtureCoach={setEditFixtureCoach} editFixtureUmpire={editFixtureUmpire} setEditFixtureUmpire={setEditFixtureUmpire} editFixtureNotes={editFixtureNotes} setEditFixtureNotes={setEditFixtureNotes} editFixtureHomeAway={editFixtureHomeAway} setEditFixtureHomeAway={setEditFixtureHomeAway} editFixturePublished={editFixturePublished} setEditFixturePublished={setEditFixturePublished} handleSaveFixture={handleSaveFixture} cancelEditFixture={cancelEditFixture} startEditFixture={startEditFixture} handleDeleteFixture={handleDeleteFixture} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
             {activeTab === 'results' && <ResultsSection results={results} busy={busy} newResultTeam={newResultTeam} setNewResultTeam={setNewResultTeam} newResultOpponent={newResultOpponent} setNewResultOpponent={setNewResultOpponent} newResultDate={newResultDate} setNewResultDate={setNewResultDate} newResultFinalScore={newResultFinalScore} setNewResultFinalScore={setNewResultFinalScore} newResultGoalScorers={newResultGoalScorers} setNewResultGoalScorers={setNewResultGoalScorers} newResultPublished={newResultPublished} setNewResultPublished={setNewResultPublished} handleCreateResult={handleCreateResult} editingResultId={editingResultId} editResultTeam={editResultTeam} setEditResultTeam={setEditResultTeam} editResultOpponent={editResultOpponent} setEditResultOpponent={setEditResultOpponent} editResultDate={editResultDate} setEditResultDate={setEditResultDate} editResultFinalScore={editResultFinalScore} setEditResultFinalScore={setEditResultFinalScore} editResultGoalScorers={editResultGoalScorers} setEditResultGoalScorers={setEditResultGoalScorers} editResultPublished={editResultPublished} setEditResultPublished={setEditResultPublished} handleSaveResult={handleSaveResult} cancelEditResult={cancelEditResult} startEditResult={startEditResult} handleDeleteResult={handleDeleteResult} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
             {activeTab === 'week' && <WeekSection weekPlans={weekPlans} selectedWeekPlan={selectedWeekPlan} selectedWeekItems={selectedWeekItems} busy={busy} selectedWeekPlanId={selectedWeekPlanId} setSelectedWeekPlanId={setSelectedWeekPlanId} newWeekLabel={newWeekLabel} setNewWeekLabel={setNewWeekLabel} newWeekPublished={newWeekPublished} setNewWeekPublished={setNewWeekPublished} handleCreateWeekPlan={handleCreateWeekPlan} newDayLabel={newDayLabel} setNewDayLabel={setNewDayLabel} newWeekItemTitle={newWeekItemTitle} setNewWeekItemTitle={setNewWeekItemTitle} newWeekItemDetails={newWeekItemDetails} setNewWeekItemDetails={setNewWeekItemDetails} handleCreateWeekItem={handleCreateWeekItem} editingWeekPlanId={editingWeekPlanId} editWeekLabel={editWeekLabel} setEditWeekLabel={setEditWeekLabel} editWeekPublished={editWeekPublished} setEditWeekPublished={setEditWeekPublished} handleSaveWeekPlan={handleSaveWeekPlan} cancelEditWeekPlan={cancelEditWeekPlan} startEditWeekPlan={startEditWeekPlan} handleDeleteWeekPlan={handleDeleteWeekPlan} editingWeekItemId={editingWeekItemId} editDayLabel={editDayLabel} setEditDayLabel={setEditDayLabel} editWeekItemTitle={editWeekItemTitle} setEditWeekItemTitle={setEditWeekItemTitle} editWeekItemDetails={editWeekItemDetails} setEditWeekItemDetails={setEditWeekItemDetails} handleSaveWeekItem={handleSaveWeekItem} cancelEditWeekItem={cancelEditWeekItem} startEditWeekItem={startEditWeekItem} handleDeleteWeekItem={handleDeleteWeekItem} moveItem={moveItem} formatDate={formatDate} />}
             {activeTab === 'programs' && <ProgramsSection programs={programs} busy={busy} newProgramTitle={newProgramTitle} setNewProgramTitle={setNewProgramTitle} newProgramCategory={newProgramCategory} setNewProgramCategory={setNewProgramCategory} newProgramDayLabel={newProgramDayLabel} setNewProgramDayLabel={setNewProgramDayLabel} newProgramDetails={newProgramDetails} setNewProgramDetails={setNewProgramDetails} newProgramPublished={newProgramPublished} setNewProgramPublished={setNewProgramPublished} newProgramFile={newProgramFile} setNewProgramFile={setNewProgramFile} handleCreateProgram={handleCreateProgram} editingProgramId={editingProgramId} editProgramTitle={editProgramTitle} setEditProgramTitle={setEditProgramTitle} editProgramCategory={editProgramCategory} setEditProgramCategory={setEditProgramCategory} editProgramDayLabel={editProgramDayLabel} setEditProgramDayLabel={setEditProgramDayLabel} editProgramDetails={editProgramDetails} setEditProgramDetails={setEditProgramDetails} editProgramPublished={editProgramPublished} setEditProgramPublished={setEditProgramPublished} editProgramFile={editProgramFile} setEditProgramFile={setEditProgramFile} handleSaveProgram={handleSaveProgram} resetProgramEditFields={resetProgramEditFields} startEditProgram={startEditProgram} handleDeleteProgram={handleDeleteProgram} moveItem={moveItem} />}
             {activeTab === 'reminders' && <RemindersSection reminders={reminders} busy={busy} newReminderTitle={newReminderTitle} setNewReminderTitle={setNewReminderTitle} newReminderDetails={newReminderDetails} setNewReminderDetails={setNewReminderDetails} newReminderPublished={newReminderPublished} setNewReminderPublished={setNewReminderPublished} handleCreateReminder={handleCreateReminder} editingReminderId={editingReminderId} editReminderTitle={editReminderTitle} setEditReminderTitle={setEditReminderTitle} editReminderDetails={editReminderDetails} setEditReminderDetails={setEditReminderDetails} editReminderPublished={editReminderPublished} setEditReminderPublished={setEditReminderPublished} handleSaveReminder={handleSaveReminder} cancelEditReminder={cancelEditReminder} startEditReminder={startEditReminder} handleDeleteReminder={handleDeleteReminder} moveItem={moveItem} />}
             {activeTab === 'sponsors' && <SponsorsSection sponsors={sponsors} busy={busy} newSponsorName={newSponsorName} setNewSponsorName={setNewSponsorName} newSponsorLink={newSponsorLink} setNewSponsorLink={setNewSponsorLink} newSponsorPublished={newSponsorPublished} setNewSponsorPublished={setNewSponsorPublished} newSponsorImage={newSponsorImage} setNewSponsorImage={setNewSponsorImage} handleCreateSponsor={handleCreateSponsor} editingSponsorId={editingSponsorId} editSponsorName={editSponsorName} setEditSponsorName={setEditSponsorName} editSponsorLink={editSponsorLink} setEditSponsorLink={setEditSponsorLink} editSponsorPublished={editSponsorPublished} setEditSponsorPublished={setEditSponsorPublished} editSponsorImage={editSponsorImage} setEditSponsorImage={setEditSponsorImage} handleSaveSponsor={handleSaveSponsor} resetSponsorEditFields={resetSponsorEditFields} startEditSponsor={startEditSponsor} handleDeleteSponsor={handleDeleteSponsor} moveItem={moveItem} />}
+            {activeTab === 'spotlight' && <SpotlightSection sport={sport} />}
           </div>
         )}
       </div>

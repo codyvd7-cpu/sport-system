@@ -258,11 +258,28 @@ function PortalInner() {
         .fixture-row:hover { background: rgba(255,255,255,0.04) !important; }
         .prog-row:hover { background: rgba(255,255,255,0.04) !important; }
         input[type=password] { -webkit-text-security: disc; }
+
+        /* ── Responsive grids ── */
+        .p-hero    { display:grid; grid-template-columns:1fr 420px; gap:24px; margin-bottom:28px; align-items:start; }
+        .p-two-col { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; scroll-margin-top:72px; }
+        .p-three   { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+        .p-days    { display:grid; grid-template-columns:repeat(6,1fr); gap:4px; margin-bottom:16px; }
+        .p-nav-txt { display:inline-flex; align-items:center; gap:6px; }
+
+        @media(max-width:900px) {
+          .p-hero { grid-template-columns:1fr; }
+        }
+        @media(max-width:640px) {
+          .p-two-col { grid-template-columns:1fr; }
+          .p-three   { grid-template-columns:1fr; gap:8px; }
+          .p-nav-txt { display:none; }
+          .p-days    { gap:2px; }
+        }
       `}</style>
 
       {/* ── NAV ── */}
       <nav style={{borderBottom:`1px solid ${BORDER}`,background:'rgba(10,15,30,0.95)',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)',position:'sticky',top:0,zIndex:50}}>
-        <div style={{maxWidth:1120,margin:'0 auto',padding:'0 24px',display:'flex',alignItems:'center',justifyContent:'space-between',height:60}}>
+        <div style={{maxWidth:1120,margin:'0 auto',padding:'0 16px',display:'flex',alignItems:'center',justifyContent:'space-between',height:60}}>
           <div style={{display:'flex',alignItems:'center',gap:12}}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/st-benedicts-logo.png" alt="SBC" style={{width:36,height:36,objectFit:'contain'}}/>
@@ -288,10 +305,10 @@ function PortalInner() {
         </div>
       </nav>
 
-      <div style={{maxWidth:1120,margin:'0 auto',padding:'32px 24px 64px'}}>
+      <div style={{maxWidth:1120,margin:'0 auto',padding:'24px 16px 64px'}}>
 
         {/* ── HERO ── */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 420px',gap:24,marginBottom:28,alignItems:'start'}}>
+        <div className='p-hero'>
           {/* Left */}
           <div>
             <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:16}}>
@@ -389,7 +406,7 @@ function PortalInner() {
               <p style={{fontSize:10,fontWeight:700,letterSpacing:'0.22em',color:C,textTransform:'uppercase',marginBottom:14}}>Week at a Glance</p>
 
               {/* Day strip — all 6 visible */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:4,marginBottom:16}}>
+              <div className='p-days'>
                 {[0,1,2,3,4,5].map(i=>{
                   const isToday=i===todayDow, isSel=i===selectedDay, has=!!(itemsByDay[i]?.length);
                   return (
@@ -473,7 +490,7 @@ function PortalInner() {
           </Section>
         </motion.div>
 
-        <div id="section-fixtures" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
+        <div id='section-fixtures' className='p-two-col'>
 
           {/* Fixtures */}
           <Section>
@@ -562,7 +579,7 @@ function PortalInner() {
         </div>
 
         {/* ── PROGRAMS + REMINDERS ── */}
-        <div id="section-programs" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
+        <div id='section-programs' className='p-two-col'>
 
           {/* Programs */}
           <Section>
@@ -658,7 +675,7 @@ function PortalInner() {
               ) : spotlight.length === 0 ? (
                 <p style={{fontSize:13,color:'rgba(255,255,255,0.2)',padding:'8px 0'}}>No spotlight published yet.</p>
               ) : (
-                <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
+                <div className='p-three'>
                   {spotlight.map((s,i)=>{
                     const icons = [
                       <svg key="s" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:18,height:18}}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
