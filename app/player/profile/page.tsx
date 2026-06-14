@@ -26,8 +26,6 @@ const NAV_ITEMS = [
   { id:'performance', label:'Performance', d:'M18 20V10M12 20V4M6 20v-6' },
   { id:'results',     label:'Results',     d:'M4 6h16M4 10h16M4 14h16M4 18h16' },
   { id:'documents',   label:'Documents',   d:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6' },
-  { id:'medical',     label:'Medical',     d:'M22 12h-4l-3 9L9 3l-3 9H2' },
-  { id:'payments',    label:'Payments',    d:'M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z M1 10h22' },
   { id:'settings',    label:'Settings',    d:'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z' },
 ];
 
@@ -300,6 +298,164 @@ export default function PlayerProfilePage() {
             </div>
           </div>
 
+          {/* ── NAV VIEW SWITCHER ── */}
+          {activeNav !== 'overview' && (
+            <div style={{borderRadius:16,background:CARD,border:`1px solid ${BORDER}`,padding:'24px',marginBottom:16}}>
+              {/* Schedule view */}
+              {activeNav==='schedule'&&(
+                <div>
+                  <p style={{fontSize:10,fontWeight:800,letterSpacing:'0.15em',color:C,textTransform:'uppercase',marginBottom:16}}>Full Schedule</p>
+                  {!dataReady?<p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p>:
+                  weekItems.length===0&&fixtures.length===0?<p style={{fontSize:13,color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>No schedule published yet.</p>:
+                  <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                    {[...weekItems.map(w=>({...w,_t:'session'})),...fixtures.map(f=>({...f,_t:'fixture'}))].map((item,i,arr)=>{
+                      const isF=item._t==='fixture';
+                      return (
+                        <div key={item.id||i} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 0',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none'}}>
+                          <div style={{minWidth:50,textAlign:'center'}}>
+                            {isF?<><p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase'}}>{new Date(item.fixture_date).toLocaleDateString('en-ZA',{weekday:'short'}).toUpperCase()}</p><p style={{fontSize:18,fontWeight:900,color:'white',lineHeight:1}}>{new Date(item.fixture_date).getDate()}</p><p style={{fontSize:9,color:'rgba(255,255,255,0.35)',textTransform:'uppercase'}}>{new Date(item.fixture_date).toLocaleDateString('en-ZA',{month:'short'}).toUpperCase()}</p></>
+                            :<><p style={{fontSize:10,fontWeight:700,color:C,textTransform:'uppercase'}}>{(item.day_label||'').substring(0,3)}</p><div style={{width:6,height:6,borderRadius:'50%',background:C,opacity:0.5,margin:'4px auto'}}/></>}
+                          </div>
+                          <div style={{flex:1}}>
+                            <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>{isF?`vs ${item.opponent}`:item.title}</p>
+                            <p style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>{isF?`${item.fixture_time||'TBC'} · ${item.venue||item.home_away||''}`:item.subtitle||''}</p>
+                          </div>
+                          {isF&&<Link href={`/portal/fixtures?date=${item.fixture_date}&sport=${primary}`} style={{fontSize:11,fontWeight:600,color:C,textDecoration:'none',padding:'5px 12px',borderRadius:8,border:`1px solid ${C}35`,background:`${C}10`}}>View</Link>}
+                        </div>
+                      );
+                    })}
+                  </div>}
+                </div>
+              )}
+              {/* My Sports view */}
+              {activeNav==='mysports'&&(
+                <div>
+                  <p style={{fontSize:10,fontWeight:800,letterSpacing:'0.15em',color:C,textTransform:'uppercase',marginBottom:16}}>My Sports</p>
+                  <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                    {sports.map((sport,i)=>{
+                      const sc=SPORT_COLORS[sport]||C;
+                      return (
+                        <div key={sport} style={{padding:'16px 18px',borderRadius:14,border:`1px solid ${i===0?sc+'35':BORDER}`,background:i===0?`${sc}08`:'rgba(255,255,255,0.025)',display:'flex',alignItems:'center',gap:16}}>
+                          <div style={{width:44,height:44,borderRadius:12,background:`${sc}18`,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                            <SvgIcon d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" size={20} color={sc}/>
+                          </div>
+                          <div style={{flex:1}}>
+                            <p style={{fontSize:15,fontWeight:800,color:'white',textTransform:'capitalize',marginBottom:3}}>{sport}</p>
+                            {i===0&&athlete?.team&&<p style={{fontSize:12,color:'rgba(255,255,255,0.5)'}}>{athlete.team}{athlete.position?` · ${athlete.position}`:''}</p>}
+                          </div>
+                          <span style={{fontSize:10,fontWeight:800,padding:'4px 12px',borderRadius:20,background:i===0?`${sc}22`:'rgba(255,255,255,0.07)',color:i===0?sc:'rgba(255,255,255,0.4)',border:`1px solid ${i===0?sc+'35':'transparent'}`}}>{i===0?'PRIMARY':'SECONDARY'}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{marginTop:16,paddingTop:16,borderTop:`1px solid ${BORDER}`}}>
+                    <Link href="/player/setup" style={{fontSize:13,fontWeight:700,color:C,textDecoration:'none',display:'inline-flex',alignItems:'center',gap:6}}>
+                      <SvgIcon d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" size={13} color={C}/>
+                      Add or edit sports
+                    </Link>
+                  </div>
+                </div>
+              )}
+              {/* Results view */}
+              {activeNav==='results'&&(
+                <div>
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+                    <p style={{fontSize:10,fontWeight:800,letterSpacing:'0.15em',color:C,textTransform:'uppercase'}}>Results</p>
+                    <Link href={`/portal/fixtures/season?sport=${primary}&tab=results`} style={{fontSize:12,fontWeight:600,color:C,textDecoration:'none'}}>Full season →</Link>
+                  </div>
+                  {!dataReady?<p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p>:
+                  results.length===0?<p style={{fontSize:13,color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>No results published yet.</p>:
+                  <div style={{display:'flex',flexDirection:'column',gap:0}}>
+                    {results.map((r,i)=>{
+                      const p=r.final_score?.split(/[-–]/);
+                      const o=p?.length===2?(parseInt(p[0])>parseInt(p[1])?'WIN':parseInt(p[0])<parseInt(p[1])?'LOSS':'DRAW'):null;
+                      const oc=o==='WIN'?'#22c55e':o==='LOSS'?'#f87171':o==='DRAW'?'#fbbf24':'rgba(255,255,255,0.4)';
+                      return (
+                        <div key={r.id} style={{display:'flex',alignItems:'center',gap:14,padding:'13px 0',borderBottom:i<results.length-1?`1px solid ${BORDER}`:'none'}}>
+                          <div style={{minWidth:40,textAlign:'center'}}>
+                            <p style={{fontSize:9,color:'rgba(255,255,255,0.38)',textTransform:'uppercase'}}>{new Date(r.result_date).toLocaleDateString('en-ZA',{month:'short'}).toUpperCase()}</p>
+                            <p style={{fontSize:18,fontWeight:900,color:'white',lineHeight:1}}>{new Date(r.result_date).getDate()}</p>
+                          </div>
+                          <div style={{flex:1}}>
+                            <p style={{fontSize:13,fontWeight:700,color:'white',marginBottom:2}}>vs {r.opponent}</p>
+                            <p style={{fontSize:11,color:'rgba(255,255,255,0.4)'}}>{r.team}</p>
+                          </div>
+                          <div style={{textAlign:'right'}}>
+                            <p style={{fontSize:22,fontWeight:900,color:oc,lineHeight:1,marginBottom:3}}>{r.final_score||'—'}</p>
+                            {o&&<span style={{fontSize:9,fontWeight:800,padding:'2px 7px',borderRadius:20,background:`${oc}18`,color:oc,border:`1px solid ${oc}25`}}>{o}</span>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>}
+                </div>
+              )}
+              {/* Performance view */}
+              {activeNav==='performance'&&(
+                <div>
+                  <p style={{fontSize:10,fontWeight:800,letterSpacing:'0.15em',color:C,textTransform:'uppercase',marginBottom:20}}>Performance</p>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:14,marginBottom:20}}>
+                    {[
+                      {label:'Training Attendance',val:attendance!==null?`${attendance}%`:'—',sub:attendance!==null?'from recorded sessions':'Link athlete to unlock',c:attendance!==null&&attendance>=80?'#22c55e':'rgba(255,255,255,0.3)'},
+                      {label:'Wins This Season',val:String(wins),sub:`${draws} draws · ${losses} losses`,c:wins>0?'#22c55e':'rgba(255,255,255,0.3)'},
+                      {label:'Upcoming Fixtures',val:String(fixtures.length),sub:'this season',c:fixtures.length>0?C:'rgba(255,255,255,0.3)'},
+                    ].map(s=>(
+                      <div key={s.label} style={{background:'rgba(255,255,255,0.03)',border:`1px solid ${BORDER}`,borderRadius:14,padding:'18px 20px'}}>
+                        <p style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginBottom:10}}>{s.label}</p>
+                        <p style={{fontSize:36,fontWeight:900,color:'white',lineHeight:1,marginBottom:8}}>{s.val}</p>
+                        <p style={{fontSize:11,color:s.c}}>{s.sub}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {!profile.athlete_id&&<div style={{padding:'14px 16px',borderRadius:12,background:'rgba(251,191,36,0.08)',border:'1px solid rgba(251,191,36,0.2)'}}>
+                    <p style={{fontSize:12,fontWeight:700,color:'#fbbf24',marginBottom:3}}>Personal stats locked</p>
+                    <p style={{fontSize:12,color:'rgba(255,255,255,0.45)'}}>Your attendance and test data will appear once your coach links your account to an athlete record in the system.</p>
+                  </div>}
+                </div>
+              )}
+              {/* Teams view */}
+              {activeNav==='teams'&&(
+                <div style={{textAlign:'center',padding:'32px 0'}}>
+                  <SvgIcon d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75" size={40} color="rgba(255,255,255,0.1)"/>
+                  <p style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.35)',marginTop:16,marginBottom:6}}>Team rosters coming soon</p>
+                  <p style={{fontSize:12,color:'rgba(255,255,255,0.22)'}}>Your coaches will publish team lists here.</p>
+                  {athlete?.team&&<div style={{marginTop:20,padding:'12px 16px',borderRadius:12,background:`${C}10`,border:`1px solid ${C}25`,display:'inline-block'}}>
+                    <p style={{fontSize:13,fontWeight:700,color:C}}>You are in: {athlete.team}</p>
+                  </div>}
+                </div>
+              )}
+              {/* Documents view */}
+              {activeNav==='documents'&&(
+                <div style={{textAlign:'center',padding:'32px 0'}}>
+                  <SvgIcon d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6" size={40} color="rgba(255,255,255,0.1)"/>
+                  <p style={{fontSize:14,fontWeight:700,color:'rgba(255,255,255,0.35)',marginTop:16,marginBottom:6}}>Documents coming soon</p>
+                  <p style={{fontSize:12,color:'rgba(255,255,255,0.22)'}}>Training programmes and department documents will appear here.</p>
+                </div>
+              )}
+              {/* Settings view */}
+              {activeNav==='settings'&&(
+                <div>
+                  <p style={{fontSize:10,fontWeight:800,letterSpacing:'0.15em',color:C,textTransform:'uppercase',marginBottom:16}}>Settings</p>
+                  <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                    <Link href="/player/setup" style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px',borderRadius:12,border:`1px solid ${BORDER}`,background:'rgba(255,255,255,0.03)',textDecoration:'none',color:'white'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:12}}>
+                        <SvgIcon d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" size={16} color={C}/>
+                        <div><p style={{fontSize:13,fontWeight:700}}>Edit Profile</p><p style={{fontSize:11,color:'rgba(255,255,255,0.4)',marginTop:1}}>Update your name, grade and sports</p></div>
+                      </div>
+                      <SvgIcon d="M9 18l6-6-6-6" size={14} color="rgba(255,255,255,0.3)"/>
+                    </Link>
+                    <button onClick={async()=>{await supabase.auth.signOut();router.push('/portal?sport=hockey');}}
+                      style={{display:'flex',alignItems:'center',gap:12,padding:'14px 16px',borderRadius:12,border:`1px solid rgba(239,68,68,0.2)`,background:'rgba(239,68,68,0.06)',cursor:'pointer',color:'#f87171',textAlign:'left',width:'100%'}}>
+                      <SvgIcon d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" size={16} color="#f87171"/>
+                      <div><p style={{fontSize:13,fontWeight:700}}>Sign Out</p><p style={{fontSize:11,color:'rgba(248,113,113,0.6)',marginTop:1}}>Sign out of your player account</p></div>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeNav==='overview' && <>
           {/* MID 3-COL */}
           <div className="mid" style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:16,marginBottom:16}}>
 
@@ -467,10 +623,10 @@ export default function PlayerProfilePage() {
               <p style={{fontSize:10,fontWeight:800,letterSpacing:'0.15em',color:C,textTransform:'uppercase',marginBottom:16}}>Quick Access</p>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:12}}>
                 {[
-                  {label:'Documents', href:`/portal?sport=${primary}`, d:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z M14 2v6h6'},
-                  {label:'Medical Info', href:`/portal?sport=${primary}`, d:'M22 12h-4l-3 9L9 3l-3 9H2'},
-                  {label:'Payments', href:`/portal?sport=${primary}`, d:'M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z M1 10h22'},
-                  {label:'Settings', href:'/player/setup', d:'M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
+                  {label:'Portal', href:`/portal?sport=${primary}`, d:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10'},
+                  {label:'Fixtures', href:`/portal/fixtures/season?sport=${primary}`, d:'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01'},
+                  {label:'Results', href:`/portal/fixtures/season?sport=${primary}&tab=results`, d:'M18 20V10M12 20V4M6 20v-6'},
+                  {label:'Edit Profile', href:'/player/setup', d:'M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7 M18.5 2.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'},
                 ].map(item=>(
                   <Link key={item.label} href={item.href} className="qbtn"
                     style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'13px 14px',borderRadius:11,background:'rgba(255,255,255,0.04)',border:`1px solid ${BORDER}`,textDecoration:'none',color:'rgba(255,255,255,0.65)',transition:'all 0.15s'}}>
@@ -490,6 +646,7 @@ export default function PlayerProfilePage() {
             </div>
           </div>
 
+          </> }{/* end overview */}
         </main>
       </div>
     </div>
