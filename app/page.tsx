@@ -309,10 +309,10 @@ export default function LandingPage() {
                         style={{
                           width: 50, height: 50,
                           objectFit: 'contain',
-                          opacity: dept.available ? 1 : 0.35,
+                          opacity: dept.available ? 1 : 0.4,
                           filter: dept.available
                             ? 'brightness(0) saturate(100%) invert(75%) sepia(50%) saturate(500%) hue-rotate(185deg) brightness(115%)'
-                            : 'brightness(0) invert(1)',
+                            : dept.id === 'athletics' ? 'brightness(0) invert(1)' : 'none',
                           transition: 'filter 0.35s ease',
                         }}
                       />
