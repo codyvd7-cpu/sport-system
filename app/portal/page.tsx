@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
-
 import * as React from 'react';
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
@@ -381,7 +381,7 @@ function PortalInner() {
 
         {/* ── WEEK AT A GLANCE ── */}
         {/* ── WEEK AT A GLANCE ── */}
-        <div id="section-week" style={{marginBottom:24,scrollMarginTop:72}}>
+        <motion.div id="section-week" initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:0.15,duration:0.4}} style={{marginBottom:24,scrollMarginTop:72}}>
           <Section>
             <div style={{padding:'18px 20px 20px'}}>
 
@@ -413,42 +413,50 @@ function PortalInner() {
               {loadingWeek ? (
                 <p style={{fontSize:12,color:'rgba(255,255,255,0.2)',padding:'8px 0'}}>Loading...</p>
               ) : (
-                <div style={{borderRadius:12,border:`1px solid ${C}20`,background:`${C}07`,padding:'14px 16px',minHeight:64}}>
-                  {/* Day label */}
-                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
-                    <p style={{fontSize:12,fontWeight:700,color:C,textTransform:'uppercase',letterSpacing:'0.1em'}}>{DAY_NAMES[selectedDay]}</p>
-                    <p style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long'})}</p>
-                    {todayDow===selectedDay&&<span style={{fontSize:8,fontWeight:800,letterSpacing:'0.1em',padding:'2px 7px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`}}>TODAY</span>}
-                  </div>
-                  {!itemsByDay[selectedDay]?.length ? (
-                    <p style={{fontSize:12,color:'rgba(255,255,255,0.22)',fontStyle:'italic'}}>Rest day — no sessions scheduled.</p>
-                  ) : (
-                    <div style={{display:'flex',flexDirection:'column',gap:10}}>
-                      {itemsByDay[selectedDay].map((item,si,arr)=>{
-                        const bullets=(item.details||item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
-                        const isMDay=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('vs ');
-                        const ac=isMDay?'#fbbf24':C;
-                        return (
-                          <div key={item.id||si}>
-                            {si>0&&<div style={{height:1,background:'rgba(255,255,255,0.06)',marginBottom:10}}/>}
-                            <div style={{display:'flex',gap:10}}>
-                              <div style={{width:2,flexShrink:0,borderRadius:1,background:`linear-gradient(to bottom,${ac},${ac}30)`,alignSelf:'stretch',minHeight:16}}/>
-                              <div style={{flex:1}}>
-                                <p style={{fontSize:13,fontWeight:700,color:isMDay?'#fbbf24':'white',marginBottom:bullets.length?5:0}}>{item.title}</p>
-                                {bullets.map((b:string,bi:number)=>(
-                                  <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:3}}>
-                                    <div style={{width:3,height:3,borderRadius:'50%',background:ac,flexShrink:0,marginTop:6,opacity:0.5}}/>
-                                    <p style={{fontSize:11,color:'rgba(255,255,255,0.5)',lineHeight:1.55}}>{b}</p>
-                                  </div>
-                                ))}
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selectedDay}
+                    initial={{opacity:0, y:8}}
+                    animate={{opacity:1, y:0}}
+                    exit={{opacity:0, y:-8}}
+                    transition={{duration:0.2, ease:[0.4,0,0.2,1]}}
+                    style={{borderRadius:12,border:`1px solid ${C}20`,background:`${C}07`,padding:'14px 16px',minHeight:64}}>
+                    {/* Day label */}
+                    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
+                      <p style={{fontSize:12,fontWeight:700,color:C,textTransform:'uppercase',letterSpacing:'0.1em'}}>{DAY_NAMES[selectedDay]}</p>
+                      <p style={{fontSize:11,color:'rgba(255,255,255,0.35)'}}>{weekDates[selectedDay]?.toLocaleDateString('en-ZA',{day:'numeric',month:'long'})}</p>
+                      {todayDow===selectedDay&&<span style={{fontSize:8,fontWeight:800,letterSpacing:'0.1em',padding:'2px 7px',borderRadius:20,background:`${C}22`,color:C,border:`1px solid ${C}35`}}>TODAY</span>}
+                    </div>
+                    {!itemsByDay[selectedDay]?.length ? (
+                      <p style={{fontSize:12,color:'rgba(255,255,255,0.22)',fontStyle:'italic'}}>Rest day — no sessions scheduled.</p>
+                    ) : (
+                      <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                        {itemsByDay[selectedDay].map((item,si,arr)=>{
+                          const bullets=(item.details||item.detail||'').split('\n').map((s:string)=>s.trim()).filter(Boolean);
+                          const isMDay=(item.title||'').toLowerCase().includes('match')||(item.title||'').toLowerCase().includes('fixture')||(item.title||'').toLowerCase().includes('vs ');
+                          const ac=isMDay?'#fbbf24':C;
+                          return (
+                            <div key={item.id||si}>
+                              {si>0&&<div style={{height:1,background:'rgba(255,255,255,0.06)',marginBottom:10}}/>}
+                              <div style={{display:'flex',gap:10}}>
+                                <div style={{width:2,flexShrink:0,borderRadius:1,background:`linear-gradient(to bottom,${ac},${ac}30)`,alignSelf:'stretch',minHeight:16}}/>
+                                <div style={{flex:1}}>
+                                  <p style={{fontSize:13,fontWeight:700,color:isMDay?'#fbbf24':'white',marginBottom:bullets.length?5:0}}>{item.title}</p>
+                                  {bullets.map((b:string,bi:number)=>(
+                                    <div key={bi} style={{display:'flex',alignItems:'flex-start',gap:6,marginBottom:3}}>
+                                      <div style={{width:3,height:3,borderRadius:'50%',background:ac,flexShrink:0,marginTop:6,opacity:0.5}}/>
+                                      <p style={{fontSize:11,color:'rgba(255,255,255,0.5)',lineHeight:1.55}}>{b}</p>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               )}
 
               {/* Dot nav */}
@@ -463,7 +471,7 @@ function PortalInner() {
               </div>
             </div>
           </Section>
-        </div>
+        </motion.div>
 
         <div id="section-fixtures" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,marginBottom:24,scrollMarginTop:72}}>
 
@@ -476,7 +484,10 @@ function PortalInner() {
               ) : upcomingFixtures.length === 0 ? (
                 <div style={{padding:'20px 22px'}}><p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>No upcoming fixtures.</p></div>
               ) : fixtures.filter(f=>f.fixture_date>=today).slice(0,3).map((f,i,arr)=>(
-                <Link key={f.id} href={`/portal/fixtures?date=${f.fixture_date}&sport=${sport}`}
+                <motion.div key={f.id}
+                  initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
+                  transition={{delay:i*0.07,duration:0.3,ease:[0.4,0,0.2,1]}}>
+                <Link href={`/portal/fixtures?date=${f.fixture_date}&sport=${sport}`}
                   className="fixture-row"
                   style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<arr.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s',textDecoration:'none',color:'inherit',cursor:'pointer'}}>
                   <DateBlock dateStr={f.fixture_date}/>
@@ -498,6 +509,7 @@ function PortalInner() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth={2} style={{width:13,height:13}}><path d="M9 18l6-6-6-6"/></svg>
                   </div>
                 </Link>
+                </motion.div>
               ))}
             </div>
             <div style={{padding:'12px 22px',borderTop:`1px solid ${BORDER}`}}>
@@ -520,7 +532,10 @@ function PortalInner() {
                 const outcome = outcomeOf(r.final_score||'');
                 const oc = outcomeColor(outcome);
                 return (
-                  <Link key={r.id} href={`/portal/fixtures/season?sport=${sport}&tab=results`}
+                  <motion.div key={r.id}
+                    initial={{opacity:0,y:12}} animate={{opacity:1,y:0}}
+                    transition={{delay:i*0.07,duration:0.3,ease:[0.4,0,0.2,1]}}>
+                  <Link href={`/portal/fixtures/season?sport=${sport}&tab=results`}
                     className="fixture-row"
                     style={{display:'flex',alignItems:'center',gap:14,padding:'14px 22px',borderBottom:i<latestResults.length-1?`1px solid ${BORDER}`:'none',transition:'background 0.15s',textDecoration:'none',color:'inherit',cursor:'pointer'}}>
                     <DateBlock dateStr={r.result_date}/>
@@ -533,6 +548,7 @@ function PortalInner() {
                       {outcome&&<span style={{fontSize:9,fontWeight:700,letterSpacing:'0.1em',padding:'3px 8px',borderRadius:20,background:`${oc}18`,color:oc,border:`1px solid ${oc}25`}}>{outcome}</span>}
                     </div>
                   </Link>
+                  </motion.div>
                 );
               })}
             </div>
