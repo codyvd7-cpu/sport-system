@@ -184,7 +184,7 @@ export default function PlayerProfilePage() {
               <div style={{flex:1,minWidth:0}}>
                 <h1 style={{fontSize:26,fontWeight:900,color:'white',lineHeight:1,marginBottom:4,letterSpacing:'-0.02em'}}>{profile.full_name}</h1>
                 <p style={{fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:10}}>{profile.grade}</p>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                <div style={{display:'flex',flexWrap:'wrap',gap:6,alignItems:'center'}}>
                   {sports.map(s=>{
                     const cfg=SPORT_CONFIG[s]||{color:'#38bdf8',bg:'rgba(56,189,248,0.08)'};
                     return (
@@ -193,12 +193,15 @@ export default function PlayerProfilePage() {
                       </span>
                     );
                   })}
+                  <Link href="/player/setup" style={{fontSize:11,color:'rgba(255,255,255,0.3)',textDecoration:'none',padding:'3px 10px',borderRadius:20,border:'1px solid rgba(255,255,255,0.1)',marginLeft:2}}>
+                    Edit profile
+                  </Link>
                 </div>
               </div>
               {!profile.athlete_id&&(
-                <div style={{background:'rgba(251,191,36,0.08)',border:'1px solid rgba(251,191,36,0.2)',borderRadius:10,padding:'10px 14px',maxWidth:260}}>
-                  <p style={{fontSize:11,fontWeight:700,color:'#fbbf24',marginBottom:2}}>Profile pending match</p>
-                  <p style={{fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.5}}>Your stats will appear once your coach adds you to the system.</p>
+                <div style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:10,padding:'10px 14px',maxWidth:240}}>
+                  <p style={{fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.4)',marginBottom:2}}>Stats coming soon</p>
+                  <p style={{fontSize:11,color:'rgba(255,255,255,0.28)',lineHeight:1.5}}>Personal stats appear once your coach adds you to the system.</p>
                 </div>
               )}
             </div>
@@ -206,9 +209,15 @@ export default function PlayerProfilePage() {
 
           {/* ── SPORT CARDS ── */}
           {sports.length===0 ? (
-            <div style={{textAlign:'center',padding:'48px 0'}}>
-              <p style={{fontSize:15,color:'rgba(255,255,255,0.3)'}}>No sports selected. <Link href="/player/setup" style={{color:'#38bdf8'}}>Update your profile</Link></p>
-            </div>
+            <GlassCard>
+              <div style={{padding:'40px',textAlign:'center'}}>
+                <p style={{fontSize:15,fontWeight:700,color:'rgba(255,255,255,0.4)',marginBottom:8}}>No sports selected yet</p>
+                <p style={{fontSize:13,color:'rgba(255,255,255,0.25)',marginBottom:20}}>Add the sports you play to see your fixtures, results and schedule.</p>
+                <Link href="/player/setup" style={{fontSize:13,fontWeight:700,color:'#3b82f6',padding:'10px 20px',borderRadius:10,border:'1px solid #3b82f640',background:'#3b82f610',textDecoration:'none',display:'inline-block'}}>
+                  Add sports to my profile
+                </Link>
+              </div>
+            </GlassCard>
           ) : (
             <div style={{display:'flex',flexDirection:'column',gap:20}}>
               {sports.map(sport=>{
@@ -240,9 +249,13 @@ export default function PlayerProfilePage() {
                       <div style={{position:'absolute',top:0,left:0,right:0,height:2,background:`linear-gradient(90deg,transparent,${C},transparent)`}}/>
                     </div>
 
-                    {isLoading ? (
+                    {loadingSports ? (
                       <div style={{padding:'32px',textAlign:'center'}}>
                         <div style={{width:20,height:20,borderRadius:'50%',border:`2px solid ${C}`,borderTopColor:'transparent',animation:'spin 0.8s linear infinite',margin:'0 auto'}}/>
+                      </div>
+                    ) : !data ? (
+                      <div style={{padding:'24px',textAlign:'center'}}>
+                        <p style={{fontSize:13,color:'rgba(255,255,255,0.25)'}}>Loading...</p>
                       </div>
                     ) : (
                       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))',gap:0}}>
