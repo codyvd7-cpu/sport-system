@@ -311,7 +311,7 @@ function PortalInner() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{width:14,height:14}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Coach Login
             </Link>
-            <Link href="/player" style={{background:`linear-gradient(135deg,${C}cc,${C})`,color:'white',fontSize:13,fontWeight:600,textDecoration:'none',padding:'7px 14px',borderRadius:8,display:'flex',alignItems:'center',gap:6,boxShadow:`0 4px 14px ${C}40`}}>
+            <Link href="/player/auth" style={{background:`linear-gradient(135deg,${C}cc,${C})`,color:'white',fontSize:13,fontWeight:600,textDecoration:'none',padding:'7px 14px',borderRadius:8,display:'flex',alignItems:'center',gap:6,boxShadow:`0 4px 14px ${C}40`}}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} style={{width:14,height:14}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               Player Login
             </Link>
