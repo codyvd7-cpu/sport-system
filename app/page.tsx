@@ -85,7 +85,7 @@ const DEPARTMENTS = [
     lines: ['Coming Soon'],
     href: '#',
     available: false,
-    icon: '/icon-athletics.svg',
+    icon: '/icon-athletics.png',
     accent: 'rgba(255,255,255,0.15)',
     glow: 'transparent',
     hoverBg: 'transparent',
@@ -312,7 +312,7 @@ export default function LandingPage() {
                           opacity: dept.available ? 1 : 0.4,
                           filter: dept.available
                             ? 'brightness(0) saturate(100%) invert(75%) sepia(50%) saturate(500%) hue-rotate(185deg) brightness(115%)'
-                            : 'none',
+                            : dept.id === 'athletics' ? 'brightness(0) invert(1)' : 'none',
                           transition: 'filter 0.35s ease',
                         }}
                       />
