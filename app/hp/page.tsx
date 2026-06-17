@@ -89,8 +89,34 @@ export default function HPDashboard() {
   return (
     <main style={{ minHeight:'100vh', background:'#060c1a', color:'white', paddingBottom:40 }}>
 
+      <style>{`
+        .hp-grid-stats   { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:16px; }
+        .hp-grid-actions { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:28px; }
+        .hp-grid-8       { display:grid; gap:10px; grid-template-columns:repeat(5,1fr); }
+        .hp-grid-9       { display:grid; gap:10px; grid-template-columns:repeat(5,1fr); }
+        .hp-topbar       { display:flex; }
+        .hp-pad          { padding:28px; }
+
+        @media(max-width:1024px) {
+          .hp-topbar { display:none; }
+          .hp-pad    { padding:16px 14px; }
+        }
+        @media(max-width:900px) {
+          .hp-grid-stats   { grid-template-columns:repeat(3,1fr); gap:10px; }
+          .hp-grid-actions { grid-template-columns:repeat(2,1fr); }
+          .hp-grid-8       { grid-template-columns:repeat(3,1fr); }
+          .hp-grid-9       { grid-template-columns:repeat(3,1fr); }
+        }
+        @media(max-width:540px) {
+          .hp-grid-stats   { grid-template-columns:1fr; gap:8px; }
+          .hp-grid-actions { grid-template-columns:1fr; gap:8px; }
+          .hp-grid-8       { grid-template-columns:repeat(2,1fr); }
+          .hp-grid-9       { grid-template-columns:repeat(2,1fr); }
+        }
+      `}</style>
+
       {/* ── TOP BAR ── */}
-      <header style={{ borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.95)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:30, height:56, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 28px' }}>
+      <header className="hp-topbar" style={{ borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.95)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:30, height:56, alignItems:'center', justifyContent:'space-between', padding:'0 28px', width:'100%' }}>
         <div/>{/* spacer */}
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <Link href="/" style={{ display:'flex', alignItems:'center', gap:7, fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.55)', padding:'7px 14px', borderRadius:20, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.04)', textDecoration:'none' }}>
@@ -109,7 +135,7 @@ export default function HPDashboard() {
         </div>
       </header>
 
-      <div style={{ padding:'28px 28px', maxWidth:1200 }}>
+      <div className="hp-pad" style={{ maxWidth:1200 }}>
 
         {/* ── HEADER ── */}
         <FadeUp delay={0}>
@@ -133,7 +159,7 @@ export default function HPDashboard() {
 
         {/* ── STAT CARDS ── */}
         <FadeUp delay={60}>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:16 }}>
+          <div className="hp-grid-stats">
             {STATS.map(s => (
               <HoverCard key={s.label}>
                 <Link href={s.href} style={{ display:'flex', alignItems:'center', gap:16, padding:'20px 22px', borderRadius:16, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
@@ -153,7 +179,7 @@ export default function HPDashboard() {
 
         {/* ── QUICK ACTIONS ── */}
         <FadeUp delay={100}>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:28 }}>
+          <div className="hp-grid-actions">
             {ACTIONS.map(a => (
               <HoverCard key={a.href}>
                 <Link href={a.href} style={{ display:'flex', alignItems:'center', gap:12, padding:'16px 18px', borderRadius:14, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
@@ -187,7 +213,7 @@ export default function HPDashboard() {
               Export
             </a>
           </div>
-          <StaggerList className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5" stagger={30}>
+          <StaggerList className="hp-grid-8" stagger={30}>
             {grade8.map((c: any) => (
               <StaggerItem key={c.id}><ClassCard c={c} accent="#38bdf8"/></StaggerItem>
             ))}
@@ -210,7 +236,7 @@ export default function HPDashboard() {
               Export
             </a>
           </div>
-          <StaggerList className="grid gap-3 sm:grid-cols-3 lg:grid-cols-5" stagger={30}>
+          <StaggerList className="hp-grid-9" stagger={30}>
             {grade9.map((c: any) => (
               <StaggerItem key={c.id}><ClassCard c={c} accent="#a78bfa"/></StaggerItem>
             ))}
