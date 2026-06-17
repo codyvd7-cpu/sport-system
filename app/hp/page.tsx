@@ -88,6 +88,25 @@ export default function HPDashboard() {
 
   return (
     <main style={{ minHeight:'100vh', background:'#060c1a', color:'white', paddingBottom:40 }}>
+      <style>{`
+        .hp-heading { font-size:34px; }
+        .hp-stat-num { font-size:28px; }
+        .hp-stat-icon { width:46px; height:46px; border-radius:12px; }
+        .hp-stat-icon-sz { width:22px; height:22px; }
+        .hp-action-sub { display:block; }
+        .hp-action-arrow { display:flex; }
+        .hp-action-label { font-size:12px; }
+        @media(max-width:640px) {
+          .hp-heading { font-size:24px !important; }
+          .hp-stat-num { font-size:22px !important; }
+          .hp-stat-icon { width:38px !important; height:38px !important; border-radius:10px !important; }
+          .hp-stat-icon-sz { width:18px !important; height:18px !important; }
+          .hp-action-sub { display:none !important; }
+          .hp-action-arrow { display:none !important; }
+          .hp-action-label { font-size:11px !important; }
+        }
+      `}</style>
+
 
       {/* ── TOP BAR ── */}
       <header className="hidden lg:flex" style={{ borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.95)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:30, height:56, alignItems:'center', justifyContent:'space-between', padding:'0 28px' }}>
@@ -113,10 +132,10 @@ export default function HPDashboard() {
 
         {/* ── HEADER ── */}
         <FadeUp delay={0}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:28, flexWrap:'wrap', gap:12 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:8 }}>
             <div>
               <p style={{ fontSize:11, fontWeight:600, color:`${G}99`, letterSpacing:'0.1em', marginBottom:4 }}>Welcome back</p>
-              <h1 style={{ fontSize:34, fontWeight:900, color:'white', lineHeight:1, letterSpacing:'-0.02em' }}>
+              <h1 className="hp-heading" style={{ fontWeight:900, color:'white', lineHeight:1, letterSpacing:'-0.02em' }}>
                 High <span style={{ background:`linear-gradient(135deg,${G},#38bdf8)`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Performance</span>
               </h1>
             </div>
@@ -133,15 +152,15 @@ export default function HPDashboard() {
 
         {/* ── STAT CARDS ── */}
         <FadeUp delay={60}>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
             {STATS.map(s => (
               <HoverCard key={s.label}>
-                <Link href={s.href} style={{ display:'flex', alignItems:'center', gap:12, padding:'16px', borderRadius:16, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
-                  <div style={{ width:46, height:46, borderRadius:12, background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <Icon d={s.iconD} size={22} color={s.color}/>
+                <Link href={s.href} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 10px', borderRadius:14, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
+                  <div className="hp-stat-icon" style={{ background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <span className="hp-stat-icon-sz" style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Icon d={s.iconD} size={22} color={s.color}/></span>
                   </div>
                   <div>
-                    <CountUp value={s.val} className="" style={{ fontSize:28, fontWeight:900, color:s.color, lineHeight:1, display:'block' }}/>
+                    <CountUp value={s.val} className="hp-stat-num" style={{ fontWeight:900, color:s.color, lineHeight:1, display:'block' }}/>
                     <p style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.12em', marginTop:4 }}>{s.label}</p>
                     <p style={{ fontSize:10, color:'rgba(255,255,255,0.25)', marginTop:1 }}>{s.sub}</p>
                   </div>
@@ -153,7 +172,7 @@ export default function HPDashboard() {
 
         {/* ── QUICK ACTIONS ── */}
         <FadeUp delay={100}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-7">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
             {ACTIONS.map(a => (
               <HoverCard key={a.href}>
                 <Link href={a.href} style={{ display:'flex', alignItems:'center', gap:10, padding:'13px 14px', borderRadius:14, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
@@ -161,10 +180,10 @@ export default function HPDashboard() {
                     <Icon d={a.iconD} size={17} color={a.color}/>
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
-                    <p style={{ fontSize:12, fontWeight:800, color:'white', marginBottom:2 }}>{a.label}</p>
-                    <p style={{ fontSize:10, color:'rgba(255,255,255,0.35)' }}>{a.sub}</p>
+                    <p className="hp-action-label" style={{ fontWeight:800, color:'white', marginBottom:1 }}>{a.label}</p>
+                    <p className="hp-action-sub" style={{ fontSize:10, color:'rgba(255,255,255,0.35)' }}>{a.sub}</p>
                   </div>
-                  <Icon d="M9 18l6-6-6-6" size={13} color="rgba(255,255,255,0.2)"/>
+                  <span className="hp-action-arrow"><Icon d="M9 18l6-6-6-6" size={13} color="rgba(255,255,255,0.2)"/></span>
                 </Link>
               </HoverCard>
             ))}
