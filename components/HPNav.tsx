@@ -1,46 +1,35 @@
 'use client';
-
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
+const G = '#10b981';
+const BG = '#060c1a';
+const BORDER = 'rgba(255,255,255,0.07)';
+
 const NAV_ITEMS = [
-  {
-    href: '/hp',
-    label: 'Dashboard',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
-  },
-  {
-    href: '/hp/students',
-    label: 'Students',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6"/></svg>,
-  },
-  {
-    href: '/hp/attendance',
-    label: 'Attendance',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
-  },
-  {
-    href: '/hp/testing',
-    label: 'Testing',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-  },
-  {
-    href: '/hp/trends',
-    label: 'Trends',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>,
-  },
-  {
-    href: '/hp/classes',
-    label: 'Classes',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-5 w-5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-  },
+  { href:'/hp',            label:'Dashboard',  d:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+  { href:'/hp/students',   label:'Students',   d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 3a4 4 0 0 1 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
+  { href:'/hp/attendance', label:'Attendance', d:'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+  { href:'/hp/testing',    label:'Testing',    d:'M22 12h-4l-3 9L9 3l-3 9H2' },
+  { href:'/hp/trends',     label:'Trends',     d:'M23 6L13.5 15.5 8.5 10.5 1 18 M17 6h6v6' },
+  { href:'/hp/classes',    label:'Classes',    d:'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z' },
 ];
+
+function NavIcon({ d }: { d: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+      strokeLinecap="round" strokeLinejoin="round" style={{ width:16, height:16, flexShrink:0 }}>
+      {d.split(' M').map((seg, i) => <path key={i} d={i===0 ? seg : 'M'+seg}/>)}
+    </svg>
+  );
+}
 
 export default function HPNav() {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
   const [menuOpen, setMenuOpen] = React.useState(false);
 
   function isActive(href: string) {
@@ -50,101 +39,127 @@ export default function HPNav() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push('/hp-login');
   }
 
   return (
     <>
-      {/* ── DESKTOP ─────────────────────────────────────── */}
-      <header suppressHydrationWarning className="sticky top-0 z-50 hidden border-b border-emerald-500/10 bg-[#020617]/95 backdrop-blur-xl md:block">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Link href="/hp" className="flex items-center gap-2.5 shrink-0">
-            <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict&apos;s</p>
-              <p className="text-sm font-black text-white leading-none">High Performance</p>
-            </div>
-          </Link>
-          <nav className="flex items-center gap-1">
-            {NAV_ITEMS.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link key={item.href} href={item.href}
-                  className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium transition-all ${
-                    active ? 'bg-emerald-500/15 text-emerald-400' : 'text-slate-400 hover:bg-white/5 hover:text-white'
-                  }`}>
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="flex items-center gap-2 shrink-0">
-            <Link href="/" className="rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white transition">← Departments</Link>
-            <button onClick={handleLogout} className="rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-500/20 transition">Logout</button>
+      <style>{`
+        .hp-nbtn:hover { background: rgba(255,255,255,0.05) !important; color: white !important; }
+        @media(max-width:1024px) { .hp-sidebar { display:none !important; } }
+      `}</style>
+
+      {/* ── SIDEBAR (desktop) ── */}
+      <aside className="hp-sidebar" style={{
+        width:228, flexShrink:0, position:'fixed', inset:'0 auto 0 0',
+        background:BG, borderRight:`1px solid ${BORDER}`,
+        display:'flex', flexDirection:'column', zIndex:40, overflowY:'auto',
+      }}>
+        {/* Brand */}
+        <div style={{ padding:'20px', borderBottom:`1px solid ${BORDER}`, display:'flex', alignItems:'center', gap:12 }}>
+          <Image src="/st-benedicts-logo.png" alt="SBC" width={38} height={38} style={{ objectFit:'contain', flexShrink:0 }}/>
+          <div>
+            <p style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:2 }}>
+              ST BENEDICT&apos;S COLLEGE
+            </p>
+            <p style={{ fontSize:13, fontWeight:800, color:'white', lineHeight:1 }}>High Performance</p>
           </div>
         </div>
-      </header>
 
-      {/* ── MOBILE TOP BAR ──────────────────────────────── */}
-      <header suppressHydrationWarning className="sticky top-0 z-50 border-b border-emerald-500/10 bg-[#020617]/95 backdrop-blur-xl md:hidden">
-        <div className="flex h-14 items-center justify-between px-4">
-          <Link href="/hp" className="flex items-center gap-2">
-            <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5" />
-            <div>
-              <p className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">St Benedict&apos;s</p>
-              <p className="text-sm font-black text-white leading-none">High Performance</p>
+        {/* Nav */}
+        <nav style={{ padding:'10px 10px', flex:1 }}>
+          {NAV_ITEMS.map(item => {
+            const active = isActive(item.href);
+            return (
+              <Link key={item.href} href={item.href} className="hp-nbtn"
+                style={{
+                  display:'flex', alignItems:'center', gap:12,
+                  padding:'10px 14px', borderRadius:10, marginBottom:2,
+                  background: active ? G : 'transparent',
+                  color: active ? 'white' : 'rgba(255,255,255,0.42)',
+                  fontWeight: active ? 700 : 500, fontSize:13,
+                  textDecoration:'none', transition:'all 0.15s',
+                }}>
+                <NavIcon d={item.d}/>
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Help widget */}
+        <div style={{ margin:'0 12px 20px', borderRadius:12, background:'rgba(16,185,129,0.06)', border:`1px solid ${G}18`, padding:'14px' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+            <div style={{ width:30, height:30, borderRadius:8, background:`${G}18`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth={2} style={{width:14,height:14}}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
-          </Link>
+            <div>
+              <p style={{ fontSize:12, fontWeight:700, color:'white', marginBottom:2 }}>Need Help?</p>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,0.35)', lineHeight:1.4 }}>Contact the High Performance team</p>
+            </div>
+          </div>
+          <div style={{ marginTop:10, display:'flex', gap:6 }}>
+            <Link href="/" style={{ flex:1, textAlign:'center', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', padding:'6px 8px', borderRadius:8, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', textDecoration:'none' }}>
+              ← Departments
+            </Link>
+            <button onClick={handleLogout} style={{ flex:1, fontSize:10, fontWeight:700, color:'rgba(248,113,113,0.8)', padding:'6px 8px', borderRadius:8, border:'1px solid rgba(248,113,113,0.15)', background:'rgba(248,113,113,0.06)', cursor:'pointer' }}>
+              Logout
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* ── MOBILE TOP BAR ── */}
+      <header suppressHydrationWarning style={{ position:'sticky', top:0, zIndex:50, borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', display:'none' }}
+        className="mobile-header">
+        <style>{`.mobile-header { display:flex !important; } @media(min-width:1025px){.mobile-header{display:none!important;}}`}</style>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:54, padding:'0 16px' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <Image src="/st-benedicts-logo.png" alt="SBC" width={30} height={30} style={{ objectFit:'contain' }}/>
+            <p style={{ fontSize:14, fontWeight:800, color:'white' }}>High Performance</p>
+          </div>
           <button onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-slate-300">
+            style={{ width:36, height:36, borderRadius:9, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'white' }}>
             {menuOpen
-              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:16,height:16}}><path d="M18 6L6 18M6 6l12 12"/></svg>
+              : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:16,height:16}}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             }
           </button>
         </div>
       </header>
 
-      {/* ── MOBILE MENU OVERLAY ─────────────────────────── */}
+      {/* ── MOBILE MENU ── */}
       {menuOpen && (
-        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div className="absolute right-0 top-0 h-full w-72 bg-[#06071a] border-l border-white/10 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex h-14 items-center justify-between px-4 border-b border-white/5">
-              <p className="text-sm font-black text-white">HP Classes</p>
-              <button onClick={() => setMenuOpen(false)} className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 text-slate-400">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M18 6L6 18M6 6l12 12"/></svg>
-              </button>
+        <div style={{ position:'fixed', inset:0, zIndex:45 }} onClick={() => setMenuOpen(false)}>
+          <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }}/>
+          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:260, background:'#060c1a', borderRight:`1px solid ${BORDER}` }} onClick={e => e.stopPropagation()}>
+            <div style={{ padding:'20px 16px', borderBottom:`1px solid ${BORDER}` }}>
+              <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
             </div>
-            <div className="py-4">
-              {NAV_ITEMS.map((item) => (
-                <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition ${
-                    isActive(item.href) ? 'bg-emerald-500/10 text-emerald-400' : 'text-slate-300 hover:bg-white/5'
-                  }`}>
-                  {item.icon}{item.label}
-                </Link>
-              ))}
-              <div className="mx-4 mt-4 space-y-2 border-t border-white/5 pt-4">
-                <Link href="/" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-semibold text-slate-300">All Departments</Link>
-                <button onClick={handleLogout} className="w-full rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-2.5 text-left text-sm font-semibold text-red-300">Logout</button>
-              </div>
+            {NAV_ITEMS.map(item => (
+              <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
+                style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', color:isActive(item.href)?G:'rgba(255,255,255,0.6)', textDecoration:'none', fontSize:14, fontWeight:isActive(item.href)?700:500 }}>
+                <NavIcon d={item.d}/>{item.label}
+              </Link>
+            ))}
+            <div style={{ padding:'12px 16px', borderTop:`1px solid ${BORDER}`, marginTop:8 }}>
+              <Link href="/" style={{ display:'block', marginBottom:8, fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.5)', padding:'8px 12px', borderRadius:9, border:`1px solid ${BORDER}`, textDecoration:'none' }}>← Departments</Link>
+              <button onClick={handleLogout} style={{ width:'100%', fontSize:12, fontWeight:600, color:'#f87171', padding:'8px 12px', borderRadius:9, border:'1px solid rgba(248,113,113,0.2)', background:'rgba(248,113,113,0.06)', cursor:'pointer' }}>Logout</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── MOBILE BOTTOM TABS ──────────────────────────── */}
-      <nav suppressHydrationWarning className="fixed bottom-0 left-0 right-0 z-50 border-t border-emerald-500/10 bg-[#020617]/95 backdrop-blur-xl md:hidden">
-        <div className="flex items-center justify-around px-1 py-1.5">
-          {NAV_ITEMS.map((item) => {
+      {/* ── MOBILE BOTTOM TABS ── */}
+      <nav suppressHydrationWarning className="mobile-header" style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, borderTop:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', padding:'6px 0' }}>
+        <div style={{ display:'flex', justifyContent:'space-around' }}>
+          {NAV_ITEMS.map(item => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
-                className={`flex flex-col items-center gap-0.5 rounded-xl px-2 py-1.5 transition ${active ? 'text-emerald-400' : 'text-slate-500'}`}>
-                {item.icon}
-                <span className="text-[9px] font-semibold">{item.label}</span>
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'6px 8px', color:active?G:'rgba(255,255,255,0.4)', textDecoration:'none' }}>
+                <NavIcon d={item.d}/>
+                <span style={{ fontSize:9, fontWeight:600 }}>{item.label}</span>
               </Link>
             );
           })}
