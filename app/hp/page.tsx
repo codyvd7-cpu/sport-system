@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { PageLoader } from '@/components/HPIcons';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { getCalendarTerm, getCurrentYear } from '@/lib/hpTerm';
 
@@ -50,7 +49,13 @@ export default function HPDashboard() {
       }).catch(() => setLoading(false));
   }, [year]);
 
-  if (loading) return <PageLoader label="High Performance"/>;
+  if (loading) return (
+    <div style={{ minHeight:'100vh', background:'#060c1a', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
+      <div style={{ width:28, height:28, borderRadius:'50%', border:'3px solid #10b981', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }}/>
+      <p style={{ color:'rgba(255,255,255,0.4)', fontSize:13 }}>Loading...</p>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
   const testedIds     = new Set(tests.filter(r => r.term===term).map(r => r.student_id));
   const totalStudents = students.length;
