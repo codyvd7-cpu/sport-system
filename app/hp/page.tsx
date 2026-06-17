@@ -87,7 +87,7 @@ export default function HPDashboard() {
   ];
 
   return (
-    <main style={{ minHeight:'100vh', background:'#060c1a', color:'white', paddingBottom:40 }}>
+    <main style={{ minHeight:'100vh', background:'#060c1a', color:'white' }} className="pt-14 pb-20 lg:pt-0 lg:pb-10">
       <style>{`
         .hp-heading { font-size:34px; }
         .hp-stat-num { font-size:28px; }

@@ -5,9 +5,13 @@ import HPAuthGuard from '@/components/HPAuthGuard';
 export default function HPLayout({ children }: { children: React.ReactNode }) {
   return (
     <HPAuthGuard>
-      <div className="flex min-h-screen" style={{ background:'#060c1a' }}>
+      <div style={{ minHeight:'100vh', background:'#060c1a' }}>
         <HPNav />
-        <div className="flex-1 min-h-screen lg:ml-[228px] pb-20 lg:pb-0">
+        <div className="hp-content" style={{ minHeight:'100vh' }}>
+          <style>{`
+            .hp-content { margin-left: 0; }
+            @media(min-width: 1024px) { .hp-content { margin-left: 228px; } }
+          `}</style>
           {children}
         </div>
       </div>

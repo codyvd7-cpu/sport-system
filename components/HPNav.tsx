@@ -110,7 +110,7 @@ export default function HPNav() {
       </aside>
 
       {/* ── MOBILE TOP BAR ── */}
-      <header suppressHydrationWarning style={{ position:'sticky', top:0, zIndex:50, borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', display:'none' }}
+      <header suppressHydrationWarning style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', display:'none' }}
         className="mobile-header">
         <style>{`.mobile-header { display:flex !important; } @media(min-width:1025px){.mobile-header{display:none!important;}}`}</style>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:54, padding:'0 16px' }}>
