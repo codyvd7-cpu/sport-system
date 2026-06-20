@@ -207,11 +207,11 @@ export default function LandingPage(){
 
       {/* ── HERO ── */}
       <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',
-        padding:'14px 20px 8px',flexShrink:0,
+        padding:'28px 20px 12px',flexShrink:0,
         opacity:mounted?1:0,transform:mounted?'translateY(0)':'translateY(8px)',transition:'all .7s ease'}}>
-        <Image src="/st-benedicts-logo.png" alt="SBC" width={50} height={50}
-          style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:5}} priority/>
-        <p style={{fontSize:10,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:1,textAlign:'center'}}>
+        <Image src="/st-benedicts-logo.png" alt="SBC" width={64} height={64}
+          style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:8}} priority/>
+        <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
           ST BENEDICT&apos;S COLLEGE
         </p>
         <p style={{fontSize:8,letterSpacing:'.15em',color:'rgba(255,255,255,.25)',marginBottom:6,textAlign:'center'}}>
@@ -221,8 +221,8 @@ export default function LandingPage(){
           <span style={{display:'block',color:'white'}}>DRIVEN BY</span>
           <span style={{display:'block',color:'#38bdf8',textShadow:'0 0 40px rgba(56,189,248,.28)'}}>EXCELLENCE</span>
         </h1>
-        <div style={{width:38,height:2,background:'linear-gradient(90deg,transparent,rgba(56,189,248,.7),transparent)',margin:'5px auto 4px'}}/>
-        <p style={{fontSize:10,color:'rgba(255,255,255,.3)',textAlign:'center'}}>
+        <div style={{width:48,height:2,background:'linear-gradient(90deg,transparent,rgba(56,189,248,.7),transparent)',margin:'8px auto 6px'}}/>
+        <p style={{fontSize:12,color:'rgba(255,255,255,.3)',textAlign:'center'}}>
           A unified performance platform for athletes, coaches and teams.
         </p>
       </div>
