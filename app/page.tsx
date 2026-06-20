@@ -49,8 +49,8 @@ function Card({dept,favs,onFav,main=true}:{
       height:'100%',display:'flex',flexDirection:'column',alignItems:'center',
       justifyContent:'center',gap:main?8:5,padding:main?'16px 12px':'10px 6px',
       position:'relative',borderRadius:18,overflow:'hidden',
-      background:'rgba(5,10,28,0.65)',
-      backdropFilter:'blur(24px) saturate(180%)',WebkitBackdropFilter:'blur(24px) saturate(180%)',
+      background:'rgba(5,10,28,0.22)',
+      backdropFilter:'blur(18px) saturate(140%)',WebkitBackdropFilter:'blur(18px) saturate(140%)',
       border:`1px solid ${isFav&&main?C+'45':'rgba(255,255,255,0.1)'}`,
       boxShadow:main
         ?`0 16px 48px rgba(0,0,0,0.55),0 0 0 1px ${C}18,inset 0 1px 0 rgba(255,255,255,0.12)`
