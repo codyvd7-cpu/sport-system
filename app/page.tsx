@@ -147,12 +147,14 @@ export default function LandingPage(){
   // Left:   translateX(-134%) scale(0.82) → right edge at ~22%
   // Right:  translateX(34%) scale(0.82)   → left edge at ~78%
   function mTx(offset:number):React.CSSProperties{
-    const T='transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94),opacity 0.44s ease,box-shadow 0.44s ease';
-    if(offset===0) return {transform:'translateX(-50%) scale(1)',     opacity:1,   zIndex:10,transition:T};
-    if(offset===-1)return {transform:'translateX(-134%) scale(0.82)', opacity:0.7, zIndex:5, transition:T};
-    if(offset===1) return {transform:'translateX(34%) scale(0.82)',   opacity:0.7, zIndex:5, transition:T};
+    // Only transition transform — no opacity transition = no flash when cards slide in
+    const T='transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
+    if(offset===0) return {transform:'translateX(-50%) scale(1)',      opacity:1,    zIndex:10, transition:T};
+    if(offset===-1)return {transform:'translateX(-134%) scale(0.82)',  opacity:0.72, zIndex:5,  transition:T};
+    if(offset===1) return {transform:'translateX(34%) scale(0.82)',    opacity:0.72, zIndex:5,  transition:T};
+    // Off-screen: same opacity as side cards so no fade flash when sliding in
     const d=offset<0;
-    return {transform:`translateX(${d?'-220%':'120%'}) scale(0.65)`,opacity:0,zIndex:1,transition:T};
+    return {transform:`translateX(${d?'-250%':'150%'}) scale(0.75)`, opacity:0.72, zIndex:1,  transition:T};
   }
 
   // Always show exactly DPER items, wrapping around for the last page
