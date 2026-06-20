@@ -1,4 +1,5 @@
 'use client';
+import PortalAuthGuard from '@/components/PortalAuthGuard';
 import Link from 'next/link';
 import * as React from 'react';
 import { useEffect, useState } from 'react';
