@@ -155,6 +155,11 @@ export default function LandingPage(){
     return {transform:`translateX(${d?'-220%':'120%'}) scale(0.65)`,opacity:0,zIndex:1,transition:T};
   }
 
+  // Always show exactly DPER items, wrapping around for the last page
+  function getPageItems(page:number){ 
+    return Array.from({length:DPER},(_,i)=>sorted[(page*DPER+i)%sorted.length]);
+  }
+
   return(<>
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;800;900&display=swap');
@@ -234,17 +239,14 @@ export default function LandingPage(){
             <div style={{flex:1,padding:'0 50px',display:'grid',
               gridTemplateColumns:`repeat(${DPER},1fr)`,
               gridAutoRows:'minmax(0,175px)',gap:10}}>
-              {sorted.slice(dPage*DPER,(dPage+1)*DPER).map(dept=>(
+              {getPageItems(dPage).map((dept,i)=>(
                 dept.live
-                  ?<Link key={dept.id} href={dept.href} style={{display:'block',textDecoration:'none'}} className="dc live">
+                  ?<Link key={`${dept.id}-${i}`} href={dept.href} style={{display:'block',textDecoration:'none'}} className="dc live">
                     <Card dept={dept} favs={favs} onFav={toggleFav}/>
                   </Link>
-                  :<div key={dept.id} className="dc" style={{opacity:.45}}>
+                  :<div key={`${dept.id}-${i}`} className="dc" style={{opacity:.45}}>
                     <Card dept={dept} favs={favs} onFav={toggleFav}/>
                   </div>
-              ))}
-              {Array.from({length:DPER-sorted.slice(dPage*DPER,(dPage+1)*DPER).length}).map((_,i)=>(
-                <div key={`e${i}`}/>
               ))}
             </div>
             <button className="narr" onClick={dNext}
