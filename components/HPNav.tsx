@@ -85,28 +85,7 @@ export default function HPNav() {
             );
           })}
         </nav>
-
-        {/* Help widget */}
-        <div style={{ margin:'0 12px 20px', borderRadius:12, background:'rgba(16,185,129,0.06)', border:`1px solid ${G}18`, padding:'14px' }}>
-          <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
-            <div style={{ width:30, height:30, borderRadius:8, background:`${G}18`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke={G} strokeWidth={2} style={{width:14,height:14}}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            </div>
-            <div>
-              <p style={{ fontSize:12, fontWeight:700, color:'white', marginBottom:2 }}>Need Help?</p>
-              <p style={{ fontSize:11, color:'rgba(255,255,255,0.35)', lineHeight:1.4 }}>Contact the High Performance team</p>
-            </div>
-          </div>
-          <div style={{ marginTop:10, display:'flex', gap:6 }}>
-            <Link href="/" style={{ flex:1, textAlign:'center', fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', padding:'6px 8px', borderRadius:8, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', textDecoration:'none' }}>
-              ← Departments
-            </Link>
-            <button onClick={handleLogout} style={{ flex:1, fontSize:10, fontWeight:700, color:'rgba(248,113,113,0.8)', padding:'6px 8px', borderRadius:8, border:'1px solid rgba(248,113,113,0.15)', background:'rgba(248,113,113,0.06)', cursor:'pointer' }}>
-              Logout
-            </button>
-          </div>
-        </div>
-      </aside>
+        </aside>
 
       {/* ── MOBILE TOP BAR ── */}
       <header suppressHydrationWarning style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', display:'none' }}

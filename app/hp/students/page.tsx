@@ -116,14 +116,14 @@ function HPStudentsInner() {
             <p className="mb-4 text-xs font-black uppercase tracking-wide text-emerald-400">New Student</p>
             <form onSubmit={addStudent} className="grid gap-3 sm:grid-cols-4">
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Full name"
-                className="sm:col-span-2 rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                className="sm:col-span-2 rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
               <select value={grade} onChange={e => setGrade(e.target.value)}
-                className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                className="rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
                 <option>Grade 8</option>
                 <option>Grade 9</option>
               </select>
               <select value={hpClass} onChange={e => setHpClass(e.target.value)}
-                className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                className="rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
                 {HP_CLASSES.map(c => <option key={c} value={c}>Class {c}</option>)}
               </select>
               <button type="submit" disabled={saving || !name.trim()}

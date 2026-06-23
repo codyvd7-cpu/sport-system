@@ -121,11 +121,6 @@ export default function HPDashboard() {
             <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" size={13}/>
             Departments
           </Link>
-          <div style={{ position:'relative' }}>
-            <div style={{ width:36, height:36, borderRadius:10, background:'rgba(255,255,255,0.05)', border:`1px solid ${BORDER}`, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
-              <Icon d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9 M13.73 21a2 2 0 0 1-3.46 0" size={15} color="rgba(255,255,255,0.6)"/>
-            </div>
-          </div>
           <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.05)', border:`1px solid ${BORDER}`, borderRadius:24, padding:'4px 14px 4px 4px' }}>
             <div style={{ width:28, height:28, borderRadius:'50%', background:`linear-gradient(135deg,#065f46,${G})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, color:'white', flexShrink:0 }}>HP</div>
             <span style={{ fontSize:13, fontWeight:600, color:'white' }}>HP Admin</span>

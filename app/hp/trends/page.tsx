@@ -229,7 +229,7 @@ export default function HPTrendsPage(){
                 {label:'Untested', val:gradeStudents.filter(s=>!latestMap[s.id]).length,       color:'#fbbf24'},
               ].map(x=>(
                 <div key={x.label} className="rounded-2xl border p-4 text-center"
-                  style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+                  style={{background:'#0d1424',borderColor:'rgba(255,255,255,0.06)'}}>
                   <p className="text-2xl font-black" style={{color:x.color}}>{x.val}</p>
                   <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{x.label}</p>
                 </div>
@@ -240,7 +240,7 @@ export default function HPTrendsPage(){
             <div className="rounded-2xl overflow-hidden"
               style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
               <div className="border-b px-5 py-3"
-                style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+                style={{borderColor:'rgba(255,255,255,0.06)',background:'#0d1424'}}>
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em]"
                   style={{color:isG8?'#38bdf8':'#a78bfa'}}>{grade} · {selYear} · Latest results</p>
               </div>
@@ -320,7 +320,7 @@ export default function HPTrendsPage(){
                 {label:'Groups',   val:Math.max(...classStudents.map(s=>s.training_group||0),0)||0,      color:isG8?'#38bdf8':'#a78bfa'},
               ].map(x=>(
                 <div key={x.label} className="rounded-2xl border p-4 text-center"
-                  style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
+                  style={{background:'#0d1424',borderColor:'rgba(255,255,255,0.06)'}}>
                   <p className="text-2xl font-black" style={{color:x.color}}>{x.val||'—'}</p>
                   <p className="text-[9px] font-bold uppercase tracking-[0.15em] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{x.label}</p>
                 </div>

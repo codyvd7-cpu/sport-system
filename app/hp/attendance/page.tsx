@@ -107,12 +107,12 @@ function HPAttendanceInner() {
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35">Date</label>
               <input type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)}
-                className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500" />
+                className="w-full rounded-xl border border-white/8 bg-[#0d1424] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 [&>option]:bg-[#0d1424] [&>option]:text-white" />
             </div>
             <div>
               <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35">Session Type</label>
               <select value={sessionType} onChange={e => setSessionType(e.target.value)}
-                className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500">
+                className="w-full rounded-xl border border-white/8 bg-[#0d1424] px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 [&>option]:bg-[#0d1424] [&>option]:text-white">
                 {['HP Training','Gym','Testing','Recovery','Match Prep','Conditioning'].map(t => <option key={t}>{t}</option>)}
               </select>
             </div>

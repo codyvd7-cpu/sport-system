@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { verifyHpCookie } from '@/lib/serverAuth';
 
 function getAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -8,10 +8,14 @@ function getAdmin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key);
 }
 
-export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+function requireAuth(req: NextRequest) {
+  if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  return null;
+}
 
+export async function GET(req: NextRequest) {
+  const err = requireAuth(req);
+  if (err) return err;
   try {
     const admin = getAdmin();
     const { data, error } = await admin.from('hp_students').select('*').eq('is_active', true).order('full_name');
@@ -21,9 +25,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport']);
-  if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
-
+  const err = requireAuth(req);
+  if (err) return err;
   try {
     const admin = getAdmin();
     const body = await req.json();

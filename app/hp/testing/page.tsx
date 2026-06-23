@@ -238,13 +238,13 @@ function HPTestingInner() {
         <div className="mb-5 rounded-2xl border border-white/6 bg-[rgba(255,255,255,0.025)] p-5">
           <p className="mb-4 text-xs font-black uppercase tracking-wide text-white/35">Step 1 — Session Setup</p>
           <div className="grid gap-3 sm:grid-cols-3">
-            <select value={term} onChange={e => setTerm(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
+            <select value={term} onChange={e => setTerm(e.target.value)} className="rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
               {HP_TERMS.map(t => <option key={t}>{t}</option>)}
             </select>
-            <select value={year} onChange={e => setYear(Number(e.target.value))} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
+            <select value={year} onChange={e => setYear(Number(e.target.value))} className="rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500">
               {[2025,2026,2027].map(y => <option key={y}>{y}</option>)}
             </select>
-            <input type="date" value={testDate} onChange={e => setTestDate(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
+            <input type="date" value={testDate} onChange={e => setTestDate(e.target.value)} className="rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2.5 text-sm text-white outline-none focus:border-violet-500" />
           </div>
 
           {/* Class selector */}
@@ -352,7 +352,7 @@ function HPTestingInner() {
                               value={results[s.id]?.[t.key] || ''}
                               onChange={e => setResults(p => ({ ...p, [s.id]: { ...(p[s.id] || {}), [t.key]: e.target.value } }))}
                               placeholder={t.unit === 'mm:ss' ? '2:05' : t.unit === 's' ? '0.00' : '—'}
-                              className="w-full rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-white outline-none focus:border-violet-500"
+                              className="w-full rounded-xl border border-white/8 bg-[#0d1424] [&>option]:bg-[#0d1424] [&>option]:text-white px-3 py-2 text-sm text-white outline-none focus:border-violet-500"
                             />
                           </div>
                         ))}
