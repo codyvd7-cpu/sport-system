@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
@@ -115,7 +114,7 @@ export default function HPClassesPage() {
   const grade9Classes = CLASS_OPTIONS.filter(c => c[0] === '9');
 
   return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 
         {/* Header */}

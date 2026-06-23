@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
 import { PageLoader, EmptyState, IconUsers, IconPlus, IconTrash, IconSearch } from '@/components/HPIcons';
@@ -19,7 +18,8 @@ function HPStudentsInner() {
   const [gradeFilter, setGradeFilter] = React.useState('All');
   const searchParams = useSearchParams();
   const [classFilter, setClassFilter] = React.useState(() => searchParams.get('class') || 'All');
-  const [testedFilter] = React.useState(() => searchParams.get('tested') || null);
+  // testedFilter URL param stored for future use
+  const testedFilter = searchParams.get('tested');
   const [showAdd, setShowAdd] = React.useState(false);
   const [name, setName] = React.useState('');
   const [grade, setGrade] = React.useState('Grade 8');
@@ -94,7 +94,7 @@ function HPStudentsInner() {
 
   return (
     <FadeUp delay={0}>
-    <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
+    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* Header */}

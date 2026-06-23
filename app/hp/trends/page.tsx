@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { PageLoader } from '@/components/HPIcons';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -148,7 +147,7 @@ export default function HPTrendsPage(){
   const gradeBg=isG8?'bg-sky-500/20 text-sky-300 border-sky-500/40':'bg-violet-500/20 text-violet-300 border-violet-500/40';
 
   return(
-    <main className="min-h-screen pb-24 text-white md:pb-0" style={{background:'#030810'}}>
+    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* ── HEADER ── */}

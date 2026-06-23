@@ -2,7 +2,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { PageLoader } from '@/components/HPIcons';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
@@ -227,7 +226,7 @@ function HPTestingInner() {
 
   return (
 <FadeUp delay={0}>
-    <main className="min-h-screen pb-20 text-white md:pb-0" style={{background:'#030810'}}>
+    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
         <div className="mb-8">
