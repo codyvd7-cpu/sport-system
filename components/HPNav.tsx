@@ -3,7 +3,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 
 const G = '#10b981';
 const BG = '#060c1a';
@@ -38,7 +37,7 @@ export default function HPNav() {
   }
 
   async function handleLogout() {
-    await supabase.auth.signOut();
+    try { await fetch('/api/hp/logout', { method:'POST', credentials:'include' }); } catch {}
     router.push('/hp-login');
   }
 

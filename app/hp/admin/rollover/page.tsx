@@ -91,13 +91,13 @@ export default function HPRolloverPage() {
   }
 
   if (loading) return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0 flex items-center justify-center">
+    <main className="min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-10 bg-[#030810] pb-24 text-white md:pb-0 flex items-center justify-center">
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
   );
 
   return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+    <main className="min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-10 bg-[#030810] pb-24 text-white md:pb-0">
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
 
         {/* Header */}
