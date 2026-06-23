@@ -305,8 +305,19 @@ export default function LandingPage(){
               setDragPx(dx);
             }}
             onTouchEnd={()=>{
-              if(Math.abs(dragPx)>50) mGo(dragPx<0?1:-1);
-              else{ setDragging(false); setDragPx(0); }
+              const snap=Math.abs(dragPx)>50;
+              const dir=dragPx<0?1:-1;
+              if(snap){
+                // Commit swipe
+                mGo(dir);
+              } else {
+                // Snap back: re-enable transition first, then reset position
+                // Double rAF ensures two separate browser paints
+                setDragging(false);
+                requestAnimationFrame(()=>requestAnimationFrame(()=>{
+                  setDragPx(0);
+                }));
+              }
             }}>
 
             {sorted.map((dept,idx)=>{
