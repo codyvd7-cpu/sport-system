@@ -106,7 +106,10 @@ export default function LandingPage(){
   const [isMob,    setIsMob]    = React.useState(false);
   const [dPage,    setDPage]    = React.useState(0);
   const [mIdx,     setMIdx]     = React.useState(0);
-  const tsX=React.useRef(0), teX=React.useRef(0);
+  const tsX=React.useRef(0);
+  const [dragPx,  setDragPx]  = React.useState(0);
+  const [dragging,setDragging]= React.useState(false);
+  const teX=React.useRef(0); // unused legacy
   const DPER=4;
 
   React.useEffect(()=>{
@@ -141,20 +144,31 @@ export default function LandingPage(){
   function dNext(){ setDPage(p=>(p+1)%dPages); }
   function dPrev(){ setDPage(p=>(p-1+dPages)%dPages); }
 
-  // ── Mobile transforms: correct math for peekage ───────────────────────────
-  // Card width = 65% of container, left:50%
-  // Center: translateX(-50%) scale(1)   → center at 50%
-  // Left:   translateX(-134%) scale(0.82) → right edge at ~22%
-  // Right:  translateX(34%) scale(0.82)   → left edge at ~78%
+  // Circular offset — shortest path around the loop
+  function circOff(idx:number):number{
+    let off=idx-mIdx;
+    if(off>n/2)off-=n;
+    if(off<-n/2)off+=n;
+    return off;
+  }
+
+  // Transform: base position + real-time drag offset + scale interpolation
   function mTx(offset:number):React.CSSProperties{
-    // Only transition transform — no opacity transition = no flash when cards slide in
-    const T='transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
-    if(offset===0) return {transform:'translateX(-50%) scale(1)',      opacity:1,    zIndex:10, transition:T};
-    if(offset===-1)return {transform:'translateX(-134%) scale(0.82)',  opacity:0.72, zIndex:5,  transition:T};
-    if(offset===1) return {transform:'translateX(34%) scale(0.82)',    opacity:0.72, zIndex:5,  transition:T};
-    // Off-screen: same opacity as side cards so no fade flash when sliding in
+    const T=dragging?'none':'transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
+    const prog=Math.min(1,Math.abs(dragPx)/180);
+    const goNext=dragPx<0;
+
+    // Scale: center scales down, incoming side scales up as you drag
+    let scale=0.82;
+    if(offset===0) scale=1-0.18*prog;
+    else if((offset===1&&goNext)||(offset===-1&&!goNext)) scale=0.82+0.18*prog;
+
+    // Base X for each position + live drag offset in px
+    if(offset===0)  return {transform:`translateX(calc(-50% + ${dragPx}px)) scale(${scale.toFixed(3)})`,      opacity:1,    zIndex:10,transition:T};
+    if(offset===-1) return {transform:`translateX(calc(-134% + ${dragPx}px)) scale(${scale.toFixed(3)})`,     opacity:0.72, zIndex:5, transition:T};
+    if(offset===1)  return {transform:`translateX(calc(34% + ${dragPx}px)) scale(${scale.toFixed(3)})`,       opacity:0.72, zIndex:5, transition:T};
     const d=offset<0;
-    return {transform:`translateX(${d?'-250%':'150%'}) scale(0.75)`, opacity:0.72, zIndex:1,  transition:T};
+    return {transform:`translateX(calc(${d?'-250%':'150%'} + ${dragPx}px)) scale(0.75)`, opacity:0.72, zIndex:1, transition:T};
   }
 
   // Always show exactly DPER items, wrapping around for the last page
@@ -207,9 +221,9 @@ export default function LandingPage(){
 
       {/* ── HERO ── */}
       <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',
-        padding:'28px 20px 12px',flexShrink:0,
+        padding:isMob?'28px 20px 12px':'36px 20px 16px',flexShrink:0,
         opacity:mounted?1:0,transform:mounted?'translateY(0)':'translateY(8px)',transition:'all .7s ease'}}>
-        <Image src="/st-benedicts-logo.png" alt="SBC" width={64} height={64}
+        <Image src="/st-benedicts-logo.png" alt="SBC" width={isMob?64:80} height={isMob?64:80}
           style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:8}} priority/>
         <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
           ST BENEDICT&apos;S COLLEGE
@@ -281,15 +295,22 @@ export default function LandingPage(){
             flexShrink:0,
             margin:'auto 0',      // vertically centre in flex parent
           }}
-            onTouchStart={e=>{tsX.current=e.touches[0].clientX;teX.current=e.touches[0].clientX;}}
-            onTouchMove={e=>{teX.current=e.touches[0].clientX;}}
+            onTouchStart={e=>{
+              tsX.current=e.touches[0].clientX;
+              setDragging(true);
+              setDragPx(0);
+            }}
+            onTouchMove={e=>{
+              const dx=e.touches[0].clientX-tsX.current;
+              setDragPx(dx);
+            }}
             onTouchEnd={()=>{
-              const d=tsX.current-teX.current;
-              if(Math.abs(d)>40) mGo(d>0?1:-1);
+              if(Math.abs(dragPx)>50) mGo(dragPx<0?1:-1);
+              else{ setDragging(false); setDragPx(0); }
             }}>
 
             {sorted.map((dept,idx)=>{
-              const offset=idx-mIdx;
+              const offset=circOff(idx);
               if(Math.abs(offset)>2)return null;
               const ts=mTx(offset);
               return(
@@ -328,12 +349,12 @@ export default function LandingPage(){
 
       {/* ── FOOTER ── */}
       <div style={{position:'relative',zIndex:10,textAlign:'center',
-        padding:'2px 16px 8px',flexShrink:0}}>
-        <p style={{fontSize:8,fontWeight:700,letterSpacing:'.4em',color:'rgba(56,189,248,.35)',marginBottom:2}}>
+        padding:isMob?'2px 16px 8px':'8px 16px 14px',flexShrink:0}}>
+        <p style={{fontSize:isMob?8:10,fontWeight:700,letterSpacing:'.4em',color:'rgba(56,189,248,.35)',marginBottom:isMob?2:4}}>
           VERITAS IN CARITATE
         </p>
         <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'3px 8px',
-          fontSize:8,color:'rgba(255,255,255,.15)'}}>
+          fontSize:isMob?8:10,color:'rgba(255,255,255,.2)'}}>
           <span>KINETIQ Sport · Altus (Pty) Ltd · Reg. 2026/424230/07</span>
           <span>·</span>
           <Link href="/privacy" style={{color:'inherit'}}>Privacy</Link>
