@@ -5,7 +5,6 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from 'recharts';
-import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
 type Row = Record<string, any>;
@@ -210,12 +209,12 @@ ${testBreakdown || 'No results recorded yet.'}`;
   }
 
   if (loading) return (
-    <main className="flex min-h-screen items-center justify-center" style={{background:'#030810'}}>
+    <main className="flex min-h-screen items-center justify-center pt-14 lg:pt-0" style={{background:'#060c1a'}}>
       <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
     </main>
   );
   if (!student) return (
-    <main className="flex min-h-screen items-center justify-center  text-white" style={{background:'#030810'}}>
+    <main className="flex min-h-screen items-center justify-center text-white pt-14 lg:pt-0" style={{background:'#060c1a'}}>
       <p>Student not found</p>
     </main>
   );
@@ -240,7 +239,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
   }
 
   return (
-    <main className="min-h-screen pb-24 text-white md:pb-0" style={{background:'#030810'}}>
+    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* Back */}
@@ -286,7 +285,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
                   ))}
                 </div>
               </div>
-              <a href={`/hp/export/student/${id}`} target="_blank"
+              <a href={`/hp-print/student/${id}`} target="_blank"
                 className="shrink-0 flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[11px] font-semibold transition hover:text-white"
                 style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.4)'}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -314,7 +313,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
 
         {/* ── TEST RESULTS ── */}
         <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
-          <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'#0d1424'}}>
             <div>
               <p className="text-[15px] font-black text-white">Test Results</p>
               <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{student.grade} battery · {yearResults.length} term{yearResults.length!==1?'s':''} recorded</p>
@@ -357,7 +356,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
                 const tierStyle = tier ? {
                   background:`${['#10b981','#38bdf8','#a78bfa','#fbbf24','#94a3b8'][TIERS.findIndex(x=>x.label===tier.label)]}0a`,
                   border:`1px solid ${['#10b981','#38bdf8','#a78bfa','#fbbf24','#94a3b8'][TIERS.findIndex(x=>x.label===tier.label)]}20`,
-                } : {background:'rgba(255,255,255,0.02)',border:'1px solid rgba(255,255,255,0.06)'};
+                } : {background:'#0d1424',border:'1px solid rgba(255,255,255,0.06)'};
 
                 return(
                   <div key={t.key} className="rounded-2xl p-4" style={tierStyle}>
@@ -415,7 +414,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
           if (radarData.length < 3) return null;
           return (
             <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
-              <div className="px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+              <div className="px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'#0d1424'}}>
                 <p className="text-[15px] font-black text-white">Performance Radar</p>
                 <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>Latest results across all tests · higher = better tier</p>
               </div>
@@ -452,7 +451,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
           if (barData.length < 2) return null;
           return (
             <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
-              <div className="px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+              <div className="px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'#0d1424'}}>
                 <p className="text-[15px] font-black text-white">Term Comparison</p>
                 <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>Overall performance score by term</p>
               </div>
@@ -478,7 +477,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
           );
         })()}
         <div className="mb-4 overflow-hidden rounded-2xl" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
-          <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'rgba(255,255,255,0.02)'}}>
+          <div className="flex items-center justify-between px-5 py-4 border-b" style={{borderColor:'rgba(255,255,255,0.06)',background:'#0d1424'}}>
             <div>
               <p className="text-[15px] font-black text-white">Attendance</p>
               <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{attendance.length} sessions · {present} present</p>

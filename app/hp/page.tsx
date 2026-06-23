@@ -200,7 +200,7 @@ export default function HPDashboard() {
                 {allDone8 && <p style={{ fontSize:10, color:`${G}99`, marginTop:1 }}>All classes tested ✓</p>}
               </div>
             </div>
-            <a href="/hp/export/grade/8" target="_blank"
+            <a href="/hp-print/grade/8" target="_blank"
               style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', padding:'7px 14px', borderRadius:10, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', textDecoration:'none' }}>
               <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5" size={13}/>
               Export
@@ -223,7 +223,7 @@ export default function HPDashboard() {
                 {allDone9 && <p style={{ fontSize:10, color:`${G}99`, marginTop:1 }}>All classes tested ✓</p>}
               </div>
             </div>
-            <a href="/hp/export/grade/9" target="_blank"
+            <a href="/hp-print/grade/9" target="_blank"
               style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', padding:'7px 14px', borderRadius:10, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', textDecoration:'none' }}>
               <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5" size={13}/>
               Export
@@ -291,7 +291,7 @@ function ClassCard({ c, accent }: { c: any; accent: string }) {
             {[
               { href:`/hp/class/${c.id}?tab=attendance`, label:'Reg',  color:G },
               { href:`/hp/class/${c.id}?tab=testing`,    label:'Test', color:'#a78bfa' },
-              { href:`/hp/export/class/${c.id}`,          label:'PDF',  color:'rgba(255,255,255,0.4)', external:true },
+              { href:`/hp-print/class/${c.id}`,          label:'PDF',  color:'rgba(255,255,255,0.4)', external:true },
             ].map(btn => btn.external ? (
               <a key={btn.label} href={btn.href} target="_blank" onClick={e => e.stopPropagation()}
                 style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'6px 4px', borderRadius:8, fontSize:9, fontWeight:800, color:btn.color, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.07)', textDecoration:'none' }}>

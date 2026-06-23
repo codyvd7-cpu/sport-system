@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
 import { PageLoader } from '@/components/HPIcons';
@@ -76,7 +75,6 @@ function ClassProfileInner({params}:PageProps) {
     const res = await fetch(url, { credentials: 'include' });
     if (!res.ok) {
       const err = await res.json().catch(()=>({error:'unknown'}));
-      console.error('HP Class load error:', res.status, err);
       setLoading(false); return;
     }
     const d = await res.json();
@@ -121,7 +119,7 @@ function ClassProfileInner({params}:PageProps) {
 
   return (
     <FadeUp delay={0}>
-    <main className="min-h-screen  pb-24 text-white md:pb-0" style={{background:'#030810'}}>
+    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
 
         {/* Back */}
@@ -131,7 +129,7 @@ function ClassProfileInner({params}:PageProps) {
         </Link>
 
         {/* Header */}
-        <div className="mb-5 rounded-2xl border border-white/6 p-5 relative overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+        <div className="mb-5 rounded-2xl border border-white/6 p-5 relative overflow-hidden" style={{background:'#0d1424'}}>
           <div className="absolute inset-0" style={{background:`radial-gradient(ellipse at 0% 50%, ${accent}0e, transparent 60%)`}}/>
           <div className="relative flex items-start justify-between gap-4 flex-wrap">
             <div>
@@ -142,7 +140,7 @@ function ClassProfileInner({params}:PageProps) {
               <p className="mt-1 text-sm text-white/50">{students.length} students · {term} · {year}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <a href={`/hp/export/class/${id}`} target="_blank"
+              <a href={`/hp-print/class/${id}`} target="_blank"
                 className="flex items-center gap-1.5 rounded-xl border border-white/8 px-3 py-2 text-xs font-black text-white/50 hover:text-white transition"
                 style={{background:'rgba(255,255,255,0.03)'}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -177,7 +175,7 @@ function ClassProfileInner({params}:PageProps) {
         </div>
 
         {/* Tabs */}
-        <div className="mb-4 flex rounded-2xl border border-white/5 p-1" style={{background:'rgba(255,255,255,0.02)'}}>
+        <div className="mb-4 flex rounded-2xl border border-white/5 p-1" style={{background:'#0d1424'}}>
           {([['students','Students'],['attendance','Register'],['testing','Testing']] as const).map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)}
               className={`flex-1 rounded-xl py-2.5 text-xs font-black transition ${tab===key?'bg-white/8 text-white':'text-white/35 hover:text-white/70'}`}>
@@ -188,7 +186,7 @@ function ClassProfileInner({params}:PageProps) {
 
         {/* ── STUDENTS TAB ── */}
         {tab==='students'&&(
-          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'#0d1424'}}>
             <div className="divide-y divide-white/3">
               {students.map(s=>{
                 const isTested = testedThisTerm.has(s.id);
@@ -228,7 +226,7 @@ function ClassProfileInner({params}:PageProps) {
         {tab==='attendance'&&(
         <div className="space-y-4">
             {/* Take register */}
-            <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'#0d1424'}}>
               <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between gap-3 flex-wrap">
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-wide text-white/25 mb-0.5">Take Register</p>
@@ -295,7 +293,7 @@ function ClassProfileInner({params}:PageProps) {
                   const recs=attendance.filter(a=>a.session_date===date);
                   const p=recs.filter(r=>r.status==='Present').length;
                   return(
-                    <div key={date} className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+                    <div key={date} className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'#0d1424'}}>
                       <div className="flex items-center justify-between px-5 py-3 border-b border-white/5">
                         <p className="text-sm font-black text-white">{fDate(date)}</p>
                         <span className="rounded-full px-2.5 py-0.5 text-[11px] font-black" style={{background:'rgba(16,185,129,0.08)',color:'#6ee7b7',border:'1px solid rgba(16,185,129,0.15)'}}>
@@ -337,7 +335,7 @@ function ClassProfileInner({params}:PageProps) {
                 Enter Tests →
               </Link>
             </div>
-            <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'rgba(255,255,255,0.02)'}}>
+            <div className="rounded-2xl border border-white/5 overflow-hidden" style={{background:'#0d1424'}}>
               <div className="divide-y divide-white/3">
                 {students.map(s=>{
                   const sResults=testResults.filter(r=>r.student_id===s.id&&r.term===term);
