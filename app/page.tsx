@@ -108,7 +108,7 @@ export default function LandingPage(){
   const [mIdx,     setMIdx]     = React.useState(0);
   const tsX=React.useRef(0);
   const [dragPx,  setDragPx]  = React.useState(0);
-  const [dragging,setDragging]= React.useState(false);
+  const dragging = React.useRef(false); // ref not state - avoids batching
   const teX=React.useRef(0); // unused legacy
   const DPER=4;
 
@@ -154,7 +154,7 @@ export default function LandingPage(){
 
   // Transform: base position + real-time drag offset + scale interpolation
   function mTx(offset:number):React.CSSProperties{
-    const T=dragging?'none':'transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
+    const T=dragging.current?'none':'transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
     const prog=Math.min(1,Math.abs(dragPx)/180);
     const goNext=dragPx<0;
 
@@ -297,7 +297,7 @@ export default function LandingPage(){
           }}
             onTouchStart={e=>{
               tsX.current=e.touches[0].clientX;
-              setDragging(true);
+              dragging.current=true;
               setDragPx(0);
             }}
             onTouchMove={e=>{
@@ -305,19 +305,16 @@ export default function LandingPage(){
               setDragPx(dx);
             }}
             onTouchEnd={()=>{
-              const snap=Math.abs(dragPx)>50;
-              const dir=dragPx<0?1:-1;
+              const dx=dragPx;
+              const snap=Math.abs(dx)>50;
+              // Set ref false BEFORE state update so next render has transition enabled
+              dragging.current=false;
               if(snap){
-                // Commit swipe
-                mGo(dir);
-              } else {
-                // Snap back: re-enable transition first, then reset position
-                // Double rAF ensures two separate browser paints
-                setDragging(false);
-                requestAnimationFrame(()=>requestAnimationFrame(()=>{
-                  setDragPx(0);
-                }));
+                // Advance carousel - one render: transition on + new index + dragPx 0
+                setMIdx(i=>(i+(dx<0?1:-1)+n)%n);
               }
+              // Always reset dragPx - fires transition because dragging.current already false
+              setDragPx(0);
             }}>
 
             {sorted.map((dept,idx)=>{
