@@ -77,7 +77,7 @@ export default function GradeExport({ params }: PageProps) {
             return(a.class_group||'').localeCompare(b.class_group||'');
           });
         const yearResults=(d.tests||[]).filter((r:Row)=>r.year===year);
-        const allTerms=[...new Set(yearResults.map((r:Row)=>r.term as string))];
+        const allTerms=[...new Set(yearResults.map((r:Row)=>r.term as string))] as string[];
         const latestTerm=allTerms.sort((a,b)=>TERM_ORDER.indexOf(b)-TERM_ORDER.indexOf(a))[0]||'';
         setStudents(gs);
         setResults(yearResults);
