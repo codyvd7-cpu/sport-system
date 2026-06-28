@@ -85,6 +85,31 @@ export default function HPNav() {
             );
           })}
         </nav>
+
+        {/* Bottom */}
+        <div style={{ padding:'10px', borderTop:`1px solid ${BORDER}`, flexShrink:0 }}>
+          <p style={{ fontSize:9, fontWeight:800, color:'rgba(255,255,255,0.2)', textTransform:'uppercase', letterSpacing:'0.14em', padding:'4px 12px 6px' }}>Admin</p>
+          <Link href="/hp/admin/rollover" style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:10, color:'rgba(251,191,36,0.8)', textDecoration:'none', fontSize:12, fontWeight:700, background:'rgba(251,191,36,0.07)', border:'1px solid rgba(251,191,36,0.18)', marginBottom:6 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(251,191,36,0.8)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{width:14,height:14,flexShrink:0}}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Year End Rollover
+          </Link>
+          <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:10, color:'rgba(255,255,255,0.38)', textDecoration:'none', fontSize:12, fontWeight:500, marginBottom:4 }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.38)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{width:14,height:14,flexShrink:0}}>
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            </svg>
+            Departments
+          </Link>
+          <button onClick={handleLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:10, border:'none', cursor:'pointer', color:'rgba(248,113,113,0.7)', fontSize:12, fontWeight:500, background:'transparent', textAlign:'left' }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="rgba(248,113,113,0.7)" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{width:14,height:14,flexShrink:0}}>
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <path d="M16 17l5-5-5-5"/>
+              <path d="M21 12H9"/>
+            </svg>
+            Logout
+          </button>
+        </div>
         </aside>
 
       {/* ── MOBILE TOP BAR ── */}
