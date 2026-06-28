@@ -121,6 +121,7 @@ export default function HPNav() {
               </Link>
             ))}
             <div style={{ padding:'12px 16px', borderTop:`1px solid ${BORDER}`, marginTop:8 }}>
+              <Link href="/hp/admin/rollover" onClick={() => setMenuOpen(false)} style={{ display:'block', marginBottom:8, fontSize:12, fontWeight:600, color:'rgba(251,191,36,0.8)', padding:'8px 12px', borderRadius:9, border:'1px solid rgba(251,191,36,0.2)', background:'rgba(251,191,36,0.06)', textDecoration:'none' }}>📅 Year End Rollover</Link>
               <Link href="/" style={{ display:'block', marginBottom:8, fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.5)', padding:'8px 12px', borderRadius:9, border:`1px solid ${BORDER}`, textDecoration:'none' }}>← Departments</Link>
               <button onClick={handleLogout} style={{ width:'100%', fontSize:12, fontWeight:600, color:'#f87171', padding:'8px 12px', borderRadius:9, border:'1px solid rgba(248,113,113,0.2)', background:'rgba(248,113,113,0.06)', cursor:'pointer' }}>Logout</button>
             </div>
