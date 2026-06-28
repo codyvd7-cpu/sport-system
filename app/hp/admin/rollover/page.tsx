@@ -1,305 +1,203 @@
 'use client';
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/components/Toast';
-import { PageLoader, IconGraduate, IconArrowUp } from '@/components/HPIcons';
 
 type Row = Record<string, any>;
-const HP_CLASSES = ['B','E','F','J','M'];
+const CLASSES = ['B','E','F','J','M'];
+const G = '#10b981';
+const CONFIRM = 'YEAR END ROLLOVER';
 
-export default function HPRolloverPage() {
-  const { showToast } = useToast();
+export default function Rollover() {
+  const router = useRouter();
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [loading, setLoading] = React.useState(true);
-  const [step, setStep] = React.useState<1|2|3|4>(1);
-  const [processing, setProcessing] = React.useState(false);
-  const [done, setDone] = React.useState<string[]>([]);
-  const [confirmText, setConfirmText] = React.useState('');
-  const CONFIRM_PHRASE = 'YEAR END ROLLOVER';
+  const [loading,  setLoading]  = React.useState(true);
+  const [step,     setStep]     = React.useState<1|2|3|4>(1);
+  const [busy,     setBusy]     = React.useState(false);
+  const [confirm,  setConfirm]  = React.useState('');
+  const [done,     setDone]     = React.useState<string[]>([]);
+  const [names,    setNames]    = React.useState('');
+  const [cls,      setCls]      = React.useState('B');
+  const [added,    setAdded]    = React.useState(0);
+  const [toast,    setToast]    = React.useState('');
 
-  // New Grade 8 bulk add
-  const [newNames, setNewNames] = React.useState('');
-  const [newClass, setNewClass] = React.useState('B');
-  const [addingNew, setAddingNew] = React.useState(false);
-  const [addedCount, setAddedCount] = React.useState(0);
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3500); }
 
   async function load() {
     const { data } = await supabase.from('hp_students').select('*').eq('is_active', true);
-    const sorted = (data || []).sort((a: Row, b: Row) => {
+    setStudents((data || []).sort((a: Row, b: Row) => {
       if (a.grade !== b.grade) return a.grade.localeCompare(b.grade);
-      const sA = a.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-      const sB = b.full_name.trim().split(' ').pop()?.toLowerCase() || '';
-      return sA.localeCompare(sB);
-    });
-    setStudents(sorted);
+      return (a.full_name.trim().split(' ').pop()||'').localeCompare(b.full_name.trim().split(' ').pop()||'');
+    }));
     setLoading(false);
   }
 
   React.useEffect(() => { load(); }, []);
 
-  const grade8s = students.filter(s => s.grade === 'Grade 8');
-  const grade9s = students.filter(s => s.grade === 'Grade 9');
-  const currentYear = new Date().getFullYear();
-  const nextYear = currentYear + 1;
+  const g8 = students.filter(s => s.grade === 'Grade 8');
+  const g9 = students.filter(s => s.grade === 'Grade 9');
+  const year = new Date().getFullYear();
 
-  // Step 2: Graduate Grade 9s
-  async function graduateGrade9s() {
-    setProcessing(true);
-    const ids = grade9s.map(s => s.id);
-    if (ids.length > 0) {
-      const { error } = await supabase.from('hp_students')
-        .update({ is_active: false, notes: `Graduated ${currentYear}` })
-        .in('id', ids);
-      if (error) { showToast(`Error: ${error.message}`); setProcessing(false); return; }
+  async function graduateG9() {
+    setBusy(true);
+    if (g9.length > 0) {
+      const { error } = await supabase.from('hp_students').update({ is_active:false, notes:`Graduated ${year}` }).in('id', g9.map(s=>s.id));
+      if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
     }
-    setDone(prev => [...prev, `${grade9s.length} Grade 9 students graduated and archived`]);
-    showToast(`${grade9s.length} Grade 9 students graduated ✓`);
-    setProcessing(false);
-    setStep(3);
-    await load();
+    setDone(d=>[...d, `${g9.length} Grade 9 students graduated and archived`]);
+    showToast(`${g9.length} Grade 9 students archived ✓`);
+    await load(); setBusy(false); setStep(3);
   }
 
-  // Step 3: Promote Grade 8s to Grade 9
-  async function promoteGrade8s() {
-    setProcessing(true);
-    if (grade8s.length > 0) {
-      const { error } = await supabase.from('hp_students')
-        .update({ grade: 'Grade 9', training_group: null })
-        .in('id', grade8s.map(s => s.id));
-      if (error) { showToast(`Error: ${error.message}`); setProcessing(false); return; }
+  async function promoteG8() {
+    setBusy(true);
+    if (g8.length > 0) {
+      const { error } = await supabase.from('hp_students').update({ grade:'Grade 9', training_group:null }).in('id', g8.map(s=>s.id));
+      if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
     }
-    setDone(prev => [...prev, `${grade8s.length} Grade 8 students promoted to Grade 9`]);
-    showToast(`${grade8s.length} students promoted to Grade 9 ✓`);
-    setProcessing(false);
-    setStep(4);
-    await load();
+    setDone(d=>[...d, `${g8.length} Grade 8 students promoted to Grade 9`]);
+    showToast(`${g8.length} students promoted to Grade 9 ✓`);
+    await load(); setBusy(false); setStep(4);
   }
 
-  // Step 4: Bulk add new Grade 8s
-  async function addNewGrade8s() {
-    const names = newNames.split('\n').map(n => n.trim()).filter(Boolean);
-    if (!names.length) { showToast('No names entered.'); return; }
-    setAddingNew(true);
-    const rows = names.map(name => ({ full_name: name, grade: 'Grade 8', class_group: newClass, is_active: true }));
-    const { error } = await supabase.from('hp_students').insert(rows);
-    if (error) { showToast(`Error: ${error.message}`); setAddingNew(false); return; }
-    setAddedCount(prev => prev + names.length);
-    setNewNames('');
-    showToast(`${names.length} students added to Grade 8${newClass} ✓`);
-    setAddingNew(false);
-    await load();
+  async function addG8s() {
+    const list = names.split('\n').map(n=>n.trim()).filter(Boolean);
+    if (!list.length) { showToast('No names entered.'); return; }
+    setBusy(true);
+    const { error } = await supabase.from('hp_students').insert(list.map(full_name=>({ full_name, grade:'Grade 8', class_group:cls, is_active:true })));
+    if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
+    setAdded(a=>a+list.length); setNames('');
+    showToast(`${list.length} students added to Grade 8${cls} ✓`);
+    await load(); setBusy(false);
   }
 
   if (loading) return (
-    <main className="min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-10 bg-[#030810] pb-24 text-white md:pb-0 flex items-center justify-center">
-      <div className="h-5 w-5 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent"/>
+    <main className="pt-14 pb-20 lg:pt-0 lg:pb-10" style={{minHeight:'100vh',background:'#060c1a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{width:24,height:24,borderRadius:'50%',border:'3px solid #10b981',borderTopColor:'transparent',animation:'spin 0.8s linear infinite'}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </main>
   );
 
+  const BD = 'rgba(255,255,255,0.08)';
+  const card:React.CSSProperties = {borderRadius:16,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.03)',padding:'20px'};
+  const btn = (col:string):React.CSSProperties => ({width:'100%',padding:'13px',borderRadius:12,border:`1px solid ${col}35`,background:`${col}12`,color:col,fontWeight:800,fontSize:14,cursor:'pointer'});
+  const STEPS=[{n:1,l:'Review'},{n:2,l:'Graduate'},{n:3,l:'Promote'},{n:4,l:'New 8s'}];
+
   return (
-    <main className="min-h-screen pt-14 pb-20 lg:pt-0 lg:pb-10 bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+    <main className="pt-14 pb-20 lg:pt-0 lg:pb-10" style={{minHeight:'100vh',background:'#060c1a',color:'white'}}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
-        {/* Header */}
-        <div className="mb-8">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-400">High Performance · Admin</p>
-          <h1 className="mt-1 text-3xl font-black text-white">Year End Rollover</h1>
-          <p className="mt-1 text-sm text-slate-500">{currentYear} → {nextYear} transition</p>
+      {toast&&<div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:12,padding:'12px 20px',color:'#10b981',fontWeight:700,fontSize:13,backdropFilter:'blur(12px)',whiteSpace:'nowrap'}}>{toast}</div>}
+
+      <div style={{maxWidth:580,margin:'0 auto',padding:'32px 20px'}}>
+        <p style={{fontSize:10,fontWeight:800,color:'#fbbf24',textTransform:'uppercase',letterSpacing:'0.2em',marginBottom:6}}>HP Admin</p>
+        <h1 style={{fontSize:28,fontWeight:900,letterSpacing:'-0.02em',marginBottom:4}}>Year End Rollover</h1>
+        <p style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginBottom:24}}>{year} → {year+1} transition</p>
+
+        {/* Steps */}
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:24}}>
+          {STEPS.map((s,i)=><React.Fragment key={s.n}>
+            <div style={{fontSize:11,fontWeight:800,padding:'6px 12px',borderRadius:20,
+              background:step===s.n?'rgba(251,191,36,0.12)':step>s.n?'rgba(16,185,129,0.08)':'rgba(255,255,255,0.04)',
+              color:step===s.n?'#fbbf24':step>s.n?G:'rgba(255,255,255,0.3)',
+              border:`1px solid ${step===s.n?'rgba(251,191,36,0.25)':step>s.n?'rgba(16,185,129,0.2)':'rgba(255,255,255,0.06)'}`,
+            }}>{step>s.n?'✓ ':''}{s.l}</div>
+            {i<3&&<span style={{color:'rgba(255,255,255,0.15)',fontSize:12}}>→</span>}
+          </React.Fragment>)}
         </div>
 
-        {/* Warning banner */}
-        {step === 1 && (
-          <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
-            <p className="text-sm font-black text-amber-300 mb-2"><span>Read before proceeding</span></p>
-            <ul className="space-y-1.5 text-sm text-amber-200/80">
-              <li>• All test results and attendance history is <strong>preserved</strong> — nothing is deleted</li>
-              <li>• Grade 9 students will be <strong>archived</strong> (no longer appear in active lists)</li>
-              <li>• Grade 8 students will be <strong>promoted to Grade 9</strong> — their training groups will reset</li>
-              <li>• You will then add new Grade 8 students for {nextYear}</li>
-              <li>• This action <strong>cannot be undone</strong> — do this at the end of the school year only</li>
-            </ul>
+        {/* Step 1 */}
+        {step===1&&<div style={{display:'flex',flexDirection:'column',gap:14}}>
+          <div style={{...card,border:'1px solid rgba(251,191,36,0.22)',background:'rgba(251,191,36,0.05)'}}>
+            <p style={{fontSize:13,fontWeight:800,color:'#fbbf24',marginBottom:10}}>Read before proceeding</p>
+            {['All test results and attendance history is preserved — nothing is deleted',
+              'Grade 9 students will be archived (no longer in active lists)',
+              'Grade 8 students will be promoted to Grade 9 — training groups reset',
+              `You will then add new Grade 8 students for ${year+1}`,
+              'This cannot be undone — only do this at the end of the school year',
+            ].map((t,i)=><p key={i} style={{fontSize:12,color:'rgba(251,191,36,0.65)',display:'flex',gap:8,marginTop:5}}><span>•</span>{t}</p>)}
           </div>
-        )}
-
-        {/* Progress steps */}
-        <div className="mb-6 flex items-center gap-2">
-          {[
-            { n:1, label:'Review' },
-            { n:2, label:'Graduate' },
-            { n:3, label:'Promote' },
-            { n:4, label:'New 8s' },
-          ].map((s, i) => (
-            <React.Fragment key={s.n}>
-              <div className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-black transition ${step === s.n ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300' : step > s.n ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-400' : 'bg-slate-900 border border-slate-800 text-slate-600'}`}>
-                {step > s.n ? '✓' : s.n} {s.label}
-              </div>
-              {i < 3 && <span className="text-slate-700 text-xs">→</span>}
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* Step 1: Review */}
-        {step === 1 && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-black text-white">Grade 9 — Will be graduated</p>
-                <span className="rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-1 text-xs font-black text-red-400">{grade9s.length} students</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {grade9s.map(s => (
-                  <span key={s.id} className="rounded-lg bg-slate-800 px-2 py-1 text-[10px] text-slate-400">
-                    {s.full_name.trim().split(' ').pop()} ({s.class_group})
-                  </span>
-                ))}
-              </div>
-              <p className="mt-3 text-[11px] text-slate-600">Their records stay in the database for historical reference.</p>
+          <div style={card}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <p style={{fontSize:13,fontWeight:800}}>Grade 9 — will be archived</p>
+              <span style={{fontSize:11,fontWeight:700,color:'#f87171',background:'rgba(248,113,113,0.08)',border:'1px solid rgba(248,113,113,0.2)',borderRadius:20,padding:'3px 10px'}}>{g9.length} students</span>
             </div>
-
-            <div className="rounded-2xl border border-sky-500/20 bg-sky-500/5 p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-black text-white">Grade 8 — Will be promoted to Grade 9</p>
-                <span className="rounded-xl border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-black text-sky-400">{grade8s.length} students</span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {grade8s.map(s => (
-                  <span key={s.id} className="rounded-lg bg-slate-800 px-2 py-1 text-[10px] text-slate-400">
-                    {s.full_name.trim().split(' ').pop()} ({s.class_group})
-                  </span>
-                ))}
-              </div>
-              <p className="mt-3 text-[11px] text-slate-600">All test results and attendance history carry over. Training groups will reset — you will re-assign after new testing.</p>
-            </div>
-
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <p className="text-xs text-slate-500 mb-2">Type <span className="font-black text-white">{CONFIRM_PHRASE}</span> to confirm</p>
-              <input
-                value={confirmText}
-                onChange={e => setConfirmText(e.target.value.toUpperCase())}
-                placeholder="Type here..."
-                className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm font-mono text-white outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <button
-              onClick={() => setStep(2)}
-              disabled={confirmText !== CONFIRM_PHRASE}
-              className="w-full rounded-xl border border-amber-500/40 bg-amber-500/15 py-3 text-sm font-black text-amber-300 hover:bg-amber-500/25 transition disabled:opacity-30 disabled:cursor-not-allowed">
-              I understand — Begin Rollover →
-            </button>
-          </div>
-        )}
-
-        {/* Step 2: Graduate Grade 9s */}
-        {step === 2 && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center space-y-4">
-            <IconGraduate className="h-10 w-10 text-slate-400"/>
-            <h2 className="text-xl font-black text-white">Graduate Grade 9s</h2>
-            <p className="text-sm text-slate-400">
-              <span className="text-white font-black">{grade9s.length} students</span> will be archived. Their results and attendance are preserved.
-            </p>
-            <div className="flex flex-wrap justify-center gap-1.5 pb-2">
-              {grade9s.map(s => (
-                <span key={s.id} className="rounded-lg bg-slate-800 px-2 py-1 text-[10px] text-slate-400">
-                  {s.full_name.trim().split(' ').pop()}
-                </span>
-              ))}
-            </div>
-            <button onClick={graduateGrade9s} disabled={processing}
-              className="w-full rounded-xl border border-red-500/30 bg-red-500/10 py-3 text-sm font-black text-red-300 hover:bg-red-500/20 transition disabled:opacity-50">
-              {processing ? 'Archiving...' : `Archive ${grade9s.length} Grade 9 Students`}
-            </button>
-            {grade9s.length === 0 && (
-              <button onClick={() => setStep(3)} className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 text-sm font-black text-slate-400 hover:text-white transition">
-                No Grade 9s — Skip →
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Step 3: Promote Grade 8s */}
-        {step === 3 && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center space-y-4">
-            <IconArrowUp className="h-10 w-10 text-slate-400"/>
-            <h2 className="text-xl font-black text-white">Promote to Grade 9</h2>
-            <p className="text-sm text-slate-400">
-              <span className="text-white font-black">{grade8s.length} students</span> currently in Grade 8 will become Grade 9. Their class groups carry over — you can reassign after testing.
-            </p>
-            <div className="flex flex-wrap justify-center gap-1.5 pb-2">
-              {grade8s.map(s => (
-                <span key={s.id} className="rounded-lg bg-slate-800 px-2 py-1 text-[10px] text-slate-400">
-                  {s.full_name.trim().split(' ').pop()} 8{s.class_group} → 9{s.class_group}
-                </span>
-              ))}
-            </div>
-            <button onClick={promoteGrade8s} disabled={processing}
-              className="w-full rounded-xl border border-sky-500/30 bg-sky-500/10 py-3 text-sm font-black text-sky-300 hover:bg-sky-500/20 transition disabled:opacity-50">
-              {processing ? 'Promoting...' : `Promote ${grade8s.length} Students to Grade 9`}
-            </button>
-            {grade8s.length === 0 && (
-              <button onClick={() => setStep(4)} className="w-full rounded-xl border border-slate-700 bg-slate-800 py-3 text-sm font-black text-slate-400 hover:text-white transition">
-                No Grade 8s — Skip →
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Step 4: Add new Grade 8s */}
-        {step === 4 && (
-          <div className="space-y-5">
-            {done.length > 0 && (
-              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-                <p className="text-xs font-black text-emerald-400 mb-2">✓ Completed</p>
-                {done.map((d, i) => <p key={i} className="text-sm text-emerald-300">{d}</p>)}
-              </div>
-            )}
-
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-              <p className="text-sm font-black text-white mb-1">Add New Grade 8 Students</p>
-              <p className="text-xs text-slate-500 mb-4">Paste one full name per line. Select which class to add them to. Repeat for each class.</p>
-
-              <div className="mb-3">
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Class</label>
-                <div className="flex gap-2 flex-wrap">
-                  {HP_CLASSES.map(c => (
-                    <button key={c} onClick={() => setNewClass(c)}
-                      className={`rounded-xl border px-4 py-2 text-sm font-black transition ${newClass === c ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800 text-slate-400 hover:text-white'}`}>
-                      8{c}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-slate-500">Names — one per line</label>
-                <textarea
-                  value={newNames}
-                  onChange={e => setNewNames(e.target.value)}
-                  rows={8}
-                  placeholder={'Lorenzo Carrozzo\nJoshua Cowan\nAaryan Doorasamy'}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500 font-mono resize-none"
-                />
-                <p className="mt-1 text-[10px] text-slate-600">{newNames.split('\n').filter(n => n.trim()).length} names entered</p>
-              </div>
-
-              <button onClick={addNewGrade8s} disabled={addingNew || !newNames.trim()}
-                className="w-full rounded-xl border border-emerald-500/40 bg-emerald-500/15 py-3 text-sm font-black text-emerald-300 hover:bg-emerald-500/25 transition disabled:opacity-50">
-                {addingNew ? 'Adding...' : `Add to Grade 8${newClass}`}
-              </button>
-
-              {addedCount > 0 && (
-                <p className="mt-2 text-center text-xs text-emerald-400 font-black">{addedCount} new students added so far ✓</p>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-4 text-center">
-              <p className="text-xs text-slate-600 mb-3">Once all new Grade 8s are added, you are done for the year.</p>
-              <a href="/hp" className="inline-block rounded-xl border border-emerald-500/40 bg-emerald-500/15 px-6 py-2.5 text-sm font-black text-emerald-300 hover:bg-emerald-500/25 transition">
-                Back to HP Dashboard →
-              </a>
+            <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+              {g9.map(s=><span key={s.id} style={{fontSize:10,background:'rgba(255,255,255,0.05)',border:`1px solid ${BD}`,borderRadius:8,padding:'3px 8px',color:'rgba(255,255,255,0.45)'}}>{s.full_name.trim().split(' ').pop()} ({s.class_group})</span>)}
+              {g9.length===0&&<p style={{fontSize:12,color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>No Grade 9 students</p>}
             </div>
           </div>
-        )}
+          <div style={card}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <p style={{fontSize:13,fontWeight:800}}>Grade 8 — will become Grade 9</p>
+              <span style={{fontSize:11,fontWeight:700,color:'#38bdf8',background:'rgba(56,189,248,0.08)',border:'1px solid rgba(56,189,248,0.2)',borderRadius:20,padding:'3px 10px'}}>{g8.length} students</span>
+            </div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+              {g8.map(s=><span key={s.id} style={{fontSize:10,background:'rgba(255,255,255,0.05)',border:`1px solid ${BD}`,borderRadius:8,padding:'3px 8px',color:'rgba(255,255,255,0.45)'}}>{s.full_name.trim().split(' ').pop()} 8{s.class_group}→9{s.class_group}</span>)}
+              {g8.length===0&&<p style={{fontSize:12,color:'rgba(255,255,255,0.25)',fontStyle:'italic'}}>No Grade 8 students</p>}
+            </div>
+          </div>
+          <div style={{...card,background:'rgba(0,0,0,0.25)'}}>
+            <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Type <strong style={{color:'white'}}>{CONFIRM}</strong> to confirm</p>
+            <input value={confirm} onChange={e=>setConfirm(e.target.value.toUpperCase())} placeholder="Type here…"
+              style={{width:'100%',borderRadius:10,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.05)',padding:'10px 14px',color:'white',fontSize:13,outline:'none',fontFamily:'monospace'}}/>
+          </div>
+          <button onClick={()=>setStep(2)} disabled={confirm!==CONFIRM} style={{...btn('#fbbf24'),opacity:confirm!==CONFIRM?0.3:1}}>I understand — Begin Rollover →</button>
+        </div>}
+
+        {/* Step 2 */}
+        {step===2&&<div style={{...card,textAlign:'center',display:'flex',flexDirection:'column',gap:16,alignItems:'center'}}>
+          <div style={{width:56,height:56,borderRadius:16,background:'rgba(248,113,113,0.1)',border:'1px solid rgba(248,113,113,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth={1.8} style={{width:24,height:24}}><path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <h2 style={{fontSize:20,fontWeight:900}}>Graduate Grade 9s</h2>
+          <p style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}><strong style={{color:'white'}}>{g9.length} students</strong> will be archived. All results and attendance are permanently preserved.</p>
+          <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:5,width:'100%'}}>
+            {g9.map(s=><span key={s.id} style={{fontSize:10,background:'rgba(255,255,255,0.05)',border:`1px solid ${BD}`,borderRadius:8,padding:'3px 8px',color:'rgba(255,255,255,0.4)'}}>{s.full_name.trim().split(' ').pop()}</span>)}
+          </div>
+          {g9.length>0
+            ?<button onClick={graduateG9} disabled={busy} style={{...btn('#f87171'),width:'100%'}}>{busy?'Archiving…':`Archive ${g9.length} Grade 9 Students`}</button>
+            :<button onClick={()=>setStep(3)} style={{...btn(G),width:'100%'}}>No Grade 9s — Skip →</button>}
+        </div>}
+
+        {/* Step 3 */}
+        {step===3&&<div style={{...card,textAlign:'center',display:'flex',flexDirection:'column',gap:16,alignItems:'center'}}>
+          <div style={{width:56,height:56,borderRadius:16,background:'rgba(56,189,248,0.1)',border:'1px solid rgba(56,189,248,0.2)',display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth={1.8} style={{width:24,height:24}}><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          </div>
+          <h2 style={{fontSize:20,fontWeight:900}}>Promote to Grade 9</h2>
+          <p style={{fontSize:13,color:'rgba(255,255,255,0.5)'}}><strong style={{color:'white'}}>{g8.length} students</strong> will move to Grade 9. Training groups will reset — re-assign after new testing.</p>
+          <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:5,width:'100%'}}>
+            {g8.map(s=><span key={s.id} style={{fontSize:10,background:'rgba(255,255,255,0.05)',border:`1px solid ${BD}`,borderRadius:8,padding:'3px 8px',color:'rgba(255,255,255,0.4)'}}>{s.full_name.trim().split(' ').pop()} 8{s.class_group}→9{s.class_group}</span>)}
+          </div>
+          {g8.length>0
+            ?<button onClick={promoteG8} disabled={busy} style={{...btn('#38bdf8'),width:'100%'}}>{busy?'Promoting…':`Promote ${g8.length} Students to Grade 9`}</button>
+            :<button onClick={()=>setStep(4)} style={{...btn(G),width:'100%'}}>No Grade 8s — Skip →</button>}
+        </div>}
+
+        {/* Step 4 */}
+        {step===4&&<div style={{display:'flex',flexDirection:'column',gap:14}}>
+          {done.length>0&&<div style={{...card,border:'1px solid rgba(16,185,129,0.22)',background:'rgba(16,185,129,0.05)'}}>
+            <p style={{fontSize:11,fontWeight:800,color:G,marginBottom:6}}>✓ Completed</p>
+            {done.map((d,i)=><p key={i} style={{fontSize:13,color:'rgba(16,185,129,0.75)'}}>{d}</p>)}
+          </div>}
+          <div style={card}>
+            <p style={{fontSize:15,fontWeight:800,marginBottom:4}}>Add New Grade 8 Students</p>
+            <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:16}}>Paste one full name per line. Select class. Repeat for each class.</p>
+            <p style={{fontSize:10,fontWeight:800,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:8}}>Class</p>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap',marginBottom:16}}>
+              {CLASSES.map(c=><button key={c} onClick={()=>setCls(c)} style={{padding:'8px 16px',borderRadius:10,border:`1px solid ${cls===c?G+'45':BD}`,background:cls===c?`${G}12`:'rgba(255,255,255,0.04)',color:cls===c?G:'rgba(255,255,255,0.5)',fontWeight:800,fontSize:13,cursor:'pointer'}}>8{c}</button>)}
+            </div>
+            <p style={{fontSize:10,fontWeight:800,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.12em',marginBottom:8}}>Names — one per line</p>
+            <textarea value={names} onChange={e=>setNames(e.target.value)} rows={8}
+              placeholder={'Lorenzo Carrozzo\nJoshua Cowan\nAaryan Doorasamy'}
+              style={{width:'100%',borderRadius:10,border:`1px solid ${BD}`,background:'rgba(0,0,0,0.25)',padding:'12px 14px',color:'white',fontSize:13,outline:'none',fontFamily:'monospace',resize:'vertical',marginBottom:6}}/>
+            <p style={{fontSize:11,color:'rgba(255,255,255,0.3)',marginBottom:14}}>{names.split('\n').filter(n=>n.trim()).length} names entered</p>
+            <button onClick={addG8s} disabled={busy||!names.trim()} style={{...btn(G),opacity:!names.trim()?0.3:1}}>{busy?'Adding…':`Add to Grade 8${cls}`}</button>
+            {added>0&&<p style={{textAlign:'center',fontSize:12,fontWeight:800,color:G,marginTop:10}}>{added} new students added ✓</p>}
+          </div>
+          <button onClick={()=>router.push('/hp')} style={btn(G)}>Done — Back to HP Dashboard →</button>
+        </div>}
       </div>
     </main>
   );
