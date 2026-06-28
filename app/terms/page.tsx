@@ -11,7 +11,7 @@ export default function TermsOfUsePage() {
           </p>
           <h1 style={{fontSize:32,fontWeight:900,color:'white',letterSpacing:'-0.02em',margin:0}}>Terms of Use</h1>
           <p style={{marginTop:8,fontSize:13,color:'rgba(255,255,255,0.4)'}}>
-            KINETIQ Sport Platform · Last updated {new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
+            Altus Performance Platform · Last updated {new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
           </p>
         </div>
 
@@ -20,7 +20,7 @@ export default function TermsOfUsePage() {
           {/* Intro */}
           <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0,fontSize:13}}>
-              These Terms of Use (&quot;Terms&quot;) govern access to and use of the <strong style={{color:'white'}}>KINETIQ Sport</strong> platform (&quot;Platform&quot;),
+              These Terms of Use (&quot;Terms&quot;) govern access to and use of the <strong style={{color:'white'}}>Altus Performance</strong> platform (&quot;Platform&quot;),
               a product developed and operated by <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> (&quot;Altus&quot;, &quot;we&quot;, &quot;us&quot;).
               By accessing or using the Platform, you agree to be bound by these Terms.
               If you do not agree, you must discontinue use immediately.
@@ -29,7 +29,7 @@ export default function TermsOfUsePage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>1. The Platform</h2>
           <p style={{marginBottom:24}}>
-            KINETIQ Sport is a proprietary sport operations and high-performance management platform designed for use by educational institutions.
+            Altus Performance is a proprietary sport operations and high-performance management platform designed for use by educational institutions.
             The Platform provides tools for team management, athlete performance tracking, attendance recording, coaching staff administration, and parent and player communication portals.
             All intellectual property in and to the Platform, including its source code, design, data models, and documentation, is owned exclusively by Altus (Pty) Ltd.
           </p>
@@ -73,9 +73,9 @@ export default function TermsOfUsePage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>6. Intellectual Property</h2>
           <p style={{marginBottom:24}}>
-            All rights, title, and interest in the KINETIQ Sport platform, including its name, branding, design, functionality, and all associated intellectual property, vest exclusively in Altus (Pty) Ltd.
+            All rights, title, and interest in the Altus Performance platform, including its name, branding, design, functionality, and all associated intellectual property, vest exclusively in Altus (Pty) Ltd.
             No use, reproduction, or distribution of the Platform or any of its components is permitted without the prior written consent of Altus.
-            The name &quot;KINETIQ Sport&quot; and associated branding are the property of Altus (Pty) Ltd.
+            The name &quot;Altus Performance&quot; and associated branding are the property of Altus (Pty) Ltd.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>7. Availability and Modifications</h2>
@@ -106,15 +106,15 @@ export default function TermsOfUsePage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>11. Contact</h2>
           <div style={{padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0}}><strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong></p>
-            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> KINETIQ Sport</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> Altus Performance</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Contact:</strong> Cody Jason Van Dyk</p>
-            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@kinetiqsport.co.za</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@altusperformance.co.za</p>
           </div>
         </div>
 
         {/* Footer */}
         <div style={{marginTop:48,paddingTop:24,borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,0.2)'}}>
-          <span>KINETIQ Sport is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</span>
+          <span>Altus Performance is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</span>
           <span>© {year} Altus (Pty) Ltd · Reg. 2026/424230/07</span>
         </div>
       </div>

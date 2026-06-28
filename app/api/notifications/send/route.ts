@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   if (!subs?.length) return NextResponse.json({ ok: true, sent: 0, debug: subErr?.message });
 
   const payload = { title, body, url: url || '/dashboard', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' };
-  const vapidKeys = { publicKey: vapidPublic, privateKey: vapidPrivate, email: 'cody@kinetiqsport.co.za' };
+  const vapidKeys = { publicKey: vapidPublic, privateKey: vapidPrivate, email: 'cody@altusperformance.co.za' };
 
   let sent = 0, failed = 0;
   const staleEndpoints: string[] = [];

@@ -11,7 +11,7 @@ export default function PrivacyPolicyPage() {
           </p>
           <h1 style={{fontSize:32,fontWeight:900,color:'white',letterSpacing:'-0.02em',margin:0}}>Privacy Policy</h1>
           <p style={{marginTop:8,fontSize:13,color:'rgba(255,255,255,0.4)'}}>
-            KINETIQ Sport Platform · Last updated {new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
+            Altus Performance Platform · Last updated {new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'})}
           </p>
         </div>
 
@@ -20,10 +20,10 @@ export default function PrivacyPolicyPage() {
           {/* Company */}
           <section style={{marginBottom:32,padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0,fontSize:13}}>
-              <strong style={{color:'white'}}>KINETIQ Sport</strong> is a digital sport management platform operated by{' '}
+              <strong style={{color:'white'}}>Altus Performance</strong> is a digital sport management platform operated by{' '}
               <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> (&quot;Altus&quot;, &quot;we&quot;, &quot;us&quot;, &quot;our&quot;), a company incorporated in the Republic of South Africa.
               Altus is the responsible party for the processing of personal information as defined under the Protection of Personal Information Act 4 of 2013 (&quot;POPIA&quot;).
-              This Privacy Policy applies to all users of the KINETIQ Sport platform, including coaches, athletic staff, school administrators, athletes, and parents or guardians who access the platform.
+              This Privacy Policy applies to all users of the Altus Performance platform, including coaches, athletic staff, school administrators, athletes, and parents or guardians who access the platform.
             </p>
           </section>
 
@@ -40,7 +40,7 @@ export default function PrivacyPolicyPage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>2. How We Use Your Information</h2>
           <p>We process personal information for the following lawful purposes:</p>
           <ul style={{margin:'12px 0 24px 20px'}}>
-            <li style={{marginBottom:8}}>Providing and maintaining the KINETIQ Sport platform and its features.</li>
+            <li style={{marginBottom:8}}>Providing and maintaining the Altus Performance platform and its features.</li>
             <li style={{marginBottom:8}}>Managing athlete performance records, attendance, and team administration.</li>
             <li style={{marginBottom:8}}>Facilitating secure coach and staff access to the platform.</li>
             <li style={{marginBottom:8}}>Communicating updates, notifications, and service-related communications.</li>
@@ -86,8 +86,8 @@ export default function PrivacyPolicyPage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>8. Children&apos;s Privacy</h2>
           <p style={{marginBottom:24}}>
-            KINETIQ Sport processes personal information relating to minor athletes solely on behalf of and under the authority of the licensed school institution.
-            Parents or guardians wishing to exercise rights in respect of their child&apos;s personal information should contact their school&apos;s designated KINETIQ Sport administrator.
+            Altus Performance processes personal information relating to minor athletes solely on behalf of and under the authority of the licensed school institution.
+            Parents or guardians wishing to exercise rights in respect of their child&apos;s personal information should contact their school&apos;s designated Altus Performance administrator.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>9. Changes to This Policy</h2>
@@ -99,16 +99,16 @@ export default function PrivacyPolicyPage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>10. Contact</h2>
           <div style={{padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
             <p style={{margin:0}}><strong style={{color:'white'}}>Responsible Party:</strong> Altus (Pty) Ltd</p>
-            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> KINETIQ Sport</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> Altus Performance</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Contact Person:</strong> Cody Jason Van Dyk</p>
-            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@kinetiqsport.co.za</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@altusperformance.co.za</p>
             <p style={{margin:'8px 0 0',fontSize:12,color:'rgba(255,255,255,0.3)'}}>Information Regulator of South Africa: <a href="https://inforegulator.org.za" style={{color:'rgba(56,189,248,0.7)'}}>inforegulator.org.za</a></p>
           </div>
         </div>
 
         {/* Footer */}
         <div style={{marginTop:48,paddingTop:24,borderTop:'1px solid rgba(255,255,255,0.07)',display:'flex',justifyContent:'space-between',fontSize:11,color:'rgba(255,255,255,0.2)'}}>
-          <span>KINETIQ Sport is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</span>
+          <span>Altus Performance is a product of Altus (Pty) Ltd (Reg. 2026/424230/07)</span>
           <span>© {year} Altus (Pty) Ltd · Reg. 2026/424230/07</span>
         </div>
       </div>

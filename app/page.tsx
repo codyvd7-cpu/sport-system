@@ -363,7 +363,7 @@ export default function LandingPage(){
         </p>
         <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'3px 8px',
           fontSize:isMob?8:10,color:'rgba(255,255,255,.2)'}}>
-          <span>KINETIQ Sport · Altus (Pty) Ltd · Reg. 2026/424230/07</span>
+          <span>Altus Performance · Altus (Pty) Ltd · Reg. 2026/424230/07</span>
           <span>·</span>
           <Link href="/privacy" style={{color:'inherit'}}>Privacy</Link>
           <span>·</span>

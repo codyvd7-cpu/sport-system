@@ -151,7 +151,7 @@ export default function PlayerAuthPage() {
               {mode === 'signin' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}
             </h1>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>
-              {mode === 'signin' ? 'Sign in to access your profile' : mode === 'signup' ? 'Join the KINETIQ player platform' : 'Enter your email to reset your password'}
+              {mode === 'signin' ? 'Sign in to access your profile' : mode === 'signup' ? 'Join the Altus Performance player platform' : 'Enter your email to reset your password'}
             </p>
           </div>
 

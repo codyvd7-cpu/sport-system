@@ -123,7 +123,7 @@ export default function NotificationsPage() {
             <div>
               <p className="text-[13px] font-black text-white">{title}</p>
               <p className="text-[12px] mt-0.5" style={{color:'rgba(255,255,255,0.5)'}}>{body}</p>
-              <p className="text-[10px] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>Kinetiq Sport · now</p>
+              <p className="text-[10px] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>Altus Performance · now</p>
             </div>
           </div>
         )}

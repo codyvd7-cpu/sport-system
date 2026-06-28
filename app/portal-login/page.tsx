@@ -202,7 +202,7 @@ function PortalLoginInner() {
             Veritas In Caritate
           </p>
           <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'4px 8px',fontSize:9,color:'rgba(255,255,255,0.18)'}}>
-            <span>KINETIQ Sport is a product of Altus (Pty) Ltd. Reg. 2026/424230/07</span>
+            <span>Altus Performance is a product of Altus (Pty) Ltd. Reg. 2026/424230/07</span>
             <span>·</span>
             <Link href="/privacy" style={{color:'inherit'}}>Privacy</Link>
             <span>·</span>

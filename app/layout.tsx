@@ -6,28 +6,28 @@ import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 import QueryProvider from '@/components/QueryProvider';
 
 export const metadata: Metadata = {
-  title: "Kinetiq Sport",
+  title: "Altus Performance",
   description: 'High-performance sport operations platform for St Benedict\'s College.',
   manifest: '/manifest.json',
   openGraph: {
-    title: "Kinetiq Sport",
+    title: "Altus Performance",
     description: 'High-performance sport operations platform for St Benedict\'s College.',
-    url: 'https://kinetiqsport.co.za',
-    siteName: "Kinetiq Sport",
+    url: 'https://altusperformance.co.za',
+    siteName: "Altus Performance",
     images: [{ url: '/sbc-photo-1.jpg', width: 1200, height: 630, alt: "St Benedict's College" }],
     locale: 'en_ZA',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Kinetiq Sport",
+    title: "Altus Performance",
     description: 'High-performance sport operations platform for St Benedict\'s College.',
     images: ['/sbc-photo-1.jpg'],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: "Kinetiq Sport",
+    title: "Altus Performance",
   },
   other: {
     'mobile-web-app-capable': 'yes',

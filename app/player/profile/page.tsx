@@ -775,7 +775,7 @@ export default function PlayerProfile(){
       <aside className="sidebar">
         <div style={{padding:'16px 14px',borderBottom:`1px solid ${B}`,display:'flex',alignItems:'center',gap:10,flexShrink:0}}>
           <Image src="/st-benedicts-logo.png" alt="SBC" width={30} height={30} style={{objectFit:'contain',flexShrink:0}}/>
-          <div><p style={{fontSize:10,fontWeight:900,color:'white',lineHeight:1.2}}>ST BENEDICT&apos;S</p><p style={{fontSize:9,fontWeight:700,color:C,textTransform:'uppercase',letterSpacing:'0.08em',marginTop:2}}>Kinetiq Sport</p></div>
+          <div><p style={{fontSize:10,fontWeight:900,color:'white',lineHeight:1.2}}>ST BENEDICT&apos;S</p><p style={{fontSize:9,fontWeight:700,color:C,textTransform:'uppercase',letterSpacing:'0.08em',marginTop:2}}>Altus Performance</p></div>
         </div>
         <nav style={{padding:'8px',flex:1,overflowY:'auto'}}>
           {NAV.map(n=>{const a=nav===n.id;return<button key={n.id} className="navbtn" onClick={()=>setNav(n.id)} style={{width:'100%',display:'flex',alignItems:'center',gap:10,padding:'9px 11px',borderRadius:9,border:'none',cursor:'pointer',marginBottom:1,textAlign:'left',background:a?`${C}16`:'transparent',color:a?C:'rgba(255,255,255,0.42)',fontWeight:a?700:500,fontSize:12,transition:'all 0.12s',borderLeft:a?`2px solid ${C}`:'2px solid transparent'}}>
