@@ -1,224 +1,246 @@
 'use client';
 import * as React from 'react';
 
+// Easing functions
+const easeOut  = (t:number) => 1 - Math.pow(1-t, 3);
+const easeIn   = (t:number) => t * t * t;
+const easeInOut= (t:number) => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+const clamp    = (v:number, mn=0, mx=1) => Math.min(mx, Math.max(mn, v));
+const inv      = (t:number, a:number, b:number) => clamp((t-a)/(b-a));
+
 export default function SplashScreen() {
+  const wrapRef   = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const rafRef    = React.useRef<number>(0);
-  const [phase, setPhase] = React.useState(0);
-  // 0=hidden 1=particles+emerge 2=hold+pulse 3=text 4=out 5=gone
+  const logoRef   = React.useRef<HTMLDivElement>(null);
+  const textRef   = React.useRef<HTMLDivElement>(null);
+  const lineRef   = React.useRef<HTMLDivElement>(null);
+  const [active, setActive] = React.useState(false);
 
   React.useEffect(() => {
-    if (sessionStorage.getItem('ap_v3')) return;
-    sessionStorage.setItem('ap_v3', '1');
-    setPhase(1);
-    const t2 = setTimeout(() => setPhase(2), 1800);
-    const t3 = setTimeout(() => setPhase(3), 2600);
-    const t4 = setTimeout(() => setPhase(4), 3800);
-    const t5 = setTimeout(() => setPhase(5), 4600);
-    return () => [t2,t3,t4,t5].forEach(clearTimeout);
+    if (sessionStorage.getItem('ap_v4')) return;
+    sessionStorage.setItem('ap_v4', '1');
+    setActive(true);
   }, []);
 
-  // Canvas particle engine
   React.useEffect(() => {
-    if (phase < 1 || phase === 5) return;
+    if (!active) return;
+    const wrap   = wrapRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    const logoEl = logoRef.current;
+    const textEl = textRef.current;
+    const lineEl = lineRef.current;
+    if (!wrap || !canvas || !logoEl || !textEl || !lineEl) return;
 
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const W = canvas.width, H = canvas.height;
-    const CX = W / 2, CY = H / 2 - 30;
+    // ── Canvas setup ──────────────────────────────────────────────────────────
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const W   = window.innerWidth;
+    const H   = window.innerHeight;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width  = W * DPR;
+    canvas.height = H * DPR;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(DPR, DPR);
 
-    type P = { x:number; y:number; vx:number; vy:number; size:number; alpha:number; col:string; dead:boolean; trail:{x:number;y:number}[] };
-    const COLS = ['#1d4ed8','#2563eb','#3b82f6','#06b6d4','#0ea5e9','#7dd3fc'];
-    const particles: P[] = [];
-    const N = 90;
+    const CX = W / 2;
+    const CY = H / 2 - 20;
+
+    // ── Particles ─────────────────────────────────────────────────────────────
+    const COLS = ['#1d4ed8','#2563eb','#3b82f6','#0ea5e9','#06b6d4','#38bdf8'];
+    type Particle = { sx:number; sy:number; x:number; y:number; vx:number; vy:number; size:number; col:string; born:number; trail:{x:number;y:number}[] };
+    const particles: Particle[] = [];
+    const N = 80;
 
     for (let i = 0; i < N; i++) {
-      const angle  = Math.random() * Math.PI * 2;
-      const radius = 180 + Math.random() * 280;
-      const cx = CX + Math.cos(angle) * radius;
-      const cy = CY + Math.sin(angle) * radius;
-      const speed = 1.2 + Math.random() * 2.2;
-      const dx = CX - cx, dy = CY - cy;
-      const dist = Math.sqrt(dx*dx+dy*dy);
+      const angle  = (i / N) * Math.PI * 2 + (Math.random() - 0.5) * 0.3;
+      const radius = 200 + Math.random() * 320;
+      const sx     = CX + Math.cos(angle) * radius;
+      const sy     = CY + Math.sin(angle) * radius;
+      const dx = CX - sx, dy = CY - sy;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const speed = 2.5 + Math.random() * 3;
       particles.push({
-        x: cx, y: cy,
-        vx: (dx/dist)*speed,
-        vy: (dy/dist)*speed,
-        size: 0.6 + Math.random() * 1.4,
-        alpha: 0.4 + Math.random() * 0.6,
+        sx, sy, x: sx, y: sy,
+        vx: (dx/dist) * speed,
+        vy: (dy/dist) * speed,
+        size: 0.8 + Math.random() * 1.6,
         col: COLS[Math.floor(Math.random() * COLS.length)],
-        dead: false,
+        born: 0.1 + (i / N) * 0.8,   // staggered birth time (seconds)
         trail: [],
       });
     }
 
-    let t = 0;
-    const draw = () => {
-      t++;
-      // Fade trail
-      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    // ── Animation loop ────────────────────────────────────────────────────────
+    const START = performance.now();
+    // Timeline (seconds):
+    const TL = { ptcEnd:2.0, logoIn:0.3, logoFull:2.2, textIn:2.5, textFull:3.2, fadeStart:3.8, end:4.6 };
+    let rafId = 0;
+
+    const frame = (now: number) => {
+      const t = (now - START) / 1000;
+
+      // ── Canvas ──
+      // Dark fade trail for particle streaks
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
       ctx.fillRect(0, 0, W, H);
 
+      // Particles
       for (const p of particles) {
-        if (p.dead) continue;
-        p.trail.push({ x: p.x, y: p.y });
-        if (p.trail.length > 12) p.trail.shift();
+        if (t < p.born) continue;
+        const age = t - p.born;
 
-        // Move toward center
-        const dx = CX - p.x, dy = CY - p.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < 6) { p.dead = true; continue; }
-
-        if (phase <= 2) {
-          p.x += p.vx;
-          p.y += p.vy;
+        if (t < TL.ptcEnd) {
+          // Move toward center
+          const dx = CX - p.x, dy = CY - p.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > 3) {
+            p.x += p.vx;
+            p.y += p.vy;
+          }
         } else {
-          p.alpha *= 0.92;
+          // Fade away
+          p.size *= 0.96;
         }
 
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 14) p.trail.shift();
+
+        const fadeIn = clamp(age * 3, 0, 1);
+        const fadeOut= t > TL.ptcEnd ? clamp((t - TL.ptcEnd) * 3, 0, 1) : 0;
+        const alpha  = fadeIn * (1 - fadeOut) * 0.85;
+
         // Trail
-        if (p.trail.length > 2) {
-          for (let i = 1; i < p.trail.length; i++) {
-            const a = (i / p.trail.length) * p.alpha * 0.5;
-            ctx.beginPath();
-            ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
-            ctx.lineTo(p.trail[i].x, p.trail[i].y);
-            ctx.strokeStyle = p.col;
-            ctx.lineWidth = p.size * (i / p.trail.length);
-            ctx.globalAlpha = a;
-            ctx.stroke();
-          }
+        for (let i = 1; i < p.trail.length; i++) {
+          const progress = i / p.trail.length;
+          ctx.beginPath();
+          ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
+          ctx.lineTo(p.trail[i].x, p.trail[i].y);
+          ctx.strokeStyle = p.col;
+          ctx.lineWidth   = p.size * progress * 0.8;
+          ctx.globalAlpha = alpha * progress * 0.6;
+          ctx.stroke();
         }
 
         // Dot
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fillStyle = p.col;
-        ctx.globalAlpha = p.alpha;
+        ctx.globalAlpha = alpha;
         ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Glow bloom when particles converge
+      const convergeProg = clamp(inv(t, 1.2, TL.ptcEnd), 0, 1);
+      const holdProg     = clamp(inv(t, TL.ptcEnd, TL.ptcEnd + 0.4), 0, 1);
+      const pulseProg    = t > TL.ptcEnd ? 0.15 + 0.12 * Math.sin(t * 4.5) : 0;
+      const glowAlpha    = easeOut(convergeProg) * 0.6 + pulseProg;
+
+      if (glowAlpha > 0.01) {
+        const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, 90);
+        g.addColorStop(0,   `rgba(37,99,235,${glowAlpha * 0.5})`);
+        g.addColorStop(0.4, `rgba(6,182,212,${glowAlpha * 0.2})`);
+        g.addColorStop(1,   'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
         ctx.globalAlpha = 1;
+        ctx.fillRect(CX-90, CY-90, 180, 180);
       }
 
-      // Blue glow at logo center when particles arrive
-      if (t > 40) {
-        const alive = particles.filter(p => !p.dead).length;
-        const converge = Math.max(0, 1 - alive / N);
-        const pulse = phase >= 2 ? (0.5 + 0.5 * Math.sin(t * 0.06)) : converge;
-        const grd = ctx.createRadialGradient(CX, CY, 0, CX, CY, 80);
-        grd.addColorStop(0, `rgba(37,99,235,${0.18 * pulse})`);
-        grd.addColorStop(0.5, `rgba(6,182,212,${0.08 * pulse})`);
-        grd.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = grd;
-        ctx.globalAlpha = 1;
-        ctx.fillRect(CX - 80, CY - 80, 160, 160);
+      // ── Logo (direct DOM) ──
+      const logoProgress = easeOut(clamp(inv(t, TL.logoIn, TL.logoFull), 0, 1));
+      const blur  = (1 - logoProgress) * 14;
+      const scale = 1.06 - 0.06 * logoProgress;
+      const glow  = t > TL.logoFull ? 18 + 10 * Math.sin(t * 4) : logoProgress * 18;
+      const logoOpacity = easeIn(clamp(inv(t, TL.logoIn, TL.logoIn + 1.2), 0, 1));
+      logoEl.style.opacity   = String(logoOpacity);
+      logoEl.style.transform = `scale(${scale})`;
+      logoEl.style.filter    = `blur(${blur.toFixed(1)}px) drop-shadow(0 0 ${glow.toFixed(0)}px rgba(37,99,235,0.7)) drop-shadow(0 0 ${(glow*2).toFixed(0)}px rgba(37,99,235,0.25))`;
+
+      // ── Text (direct DOM) ──
+      const textProgress = easeOut(clamp(inv(t, TL.textIn, TL.textFull), 0, 1));
+      const lineProgress = easeOut(clamp(inv(t, TL.textIn, TL.textIn + 0.5), 0, 1));
+      lineEl.style.transform = `scaleX(${lineProgress})`;
+      lineEl.style.opacity   = String(lineProgress);
+      textEl.style.opacity   = String(textProgress);
+      textEl.style.transform = `translateY(${(1-textProgress)*14}px)`;
+
+      // ── Wrap fade out ──
+      if (t > TL.fadeStart) {
+        const fo = clamp(inv(t, TL.fadeStart, TL.end), 0, 1);
+        wrap.style.opacity = String(1 - easeIn(fo));
       }
 
-      rafRef.current = requestAnimationFrame(draw);
+      if (t < TL.end) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        setActive(false);
+      }
     };
 
-    // Start with black
+    // Init canvas to black
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
-    draw();
 
-    return () => cancelAnimationFrame(rafRef.current);
-  }, [phase]);
+    rafId = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(rafId);
+  }, [active]);
 
-  if (phase === 0 || phase === 5) return null;
-
-  const logoBlur   = phase === 1 ? '12px' : '0px';
-  const logoScale  = phase === 1 ? 1.05 : 1;
-  const logoOpacity= phase === 1 ? 0 : 1;
-  const glowSize   = phase >= 2 ? '0 0 40px rgba(37,99,235,0.55), 0 0 80px rgba(37,99,235,0.2)' : 'none';
+  if (!active) return null;
 
   return (
-    <div style={{
+    <div ref={wrapRef} style={{
       position:'fixed', inset:0, zIndex:9999,
       background:'#000',
       display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
-      opacity: phase === 4 ? 0 : 1,
-      transition: phase === 4 ? 'opacity 0.85s cubic-bezier(0.4,0,1,1)' : 'none',
       pointerEvents:'none',
     }}>
-      <style>{`
-        @keyframes emerge {
-          0%   { opacity:0; transform:scale(1.06); filter:blur(14px); }
-          40%  { filter:blur(4px); }
-          100% { opacity:1; transform:scale(1); filter:blur(0px); }
-        }
-        @keyframes dolly {
-          0%   { transform:scale(1.04); }
-          100% { transform:scale(1); }
-        }
-        @keyframes glow-beat {
-          0%,100% { filter:drop-shadow(0 0 18px rgba(37,99,235,0.5)) drop-shadow(0 0 40px rgba(37,99,235,0.2)); }
-          50%     { filter:drop-shadow(0 0 28px rgba(37,99,235,0.8)) drop-shadow(0 0 60px rgba(6,182,212,0.3)); }
-        }
-        @keyframes text-rise {
-          0%   { opacity:0; transform:translateY(16px) scaleX(0.96); letter-spacing:0.5em; }
-          100% { opacity:1; transform:translateY(0) scaleX(1); }
-        }
-        @keyframes sub-rise {
-          0%   { opacity:0; transform:translateY(8px); }
-          100% { opacity:0.35; transform:translateY(0); }
-        }
-        @keyframes line-expand {
-          0%   { transform:scaleX(0); opacity:0; }
-          100% { transform:scaleX(1); opacity:1; }
-        }
-      `}</style>
-
-      {/* Canvas */}
-      <canvas ref={canvasRef} style={{ position:'absolute', inset:0, width:'100%', height:'100%' }}/>
+      {/* Particle canvas */}
+      <canvas ref={canvasRef} style={{ position:'absolute', inset:0 }}/>
 
       {/* Logo */}
-      <div style={{
+      <div ref={logoRef} style={{
         position:'relative', zIndex:1,
-        width:100, height:100,
+        width:110, height:110,
         marginBottom:32,
-        animation: phase >= 2
-          ? `glow-beat 2.2s ease-in-out infinite, dolly 1.2s ease both`
-          : phase === 1 ? 'emerge 1.8s cubic-bezier(0.22,1,0.36,1) 0.2s both' : 'none',
+        opacity:0,
+        willChange:'transform,filter,opacity',
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/altus-icon.png" alt="Altus"
           style={{ width:'100%', height:'100%', objectFit:'contain', display:'block' }}/>
       </div>
 
-      {/* Text block */}
-      {phase >= 3 && (
-        <div style={{ position:'relative', zIndex:1, textAlign:'center' }}>
-          <div style={{
-            width:40, height:1,
-            background:'linear-gradient(90deg,transparent,rgba(37,99,235,0.8),transparent)',
-            margin:'0 auto 18px',
-            transformOrigin:'center',
-            animation:'line-expand 0.5s cubic-bezier(0.34,1.4,0.64,1) both',
-          }}/>
-          <p style={{
-            fontFamily:'-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif',
-            fontSize:12, fontWeight:700,
-            letterSpacing:'0.38em',
-            color:'rgba(255,255,255,0.88)',
-            textTransform:'uppercase',
-            animation:'text-rise 0.65s cubic-bezier(0.22,1,0.36,1) both',
-            marginBottom:7,
-          }}>Altus Performance</p>
-          <p style={{
-            fontFamily:'-apple-system,BlinkMacSystemFont,system-ui,sans-serif',
-            fontSize:9, fontWeight:300,
-            letterSpacing:'0.22em',
-            color:'rgba(255,255,255,0.35)',
-            textTransform:'uppercase',
-            animation:'sub-rise 0.6s ease 0.2s both',
-          }}>St Benedict&apos;s College</p>
-        </div>
-      )}
+      {/* Accent line */}
+      <div ref={lineRef} style={{
+        width:44, height:1.5,
+        background:'linear-gradient(90deg,transparent,#3b82f6,#06b6d4,transparent)',
+        marginBottom:18,
+        transformOrigin:'center',
+        opacity:0,
+        transform:'scaleX(0)',
+        zIndex:1, position:'relative',
+        willChange:'transform,opacity',
+      }}/>
+
+      {/* Text */}
+      <div ref={textRef} style={{
+        zIndex:1, position:'relative',
+        textAlign:'center',
+        opacity:0, transform:'translateY(14px)',
+        willChange:'transform,opacity',
+      }}>
+        <p style={{
+          fontFamily:'-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif',
+          fontSize:12, fontWeight:700, letterSpacing:'0.36em',
+          color:'rgba(255,255,255,0.88)', textTransform:'uppercase', marginBottom:7,
+        }}>Altus Performance</p>
+        <p style={{
+          fontFamily:'-apple-system,BlinkMacSystemFont,system-ui,sans-serif',
+          fontSize:9, fontWeight:300, letterSpacing:'0.2em',
+          color:'rgba(255,255,255,0.32)', textTransform:'uppercase',
+        }}>St Benedict&apos;s College</p>
+      </div>
     </div>
   );
 }
