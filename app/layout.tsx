@@ -1,64 +1,55 @@
-import type { Metadata } from 'next';
-import './globals.css';
-import RootLayoutClient from '@/components/RootLayoutClient';
+import type { Metadata, Viewport } from 'next';
 import { ToastProvider } from '@/components/Toast';
-import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
-import QueryProvider from '@/components/QueryProvider';
+import SplashScreen from '@/components/SplashScreen';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "Altus Performance",
-  description: 'High-performance sport operations platform for St Benedict\'s College.',
-  manifest: '/manifest.json',
-  openGraph: {
-    title: "Altus Performance",
-    description: 'High-performance sport operations platform for St Benedict\'s College.',
-    url: 'https://altusperformance.co.za',
-    siteName: "Altus Performance",
-    images: [{ url: '/sbc-photo-1.jpg', width: 1200, height: 630, alt: "St Benedict's College" }],
-    locale: 'en_ZA',
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: "Altus Performance",
-    description: 'High-performance sport operations platform for St Benedict\'s College.',
-    images: ['/sbc-photo-1.jpg'],
-  },
+  title:       'Altus Performance',
+  description: "St Benedict's College High Performance Platform",
+  manifest:    '/manifest.json',
   appleWebApp: {
-    capable: true,
-    statusBarStyle: 'black-translucent',
-    title: "Altus Performance",
+    capable:       true,
+    statusBarStyle:'black-translucent',
+    title:         'Altus',
+    startupImage:  '/altus-icon.png',
   },
-  other: {
-    'mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-capable': 'yes',
-    'apple-mobile-web-app-status-bar-style': 'black-translucent',
-    'theme-color': '#0ea5e9',
+  icons: {
+    icon:  '/altus-icon.png',
+    apple: '/altus-icon.png',
+    shortcut: '/altus-icon.png',
+  },
+  openGraph: {
+    title:       'Altus Performance',
+    description: "St Benedict's College — High Performance Sport Platform",
+    siteName:    'Altus Performance',
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export const viewport: Viewport = {
+  themeColor:        '#070c1a',
+  width:             'device-width',
+  initialScale:      1,
+  maximumScale:      1,
+  userScalable:      false,
+  viewportFit:       'cover',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{__html:`
-          (function(){
-            var COLORS={hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
-            var sport=localStorage.getItem('activeSport')||'hockey';
-            var c=COLORS[sport]||'#38bdf8';
-            document.documentElement.style.setProperty('--sport-color',c);
-            document.documentElement.style.setProperty('--sport-color-dim',c+'1a');
-            document.documentElement.style.setProperty('--sport-color-border',c+'4d');
-          })();
-        `}}/>
+        <link rel="apple-touch-icon" href="/altus-icon.png"/>
+        <link rel="apple-touch-icon" sizes="180x180" href="/altus-icon.png"/>
+        <meta name="apple-mobile-web-app-capable" content="yes"/>
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+        <meta name="apple-mobile-web-app-title" content="Altus"/>
+        <meta name="mobile-web-app-capable" content="yes"/>
       </head>
-      <body className="min-h-screen text-white antialiased" style={{background:'var(--bg)',fontFamily:'var(--font-sans)'}} suppressHydrationWarning>
-        <ServiceWorkerRegistrar/>
-        <QueryProvider>
-          <ToastProvider>
-            <RootLayoutClient>{children}</RootLayoutClient>
-          </ToastProvider>
-        </QueryProvider>
+      <body>
+        <SplashScreen/>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
