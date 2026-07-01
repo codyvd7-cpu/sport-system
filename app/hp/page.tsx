@@ -1,311 +1,212 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
-import { getCalendarTerm, getCurrentYear } from '@/lib/hpTerm';
+import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
 
-const G = '#10b981';
-const BORDER = 'rgba(255,255,255,0.07)';
-const CARD = 'rgba(255,255,255,0.03)';
-
 const CLASSES = [
-  { id:'8B', grade:'Grade 8', cls:'B' },{ id:'8E', grade:'Grade 8', cls:'E' },
-  { id:'8F', grade:'Grade 8', cls:'F' },{ id:'8J', grade:'Grade 8', cls:'J' },
-  { id:'8M', grade:'Grade 8', cls:'M' },{ id:'9B', grade:'Grade 9', cls:'B' },
-  { id:'9E', grade:'Grade 9', cls:'E' },{ id:'9F', grade:'Grade 9', cls:'F' },
-  { id:'9J', grade:'Grade 9', cls:'J' },{ id:'9M', grade:'Grade 9', cls:'M' },
+  { id: '8B', grade: 'Grade 8', cls: 'B' },
+  { id: '8E', grade: 'Grade 8', cls: 'E' },
+  { id: '8F', grade: 'Grade 8', cls: 'F' },
+  { id: '8J', grade: 'Grade 8', cls: 'J' },
+  { id: '8M', grade: 'Grade 8', cls: 'M' },
+  { id: '9B', grade: 'Grade 9', cls: 'B' },
+  { id: '9E', grade: 'Grade 9', cls: 'E' },
+  { id: '9F', grade: 'Grade 9', cls: 'F' },
+  { id: '9J', grade: 'Grade 9', cls: 'J' },
+  { id: '9M', grade: 'Grade 9', cls: 'M' },
 ];
 
-const ACTIONS = [
-  { href:'/hp/attendance', label:'Take Register',  sub:'Mark class attendance',    color:G,         iconD:'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-  { href:'/hp/testing',    label:'Enter Tests',    sub:'Record fitness scores',    color:'#a78bfa',  iconD:'M22 12h-4l-3 9L9 3l-3 9H2' },
-  { href:'/hp/students',   label:'All Students',   sub:'Browse full roster',       color:'#38bdf8',  iconD:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 3a4 4 0 0 1 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
-  { href:'/hp/trends',     label:'Trends',         sub:'Performance over time',    color:'#f59e0b',  iconD:'M23 6L13.5 15.5 8.5 10.5 1 18 M17 6h6v6' },
-];
+function getCurrentTerm(): string {
+  const month = new Date().getMonth() + 1;
+  if (month <= 3) return 'Term 1';
+  if (month <= 6) return 'Term 2';
+  if (month <= 9) return 'Term 3';
+  return 'Term 4';
+}
 
-function Icon({ d, size=18, color='currentColor' }: { d: string; size?: number; color?: string }) {
+function formatDate(d: string) {
+  return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+}
+
+function ClassCard({ c, term }: { c: any; term: string }) {
+  const isGrade8 = c.grade === 'Grade 8';
+  const allTested = c.tested === c.total && c.total > 0;
+  const noneTested = c.tested === 0;
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ width:size, height:size, flexShrink:0 }}>
-      {d.split(' M').map((seg, i) => <path key={i} d={i===0 ? seg : 'M'+seg}/>)}
-    </svg>
+    <div className="rounded-2xl border border-slate-800 bg-slate-900 overflow-hidden transition hover:border-slate-700">
+      <div className={`px-4 py-3 flex items-center justify-between border-b border-slate-800 ${isGrade8 ? 'bg-sky-500/5' : 'bg-violet-500/5'}`}>
+        <div>
+          <p className={`text-xl font-black ${isGrade8 ? 'text-sky-400' : 'text-violet-400'}`}>{c.grade === 'Grade 8' ? '8' : '9'}{c.cls}</p>
+          <p className="text-[10px] text-slate-500">{c.total} students</p>
+        </div>
+        <div>
+          {allTested
+            ? <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-300">All tested ✓</span>
+            : noneTested
+            ? <span className="rounded-lg border border-slate-700 bg-slate-800 px-2 py-0.5 text-[10px] font-black text-slate-500">Not started</span>
+            : <span className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-black text-amber-300">{c.total - c.tested} untested</span>
+          }
+        </div>
+      </div>
+      <div className="px-4 py-3">
+        <div className="mb-1.5 flex items-center justify-between">
+          <p className="text-[10px] font-black uppercase tracking-wide text-slate-600">{term} Testing</p>
+          <p className="text-[10px] font-black text-slate-400">{c.tested}/{c.total}</p>
+        </div>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+          <div className={`h-full rounded-full transition-all ${allTested ? 'bg-emerald-500' : 'bg-sky-500'}`} style={{ width: `${c.testPct}%` }} />
+        </div>
+        {c.lastSession && <p className="mt-2 text-[10px] text-slate-600">Last session: <span className="text-slate-400">{formatDate(c.lastSession)}</span></p>}
+        {c.attRate !== null && <p className="text-[10px] text-slate-600">Attendance: <span className={`font-black ${c.attRate >= 80 ? 'text-emerald-400' : c.attRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{c.attRate}%</span></p>}
+      </div>
+      <div className="grid grid-cols-2 border-t border-slate-800">
+        <Link href={`/hp/attendance?class=${c.id}`} className="flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-slate-400 hover:bg-slate-800 hover:text-emerald-400 transition border-r border-slate-800">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M9 11l3 3L22 4"/></svg>Register
+        </Link>
+        <Link href={`/hp/testing?class=${c.id}`} className="flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-slate-400 hover:bg-slate-800 hover:text-violet-400 transition border-r border-slate-800">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Test
+        </Link>
+        <a href={`/hp/export/class/${c.id}`} target="_blank" className="col-span-2 flex items-center justify-center gap-1.5 py-2 text-[10px] font-black text-slate-600 hover:bg-slate-800 hover:text-slate-300 transition border-t border-slate-800">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export PDF
+        </a>
+      </div>
+    </div>
   );
 }
 
 export default function HPDashboard() {
   const [students, setStudents] = React.useState<Row[]>([]);
-  const [tests,    setTests]    = React.useState<Row[]>([]);
-  const [attendance, setAtt]   = React.useState<Row[]>([]);
-  const [loading,  setLoading]  = React.useState(true);
-  const term = getCalendarTerm();
-  const year = getCurrentYear();
+  const [testResults, setTestResults] = React.useState<Row[]>([]);
+  const [attendance, setAttendance] = React.useState<Row[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const currentTerm = getCurrentTerm();
+  const currentYear = new Date().getFullYear();
 
   React.useEffect(() => {
-    fetch(`/api/hp/data?type=dashboard&year=${year}`, { credentials:'include' })
-      .then(r => r.json()).then(d => {
-        setStudents(d.students||[]); setTests(d.tests||[]); setAtt(d.attendance||[]);
-        setLoading(false);
-      }).catch(() => setLoading(false));
-  }, [year]);
-
-  if (loading) return (
-    <div style={{ minHeight:'100vh', background:'#060c1a', display:'flex', alignItems:'center', justifyContent:'center', flexDirection:'column', gap:16 }}>
-      <div style={{ width:28, height:28, borderRadius:'50%', border:'3px solid #10b981', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }}/>
-      <p style={{ color:'rgba(255,255,255,0.4)', fontSize:13 }}>Loading...</p>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
-
-  const testedIds     = new Set(tests.filter(r => r.term===term).map(r => r.student_id));
-  const totalStudents = students.length;
-  const totalTested   = testedIds.size;
-  const totalUntested = totalStudents - totalTested;
-  const overallAtt    = (() => {
-    if (!attendance.length) return null;
-    const present = attendance.filter(a => a.status==='Present').length;
-    return Math.round((present/attendance.length)*100);
-  })();
+    async function load() {
+      const [sRes, tRes, aRes] = await Promise.all([
+        supabase.from('hp_students').select('*').eq('is_active', true),
+        supabase.from('hp_test_results').select('student_id, term, year').eq('year', currentYear),
+        supabase.from('hp_attendance').select('student_id, session_date, status').order('session_date', { ascending: false }).limit(2000),
+      ]);
+      setStudents(sRes.data || []);
+      setTestResults(tRes.data || []);
+      setAttendance(aRes.data || []);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const classStats = CLASSES.map(c => {
-    const cs    = students.filter(s => s.grade===c.grade && s.class_group===c.cls);
-    const total = cs.length; if (!total) return null;
-    const tested = cs.filter(s => testedIds.has(s.id)).length;
-    const pct    = Math.round((tested/total)*100);
-    const classAtt = attendance.filter(a => cs.some(s => s.id===a.student_id));
-    const dates  = [...new Set(classAtt.map(a => a.session_date))].slice(0,8);
-    const present = classAtt.filter(a => dates.includes(a.session_date) && a.status==='Present').length;
-    const possible = dates.length * total;
-    const attRate = possible>0 ? Math.round((present/possible)*100) : null;
-    return {...c, total, tested, pct, attRate};
-  }).filter(Boolean) as any[];
+    const cs = students.filter(s => s.grade === c.grade && s.class_group === c.cls);
+    const total = cs.length;
+    const testedThisTerm = new Set(testResults.filter(r => r.term === currentTerm).map(r => r.student_id));
+    const tested = cs.filter(s => testedThisTerm.has(s.id)).length;
+    const classAtt = attendance.filter(a => cs.some(s => s.id === a.student_id));
+    const lastSession = classAtt[0]?.session_date || null;
+    const recentDates = [...new Set(classAtt.map(a => a.session_date))].slice(0, 10);
+    const presentCount = classAtt.filter(a => recentDates.includes(a.session_date) && a.status === 'Present').length;
+    const possibleCount = recentDates.length * total;
+    const attRate = possibleCount > 0 ? Math.round((presentCount / possibleCount) * 100) : null;
+    return { ...c, total, tested, lastSession, attRate, testPct: total > 0 ? Math.round((tested / total) * 100) : 0 };
+  }).filter(c => c.total > 0);
 
-  const grade8  = classStats.filter(c => c.grade==='Grade 8');
-  const grade9  = classStats.filter(c => c.grade==='Grade 9');
-  const allDone8 = grade8.every(c => c.pct===100);
-  const allDone9 = grade9.every(c => c.pct===100);
+  const grade8 = classStats.filter(c => c.grade === 'Grade 8');
+  const grade9 = classStats.filter(c => c.grade === 'Grade 9');
+  const totalStudents = students.length;
+  const totalTested = new Set(testResults.filter(r => r.term === currentTerm).map(r => r.student_id)).size;
+  const totalUntested = totalStudents - totalTested;
 
-  const STATS = [
-    { label:'ENROLLED',  sub:'All students',    val:totalStudents, color:'#38bdf8', bg:'rgba(56,189,248,0.12)',  href:'/hp/students',             iconD:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 3a4 4 0 0 1 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
-    { label:'TESTED',    sub:'This term',        val:totalTested,   color:G,         bg:'rgba(16,185,129,0.12)', href:'/hp/students?tested=true',  iconD:'M22 12h-4l-3 9L9 3l-3 9H2' },
-    { label:'REMAINING', sub:'To be tested',     val:totalUntested, color:totalUntested>0?'#f59e0b':'rgba(255,255,255,0.15)', bg:totalUntested>0?'rgba(245,158,11,0.12)':'rgba(255,255,255,0.04)', href:'/hp/students?tested=false', iconD:'M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z M12 8v4l3 3' },
-  ];
-
-  return (
-    <main style={{ minHeight:'100vh', background:'#060c1a', color:'white' }} className="pt-14 pb-20 lg:pt-0 lg:pb-10">
-      <style>{`
-        .hp-heading { font-size:34px; }
-        .hp-stat-num { font-size:28px; }
-        .hp-stat-icon { width:46px; height:46px; border-radius:12px; }
-        .hp-stat-icon-sz { width:22px; height:22px; }
-        .hp-action-sub { display:block; }
-        .hp-action-arrow { display:flex; }
-        .hp-action-label { font-size:12px; }
-        @media(max-width:640px) {
-          .hp-heading { font-size:24px !important; }
-          .hp-stat-num { font-size:22px !important; }
-          .hp-stat-icon { width:38px !important; height:38px !important; border-radius:10px !important; }
-          .hp-stat-icon-sz { width:18px !important; height:18px !important; }
-          .hp-action-sub { display:none !important; }
-          .hp-action-arrow { display:none !important; }
-          .hp-action-label { font-size:11px !important; }
-        }
-      `}</style>
-
-
-      {/* ── TOP BAR ── */}
-      <header className="hidden lg:flex" style={{ borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.95)', backdropFilter:'blur(12px)', position:'sticky', top:0, zIndex:30, height:56, alignItems:'center', justifyContent:'space-between', padding:'0 28px' }}>
-        <div/>{/* spacer */}
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <Link href="/" style={{ display:'flex', alignItems:'center', gap:7, fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.55)', padding:'7px 14px', borderRadius:20, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.04)', textDecoration:'none' }}>
-            <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" size={13}/>
-            Departments
-          </Link>
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.05)', border:`1px solid ${BORDER}`, borderRadius:24, padding:'4px 14px 4px 4px' }}>
-            <div style={{ width:28, height:28, borderRadius:'50%', background:`linear-gradient(135deg,#065f46,${G})`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, color:'white', flexShrink:0 }}>HP</div>
-            <span style={{ fontSize:13, fontWeight:600, color:'white' }}>HP Admin</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="px-4 py-5 lg:px-7 lg:py-7" style={{ maxWidth:1200 }}>
-
-        {/* ── HEADER ── */}
-        <FadeUp delay={0}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:8 }}>
-            <div>
-              <p style={{ fontSize:11, fontWeight:600, color:`${G}99`, letterSpacing:'0.1em', marginBottom:4 }}>Welcome back</p>
-              <h1 className="hp-heading" style={{ fontWeight:900, color:'white', lineHeight:1, letterSpacing:'-0.02em' }}>
-                High <span style={{ background:`linear-gradient(135deg,${G},#38bdf8)`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text' }}>Performance</span>
-              </h1>
-            </div>
-            <div style={{ textAlign:'right' }}>
-              <p style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.4)' }}>{term} · {year}</p>
-              {overallAtt!==null && (
-                <p style={{ fontSize:11, marginTop:3, fontWeight:700, color:overallAtt>=80?G:overallAtt>=60?'#fbbf24':'#f87171' }}>
-                  {overallAtt}% avg attendance
-                </p>
-              )}
-            </div>
-          </div>
-        </FadeUp>
-
-        {/* ── STAT CARDS ── */}
-        <FadeUp delay={60}>
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
-            {STATS.map(s => (
-              <HoverCard key={s.label}>
-                <Link href={s.href} style={{ display:'flex', alignItems:'center', gap:8, padding:'12px 10px', borderRadius:14, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
-                  <div className="hp-stat-icon" style={{ background:s.bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <span className="hp-stat-icon-sz" style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Icon d={s.iconD} size={22} color={s.color}/></span>
-                  </div>
-                  <div>
-                    <CountUp value={s.val} className="hp-stat-num" style={{ fontWeight:900, color:s.color, lineHeight:1, display:'block' }}/>
-                    <p style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.12em', marginTop:4 }}>{s.label}</p>
-                    <p style={{ fontSize:10, color:'rgba(255,255,255,0.25)', marginTop:1 }}>{s.sub}</p>
-                  </div>
-                </Link>
-              </HoverCard>
-            ))}
-          </div>
-        </FadeUp>
-
-        {/* ── QUICK ACTIONS ── */}
-        <FadeUp delay={100}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-6">
-            {ACTIONS.map(a => (
-              <HoverCard key={a.href}>
-                <Link href={a.href} style={{ display:'flex', alignItems:'center', gap:10, padding:'13px 14px', borderRadius:14, background:CARD, border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
-                  <div style={{ width:38, height:38, borderRadius:10, background:`${a.color}14`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <Icon d={a.iconD} size={17} color={a.color}/>
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <p className="hp-action-label" style={{ fontWeight:800, color:'white', marginBottom:1 }}>{a.label}</p>
-                    <p className="hp-action-sub" style={{ fontSize:10, color:'rgba(255,255,255,0.35)' }}>{a.sub}</p>
-                  </div>
-                  <span className="hp-action-arrow"><Icon d="M9 18l6-6-6-6" size={13} color="rgba(255,255,255,0.2)"/></span>
-                </Link>
-              </HoverCard>
-            ))}
-          </div>
-        </FadeUp>
-
-        {/* ── GRADE 8 ── */}
-        <FadeUp delay={140}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-              <div style={{ width:4, height:24, borderRadius:2, background:'rgba(56,189,248,0.6)' }}/>
-              <div>
-                <p style={{ fontSize:11, fontWeight:800, letterSpacing:'0.2em', color:'#38bdf8', textTransform:'uppercase' }}>Grade 8</p>
-                {allDone8 && <p style={{ fontSize:10, color:`${G}99`, marginTop:1 }}>All classes tested ✓</p>}
-              </div>
-            </div>
-            <a href="/hp-print/grade/8" target="_blank"
-              style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', padding:'7px 14px', borderRadius:10, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', textDecoration:'none' }}>
-              <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5" size={13}/>
-              Export
-            </a>
-          </div>
-          <StaggerList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" stagger={30}>
-            {grade8.map((c: any) => (
-              <StaggerItem key={c.id}><ClassCard c={c} accent="#38bdf8"/></StaggerItem>
-            ))}
-          </StaggerList>
-        </FadeUp>
-
-        {/* ── GRADE 9 ── */}
-        <FadeUp delay={180}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, marginTop:28 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-              <div style={{ width:4, height:24, borderRadius:2, background:'rgba(167,139,250,0.6)' }}/>
-              <div>
-                <p style={{ fontSize:11, fontWeight:800, letterSpacing:'0.2em', color:'#a78bfa', textTransform:'uppercase' }}>Grade 9</p>
-                {allDone9 && <p style={{ fontSize:10, color:`${G}99`, marginTop:1 }}>All classes tested ✓</p>}
-              </div>
-            </div>
-            <a href="/hp-print/grade/9" target="_blank"
-              style={{ display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.35)', padding:'7px 14px', borderRadius:10, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', textDecoration:'none' }}>
-              <Icon d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4 M7 10l5 5 5-5" size={13}/>
-              Export
-            </a>
-          </div>
-          <StaggerList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" stagger={30}>
-            {grade9.map((c: any) => (
-              <StaggerItem key={c.id}><ClassCard c={c} accent="#a78bfa"/></StaggerItem>
-            ))}
-          </StaggerList>
-        </FadeUp>
-
+  if (loading) return (
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-4">
+        {[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-slate-900 animate-pulse" />)}
       </div>
     </main>
   );
-}
-
-function ClassCard({ c, accent }: { c: any; accent: string }) {
-  const done = c.pct === 100;
-  const none = c.tested === 0;
-  const BORDER = 'rgba(255,255,255,0.07)';
 
   return (
-    <HoverCard>
-      <Link href={`/hp/class/${c.id}`}
-        style={{ display:'block', borderRadius:16, background:'rgba(255,255,255,0.025)', border:`1px solid ${BORDER}`, textDecoration:'none', position:'relative', overflow:'hidden' }}>
-        <div style={{ position:'absolute', top:0, left:0, right:0, height:2, background:`linear-gradient(90deg,transparent,${accent}60,transparent)`, opacity:0 }} className="card-top-line"/>
-        <div style={{ padding:'16px' }}>
-          {/* Class ID */}
-          <p style={{ fontSize:30, fontWeight:900, color:accent, lineHeight:1, letterSpacing:'-0.01em', marginBottom:4 }}>{c.id}</p>
-          <p style={{ fontSize:10, color:'rgba(255,255,255,0.3)', marginBottom:12 }}>{c.total} students</p>
+    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
 
-          {/* Progress bar */}
-          <div style={{ marginBottom:8 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-              <span style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', color:'rgba(255,255,255,0.25)', textTransform:'uppercase' }}>Tested</span>
-              <span style={{ fontSize:10, fontWeight:900, color:done?G:accent }}>{c.pct}%</span>
-            </div>
-            <div style={{ height:4, borderRadius:2, background:'rgba(255,255,255,0.07)', overflow:'hidden' }}>
-              <div style={{ height:'100%', borderRadius:2, width:`${c.pct}%`, background:done?G:accent, transition:'width 0.7s ease' }}/>
-            </div>
+        {/* Header */}
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict's College</p>
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-white">High Performance</h1>
+            <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           </div>
+          <span className="mt-1 shrink-0 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-black text-emerald-300">{currentTerm} · {currentYear}</span>
+        </div>
 
-          {/* Status */}
-          <div style={{ marginBottom:8 }}>
-            {done ? (
-              <span style={{ fontSize:10, fontWeight:800, color:G }}>All tested ✓</span>
-            ) : none ? (
-              <span style={{ fontSize:10, color:'rgba(255,255,255,0.2)' }}>Not started</span>
-            ) : (
-              <span style={{ fontSize:10, fontWeight:700, color:'#fbbf24' }}>{c.total-c.tested} remaining</span>
-            )}
+        {/* Programme snapshot */}
+        <div className="mb-6 grid grid-cols-3 gap-3">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-4 text-center">
+            <p className="text-2xl font-black text-white">{totalStudents}</p>
+            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">Students</p>
           </div>
-
-          {/* Attendance */}
-          {c.attRate!==null && (
-            <p style={{ fontSize:10, marginBottom:12 }}>
-              <span style={{ color:'rgba(255,255,255,0.3)' }}>Att </span>
-              <span style={{ fontWeight:800, color:c.attRate>=80?G:c.attRate>=60?'#fbbf24':'#f87171' }}>{c.attRate}%</span>
-            </p>
-          )}
-
-          {/* Quick actions */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:5 }}>
-            {[
-              { href:`/hp/class/${c.id}?tab=attendance`, label:'Reg',  color:G },
-              { href:`/hp/class/${c.id}?tab=testing`,    label:'Test', color:'#a78bfa' },
-              { href:`/hp-print/class/${c.id}`,          label:'PDF',  color:'rgba(255,255,255,0.4)', external:true },
-            ].map(btn => btn.external ? (
-              <a key={btn.label} href={btn.href} target="_blank" onClick={e => e.stopPropagation()}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'6px 4px', borderRadius:8, fontSize:9, fontWeight:800, color:btn.color, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.07)', textDecoration:'none' }}>
-                {btn.label}
-              </a>
-            ) : (
-              <Link key={btn.label} href={btn.href} onClick={e => e.stopPropagation()}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'6px 4px', borderRadius:8, fontSize:9, fontWeight:800, color:btn.color, background:`${btn.color}12`, border:`1px solid ${btn.color}25`, textDecoration:'none' }}>
-                {btn.label}
-              </Link>
-            ))}
+          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-center">
+            <p className="text-2xl font-black text-emerald-400">{totalTested}</p>
+            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">Tested</p>
+          </div>
+          <div className={`rounded-2xl border p-4 text-center ${totalUntested > 0 ? 'border-amber-500/20 bg-amber-500/5' : 'border-slate-800 bg-slate-900'}`}>
+            <p className={`text-2xl font-black ${totalUntested > 0 ? 'text-amber-400' : 'text-slate-500'}`}>{totalUntested}</p>
+            <p className="mt-0.5 text-[10px] font-black uppercase tracking-wide text-slate-500">Untested</p>
           </div>
         </div>
-      </Link>
-    </HoverCard>
+
+        {/* Grade 8 */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-800" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">Grade 8</p>
+            <a href="/hp/export/grade/8" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-sky-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
+            <span className="h-px flex-1 bg-slate-800" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {grade8.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
+          </div>
+        </div>
+
+        {/* Grade 9 */}
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-800" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400">Grade 9</p>
+            <a href="/hp/export/grade/9" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-violet-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
+            <span className="h-px flex-1 bg-slate-800" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {grade9.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
+          </div>
+        </div>
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          {[
+            { href: '/hp/attendance', label: 'Take Register', sub: 'Mark attendance', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-emerald-400"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
+            { href: '/hp/testing', label: 'Enter Tests', sub: 'Record results', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-violet-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, border: 'border-violet-500/20', bg: 'bg-violet-500/5' },
+            { href: '/hp/trends', label: 'Trends', sub: 'Performance data', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-sky-400"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, border: 'border-sky-500/20', bg: 'bg-sky-500/5' },
+            { href: '/hp/students', label: 'Students', sub: 'All profiles', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-amber-400"><circle cx="9" cy="7" r="4"/><path d="M3 20c0-3.314 2.686-6 6-6h6c3.314 0 6 2.686 6 6"/></svg>, border: 'border-amber-500/20', bg: 'bg-amber-500/5' },
+            { href: '/hp/admin/rollover', label: 'Year End Rollover', sub: 'Promote & graduate', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-rose-400"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>, border: 'border-rose-500/20', bg: 'bg-rose-500/5' },
+          ].map(a => (
+            <Link key={a.href} href={a.href} className={`group rounded-2xl border ${a.border} ${a.bg} p-4 transition hover:scale-[1.02]`}>
+              <div className="mb-2">{a.icon}</div>
+              <p className="text-sm font-black text-white">{a.label}</p>
+              <p className="text-[10px] text-slate-500">{a.sub}</p>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </main>
   );
 }
