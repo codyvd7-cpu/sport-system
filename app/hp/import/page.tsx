@@ -24,13 +24,22 @@ const G9 = [
 function mmssToSecs(v: string): number | null {
   if (!v || v.trim() === '' || v.trim() === '-' || v.trim() === '—') return null;
   const s = v.trim();
+  // Standard mm:ss format e.g. 1:34
   if (s.includes(':')) {
     const [m, sec] = s.split(':').map(Number);
     if (isNaN(m) || isNaN(sec)) return null;
     return m * 60 + sec;
   }
   const n = parseFloat(s);
-  return isNaN(n) ? null : n;
+  if (isNaN(n)) return null;
+  // Handle mm.ss format e.g. 1.34 means 1 min 34 sec (coach shorthand)
+  if (s.includes('.')) {
+    const secPart = parseInt(s.split('.')[1] || '0');
+    if (secPart <= 59 && n < 10) {
+      return Math.floor(n) * 60 + secPart;
+    }
+  }
+  return n;
 }
 function parseVal(key: string, raw: string): number | null {
   if (!raw || raw.trim() === '' || raw.trim() === '-' || raw.trim() === '—') return null;
