@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
 const CLASSES = ['B','E','F','J','M'];
@@ -68,20 +67,24 @@ export default function HPTesting() {
 
   function showToast(msg:string){ setToast(msg); setTimeout(()=>setToast(''),3000); }
 
-  // Load students
+  // Load students via API (uses service role key, bypasses RLS)
   React.useEffect(()=>{
-    supabase.from('hp_students').select('*').eq('is_active',true)
-      .order('grade').order('full_name')
-      .then(({data})=>setStudents(data||[]));
+    fetch('/api/hp/students',{credentials:'include'})
+      .then(r=>r.json())
+      .then(d=>setStudents((d.students||[]).sort((a:Row,b:Row)=>{
+        if(a.grade!==b.grade) return a.grade.localeCompare(b.grade);
+        return a.full_name.localeCompare(b.full_name);
+      })));
   },[]);
 
-  // Load existing results when term/year changes
+  // Load existing results via API
   React.useEffect(()=>{
     if (!students.length) return;
-    supabase.from('hp_test_results').select('*').eq('term',term).eq('year',year)
-      .then(({data})=>{
+    fetch('/api/hp/tests?term='+encodeURIComponent(term)+'&year='+year,{credentials:'include'})
+      .then(r=>r.json())
+      .then(d=>{
         const r:Record<string,Row>={}, sv:Record<string,boolean>={};
-        (data||[]).forEach(row=>{
+        (d.results||[]).forEach((row:Row)=>{
           r[row.student_id]={...row};
           if (row.run_500m) r[row.student_id].run_500m=toMmss(row.run_500m);
           sv[row.student_id]=true;
@@ -113,8 +116,8 @@ export default function HPTesting() {
     const t=stu?.grade==='Grade 9'?G9:G8;
     const payload:Row={student_id:sid,term,year,test_date:date};
     t.forEach(x=>{payload[x.key]=x.key==='run_500m'?toSecs(vals[x.key]||''):(vals[x.key]?parseFloat(vals[x.key]):null);});
-    await supabase.from('hp_test_results').delete().eq('student_id',sid).eq('term',term).eq('year',year);
-    await supabase.from('hp_test_results').insert([payload]);
+    await fetch('/api/hp/tests',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'upsert',payload})});
     setSaved(p=>({...p,[sid]:true}));
     setSaving(p=>({...p,[sid]:false}));
     setOpenStu(null);
@@ -122,7 +125,10 @@ export default function HPTesting() {
   }
 
   async function saveGroups(){
-    await Promise.all(grouped.filter(s=>s._g!==null).map(s=>supabase.from('hp_students').update({training_group:s._g}).eq('id',s.id)));
+    await Promise.all(grouped.filter(s=>s._g!==null).map(s=>
+      fetch('/api/hp/students',{method:'POST',credentials:'include',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'update_group',id:s.id,training_group:s._g})})
+    ));
     setStudents(prev=>prev.map(s=>{const g=grouped.find(gs=>gs.id===s.id);return g?{...s,training_group:g._g}:s;}));
     showToast('Groups saved ✓');
   }

@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
     const admin = getAdmin();
     const body = await req.json();
     const { action, ...payload } = body;
+
     if (action === 'add') {
       const { error } = await admin.from('hp_students').insert([{
         full_name: payload.full_name, grade: payload.grade, class_group: payload.class_group, is_active: true,
@@ -40,6 +41,11 @@ export async function POST(req: NextRequest) {
     }
     if (action === 'remove') {
       const { error } = await admin.from('hp_students').update({ is_active: false }).eq('id', payload.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+    if (action === 'update_group') {
+      const { error } = await admin.from('hp_students').update({ training_group: payload.training_group }).eq('id', payload.id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
