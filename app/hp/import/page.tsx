@@ -185,14 +185,14 @@ export default function HPImport() {
     let count = 0;
     for (const row of toInsert) {
       const sid = row.student!.id;
-      // delete existing for same student/term/year
-      await supabase.from('hp_test_results').delete()
-        .eq('student_id', sid).eq('term', term).eq('year', year);
-      // insert new
       const payload: Row = { student_id: sid, term, year, test_date: testDate };
       tests.forEach(t => { payload[t.key] = row.vals[t.key] ?? null; });
-      const { error } = await supabase.from('hp_test_results').insert([payload]);
-      if (!error) count++;
+      const res = await fetch('/api/hp/tests', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'upsert', payload }),
+      });
+      if (res.ok) count++;
     }
 
     setImported(count);
