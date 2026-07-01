@@ -105,6 +105,7 @@ export default function HPImport() {
   const [dataRows,   setDataRows]   = React.useState<string[][]>([]);
   const [students,   setStudents]   = React.useState<Row[]>([]);
   const [preview,    setPreview]    = React.useState<{student:Row|null;raw:string;vals:Record<string,number|null>}[]>([]);
+  const [manualMatch,setManualMatch]= React.useState<Record<number,string>>({});
   const [importing,  setImporting]  = React.useState(false);
   const [imported,   setImported]   = React.useState(0);
   const [toast,      setToast]      = React.useState('');
@@ -178,7 +179,14 @@ export default function HPImport() {
 
   // ── Step 4: import ──
   async function doImport() {
-    const toInsert = preview.filter(r => r.student);
+    const toInsert = preview.map((r,i) => {
+      if (r.student) return r;
+      if (manualMatch[i]) {
+        const stu = filteredStudents.find(s=>s.id===manualMatch[i]);
+        return stu ? {...r, student:stu} : r;
+      }
+      return r;
+    }).filter(r => r.student);
     if (!toInsert.length) { showToast('No matched students to import.'); return; }
     setImporting(true);
 
@@ -200,8 +208,8 @@ export default function HPImport() {
     setStep(4);
   }
 
-  const matched = preview.filter(r => r.student).length;
-  const unmatched = preview.filter(r => !r.student).length;
+  const matched = preview.filter((r,i) => r.student || manualMatch[i]).length;
+  const unmatched = preview.filter((r,i) => !r.student && !manualMatch[i]).length;
 
   return (
     <main className="pt-14 pb-24 lg:pt-0 lg:pb-10"
@@ -411,7 +419,15 @@ export default function HPImport() {
                         {row.student ? row.student.full_name : row.raw}
                       </p>
                       {row.student && <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{row.student.grade} · {row.student.class_group}</p>}
-                      {!row.student && <p style={{ fontSize: 10, color: '#f87171' }}>No match found</p>}
+                      {!row.student && (
+                      <select
+                        value={manualMatch[i]||''}
+                        onChange={e=>setManualMatch(p=>({...p,[i]:e.target.value}))}
+                        style={{marginTop:4,width:'100%',background:'#0d1424',color:'white',border:'1px solid rgba(248,113,113,0.3)',borderRadius:8,padding:'4px 8px',fontSize:11,cursor:'pointer'}}>
+                        <option value=''>— pick student manually —</option>
+                        {filteredStudents.map(s=><option key={s.id} value={s.id}>{s.full_name} ({s.class_group})</option>)}
+                      </select>
+                    )}
                     </div>
                     {/* Values */}
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flex: 1 }}>
@@ -437,7 +453,7 @@ export default function HPImport() {
               <button onClick={() => setStep(2)} style={{ flex: 1, padding: 12, borderRadius: 12, border: `1px solid ${BD}`, background: 'transparent', color: 'rgba(255,255,255,0.5)', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>← Back</button>
               <button onClick={doImport} disabled={importing || matched === 0}
                 style={{ flex: 2, padding: 12, borderRadius: 12, border: `1px solid ${G}35`, background: `${G}12`, color: G, fontWeight: 800, fontSize: 14, cursor: matched > 0 ? 'pointer' : 'not-allowed', opacity: matched > 0 ? 1 : 0.4 }}>
-                {importing ? 'Importing…' : `Import ${matched} Students →`}
+                {importing ? 'Importing…' : `Import ${matched} Student${matched!==1?'s':''} →`}
               </button>
             </div>
           </div>
