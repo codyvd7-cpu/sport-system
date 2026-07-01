@@ -2,7 +2,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
 
@@ -115,8 +114,9 @@ export default function HPImport() {
   function showToast(msg: string, dur = 3500) { setToast(msg); setTimeout(() => setToast(''), dur); }
 
   React.useEffect(() => {
-    supabase.from('hp_students').select('*').eq('is_active', true)
-      .then(({ data }) => setStudents(data || []));
+    fetch('/api/hp/students', { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => setStudents(d.students || []));
   }, []);
 
   // filtered students for matching
