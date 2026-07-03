@@ -1,10 +1,11 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { GRADE8_TESTS, GRADE9_TESTS, HP_CLASSES, TERM_ORDER, getTests } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
-const CLASSES = ['B','E','F','J','M'];
 
+// G8 from hpTests
 const G8 = [
   { key:'chin_up_hang',  label:'Chin Up Hang',      unit:'s',     higher:true  },
   { key:'broad_jump',    label:'Broad Jump',         unit:'cm',    higher:true  },
@@ -41,7 +42,7 @@ function calcGroups(students:Row[], results:Record<string,Row>, n:number, tests:
       if (all.length<2) return;
       const mn=Math.min(...all),mx=Math.max(...all);
       const val=t.key==='run_500m'?toSecs(r[t.key]||''):parseFloat(r[t.key]||'');
-      if (val!==null&&!isNaN(val)){total+=norm(val,t.higher,mn,mx);count++;}
+      if (val!==null&&!isNaN(val)){total+=norm(val,!t.lower,mn,mx);count++;}
     });
     return {...s, _c: count>0?total/count:null};
   });
@@ -140,7 +141,7 @@ export default function HPTesting() {
   };
 
   return (
-    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
+    <main className="min-h-screen pt-[54px] text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       {toast&&<div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'rgba(16,185,129,0.15)',border:'1px solid rgba(16,185,129,0.4)',borderRadius:12,padding:'11px 20px',color:'#10b981',fontWeight:700,fontSize:13,backdropFilter:'blur(12px)',whiteSpace:'nowrap'}}>{toast}</div>}
 
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">

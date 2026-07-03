@@ -229,11 +229,11 @@ export default function HPTrendsPage(){
                 {tests.map(t=>{
                   const vals=gradeStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
                   const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-                  const tier=avg!==null?getTier(t.key,avg,t.higher):null;
+                  const tier=avg!==null?getTier(t.key as any,avg,!t.lower):null;
                   const avgs=termAvgs(gradeStudents,t.key);
-                  const best=vals.length?(t.higher?Math.max(...vals):Math.min(...vals)):null;
+                  const best=vals.length?(!t.lower?Math.max(...vals):Math.min(...vals)):null;
                   const validTerms=avgs.filter((v):v is number=>v!==null);
-                  const improved=validTerms.length>1&&(t.higher?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
+                  const improved=validTerms.length>1&&(!t.lower?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
 
                   // Build recharts data
                   const chartData = TERMS.map((term,i) => ({
@@ -315,7 +315,7 @@ export default function HPTrendsPage(){
                 {tests.map(t=>{
                   const vals=classStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
                   const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-                  const tier=avg!==null?getTier(t.key,avg,t.higher):null;
+                  const tier=avg!==null?getTier(t.key as any,avg,!t.lower):null;
                   const active=selTest===t.key;
                   return(
                     <button key={t.key} onClick={()=>setSelTest(active?null:t.key)}
