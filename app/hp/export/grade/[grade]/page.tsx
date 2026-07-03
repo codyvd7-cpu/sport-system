@@ -43,7 +43,7 @@ export default function GradeExport({ params }: PageProps) {
           });
         const yearResults=(d.tests||[]).filter((r:Row)=>r.year===year);
         const allTerms=[...new Set(yearResults.map((r:Row)=>r.term as string))] as string[];
-        const latestTerm=allTerms.sort((a,b)=>TERM_ORDER.indexOf(b)-TERM_ORDER.indexOf(a))[0]||'';
+        const latestTerm=allTerms.sort((a,b)=>[...TERM_ORDER].indexOf(b as any)-[...TERM_ORDER].indexOf(a as any))[0]||'';
         setStudents(gs);
         setResults(yearResults);
         setAtt(d.attendance||[]);
