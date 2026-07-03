@@ -6,20 +6,8 @@ import { GRADE8_TESTS, GRADE9_TESTS, HP_CLASSES, TERM_ORDER, getTests } from '@/
 type Row = Record<string, any>;
 
 // G8 from hpTests
-const G8 = [
-  { key:'chin_up_hang',  label:'Chin Up Hang',      unit:'s',     higher:true  },
-  { key:'broad_jump',    label:'Broad Jump',         unit:'cm',    higher:true  },
-  { key:'sprint_10m',    label:'10m Sprint',         unit:'s',     higher:false },
-  { key:'sprint_30m',    label:'30m Sprint',         unit:'s',     higher:false },
-  { key:'run_500m',      label:'500m Run',           unit:'mm:ss', higher:false },
-];
-const G9 = [
-  { key:'pushup_2min',       label:'2 Min Push Up',    unit:'reps',  higher:true  },
-  { key:'triple_broad_jump', label:'Triple Broad Jump', unit:'cm',   higher:true  },
-  { key:'sprint_10m',        label:'10m Sprint',        unit:'s',    higher:false },
-  { key:'sprint_30m',        label:'30m Sprint',        unit:'s',    higher:false },
-  { key:'run_500m',          label:'500m Run',          unit:'mm:ss',higher:false },
-];
+const G8 = GRADE8_TESTS;
+const G9 = GRADE9_TESTS;
 
 function toSecs(v: string): number | null {
   if (!v) return null;
@@ -30,9 +18,9 @@ function toMmss(secs: number): string {
   const m=Math.floor(secs/60), s=Math.round(secs%60);
   return m+':'+(s<10?'0':'')+s;
 }
-function norm(val:number, higher:boolean, min:number, max:number): number {
+function norm(val:number, higherIsBetter:boolean, min:number, max:number): number {
   if (max===min) return 50;
-  return higher ? ((val-min)/(max-min))*100 : (1-(val-min)/(max-min))*100;
+  return higherIsBetter ? ((val-min)/(max-min))*100 : (1-(val-min)/(max-min))*100;
 }
 function calcGroups(students:Row[], results:Record<string,Row>, n:number, tests:typeof G8): Row[] {
   const scored = students.map(s => {
