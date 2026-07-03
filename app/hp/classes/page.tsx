@@ -3,18 +3,11 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useToast } from '@/components/Toast';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { GRADE8_TESTS, GRADE9_TESTS, getTests } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
 
 const CLASS_OPTIONS = ['8B','8E','8F','8J','8M','9B','9E','9F','9J','9M'];
-const GRADE8_TESTS = [
-  { key: 'chin_up_hang', higher: true },{ key: 'broad_jump', higher: true },
-  { key: 'sprint_10m', higher: false },{ key: 'sprint_30m', higher: false },{ key: 'run_500m', higher: false },
-];
-const GRADE9_TESTS = [
-  { key: 'pushup_2min', higher: true },{ key: 'triple_broad_jump', higher: true },
-  { key: 'sprint_10m', higher: false },{ key: 'sprint_30m', higher: false },{ key: 'run_500m', higher: false },
-];
 
 function normalise(val: number, higher: boolean, min: number, max: number) {
   if (max === min) return 50;

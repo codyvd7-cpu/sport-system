@@ -1,47 +1,14 @@
 'use client';
 import * as React from 'react';
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, HP_CLASSES, getCurrentTerm, getTests, TERM_ORDER } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ grade: string }> };
 
-const HP_CLASSES = ['B','E','F','J','M'];
 
-const GRADE8_TESTS = [
-  { key:'chin_up_hang', label:'Chin Up Hang', unit:'s',    lower:false },
-  { key:'broad_jump',   label:'Broad Jump',   unit:'cm',   lower:false },
-  { key:'sprint_10m',   label:'10m Sprint',   unit:'s',    lower:true  },
-  { key:'sprint_30m',   label:'30m Sprint',   unit:'s',    lower:true  },
-  { key:'run_500m',     label:'500m Run',     unit:'',     lower:true  },
-];
-const GRADE9_TESTS = [
-  { key:'pushup_2min',       label:'Push Up (2 min)',     unit:'reps', lower:false },
-  { key:'triple_broad_jump', label:'Triple Broad Jump', unit:'cm',  lower:false },
-  { key:'sprint_10m',        label:'10m Sprint',        unit:'s',   lower:true  },
-  { key:'sprint_30m',        label:'30m Sprint',        unit:'s',   lower:true  },
-  { key:'run_500m',          label:'500m Run',          unit:'',    lower:true  },
-];
 
-const BENCH: Record<string,[number,number,number,number]> = {
-  chin_up_hang:[45,25,12,5], broad_jump:[185,165,148,130],
-  pushup_2min:[22,18,14,10], pushup_hold:[90,70,50,30], triple_broad_jump:[680,600,530,460],
-  sprint_10m:[1.85,1.97,2.10,2.25], sprint_30m:[4.25,4.52,4.80,5.10],
-  run_500m:[100,115,130,150],
-};
 
-const TIERS = [
-  { label:'Outstanding', abbr:'OUT', color:'#ffffff', bg:'#059669', border:'#059669' },
-  { label:'Strong',      abbr:'STR', color:'#ffffff', bg:'#0284c7', border:'#0284c7' },
-  { label:'On Track',    abbr:'ON',  color:'#ffffff', bg:'#7c3aed', border:'#7c3aed' },
-  { label:'Developing',  abbr:'DEV', color:'#ffffff', bg:'#f97316', border:'#f97316' },
-  { label:'Needs Improv',abbr:'NEE', color:'#0f766e', bg:'#ccfbf1', border:'#99f6e4' },
-];
 
-function getTier(key:string,val:number,lower:boolean){
-  const b=BENCH[key]; if(!b) return TIERS[2];
-  const [e,g,a,d]=b;
-  if(lower){if(val<=e)return TIERS[0];if(val<=g)return TIERS[1];if(val<=a)return TIERS[2];if(val<=d)return TIERS[3];return TIERS[4];}
-  else{if(val>=e)return TIERS[0];if(val>=g)return TIERS[1];if(val>=a)return TIERS[2];if(val>=d)return TIERS[3];return TIERS[4];}
-}
 
 function fmt(key:string,val:number):string{
   if(key==='run_500m'){const m=Math.floor(val/60),s=Math.round(val%60);return`${m}:${s.toString().padStart(2,'0')}`;}

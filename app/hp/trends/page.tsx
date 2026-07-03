@@ -8,9 +8,9 @@ import {
 } from 'recharts';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { getCalendarTerm, getCurrentYear, HP_TERMS, getTermDateRange, prevTerm, nextTerm, termFromParam, yearFromParam, getLatestTermWithData } from '@/lib/hpTerm';
+import { BENCHMARKS as BENCH, TIERS, getTier, HP_CLASSES } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
-const HP_CLASSES = ['B','E','F','J','M'];
 const TERMS = HP_TERMS;
 
 const TESTS = [
@@ -24,27 +24,8 @@ const TESTS = [
   { key: 'run_500m',          label: '500m Run',      unit: 'mm:ss', higher: false, grade: 'both' },
 ];
 
-const BENCH: Record<string,[number,number,number,number]> = {
-  chin_up_hang:[45,25,12,5], broad_jump:[185,165,148,130],
-  pushup_2min:[22,18,14,10], pushup_hold:[90,70,50,30], triple_broad_jump:[680,600,530,460],
-  sprint_10m:[1.85,1.97,2.10,2.25], sprint_30m:[4.25,4.52,4.80,5.10],
-  run_500m:[100,115,130,150],
-};
 
-const TIERS = [
-  { label:'Outstanding', color:'#10b981', bg:'rgba(16,185,129,0.12)', border:'rgba(16,185,129,0.3)'  },
-  { label:'Strong',      color:'#38bdf8', bg:'rgba(56,189,248,0.12)', border:'rgba(56,189,248,0.3)'  },
-  { label:'On Track',    color:'#a78bfa', bg:'rgba(167,139,250,0.12)',border:'rgba(167,139,250,0.3)' },
-  { label:'Developing',  color:'#fbbf24', bg:'rgba(251,191,36,0.12)', border:'rgba(251,191,36,0.3)'  },
-  { label:'Needs Work',  color:'#94a3b8', bg:'rgba(148,163,184,0.10)',border:'rgba(148,163,184,0.25)'},
-];
 
-function getTier(key:string,val:number,higher:boolean){
-  const b=BENCH[key];if(!b)return TIERS[2];
-  const[e,g,a,d]=b;
-  if(higher){if(val>=e)return TIERS[0];if(val>=g)return TIERS[1];if(val>=a)return TIERS[2];if(val>=d)return TIERS[3];return TIERS[4];}
-  else{if(val<=e)return TIERS[0];if(val<=g)return TIERS[1];if(val<=a)return TIERS[2];if(val<=d)return TIERS[3];return TIERS[4];}
-}
 
 function fmt(key:string,val:number):string{
   if(key==='run_500m'){const m=Math.floor(val/60),s=Math.round(val%60);return`${m}:${s.toString().padStart(2,'0')}`;}

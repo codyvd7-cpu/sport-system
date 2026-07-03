@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { GRADE8_TESTS, GRADE9_TESTS, getTests, parseTestValue, fmtValue, HP_CLASSES } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
 

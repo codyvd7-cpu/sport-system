@@ -1,45 +1,13 @@
 'use client';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, HP_CLASSES, getCurrentTerm, getTests, TERM_ORDER } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
 
-const GRADE8_TESTS = [
-  { key: 'chin_up_hang', label: 'Chin Up Hang', unit: 's',   lower: false },
-  { key: 'broad_jump',   label: 'Broad Jump',   unit: 'cm',  lower: false },
-  { key: 'sprint_10m',   label: '10m Sprint',   unit: 's',   lower: true  },
-  { key: 'sprint_30m',   label: '30m Sprint',   unit: 's',   lower: true  },
-  { key: 'run_500m',     label: '500m Run',     unit: '',    lower: true  },
-];
-const GRADE9_TESTS = [
-  { key: 'pushup_2min',       label: 'Push Up (2 min)',     unit: 'reps', lower: false },
-  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm',   lower: false },
-  { key: 'sprint_10m',        label: '10m Sprint',        unit: 's',    lower: true  },
-  { key: 'sprint_30m',        label: '30m Sprint',        unit: 's',    lower: true  },
-  { key: 'run_500m',          label: '500m Run',          unit: '',     lower: true  },
-];
-const BENCH: Record<string,[number,number,number,number]> = {
-  chin_up_hang:[45,25,12,5], broad_jump:[185,165,148,130],
-  pushup_2min:[22,18,14,10],pushup_hold:[90,70,50,30], triple_broad_jump:[680,600,530,460],
-  sprint_10m:[1.85,1.97,2.10,2.25], sprint_30m:[4.25,4.52,4.80,5.10],
-  run_500m:[100,115,130,150],
-};
-const TIERS = [
-  { label:'Outstanding', color:'#047857', bg:'#d1fae5' },
-  { label:'Strong',      color:'#0369a1', bg:'#e0f2fe' },
-  { label:'On Track',    color:'#5b21b6', bg:'#ede9fe' },
-  { label:'Developing',  color:'#b45309', bg:'#fef3c7' },
-  { label:'Needs Work',  color:'#475569', bg:'#f1f5f9' },
-];
 const TERMS = ['Term 1','Term 2','Term 3'];
 type PageProps = { params: Promise<{ id: string }> };
 
-function getTier(key:string,val:number,lower:boolean){
-  const b=BENCH[key];if(!b)return TIERS[2];
-  const[e,g,a,d]=b;
-  if(lower){if(val<=e)return TIERS[0];if(val<=g)return TIERS[1];if(val<=a)return TIERS[2];if(val<=d)return TIERS[3];return TIERS[4];}
-  else{if(val>=e)return TIERS[0];if(val>=g)return TIERS[1];if(val>=a)return TIERS[2];if(val>=d)return TIERS[3];return TIERS[4];}
-}
 function fmt(key:string,val:number):string{
   if(key==='run_500m'){const m=Math.floor(val/60),s=Math.round(val%60);return`${m}:${s.toString().padStart(2,'0')}`;}
   if(key==='chin_up_hang'){if(val>=60){const m=Math.floor(val/60),s=val%60;return s?`${m}m${s}s`:`${m}min`;}return`${Math.round(val)}s`;}

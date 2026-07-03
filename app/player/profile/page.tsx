@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue } from '@/lib/hpTests';
 
 type Row = Record<string,any>;
 
@@ -43,18 +44,10 @@ const BNC:Record<string,[number,number,number,number]>={
   run_500m:[100,115,130,150],pushup_2min:[22,18,14,10],
   triple_broad_jump:[680,600,530,460],
 };
-const TIERS=[
-  {a:'OUT',l:'Outstanding',c:'#059669',bg:'#d1fae5',tc:'#065f46'},
-  {a:'STR',l:'Strong',     c:'#0284c7',bg:'#dbeafe',tc:'#1e3a8a'},
-  {a:'ON', l:'On Track',   c:'#7c3aed',bg:'#ede9fe',tc:'#4c1d95'},
-  {a:'DEV',l:'Developing', c:'#d97706',bg:'#fef3c7',tc:'#78350f'},
-  {a:'NEE',l:'Needs Work', c:'#0f766e',bg:'#ccfbf1',tc:'#134e4a'},
-];
-const TR=TIERS; // alias
 function tier(k:string,v:number,lo:boolean){
-  const b=BNC[k];if(!b)return TR[2];const[e,g,a,d]=b;
-  if(lo){if(v<=e)return TR[0];if(v<=g)return TR[1];if(v<=a)return TR[2];if(v<=d)return TR[3];return TR[4];}
-  else{if(v>=e)return TR[0];if(v>=g)return TR[1];if(v>=a)return TR[2];if(v>=d)return TR[3];return TR[4];}
+  const b=BNC[k];if(!b)return TIERS[2];const[e,g,a,d]=b;
+  if(lo){if(v<=e)return TIERS[0];if(v<=g)return TIERS[1];if(v<=a)return TIERS[2];if(v<=d)return TIERS[3];return TIERS[4];}
+  else{if(v>=e)return TIERS[0];if(v>=g)return TIERS[1];if(v>=a)return TIERS[2];if(v>=d)return TIERS[3];return TIERS[4];}
 }
 function fv(k:string,v:number):string{
   if(k==='run_500m'){const m=Math.floor(v/60),s=Math.round(v%60);return`${m}:${s.toString().padStart(2,'0')}`;}
@@ -71,7 +64,7 @@ function ago(s:string){const d=Math.floor((Date.now()-new Date(s).getTime())/864
 function Ic({d,sz=16,col='currentColor',sw=1.8}:{d:string;sz?:number;col?:string;sw?:number}){
   return<svg viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{width:sz,height:sz,flexShrink:0}}>{d.split(' M').map((s,i)=><path key={i} d={i===0?s:'M'+s}/>)}</svg>;
 }
-function Bdg({t}:{t:typeof TR[0]}){
+function Bdg({t}:{t:typeof TIERS[0]}){
   return<span style={{display:'inline-block',fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:20,background:t.bg,color:t.tc,border:`1px solid ${t.c}40`,letterSpacing:'0.04em'}}>{t.a}</span>;
 }
 function Donut({pct,col,sz=100}:{pct:number;col:string;sz?:number}){
@@ -319,7 +312,7 @@ function Performance({tr}:any){
   const lat=tr[0];const prev=tr[1]||null;
   const done=TESTS.filter(t=>{const v=parseFloat(lat[t.k]);return!isNaN(v);});
   const tiers=done.map(t=>tier(t.k,parseFloat(lat[t.k]),t.lo));
-  const best=tiers.reduce((b,t)=>TR.indexOf(t)<TR.indexOf(b)?t:b,tiers[0]||TR[2]);
+  const best=tiers.reduce((b,t)=>TR.indexOf(t)<TR.indexOf(b)?t:b,tiers[0]||TIERS[2]);
   const pbs=done.filter(t=>{const v=parseFloat(lat[t.k]);const allV=tr.map((r:Row)=>parseFloat(r[t.k])).filter((x:number)=>!isNaN(x));const pb=t.lo?Math.min(...allV):Math.max(...allV);return Math.abs(v-pb)<0.001;}).length;
   const cats=['Speed','Power','Strength','Fitness'];
   return<div style={{display:'flex',flexDirection:'column',gap:14}}>
@@ -347,7 +340,7 @@ function Performance({tr}:any){
         </div>
         <div style={{padding:'0 18px'}}>
           {cv.map((t,i)=>{
-            const v=parseFloat(lat[t.k]);const ti=tier(t.k,v,t.lo);
+            const v=parseFloat(lat[t.k]);const ti=getTier(t.k as any,v,t.lo);
             const pv=prev?parseFloat(prev[t.k]):null;const improved=pv&&!isNaN(pv)&&(t.lo?v<pv:v>pv);
             const allV=tr.map((r:Row)=>parseFloat(r[t.k])).filter((x:number)=>!isNaN(x));
             const pb=t.lo?Math.min(...allV):Math.max(...allV);
@@ -397,7 +390,7 @@ function TestResults({tr}:any){
           <tbody>
             {TESTS.map(t=>{
               const v=parseFloat(lat[t.k]); if(isNaN(v)) return null;
-              const ti=tier(t.k,v,t.lo);
+              const ti=getTier(t.k as any,v,t.lo);
               const allV=tr.map((r:Row)=>parseFloat(r[t.k])).filter((x:number)=>!isNaN(x));
               const pb=t.lo?Math.min(...allV):Math.max(...allV);
               return<tr key={t.k} style={{borderBottom:`1px solid ${B}`}}>

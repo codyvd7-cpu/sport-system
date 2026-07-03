@@ -1,10 +1,11 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import { GRADE8_TESTS, GRADE9_TESTS, HP_CLASSES, TERM_ORDER, getTests } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
-const CLASSES = ['B','E','F','J','M'];
 
+// G8 from hpTests
 const G8 = [
   { key:'chin_up_hang',  label:'Chin Up Hang',      unit:'s',     higher:true  },
   { key:'broad_jump',    label:'Broad Jump',         unit:'cm',    higher:true  },

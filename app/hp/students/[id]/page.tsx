@@ -6,57 +6,16 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from 'recharts';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, getTests } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
 
-const GRADE8_TESTS = [
-  { key: 'chin_up_hang',  label: 'Chin Up Hang',  unit: 's',   lower: false },
-  { key: 'broad_jump',    label: 'Broad Jump',     unit: 'cm',  lower: false },
-  { key: 'sprint_10m',    label: '10m Sprint',     unit: 's',   lower: true  },
-  { key: 'sprint_30m',    label: '30m Sprint',     unit: 's',   lower: true  },
-  { key: 'run_500m',      label: '500m Run',       unit: '',    lower: true  },
-];
 
-const GRADE9_TESTS = [
-  { key: 'pushup_2min',       label: 'Push Up (2 min)',     unit: 'reps', lower: false },
-  { key: 'triple_broad_jump', label: 'Triple Broad Jump', unit: 'cm',   lower: false },
-  { key: 'sprint_10m',        label: '10m Sprint',        unit: 's',    lower: true  },
-  { key: 'sprint_30m',        label: '30m Sprint',        unit: 's',    lower: true  },
-  { key: 'run_500m',          label: '500m Run',          unit: '',     lower: true  },
-];
 
 // Research-based benchmarks [Outstanding, Strong, On Track, Developing, Needs Work]
-const BENCH: Record<string, [number,number,number,number]> = {
-  chin_up_hang:      [45, 25, 12, 5],
-  broad_jump:        [185, 165, 148, 130],
-  pushup_2min:       [22, 18, 14, 10],
-  pushup_hold:       [90, 70, 50, 30],
-  triple_broad_jump: [680, 600, 530, 460],
-  sprint_10m:        [1.85, 1.97, 2.10, 2.25],
-  sprint_30m:        [4.25, 4.52, 4.80, 5.10],
-  run_500m:          [100, 115, 130, 150],
-};
 
-const TIERS = [
-  { label: 'Outstanding', color: 'text-emerald-400', bg: 'bg-emerald-500/15', border: 'border-emerald-500/30', bar: 'bg-emerald-500' },
-  { label: 'Strong',      color: 'text-sky-400',     bg: 'bg-sky-500/15',     border: 'border-sky-500/30',     bar: 'bg-sky-500'     },
-  { label: 'On Track',    color: 'text-violet-400',  bg: 'bg-violet-500/15',  border: 'border-violet-500/30',  bar: 'bg-violet-500'  },
-  { label: 'Developing',  color: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/30',   bar: 'bg-amber-500'   },
-  { label: 'Needs Work',  color: 'text-white/50',   bg: 'bg-slate-500/15',   border: 'border-slate-500/30',   bar: 'bg-slate-500'   },
-];
 
-function getTier(key: string, val: number, lower: boolean) {
-  const b = BENCH[key]; if (!b) return null;
-  const [e,g,a,d] = b;
-  if (lower) {
-    if (val <= e) return TIERS[0]; if (val <= g) return TIERS[1];
-    if (val <= a) return TIERS[2]; if (val <= d) return TIERS[3]; return TIERS[4];
-  } else {
-    if (val >= e) return TIERS[0]; if (val >= g) return TIERS[1];
-    if (val >= a) return TIERS[2]; if (val >= d) return TIERS[3]; return TIERS[4];
-  }
-}
 
 function fmt(key: string, val: number): string {
   if (key === 'run_500m') {
