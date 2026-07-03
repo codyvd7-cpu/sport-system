@@ -113,11 +113,45 @@ export default function HPDashboard() {
   const totalStudents = students.length;
   const totalTested = new Set(testResults.filter(r => r.term === currentTerm).map(r => r.student_id)).size;
   const totalUntested = totalStudents - totalTested;
+  const grade8 = classStats.filter(c => c.grade === 'Grade 8');
+  const grade9 = classStats.filter(c => c.grade === 'Grade 9');
 
   if (loading) return (
     <main className="min-h-screen bg-[#030810] pt-[54px] text-white lg:pt-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-slate-900 animate-pulse" />)}
+        {/* Grade 8 */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-800" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">Grade 8</p>
+            <a href="/hp-print/grade/8" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-sky-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
+            <span className="h-px flex-1 bg-slate-800" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {grade8.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
+          </div>
+        </div>
+
+        {/* Grade 9 */}
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-800" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400">Grade 9</p>
+            <a href="/hp-print/grade/9" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-violet-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
+            <span className="h-px flex-1 bg-slate-800" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {grade9.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
+          </div>
+        </div>
+
       </div>
     </main>
   );
@@ -159,6 +193,38 @@ export default function HPDashboard() {
 
 
 
+
+        {/* Grade 8 */}
+        <div className="mb-6">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-800" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">Grade 8</p>
+            <a href="/hp-print/grade/8" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-sky-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
+            <span className="h-px flex-1 bg-slate-800" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {grade8.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
+          </div>
+        </div>
+
+        {/* Grade 9 */}
+        <div className="mb-8">
+          <div className="mb-3 flex items-center gap-3">
+            <span className="h-px flex-1 bg-slate-800" />
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400">Grade 9</p>
+            <a href="/hp-print/grade/9" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-violet-400 transition flex items-center gap-1">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Grade
+            </a>
+            <span className="h-px flex-1 bg-slate-800" />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {grade9.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
+          </div>
+        </div>
 
       </div>
     </main>
