@@ -1,6 +1,6 @@
 'use client';
 import * as React from 'react';
-import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, parseTestValue, getTests } from '@/lib/hpTests';
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, parseTestValue, getTests, TERM_ORDER } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ classId: string }> };
