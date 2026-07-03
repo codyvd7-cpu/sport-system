@@ -110,8 +110,6 @@ export default function HPDashboard() {
     return { ...c, total, tested, lastSession, attRate, testPct: total > 0 ? Math.round((tested / total) * 100) : 0 };
   }).filter(c => c.total > 0);
 
-  const grade8 = classStats.filter(c => c.grade === 'Grade 8');
-  const grade9 = classStats.filter(c => c.grade === 'Grade 9');
   const totalStudents = students.length;
   const totalTested = new Set(testResults.filter(r => r.term === currentTerm).map(r => r.student_id)).size;
   const totalUntested = totalStudents - totalTested;
@@ -159,54 +157,9 @@ export default function HPDashboard() {
           </div>
         </div>
 
-        {/* Grade 8 */}
-        <div className="mb-6">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="h-px flex-1 bg-slate-800" />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-sky-400">Grade 8</p>
-            <a href="/hp/export/grade/8" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-sky-400 transition flex items-center gap-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Grade
-            </a>
-            <span className="h-px flex-1 bg-slate-800" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {grade8.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
-          </div>
-        </div>
 
-        {/* Grade 9 */}
-        <div className="mb-8">
-          <div className="mb-3 flex items-center gap-3">
-            <span className="h-px flex-1 bg-slate-800" />
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-violet-400">Grade 9</p>
-            <a href="/hp/export/grade/9" target="_blank" className="text-[9px] font-black text-slate-600 hover:text-violet-400 transition flex items-center gap-1">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export Grade
-            </a>
-            <span className="h-px flex-1 bg-slate-800" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {grade9.map(c => <ClassCard key={c.id} c={c} term={currentTerm} />)}
-          </div>
-        </div>
 
-        {/* Quick actions */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-          {[
-            { href: '/hp/attendance', label: 'Take Register', sub: 'Mark attendance', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-emerald-400"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>, border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' },
-            { href: '/hp/testing', label: 'Enter Tests', sub: 'Record results', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-violet-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, border: 'border-violet-500/20', bg: 'bg-violet-500/5' },
-            { href: '/hp/trends', label: 'Trends', sub: 'Performance data', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-sky-400"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, border: 'border-sky-500/20', bg: 'bg-sky-500/5' },
-            { href: '/hp/students', label: 'Students', sub: 'All profiles', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-amber-400"><circle cx="9" cy="7" r="4"/><path d="M3 20c0-3.314 2.686-6 6-6h6c3.314 0 6 2.686 6 6"/></svg>, border: 'border-amber-500/20', bg: 'bg-amber-500/5' },
-            { href: '/hp/admin/rollover', label: 'Year End Rollover', sub: 'Promote & graduate', icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-6 w-6 text-rose-400"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48 2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48 2.83-2.83"/></svg>, border: 'border-rose-500/20', bg: 'bg-rose-500/5' },
-          ].map(a => (
-            <Link key={a.href} href={a.href} className={`group rounded-2xl border ${a.border} ${a.bg} p-4 transition hover:scale-[1.02]`}>
-              <div className="mb-2">{a.icon}</div>
-              <p className="text-sm font-black text-white">{a.label}</p>
-              <p className="text-[10px] text-slate-500">{a.sub}</p>
-            </Link>
-          ))}
-        </div>
+
       </div>
     </main>
   );
