@@ -10,7 +10,6 @@ function fmt(key:string,val:number):string{
   if(key==='chin_up_hang'){if(val>=60){const m=Math.floor(val/60),s=val%60;return s?`${m}m${s}s`:`${m}min`;}return`${Math.round(val)}s`;}
   return val%1===0?String(val):val.toFixed(2);
 }
-const TERM_ORDER=['Term 1','Term 2','Term 3','Term 4'];
 
 export default function ClassExport({ params }: PageProps) {
   const { classId } = React.use(params);
