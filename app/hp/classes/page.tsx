@@ -12,7 +12,7 @@ const GRADE8_TESTS = [
   { key: 'sprint_10m', higher: false },{ key: 'sprint_30m', higher: false },{ key: 'run_500m', higher: false },
 ];
 const GRADE9_TESTS = [
-  { key: 'pushup_reps', higher: true },{ key: 'triple_broad_jump', higher: true },
+  { key: 'pushup_2min', higher: true },{ key: 'triple_broad_jump', higher: true },
   { key: 'sprint_10m', higher: false },{ key: 'sprint_30m', higher: false },{ key: 'run_500m', higher: false },
 ];
 

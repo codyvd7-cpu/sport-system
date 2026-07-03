@@ -11,10 +11,10 @@ type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
 
 const GRADE8_TESTS = ['chin_up_hang','broad_jump','sprint_10m','sprint_30m','run_500m'];
-const GRADE9_TESTS = ['pushup_reps','triple_broad_jump','sprint_10m','sprint_30m','run_500m'];
+const GRADE9_TESTS = ['pushup_2min','triple_broad_jump','sprint_10m','sprint_30m','run_500m'];
 const TEST_LABELS: Record<string,string> = {
   chin_up_hang:'Chin Up Hang', broad_jump:'Broad Jump', sprint_10m:'10m Sprint',
-  sprint_30m:'30m Sprint', run_500m:'500m Run', pushup_reps:'Push Up Reps',
+  sprint_30m:'30m Sprint', run_500m:'500m Run', pushup_2min:'Push Up Reps',
   triple_broad_jump:'Triple Broad Jump',
 };
 const TIERS = [

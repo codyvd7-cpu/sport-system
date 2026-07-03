@@ -34,13 +34,13 @@ const TESTS=[
   {k:'sprint_10m',       l:'10m Sprint',         u:'s',  lo:true, cat:'Speed'},
   {k:'sprint_30m',       l:'30m Sprint',         u:'s',  lo:true, cat:'Speed'},
   {k:'run_500m',         l:'500m Run',           u:'',   lo:true, cat:'Fitness'},
-  {k:'pushup_reps',      l:'Push Up Reps',       u:'',   lo:false,cat:'Strength'},
+  {k:'pushup_2min',      l:'Push Up (2 min)',       u:'',   lo:false,cat:'Strength'},
   {k:'triple_broad_jump',l:'Triple Broad Jump',  u:'cm', lo:false,cat:'Power'},
 ];
 const BNC:Record<string,[number,number,number,number]>={
   chin_up_hang:[45,25,12,5],broad_jump:[185,165,148,130],
   sprint_10m:[1.85,1.97,2.10,2.25],sprint_30m:[4.25,4.52,4.80,5.10],
-  run_500m:[100,115,130,150],pushup_reps:[22,18,14,10],
+  run_500m:[100,115,130,150],pushup_2min:[22,18,14,10],
   triple_broad_jump:[680,600,530,460],
 };
 const TIERS=[
