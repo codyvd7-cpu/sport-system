@@ -274,7 +274,7 @@ export default function ClassExport({ params }: PageProps) {
                   const tier=getTier(t.key,v,t.lower);
                   return(
                     <td key={t.key}>
-                      <span className="val-t" style={{color:tier.text}}>{fmt(t.key,v)}{t.unit}</span>
+                      <span className="val-t" style={{color:tier.border}}>{fmt(t.key,v)}{t.unit}</span>
                       {' '}
                       <span className="badge" style={{background:tier.bg,color:tier.color,border:`1px solid ${tier.border}`}}>{tier.abbr}</span>
                     </td>
@@ -291,7 +291,7 @@ export default function ClassExport({ params }: PageProps) {
               const t=tests.find(x=>x.key===a.key)!;
               const tier=getTier(a.key,a.avg,t.lower);
               return(
-                <td key={a.key} style={{color:tier.text}}>
+                <td key={a.key} style={{color:tier.border}}>
                   {fmt(a.key,a.avg)}{t.unit}
                 </td>
               );

@@ -56,9 +56,10 @@ export const BENCHMARKS: Record<TestKey, [number, number, number, number]> = {
 export interface Tier {
   abbr:   string;
   label:  string;
-  color:  string;   // text colour
+  color:  string;   // badge text colour (dark, on light bg)
   bg:     string;   // badge background
-  border: string;
+  border: string;   // border + value text colour (vivid)
+  text?:  string;   // alias for border — kept for backward compat
 }
 
 export const TIERS: Tier[] = [
