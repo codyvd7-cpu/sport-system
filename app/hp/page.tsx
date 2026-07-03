@@ -1,7 +1,6 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
 
@@ -86,18 +85,14 @@ export default function HPDashboard() {
   const currentYear = new Date().getFullYear();
 
   React.useEffect(() => {
-    async function load() {
-      const [sRes, tRes, aRes] = await Promise.all([
-        supabase.from('hp_students').select('*').eq('is_active', true),
-        supabase.from('hp_test_results').select('student_id, term, year').eq('year', currentYear),
-        supabase.from('hp_attendance').select('student_id, session_date, status').order('session_date', { ascending: false }).limit(2000),
-      ]);
-      setStudents(sRes.data || []);
-      setTestResults(tRes.data || []);
-      setAttendance(aRes.data || []);
-      setLoading(false);
-    }
-    load();
+    fetch('/api/hp/data?type=dashboard&year=' + currentYear, { credentials: 'include' })
+      .then(r => r.json())
+      .then(d => {
+        setStudents(d.students || []);
+        setTestResults(d.tests || []);
+        setAttendance(d.attendance || []);
+        setLoading(false);
+      });
   }, []);
 
   const classStats = CLASSES.map(c => {
