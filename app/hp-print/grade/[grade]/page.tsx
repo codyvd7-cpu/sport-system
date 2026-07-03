@@ -19,8 +19,6 @@ function fmt(key:string,val:number):string{
   return val%1===0?String(val):val.toFixed(2);
 }
 
-const TERM_ORDER = ['Term 1','Term 2','Term 3','Term 4'];
-
 export default function GradeExport({ params }: PageProps) {
   const { grade: gradeNum } = React.use(params);
   const grade = gradeNum === '8' ? 'Grade 8' : 'Grade 9';
