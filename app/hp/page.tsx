@@ -117,7 +117,7 @@ export default function HPDashboard() {
   const totalUntested = totalStudents - totalTested;
 
   if (loading) return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
+    <main className="min-h-screen bg-[#030810] pt-[54px] text-white lg:pt-0">
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-24 rounded-2xl bg-slate-900 animate-pulse" />)}
       </div>
@@ -125,20 +125,18 @@ export default function HPDashboard() {
   );
 
   return (
-    <main className="min-h-screen bg-[#030810] pb-24 text-white md:pb-0">
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+    <main className="min-h-screen bg-[#030810] pt-[54px] text-white lg:pt-0">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 overflow-x-hidden">
 
         {/* Header */}
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict's College</p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-white">High Performance</h1>
-            <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-          </div>
-          <div className="flex items-center gap-2 mt-1">
+        <div className="mb-6">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict's College</p>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">High Performance</h1>
+          <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+          <div className="mt-3 flex items-center gap-2">
             {['Term 1','Term 2','Term 3','Term 4'].map(t => (
               <button key={t} onClick={() => setCurrentTerm(t)}
-                className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${currentTerm === t ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800/60 text-slate-500 hover:text-white'}`}>
+                className={`flex-1 rounded-xl border py-2 text-xs font-black transition ${currentTerm === t ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800/60 text-slate-500 hover:text-white'}`}>
                 {t.replace('Term ', 'T')}
               </button>
             ))}
