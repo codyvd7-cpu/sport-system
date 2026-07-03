@@ -72,7 +72,7 @@ export default function Rollover() {
   }
 
   if (loading) return (
-    <main className="pt-14 pb-20 lg:pt-0 lg:pb-10" style={{minHeight:'100vh',background:'#060c1a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+    <main className="pt-[54px] lg:pt-0 lg:pb-10" style={{minHeight:'100vh',background:'#060c1a',display:'flex',alignItems:'center',justifyContent:'center'}}>
       <div style={{width:24,height:24,borderRadius:'50%',border:'3px solid #10b981',borderTopColor:'transparent',animation:'spin 0.8s linear infinite'}}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </main>
@@ -84,7 +84,7 @@ export default function Rollover() {
   const STEPS=[{n:1,l:'Review'},{n:2,l:'Graduate'},{n:3,l:'Promote'},{n:4,l:'New 8s'}];
 
   return (
-    <main className="pt-14 pb-20 lg:pt-0 lg:pb-10" style={{minHeight:'100vh',background:'#060c1a',color:'white'}}>
+    <main className="pt-[54px] lg:pt-0 lg:pb-10" style={{minHeight:'100vh',background:'#060c1a',color:'white'}}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
       {toast&&<div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:12,padding:'12px 20px',color:'#10b981',fontWeight:700,fontSize:13,backdropFilter:'blur(12px)',whiteSpace:'nowrap'}}>{toast}</div>}

@@ -221,7 +221,7 @@ export default function HPImport() {
   const unmatched = preview.filter((r,i) => !r.student && !manualMatch[i]).length;
 
   return (
-    <main className="pt-14 pb-24 lg:pt-0 lg:pb-10"
+    <main className="pt-[54px] lg:pt-0 lg:pb-10"
       style={{ minHeight: '100vh', background: BG, color: 'white' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 

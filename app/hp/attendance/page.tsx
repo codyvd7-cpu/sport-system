@@ -92,7 +92,7 @@ function HPAttendanceInner() {
 
   return (
 <FadeUp delay={0}>
-    <main className="min-h-screen pt-14 pb-20 text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
+    <main className="min-h-screen pt-[54px] text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <Link href="/hp" className="mb-6 inline-block text-xs text-white/35 hover:text-white/70">← High Performance</Link>
         <div className="mb-8">

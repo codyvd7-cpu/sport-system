@@ -4,40 +4,36 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 
-const G = '#10b981';
-const BG = '#060c1a';
+const G      = '#10b981';
+const BG     = '#060c1a';
 const BORDER = 'rgba(255,255,255,0.07)';
 
-const NAV_ITEMS = [
-  { href:'/hp',            label:'Dashboard',  d:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
-  { href:'/hp/students',   label:'Students',   d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 3a4 4 0 0 1 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
-  { href:'/hp/attendance', label:'Attendance', d:'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
-  { href:'/hp/testing',    label:'Testing',    d:'M22 12h-4l-3 9L9 3l-3 9H2' },
-  { href:'/hp/trends',     label:'Trends',     d:'M23 6L13.5 15.5 8.5 10.5 1 18 M17 6h6v6' },
-  { href:'/hp/classes',    label:'Classes',    d:'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z' },
-  { href:'/hp/admin/rollover', label:'Year End Rollover', d:'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z' },
+const NAV = [
+  { href:'/hp',                label:'Dashboard',       d:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
+  { href:'/hp/students',       label:'Students',        d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 3a4 4 0 0 1 0 8 M23 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75' },
+  { href:'/hp/attendance',     label:'Attendance',      d:'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
+  { href:'/hp/testing',        label:'Testing',         d:'M22 12h-4l-3 9L9 3l-3 9H2' },
+  { href:'/hp/trends',         label:'Trends',          d:'M23 6L13.5 15.5 8.5 10.5 1 18 M17 6h6v6' },
+  { href:'/hp/classes',        label:'Classes',         d:'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z' },
 ];
 
-function NavIcon({ d }: { d: string }) {
+function Icon({ d, size=16 }: { d:string; size?:number }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
-      strokeLinecap="round" strokeLinejoin="round" style={{ width:16, height:16, flexShrink:0 }}>
+      strokeLinecap="round" strokeLinejoin="round" style={{ width:size, height:size, flexShrink:0 }}>
       {d.split(' M').map((seg, i) => <path key={i} d={i===0 ? seg : 'M'+seg}/>)}
     </svg>
   );
 }
 
 export default function HPNav() {
-  const pathname = usePathname();
-  const router   = useRouter();
-  const [menuOpen, setMenuOpen] = React.useState(false);
+  const pathname  = usePathname();
+  const router    = useRouter();
+  const [open, setOpen] = React.useState(false);
 
-  function isActive(href: string) {
-    if (href === '/hp') return pathname === '/hp';
-    return pathname.startsWith(href);
-  }
+  const active = (href: string) => href === '/hp' ? pathname === '/hp' : pathname.startsWith(href);
 
-  async function handleLogout() {
+  async function logout() {
     try { await fetch('/api/hp/logout', { method:'POST', credentials:'include' }); } catch {}
     router.push('/hp-login');
   }
@@ -45,107 +41,167 @@ export default function HPNav() {
   return (
     <>
       <style>{`
-        .hp-nbtn:hover { background: rgba(255,255,255,0.05) !important; color: white !important; }
-        @media(max-width:1024px) { .hp-sidebar { display:none !important; } }
+        .hp-nb:hover { background:rgba(255,255,255,0.05)!important; color:white!important; }
+        .hp-sidebar { display:flex; }
+        @media(max-width:1024px){ .hp-sidebar { display:none!important; } }
+        .hp-mob { display:none; }
+        @media(max-width:1024px){ .hp-mob { display:flex!important; } }
       `}</style>
 
-      {/* ── SIDEBAR (desktop) ── */}
+      {/* ── DESKTOP SIDEBAR ── */}
       <aside className="hp-sidebar" style={{
         width:228, flexShrink:0, position:'fixed', inset:'0 auto 0 0',
         background:BG, borderRight:`1px solid ${BORDER}`,
-        display:'flex', flexDirection:'column', zIndex:40, overflowY:'auto',
+        flexDirection:'column', zIndex:40, overflowY:'auto',
       }}>
-        {/* Brand */}
         <div style={{ padding:'20px', borderBottom:`1px solid ${BORDER}`, display:'flex', alignItems:'center', gap:12 }}>
-          <Image src="/st-benedicts-logo.png" alt="SBC" width={38} height={38} style={{ objectFit:'contain', flexShrink:0 }}/>
+          <Image src="/st-benedicts-logo.png" alt="SBC" width={36} height={36} style={{ objectFit:'contain', flexShrink:0 }}/>
           <div>
-            <p style={{ fontSize:10, fontWeight:700, color:'rgba(255,255,255,0.45)', letterSpacing:'0.1em', textTransform:'uppercase', marginBottom:2 }}>
-              ST BENEDICT&apos;S COLLEGE
-            </p>
-            <p style={{ fontSize:13, fontWeight:800, color:'white', lineHeight:1 }}>High Performance</p>
+            <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', textTransform:'uppercase' }}>St Benedict's</p>
+            <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
           </div>
         </div>
-
-        {/* Nav */}
-        <nav style={{ padding:'10px 10px', flex:1 }}>
-          {NAV_ITEMS.map(item => {
-            const active = isActive(item.href);
-            return (
-              <Link key={item.href} href={item.href} className="hp-nbtn"
-                style={{
-                  display:'flex', alignItems:'center', gap:12,
-                  padding:'10px 14px', borderRadius:10, marginBottom:2,
-                  background: active ? G : 'transparent',
-                  color: active ? 'white' : 'rgba(255,255,255,0.42)',
-                  fontWeight: active ? 700 : 500, fontSize:13,
-                  textDecoration:'none', transition:'all 0.15s',
-                }}>
-                <NavIcon d={item.d}/>
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav style={{ padding:'10px', flex:1 }}>
+          {NAV.map(n => (
+            <Link key={n.href} href={n.href} className="hp-nb" style={{
+              display:'flex', alignItems:'center', gap:12, padding:'10px 14px',
+              borderRadius:10, marginBottom:2, textDecoration:'none', transition:'all 0.15s',
+              background: active(n.href) ? G : 'transparent',
+              color: active(n.href) ? 'white' : 'rgba(255,255,255,0.42)',
+              fontWeight: active(n.href) ? 700 : 500, fontSize:13,
+            }}>
+              <Icon d={n.d}/>{n.label}
+            </Link>
+          ))}
         </nav>
-
-        </aside>
-
-      {/* ── MOBILE TOP BAR ── */}
-      <header suppressHydrationWarning style={{ position:'fixed', top:0, left:0, right:0, zIndex:50, borderBottom:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', display:'none' }}
-        className="mobile-header">
-        <style>{`.mobile-header { display:flex !important; } @media(min-width:1025px){.mobile-header{display:none!important;}}`}</style>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', height:54, padding:'0 16px' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <Image src="/st-benedicts-logo.png" alt="SBC" width={30} height={30} style={{ objectFit:'contain' }}/>
-            <p style={{ fontSize:14, fontWeight:800, color:'white' }}>High Performance</p>
-          </div>
-          <button onClick={() => setMenuOpen(!menuOpen)}
-            style={{ width:36, height:36, borderRadius:9, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'white' }}>
-            {menuOpen
-              ? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:16,height:16}}><path d="M18 6L6 18M6 6l12 12"/></svg>
-              : <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:16,height:16}}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-            }
+        <div style={{ padding:'12px 10px', borderTop:`1px solid ${BORDER}` }}>
+          <Link href="/hp/admin/rollover" className="hp-nb" style={{
+            display:'flex', alignItems:'center', gap:10, padding:'9px 14px', borderRadius:10,
+            color:'rgba(251,191,36,0.7)', textDecoration:'none', fontSize:12, fontWeight:700,
+            background:'rgba(251,191,36,0.06)', border:'1px solid rgba(251,191,36,0.15)',
+            marginBottom:6, transition:'all 0.15s',
+          }}>
+            <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" size={13}/>
+            Year End Rollover
+          </Link>
+          <Link href="/" className="hp-nb" style={{
+            display:'flex', alignItems:'center', gap:10, padding:'9px 14px', borderRadius:10,
+            color:'rgba(255,255,255,0.35)', textDecoration:'none', fontSize:12, fontWeight:500,
+            marginBottom:4, transition:'all 0.15s',
+          }}>
+            <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" size={13}/>
+            Departments
+          </Link>
+          <button onClick={logout} className="hp-nb" style={{
+            width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 14px',
+            borderRadius:10, border:'none', cursor:'pointer', color:'rgba(248,113,113,0.65)',
+            fontSize:12, fontWeight:500, background:'transparent', textAlign:'left', transition:'all 0.15s',
+          }}>
+            <Icon d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" size={13}/>
+            Logout
           </button>
         </div>
+      </aside>
+
+      {/* ── MOBILE TOP BAR ── */}
+      <header className="hp-mob" style={{
+        position:'fixed', top:0, left:0, right:0, zIndex:50,
+        background:'rgba(6,12,26,0.97)', backdropFilter:'blur(12px)',
+        borderBottom:`1px solid ${BORDER}`, height:54,
+        alignItems:'center', justifyContent:'space-between', padding:'0 16px',
+      }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <Image src="/st-benedicts-logo.png" alt="SBC" width={28} height={28} style={{ objectFit:'contain' }}/>
+          <p style={{ fontSize:14, fontWeight:800, color:'white' }}>High Performance</p>
+        </div>
+        <button onClick={() => setOpen(true)} style={{
+          width:38, height:38, borderRadius:10, border:`1px solid ${BORDER}`,
+          background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center',
+          justifyContent:'center', cursor:'pointer', color:'white',
+        }}>
+          <Icon d="M3 6h18M3 12h18M3 18h18" size={17}/>
+        </button>
       </header>
 
-      {/* ── MOBILE MENU ── */}
-      {menuOpen && (
-        <div style={{ position:'fixed', inset:0, zIndex:45 }} onClick={() => setMenuOpen(false)}>
-          <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }}/>
-          <div style={{ position:'absolute', left:0, top:0, bottom:0, width:260, background:'#060c1a', borderRight:`1px solid ${BORDER}` }} onClick={e => e.stopPropagation()}>
-            <div style={{ padding:'20px 16px', borderBottom:`1px solid ${BORDER}` }}>
-              <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
+      {/* ── MOBILE SLIDE-OUT MENU ── */}
+      {open && (
+        <div style={{ position:'fixed', inset:0, zIndex:60 }} onClick={() => setOpen(false)}>
+          {/* Backdrop */}
+          <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(4px)' }}/>
+
+          {/* Panel */}
+          <div style={{
+            position:'absolute', left:0, top:0, bottom:0, width:'75%', maxWidth:300,
+            background:'#040810', borderRight:`1px solid ${BORDER}`,
+            display:'flex', flexDirection:'column', overflowY:'auto',
+          }} onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px', borderBottom:`1px solid ${BORDER}` }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <Image src="/st-benedicts-logo.png" alt="SBC" width={28} height={28} style={{ objectFit:'contain' }}/>
+                <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
+              </div>
+              <button onClick={() => setOpen(false)} style={{
+                width:32, height:32, borderRadius:8, border:`1px solid ${BORDER}`,
+                background:'rgba(255,255,255,0.05)', display:'flex', alignItems:'center',
+                justifyContent:'center', cursor:'pointer', color:'rgba(255,255,255,0.5)',
+              }}>
+                <Icon d="M18 6L6 18M6 6l12 12" size={14}/>
+              </button>
             </div>
-            {NAV_ITEMS.map(item => (
-              <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
-                style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 16px', color:isActive(item.href)?G:'rgba(255,255,255,0.6)', textDecoration:'none', fontSize:14, fontWeight:isActive(item.href)?700:500 }}>
-                <NavIcon d={item.d}/>{item.label}
+
+            {/* Nav items */}
+            <nav style={{ flex:1, padding:'10px 10px' }}>
+              {NAV.map(n => {
+                const isAct = active(n.href);
+                return (
+                  <Link key={n.href} href={n.href} onClick={() => setOpen(false)} style={{
+                    display:'flex', alignItems:'center', gap:14, padding:'13px 16px',
+                    borderRadius:12, marginBottom:4, textDecoration:'none', transition:'all 0.15s',
+                    background: isAct ? `${G}15` : 'transparent',
+                    color: isAct ? G : 'rgba(255,255,255,0.55)',
+                    fontWeight: isAct ? 700 : 500, fontSize:14,
+                    borderLeft: isAct ? `3px solid ${G}` : '3px solid transparent',
+                  }}>
+                    <Icon d={n.d} size={18}/>
+                    {n.label}
+                  </Link>
+                );
+              })}
+            </nav>
+
+            {/* Footer */}
+            <div style={{ padding:'12px 10px', borderTop:`1px solid ${BORDER}` }}>
+              <Link href="/hp/admin/rollover" onClick={() => setOpen(false)} style={{
+                display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderRadius:12,
+                color:'rgba(251,191,36,0.8)', textDecoration:'none', fontSize:14, fontWeight:700,
+                background:'rgba(251,191,36,0.07)', border:'1px solid rgba(251,191,36,0.18)',
+                marginBottom:8,
+              }}>
+                <Icon d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" size={18}/>
+                Year End Rollover
               </Link>
-            ))}
-            <div style={{ padding:'12px 16px', borderTop:`1px solid ${BORDER}`, marginTop:8 }}>
-              <Link href="/hp/admin/rollover" onClick={() => setMenuOpen(false)} style={{ display:'block', marginBottom:8, fontSize:12, fontWeight:600, color:'rgba(251,191,36,0.8)', padding:'8px 12px', borderRadius:9, border:'1px solid rgba(251,191,36,0.2)', background:'rgba(251,191,36,0.06)', textDecoration:'none' }}>📅 Year End Rollover</Link>
-              <Link href="/" style={{ display:'block', marginBottom:8, fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.5)', padding:'8px 12px', borderRadius:9, border:`1px solid ${BORDER}`, textDecoration:'none' }}>← Departments</Link>
-              <button onClick={handleLogout} style={{ width:'100%', fontSize:12, fontWeight:600, color:'#f87171', padding:'8px 12px', borderRadius:9, border:'1px solid rgba(248,113,113,0.2)', background:'rgba(248,113,113,0.06)', cursor:'pointer' }}>Logout</button>
+              <Link href="/" style={{
+                display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderRadius:12,
+                color:'rgba(255,255,255,0.4)', textDecoration:'none', fontSize:14, fontWeight:500,
+                marginBottom:4,
+              }}>
+                <Icon d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" size={18}/>
+                Departments
+              </Link>
+              <button onClick={logout} style={{
+                width:'100%', display:'flex', alignItems:'center', gap:12, padding:'13px 16px',
+                borderRadius:12, border:'none', cursor:'pointer', color:'rgba(248,113,113,0.7)',
+                fontSize:14, fontWeight:500, background:'transparent', textAlign:'left',
+              }}>
+                <Icon d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" size={18}/>
+                Logout
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      {/* ── MOBILE BOTTOM TABS — 5 items only ── */}
-      <nav suppressHydrationWarning className="mobile-header" style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, borderTop:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', padding:'6px 0 8px' }}>
-        <div style={{ display:'flex', justifyContent:'space-around' }}>
-          {NAV_ITEMS.slice(0, 5).map(item => {
-            const active = isActive(item.href);
-            return (
-              <Link key={item.href} href={item.href}
-                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 12px', color:active?G:'rgba(255,255,255,0.38)', textDecoration:'none', minWidth:52 }}>
-                <NavIcon d={item.d}/>
-                <span style={{ fontSize:9, fontWeight: active ? 700 : 500 }}>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
     </>
   );
 }
