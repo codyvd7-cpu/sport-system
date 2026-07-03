@@ -1,13 +1,12 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { useToast } from '@/components/Toast';
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { GRADE8_TESTS, GRADE9_TESTS, getTests } from '@/lib/hpTests';
+import { HP_CLASS_IDS } from '@/lib/hpConfig';
 
 type Row = Record<string, any>;
 
-const CLASS_OPTIONS = ['8B','8E','8F','8J','8M','9B','9E','9F','9J','9M'];
+const CLASS_OPTIONS = HP_CLASS_IDS;
 
 function normalise(val: number, higher: boolean, min: number, max: number) {
   if (max === min) return 50;
@@ -29,7 +28,7 @@ function computeGroups(students: Row[], results: Record<string, Row>, numGroups:
       const allVals = scored.map(x => x.vals[t.key]).filter(v => v !== undefined) as number[];
       if (allVals.length < 2 || s.vals[t.key] === undefined) return;
       const min = Math.min(...allVals), max = Math.max(...allVals);
-      total += normalise(s.vals[t.key], t.higher, min, max);
+      total += normalise(s.vals[t.key], !t.lower, min, max);
       count++;
     });
     return { id: s.id, score: count > 0 ? total / count : null };
@@ -50,7 +49,8 @@ const GROUP_COLORS: Record<number, string> = {
 };
 
 export default function HPClassesPage() {
-  const { showToast } = useToast();
+  const [toast, setToast] = React.useState('');
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
   const [students, setStudents] = React.useState<Row[]>([]);
   const [latestResults, setLatestResults] = React.useState<Record<string, Row>>({});
   const [loading, setLoading] = React.useState(true);
@@ -242,6 +242,7 @@ export default function HPClassesPage() {
           </div>
         )}
       </div>
+      {toast && <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'rgba(124,58,237,0.15)',border:'1px solid rgba(124,58,237,0.4)',borderRadius:12,padding:'11px 20px',color:'#a78bfa',fontWeight:700,fontSize:13,backdropFilter:'blur(12px)',whiteSpace:'nowrap'}}>{toast}</div>}
     </main>
   );
 }
