@@ -19,8 +19,9 @@ const CLASSES = [
 
 function getCurrentTerm(): string {
   const month = new Date().getMonth() + 1;
+  // SA school holiday July = between T2 and T3, default to T2 until August
   if (month <= 3) return 'Term 1';
-  if (month <= 6) return 'Term 2';
+  if (month <= 7) return 'Term 2';
   if (month <= 9) return 'Term 3';
   return 'Term 4';
 }
@@ -81,7 +82,7 @@ export default function HPDashboard() {
   const [testResults, setTestResults] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const currentTerm = getCurrentTerm();
+  const [currentTerm, setCurrentTerm] = React.useState(getCurrentTerm());
   const currentYear = new Date().getFullYear();
 
   React.useEffect(() => {
@@ -134,7 +135,14 @@ export default function HPDashboard() {
             <h1 className="mt-1 text-3xl font-black tracking-tight text-white">High Performance</h1>
             <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           </div>
-          <span className="mt-1 shrink-0 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-black text-emerald-300">{currentTerm} · {currentYear}</span>
+          <div className="flex items-center gap-2 mt-1">
+            {['Term 1','Term 2','Term 3','Term 4'].map(t => (
+              <button key={t} onClick={() => setCurrentTerm(t)}
+                className={`rounded-xl border px-3 py-1.5 text-xs font-black transition ${currentTerm === t ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-300' : 'border-slate-700 bg-slate-800/60 text-slate-500 hover:text-white'}`}>
+                {t.replace('Term ', 'T')}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Programme snapshot */}

@@ -131,16 +131,16 @@ export default function HPNav() {
         </div>
       )}
 
-      {/* ── MOBILE BOTTOM TABS ── */}
-      <nav suppressHydrationWarning className="mobile-header" style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, borderTop:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', padding:'6px 0' }}>
+      {/* ── MOBILE BOTTOM TABS — 5 items only ── */}
+      <nav suppressHydrationWarning className="mobile-header" style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:50, borderTop:`1px solid ${BORDER}`, background:'rgba(6,12,26,0.96)', backdropFilter:'blur(12px)', padding:'6px 0 8px' }}>
         <div style={{ display:'flex', justifyContent:'space-around' }}>
-          {NAV_ITEMS.map(item => {
+          {NAV_ITEMS.slice(0, 5).map(item => {
             const active = isActive(item.href);
             return (
               <Link key={item.href} href={item.href}
-                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'6px 8px', color:active?G:'rgba(255,255,255,0.4)', textDecoration:'none' }}>
+                style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'4px 12px', color:active?G:'rgba(255,255,255,0.38)', textDecoration:'none', minWidth:52 }}>
                 <NavIcon d={item.d}/>
-                <span style={{ fontSize:9, fontWeight:600 }}>{item.label}</span>
+                <span style={{ fontSize:9, fontWeight: active ? 700 : 500 }}>{item.label}</span>
               </Link>
             );
           })}
