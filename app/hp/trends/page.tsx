@@ -1,37 +1,23 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { PageLoader } from '@/components/HPIcons';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell, CartesianGrid, ReferenceLine,
 } from 'recharts';
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
-import { getCalendarTerm, getCurrentYear, HP_TERMS, getTermDateRange, prevTerm, nextTerm, termFromParam, yearFromParam, getLatestTermWithData } from '@/lib/hpTerm';
-import { BENCHMARKS as BENCH, TIERS, getTier, HP_CLASSES } from '@/lib/hpTests';
+import { HP_TERMS } from '@/lib/hpTerm';
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue } from '@/lib/hpTests';
+import { HP_CLASSES } from '@/lib/hpConfig';
 
 type Row = Record<string, any>;
 const TERMS = HP_TERMS;
 
-const TESTS = [
-  { key: 'chin_up_hang',      label: 'Chin Up Hang',  unit: 's',     lower: false,  grade: '8' },
-  { key: 'broad_jump',        label: 'Broad Jump',    unit: 'cm',    lower: false,  grade: '8' },
-  { key: 'pushup_2min',       label: 'Push Up (2 min)', unit: 'reps',  lower: false,  grade: '9' },
-  { key: 'pushup_hold',       label: 'Push Up Hold', unit: 'mm:ss', lower: false,  grade: '9' },
-  { key: 'triple_broad_jump', label: 'Triple Jump',   unit: 'cm',    lower: false,  grade: '9' },
-  { key: 'sprint_10m',        label: '10m Sprint',    unit: 's',     lower: true, grade: 'both' },
-  { key: 'sprint_30m',        label: '30m Sprint',    unit: 's',     lower: true, grade: 'both' },
-  { key: 'run_500m',          label: '500m Run',      unit: 'mm:ss', lower: true, grade: 'both' },
-];
+// Tests come from shared hpTests — no local copy
 
 
 
 
-function fmt(key:string,val:number):string{
-  if(key==='run_500m'){const m=Math.floor(val/60),s=Math.round(val%60);return`${m}:${s.toString().padStart(2,'0')}`;}
-  if(key==='chin_up_hang'){if(val>=60){const m=Math.floor(val/60),s=val%60;return s?`${m}m${s}s`:`${m}min`;}return`${Math.round(val)}s`;}
-  return val%1===0?String(val):val.toFixed(2);
-}
+// fmt → use fmtValue from hpTests
 
 // ─── Mini sparkline ───────────────────────────────────────────────────────────
 function Spark({vals,higher}:{vals:(number|null)[];higher:boolean}){
@@ -91,13 +77,23 @@ export default function HPTrendsPage(){
       .catch(()=>setLoading(false));
   },[]);
 
-  const tests=TESTS.filter(t=>t.grade===grade.split(' ')[1]||t.grade==='both');
+  const tests = grade==='Grade 8' ? GRADE8_TESTS : GRADE9_TESTS;
   const gradeStudents=students.filter(s=>s.grade===grade);
 
   // latest result per student for selected year
   const latestMap=React.useMemo(()=>{
+    const TERM_ORD: Record<string,number> = {'Term 1':1,'Term 2':2,'Term 3':3,'Term 4':4};
+    // Sort so the latest term/date wins — pick last for each student
+    const sorted=[...results]
+      .filter(r=>r.year===selYear)
+      .sort((a,b)=>{
+        if(a.year!==b.year) return a.year-b.year;
+        const ta=TERM_ORD[a.term]??0, tb=TERM_ORD[b.term]??0;
+        if(ta!==tb) return ta-tb;
+        return (a.test_date||'').localeCompare(b.test_date||'');
+      });
     const map:Record<string,Row>={};
-    results.filter(r=>r.year===selYear).forEach(r=>{map[r.student_id]=r;});
+    sorted.forEach(r=>{map[r.student_id]=r;});
     return map;
   },[results,selYear]);
 
@@ -121,14 +117,19 @@ export default function HPTrendsPage(){
   // selected test object
   const testObj=tests.find(t=>t.key===selTest);
 
-  if(loading) return <PageLoader label="Loading Trends"/>;
+  if(loading) return (
+    <div style={{minHeight:'100vh',background:'#060c1a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{width:24,height:24,borderRadius:'50%',border:'3px solid #10b981',borderTopColor:'transparent',animation:'spin 0.8s linear infinite'}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  );
 
   const isG8=grade==='Grade 8';
   const gradeColor=isG8?'text-sky-400':'text-violet-400';
   const gradeBg=isG8?'bg-sky-500/20 text-sky-300 border-sky-500/40':'bg-violet-500/20 text-violet-300 border-violet-500/40';
 
   return(
-    <main className="min-h-screen pt-[54px] text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
+    <main className="min-h-screen pt-[54px] text-white lg:pt-0" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* ── HEADER ── */}
@@ -139,7 +140,6 @@ export default function HPTrendsPage(){
           </div>
         </div>
 
-        <FadeUp delay={0}>
         {/* ── CONTROL BAR ── */}
         <div className="mb-5 flex flex-wrap gap-2">
           {/* Year navigator */}
@@ -250,7 +250,7 @@ export default function HPTrendsPage(){
                       <div className="w-24 shrink-0">
                         {avg!==null
                           ?<>
-                            <p className="text-[15px] font-black" style={{color:tier?.color}}>{fmt(t.key,avg)}{t.unit&&t.unit!=='mm:ss'&&<span className="text-[9px] ml-0.5 opacity-50">{t.unit}</span>}</p>
+                            <p className="text-[15px] font-black" style={{color:tier?.color}}>{fmtValue(t.key as any,avg)}{t.unit&&t.unit!=='mm:ss'&&<span className="text-[9px] ml-0.5 opacity-50">{t.unit}</span>}</p>
                             {tier&&<TierPill label={tier.label}/>}
                           </>
                           :<p className="text-sm" style={{color:'rgba(255,255,255,0.2)'}}>No data</p>}
@@ -274,7 +274,7 @@ export default function HPTrendsPage(){
                         {best!==null&&(
                           <div className="text-right ml-2">
                             <p className="text-[9px]" style={{color:'rgba(255,255,255,0.25)'}}>Best</p>
-                            <p className="text-[11px] font-black text-white">{fmt(t.key,best)}</p>
+                            <p className="text-[11px] font-black text-white">{fmtValue(t.key as any,best)}</p>
                           </div>
                         )}
                       </div>
@@ -327,7 +327,7 @@ export default function HPTrendsPage(){
                       }}>
                       <span className="font-bold">{t.label}</span>
                       {avg!==null&&tier&&(
-                        <span className="text-[11px] font-black" style={{color:tier.color}}>{fmt(t.key,avg)}</span>
+                        <span className="text-[11px] font-black" style={{color:tier.color}}>{fmtValue(t.key as any,avg)}</span>
                       )}
                       {!vals.length&&<span className="text-[10px]" style={{color:'rgba(255,255,255,0.2)'}}>no data</span>}
                     </button>
@@ -370,7 +370,7 @@ export default function HPTrendsPage(){
                       {avg!==null&&avgTier&&(
                         <>
                           <p className="text-4xl font-black" style={{color:avgTier.color}}>
-                            {fmt(testObj.key,avg)}
+                            {fmtValue(testObj.key as any,avg)}
                             {testObj.unit&&testObj.unit!=='mm:ss'&&<span className="text-base ml-1.5 opacity-40">{testObj.unit}</span>}
                           </p>
                           <div className="mt-1.5 flex items-center gap-2">
@@ -386,7 +386,7 @@ export default function HPTrendsPage(){
                           <div key={term} className="text-center">
                             <p className="text-[8px] mb-0.5" style={{color:'rgba(255,255,255,0.25)'}}>{term.replace('Term ','T')}</p>
                             <p className="text-[12px] font-black" style={{color:avgs[i]!==null?(improved?'#10b981':'#f87171'):'rgba(255,255,255,0.15)'}}>
-                              {avgs[i]!==null?fmt(testObj.key,avgs[i]!):'—'}
+                              {avgs[i]!==null?fmtValue(testObj.key as any,avgs[i]!):'—'}
                             </p>
                           </div>
                         ))}
@@ -410,7 +410,7 @@ export default function HPTrendsPage(){
                           <Tooltip
                             contentStyle={{background:'rgba(10,15,30,0.95)',border:'1px solid rgba(255,255,255,0.1)',borderRadius:8,fontSize:10}}
                             itemStyle={{color:'white'}}
-                            formatter={(v:any)=>[`${fmt(testObj.key,v)} ${testObj.unit!=='mm:ss'?testObj.unit:''}`,'']}
+                            formatter={(v:any)=>[`${fmtValue(testObj.key as any,v)} ${testObj.unit!=='mm:ss'?testObj.unit:''}`,'']}
                             labelStyle={{color:'rgba(255,255,255,0.4)'}}
                           />
                           <Bar dataKey="val" radius={[4,4,0,0]}>
@@ -444,11 +444,14 @@ export default function HPTrendsPage(){
                   <div className="divide-y" style={{borderColor:'rgba(255,255,255,0.04)'}}>
                     {sorted.map((x,i)=>{
                       const tier=getTier(testObj.key as any,x.val,!testObj.lower);
-                      const r1=results.find(r=>r.student_id===x.id&&r.term==='Term 1'&&r.year===selYear);
-                      const r2=results.find(r=>r.student_id===x.id&&r.term==='Term 2'&&r.year===selYear);
-                      const v1=r1?parseFloat(r1[testObj.key]):NaN;
-                      const v2=r2?parseFloat(r2[testObj.key]):NaN;
-                      const hasDelta=!isNaN(v1)&&!isNaN(v2);
+                      // Use earliest vs latest term available for this student/key
+                      const TORD: Record<string,number> = {'Term 1':1,'Term 2':2,'Term 3':3,'Term 4':4};
+                      const sResults=results
+                        .filter(r=>r.student_id===x.id&&r.year===selYear&&r[testObj.key]!=null)
+                        .sort((a,b)=>(TORD[a.term]??0)-(TORD[b.term]??0));
+                      const v1=sResults.length>1?parseFloat(sResults[0][testObj.key]):NaN;
+                      const v2=sResults.length>1?parseFloat(sResults[sResults.length-1][testObj.key]):NaN;
+                      const hasDelta=!isNaN(v1)&&!isNaN(v2)&&v1!==v2;
                       const delta=hasDelta?((!testObj.lower?v2-v1:v1-v2)):0;
                       const pctDelta=hasDelta?Math.abs((delta/v1)*100).toFixed(1):null;
                       return(
@@ -459,7 +462,7 @@ export default function HPTrendsPage(){
                             {x.group&&<p className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>Group {x.group}</p>}
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-[13px] font-black" style={{color:tier.color}}>{fmt(testObj.key,x.val)}</p>
+                            <p className="text-[13px] font-black" style={{color:tier.color}}>{fmtValue(testObj.key as any,x.val)}</p>
                             <TierPill label={tier.label}/>
                           </div>
                           {hasDelta&&(
@@ -494,7 +497,6 @@ export default function HPTrendsPage(){
           </div>
         )}
 
-        </FadeUp>
       </div>
     </main>
   );
