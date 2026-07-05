@@ -1,17 +1,15 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
-import { useToast } from '@/components/Toast';
 import { useSearchParams } from 'next/navigation';
-import { PageLoader, EmptyState, IconUsers, IconPlus, IconTrash, IconSearch } from '@/components/HPIcons';
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { HP_CLASSES, HP_CLASS_IDS } from '@/lib/hpConfig';
 
 type Row = Record<string, any>;
-const HP_CLASSES = ['B','E','F','J','M'];
-const CLASS_OPTIONS = ['8B','8E','8F','8J','8M','9B','9E','9F','9J','9M'];
+const CLASS_OPTIONS = HP_CLASS_IDS;
 
 function HPStudentsInner() {
-  const { showToast } = useToast();
+  const [toast, setToast] = React.useState('');
+  function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
   const [students, setStudents] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [search, setSearch] = React.useState('');
@@ -93,8 +91,7 @@ function HPStudentsInner() {
   const g9 = students.filter(s => s.grade === 'Grade 9').length;
 
   return (
-    <FadeUp delay={0}>
-    <main className="min-h-screen pt-[54px] text-white lg:pt-0 lg:pb-10" style={{background:'#060c1a'}}>
+    <main className="min-h-screen pt-[54px] text-white lg:pt-0" style={{background:'#060c1a'}}>
       <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
 
         {/* Header */}
@@ -174,7 +171,10 @@ function HPStudentsInner() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState icon={<IconUsers className="h-8 w-8"/>} title="No students found" sub="Try adjusting your search or filters"/>
+          <div className="py-16 text-center">
+            <p className="text-sm font-black text-white/25">No students found</p>
+            <p className="text-xs text-white/15 mt-1">Try adjusting your search or filters</p>
+          </div>
         ) : (
         <div className="space-y-1">
             {filtered.map(s => {
@@ -208,13 +208,18 @@ function HPStudentsInner() {
           </div>
         )}
       </div>
+      {toast && <div style={{position:'fixed',top:20,left:'50%',transform:'translateX(-50%)',zIndex:999,background:'rgba(16,185,129,0.12)',border:'1px solid rgba(16,185,129,0.35)',borderRadius:12,padding:'11px 20px',color:'#10b981',fontWeight:700,fontSize:13,backdropFilter:'blur(12px)',whiteSpace:'nowrap'}}>{toast}</div>}
     </main>
-    </FadeUp>
   );
 }
 export default function HPStudentsPage() {
   return (
-    <React.Suspense fallback={<PageLoader label="Loading students"/>}>
+    <React.Suspense fallback={
+    <div style={{minHeight:'100vh',background:'#060c1a',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{width:24,height:24,borderRadius:'50%',border:'3px solid #10b981',borderTopColor:'transparent',animation:'spin 0.8s linear infinite'}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+    </div>
+  }>
       <HPStudentsInner/>
     </React.Suspense>
   );
