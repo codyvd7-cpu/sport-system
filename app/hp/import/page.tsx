@@ -2,58 +2,24 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { GRADE8_TESTS, GRADE9_TESTS, parseTestValue, fmtValue } from '@/lib/hpTests';
+import { HP_CLASSES, HP_CLASS_IDS } from '@/lib/hpConfig';
 
 type Row = Record<string, any>;
 
-// ─── test config (must match DB columns) ─────────────────────────────────────
-const G8 = [
-  { key:'chin_up_hang',  label:'Chin Up Hang',     unit:'s',     hint:'seconds e.g. 35' },
-  { key:'broad_jump',    label:'Broad Jump',        unit:'cm',    hint:'centimetres e.g. 182' },
-  { key:'sprint_10m',   label:'10m Sprint',        unit:'s',     hint:'seconds e.g. 2.24' },
-  { key:'sprint_30m',   label:'30m Sprint',        unit:'s',     hint:'seconds e.g. 4.85' },
-  { key:'run_500m',     label:'500m Run',           unit:'mm:ss', hint:'e.g. 2:15' },
-];
-const G9 = [
-  { key:'pushup_2min',       label:'Push Up (2 min)', unit:'reps',  hint:'e.g. 22' },
-  { key:'triple_broad_jump', label:'Triple Broad Jump',unit:'cm',   hint:'e.g. 620' },
-  { key:'sprint_10m',        label:'10m Sprint',       unit:'s',     hint:'e.g. 2.18' },
-  { key:'sprint_30m',        label:'30m Sprint',       unit:'s',     hint:'e.g. 4.60' },
-  { key:'run_500m',          label:'500m Run',          unit:'mm:ss', hint:'e.g. 2:05' },
-];
+// Test definitions from shared lib
+const G8 = GRADE8_TESTS;
+const G9 = GRADE9_TESTS;
+function testHint(unit: string): string {
+  if (unit === 'mm:ss') return 'e.g. 2:15';
+  if (unit === 'reps')  return 'e.g. 22';
+  if (unit === 'cm')    return 'e.g. 182';
+  return 'e.g. 35';
+}
 
-function mmssToSecs(v: string): number | null {
-  if (!v || v.trim() === '' || v.trim() === '-' || v.trim() === '—') return null;
-  const s = v.trim();
-  // Standard mm:ss format e.g. 1:34
-  if (s.includes(':')) {
-    const [m, sec] = s.split(':').map(Number);
-    if (isNaN(m) || isNaN(sec)) return null;
-    return m * 60 + sec;
-  }
-  const n = parseFloat(s);
-  if (isNaN(n)) return null;
-  // Handle mm.ss format e.g. 1.34 means 1 min 34 sec (coach shorthand)
-  if (s.includes('.')) {
-    const secPart = parseInt(s.split('.')[1] || '0');
-    if (secPart <= 59 && n < 10) {
-      return Math.floor(n) * 60 + secPart;
-    }
-  }
-  return n;
-}
-function parseVal(key: string, raw: string): number | null {
-  if (!raw || raw.trim() === '' || raw.trim() === '-' || raw.trim() === '—') return null;
-  if (key === 'run_500m') return mmssToSecs(raw);
-  const n = parseFloat(raw.replace(',', '.'));
-  return isNaN(n) ? null : n;
-}
-function fmtVal(key: string, v: number): string {
-  if (key === 'run_500m') {
-    const m = Math.floor(v / 60), s = Math.round(v % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  }
-  return v % 1 === 0 ? String(v) : v.toFixed(2);
-}
+// parseVal / fmtVal → use parseTestValue / fmtValue from hpTests
+const parseVal = (key: string, raw: string) => parseTestValue(key as any, raw);
+const fmtVal   = (key: string, v: number)  => fmtValue(key as any, v);
 
 // ─── name matching ────────────────────────────────────────────────────────────
 function surname(name: string) {
@@ -199,18 +165,18 @@ export default function HPImport() {
     if (!toInsert.length) { showToast('No matched students to import.'); return; }
     setImporting(true);
 
-    let count = 0;
-    for (const row of toInsert) {
+    // Bulk concurrent import — all requests fire simultaneously
+    const results = await Promise.all(toInsert.map(row => {
       const sid = row.student!.id;
       const payload: Row = { student_id: sid, term, year, test_date: testDate };
       tests.forEach(t => { payload[t.key] = row.vals[t.key] ?? null; });
-      const res = await fetch('/api/hp/tests', {
+      return fetch('/api/hp/tests', {
         method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'upsert', payload }),
       });
-      if (res.ok) count++;
-    }
+    }));
+    const count = results.filter(r => r.ok).length;
 
     setImported(count);
     setImporting(false);
@@ -221,7 +187,7 @@ export default function HPImport() {
   const unmatched = preview.filter((r,i) => !r.student && !manualMatch[i]).length;
 
   return (
-    <main className="pt-14 pb-24 lg:pt-0 lg:pb-10"
+    <main className="pt-[54px] lg:pt-0"
       style={{ minHeight: '100vh', background: BG, color: 'white' }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
 
