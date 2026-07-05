@@ -178,7 +178,7 @@ export default function SplashScreen() {
 
       <div ref={logoRef} style={{
         position:'relative', zIndex:1,
-        width:110, height:110, marginBottom:30,
+        width:'min(200px, 38vw)', height:'min(200px, 38vw)', marginBottom:30,
         opacity:0, willChange:'transform,filter,opacity',
       }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
