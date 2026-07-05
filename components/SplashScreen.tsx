@@ -1,214 +1,230 @@
 'use client';
 import * as React from 'react';
 
-const ease3  = (t:number) => 1 - Math.pow(1-t, 3);
-const clamp  = (v:number, a=0, b=1) => Math.min(b, Math.max(a, v));
-const slice  = (t:number, a:number, b:number) => clamp((t-a)/(b-a));
+// ─── Easing ───────────────────────────────────────────────────────────────────
+const easeInOut = (t: number) => t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+const easeOut   = (t: number) => 1 - Math.pow(1-t, 3);
+const clamp     = (v: number, a=0, b=1) => Math.min(b, Math.max(a, v));
+const slice     = (t: number, a: number, b: number) => clamp((t-a)/(b-a));
 
 export default function SplashScreen() {
-  const wrapRef   = React.useRef<HTMLDivElement>(null);
-  const canvasRef = React.useRef<HTMLCanvasElement>(null);
-  const logoRef   = React.useRef<HTMLDivElement>(null);
-  const textRef   = React.useRef<HTMLDivElement>(null);
-  const lineRef   = React.useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = React.useState(false);
-  const [gone,    setGone]    = React.useState(false);
-
-  // Mount after hydration
-  React.useEffect(() => { setMounted(true); }, []);
+  const canvasRef  = React.useRef<HTMLCanvasElement>(null);
+  const logoRef    = React.useRef<HTMLDivElement>(null);
+  const textRef    = React.useRef<HTMLDivElement>(null);
+  const subRef     = React.useRef<HTMLDivElement>(null);
+  const wrapRef    = React.useRef<HTMLDivElement>(null);
+  const [active, setActive] = React.useState(false);
+  const [gone,   setGone]   = React.useState(false);
 
   React.useEffect(() => {
-    if (!mounted) return;
-    if (sessionStorage.getItem('ap_v5')) { setGone(true); return; }
-    sessionStorage.setItem('ap_v5', '1');
-  }, [mounted]);
+    if (sessionStorage.getItem('ap_beam')) return;
+    sessionStorage.setItem('ap_beam', '1');
+    setActive(true);
+  }, []);
 
-  // Run animation once all refs are ready
   React.useEffect(() => {
-    if (!mounted || gone) return;
+    if (!active) return;
 
-    // Wait one frame so React has painted the DOM
-    const startRaf = requestAnimationFrame(() => {
-      const wrap   = wrapRef.current;
-      const canvas = canvasRef.current;
-      const logoEl = logoRef.current;
-      const textEl = textRef.current;
-      const lineEl = lineRef.current;
-      if (!wrap || !canvas || !logoEl || !textEl || !lineEl) return;
+    const wrap   = wrapRef.current;
+    const canvas = canvasRef.current;
+    const logoEl = logoRef.current;
+    const textEl = textRef.current;
+    const subEl  = subRef.current;
+    if (!wrap || !canvas || !logoEl || !textEl || !subEl) return;
 
-      // Canvas
-      const DPR = Math.min(window.devicePixelRatio || 1, 2);
-      const W = window.innerWidth, H = window.innerHeight;
-      canvas.width  = W * DPR;
-      canvas.height = H * DPR;
-      canvas.style.width  = W + 'px';
-      canvas.style.height = H + 'px';
-      const ctx = canvas.getContext('2d')!;
-      ctx.scale(DPR, DPR);
-      const CX = W / 2, CY = H / 2 - 15;
+    let rafId = 0;
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    const W   = window.innerWidth;
+    const H   = window.innerHeight;
+    canvas.width  = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(DPR, DPR);
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0, 0, W, H);
 
-      // Particles
-      const COLS = ['#1d4ed8','#2563eb','#3b82f6','#0ea5e9','#06b6d4','#38bdf8'];
-      type P = { x:number; y:number; vx:number; vy:number; size:number; col:string; born:number; trail:{x:number;y:number}[] };
-      const N = 80;
-      const parts: P[] = Array.from({length:N}, (_,i) => {
-        const angle  = (i/N) * Math.PI * 2 + (Math.random()-0.5) * 0.4;
-        const radius = 200 + Math.random() * 300;
-        const sx = CX + Math.cos(angle)*radius;
-        const sy = CY + Math.sin(angle)*radius;
-        const dx = CX-sx, dy = CY-sy;
-        const d  = Math.sqrt(dx*dx+dy*dy);
-        const sp = 2.8 + Math.random() * 2.5;
-        return { x:sx, y:sy, vx:(dx/d)*sp, vy:(dy/d)*sp, size:0.8+Math.random()*1.6,
-                 col:COLS[i%COLS.length], born:0.05+(i/N)*0.7, trail:[] };
-      });
+    const CX = W / 2;
+    const CY = H / 2 - 30;
 
-      // Timeline (seconds)
-      const TL = { ptcEnd:2.0, logoIn:0.25, logoFull:2.0, textIn:2.4, fadeStart:3.6, end:4.4 };
+    // Load logo
+    const logo = new Image();
+    logo.src   = '/altus-icon.png';
 
-      ctx.fillStyle = '#000';
+    const LOGO_SIZE = Math.min(W * 0.22, 120);
+    const lx = CX - LOGO_SIZE / 2;
+    const ly = CY - LOGO_SIZE / 2;
+
+    // ── Timeline (seconds) ───────────────────────────────────────────────────
+    // 0.0 – 0.25  : pure black
+    // 0.25 – 0.45 : beam appears (vertical line materialises at left of logo)
+    // 0.45 – 1.80 : beam sweeps across, logo revealed behind it
+    // 1.80 – 2.10 : beam exits right, logo holds with edge glow
+    // 2.10 – 2.45 : "ALTUS" fades in
+    // 2.45 – 2.70 : subtitle fades in
+    // 2.70 – 3.20 : gentle push-in, hold
+    // 3.20 – 3.80 : fade to transparent → app appears
+
+    const TL = {
+      beamAppear:  [0.25, 0.45] as [number,number],
+      beamSweep:   [0.45, 1.80] as [number,number],
+      holdGlow:    [1.80, 2.10] as [number,number],
+      textIn:      [2.10, 2.45] as [number,number],
+      subIn:       [2.45, 2.70] as [number,number],
+      fadeOut:     [3.20, 3.80] as [number,number],
+      end:         3.85,
+    };
+
+    const START = performance.now();
+
+    const frame = (now: number) => {
+      const t = (now - START) / 1000;
+      ctx.fillStyle = '#050505';
       ctx.fillRect(0, 0, W, H);
 
-      const START = performance.now();
-      let rafId = 0;
+      // ── Beam X position (sweeps from lx-40 to lx+LOGO_SIZE+40) ────────────
+      const sweepProg = easeInOut(clamp(slice(t, TL.beamSweep[0], TL.beamSweep[1])));
+      const beamX     = (lx - 50) + (LOGO_SIZE + 100) * sweepProg;
+      const beamAlpha = easeOut(clamp(slice(t, TL.beamAppear[0], TL.beamAppear[1])));
 
-      const frame = (now: number) => {
-        const t = (now - START) / 1000;
+      // ── Draw logo with clip (only reveal left-of-beam) ────────────────────
+      if (logo.complete) {
+        const revealX = beamX + 12; // slightly ahead of beam centre
 
-        // Trail fade
-        ctx.fillStyle = 'rgba(0,0,0,0.14)';
-        ctx.fillRect(0, 0, W, H);
+        // Revealed portion (left of beam)
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, revealX, H);
+        ctx.clip();
+        ctx.globalAlpha = 0.92;
+        ctx.drawImage(logo, lx, ly, LOGO_SIZE, LOGO_SIZE);
+        ctx.restore();
 
-        // Particles
-        for (const p of parts) {
-          if (t < p.born) continue;
-          const age = t - p.born;
-          const fadeIn  = clamp(age * 3);
-          const fadeOut = t > TL.ptcEnd ? clamp((t - TL.ptcEnd) * 4) : 0;
-          const alpha   = fadeIn * (1 - fadeOut) * 0.9;
+        // After beam exits: logo fully visible with subtle blue edge
+        if (t > TL.holdGlow[0]) {
+          const holdProg = clamp(slice(t, TL.holdGlow[0], TL.holdGlow[1]));
+          ctx.save();
+          ctx.globalAlpha = holdProg * 0.92;
+          ctx.drawImage(logo, lx, ly, LOGO_SIZE, LOGO_SIZE);
+          ctx.restore();
 
-          if (t < TL.ptcEnd) {
-            const dx = CX-p.x, dy = CY-p.y;
-            if (Math.sqrt(dx*dx+dy*dy) > 4) { p.x += p.vx; p.y += p.vy; }
-          }
-
-          p.trail.push({x:p.x, y:p.y});
-          if (p.trail.length > 14) p.trail.shift();
-
-          for (let i=1; i<p.trail.length; i++) {
-            const pr = i/p.trail.length;
-            ctx.beginPath();
-            ctx.moveTo(p.trail[i-1].x, p.trail[i-1].y);
-            ctx.lineTo(p.trail[i].x,   p.trail[i].y);
-            ctx.strokeStyle = p.col;
-            ctx.lineWidth   = p.size * pr * 0.9;
-            ctx.globalAlpha = alpha * pr * 0.55;
-            ctx.stroke();
-          }
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
-          ctx.fillStyle = p.col;
-          ctx.globalAlpha = alpha;
-          ctx.fill();
+          // Blue edge glow (drop shadow effect on canvas via radial)
+          const glowA = 0.12 + 0.04 * Math.sin(t * 3);
+          const grd   = ctx.createRadialGradient(CX, CY, LOGO_SIZE*0.3, CX, CY, LOGO_SIZE*0.75);
+          grd.addColorStop(0,   `rgba(30,144,255,0)`);
+          grd.addColorStop(0.7, `rgba(30,144,255,${glowA * holdProg})`);
+          grd.addColorStop(1,   'rgba(0,0,0,0)');
+          ctx.fillStyle = grd;
           ctx.globalAlpha = 1;
+          ctx.fillRect(lx - 30, ly - 30, LOGO_SIZE + 60, LOGO_SIZE + 60);
         }
 
-        // Glow
-        const glowA = t > TL.ptcEnd
-          ? 0.12 + 0.10 * Math.sin(t * 4.2)
-          : ease3(clamp(slice(t, 1.0, TL.ptcEnd))) * 0.45;
-        if (glowA > 0.01) {
-          const g = ctx.createRadialGradient(CX,CY,0, CX,CY,100);
-          g.addColorStop(0,   `rgba(37,99,235,${glowA*0.55})`);
-          g.addColorStop(0.5, `rgba(6,182,212,${glowA*0.2})`);
-          g.addColorStop(1,   'rgba(0,0,0,0)');
-          ctx.fillStyle = g;
-          ctx.fillRect(CX-100, CY-100, 200, 200);
+        // Subtle reflective floor beneath logo
+        if (t > TL.holdGlow[0]) {
+          const rp = clamp(slice(t, TL.holdGlow[0], TL.holdGlow[1]));
+          ctx.save();
+          ctx.globalAlpha = 0.12 * rp;
+          ctx.scale(1, -0.25);
+          ctx.drawImage(logo, lx, -(ly + LOGO_SIZE + 32 + LOGO_SIZE * 0.25) * 4, LOGO_SIZE, LOGO_SIZE);
+          ctx.restore();
+          // Fade reflection with gradient
+          const rGrad = ctx.createLinearGradient(0, ly + LOGO_SIZE + 2, 0, ly + LOGO_SIZE + 30);
+          rGrad.addColorStop(0, 'rgba(5,5,5,0)');
+          rGrad.addColorStop(1, 'rgba(5,5,5,1)');
+          ctx.fillStyle = rGrad;
+          ctx.fillRect(0, ly + LOGO_SIZE + 2, W, 28);
         }
+      }
 
-        // Logo
-        const logoProg = ease3(clamp(slice(t, TL.logoIn, TL.logoFull)));
-        const blur  = (1-logoProg) * 16;
-        const scale = 1.07 - 0.07 * logoProg;
-        const loOp  = clamp(slice(t, TL.logoIn, TL.logoIn+1.4));
-        const glow  = t > TL.logoFull ? 20 + 10*Math.sin(t*4.2) : logoProg*20;
-        logoEl.style.opacity   = String(loOp);
-        logoEl.style.transform = `scale(${scale.toFixed(4)})`;
-        logoEl.style.filter    = `blur(${blur.toFixed(1)}px) drop-shadow(0 0 ${glow.toFixed(0)}px rgba(37,99,235,0.7)) drop-shadow(0 0 ${(glow*2.2).toFixed(0)}px rgba(37,99,235,0.22))`;
+      // ── The beam itself ───────────────────────────────────────────────────
+      if (beamAlpha > 0.01 && t < TL.holdGlow[1]) {
+        const beamVisible = t < TL.beamSweep[1] ? beamAlpha : 1 - clamp(slice(t, TL.holdGlow[0], TL.holdGlow[1]));
 
-        // Text + line
-        const lnP  = ease3(clamp(slice(t, TL.textIn, TL.textIn+0.5)));
-        const txP  = ease3(clamp(slice(t, TL.textIn+0.15, TL.textIn+1.0)));
-        lineEl.style.transform = `scaleX(${lnP.toFixed(4)})`;
-        lineEl.style.opacity   = String(lnP);
-        textEl.style.opacity   = String(txP);
-        textEl.style.transform = `translateY(${((1-txP)*14).toFixed(1)}px)`;
+        // Glow spread
+        const spread = 50;
+        const grd = ctx.createLinearGradient(beamX - spread, 0, beamX + spread, 0);
+        grd.addColorStop(0,    'rgba(30,144,255,0)');
+        grd.addColorStop(0.35, `rgba(30,144,255,${0.08 * beamVisible})`);
+        grd.addColorStop(0.5,  `rgba(30,144,255,${0.55 * beamVisible})`);
+        grd.addColorStop(0.65, `rgba(30,144,255,${0.08 * beamVisible})`);
+        grd.addColorStop(1,    'rgba(30,144,255,0)');
+        ctx.fillStyle = grd;
+        ctx.fillRect(beamX - spread, 0, spread * 2, H);
 
-        // Fade out
-        if (t > TL.fadeStart) {
-          const fo = clamp(slice(t, TL.fadeStart, TL.end));
-          wrap.style.opacity = String(1 - fo*fo);
-        }
+        // Razor-thin core line (2px)
+        ctx.fillStyle = `rgba(140,190,255,${0.85 * beamVisible})`;
+        ctx.fillRect(beamX - 1, 0, 2, H);
+      }
 
-        if (t < TL.end) {
-          rafId = requestAnimationFrame(frame);
-        } else {
-          setGone(true);
-        }
-      };
+      // ── Text via DOM (not canvas — better font rendering) ─────────────────
+      const textProg  = easeOut(clamp(slice(t, TL.textIn[0], TL.textIn[1])));
+      const subProg   = easeOut(clamp(slice(t, TL.subIn[0], TL.subIn[1])));
+      textEl.style.opacity   = String(textProg);
+      textEl.style.transform = `translateY(${(1-textProg)*10}px)`;
+      subEl.style.opacity    = String(subProg);
 
+      // ── Logo DOM push-in (complement canvas logo) ─────────────────────────
+      // Canvas handles the logo, DOM handles the fade-out wrapper
+      if (t > TL.fadeOut[0]) {
+        const fo = clamp(slice(t, TL.fadeOut[0], TL.fadeOut[1]));
+        wrap.style.opacity = String(1 - easeOut(fo));
+      }
+
+      if (t < TL.end) {
+        rafId = requestAnimationFrame(frame);
+      } else {
+        setGone(true);
+      }
+    };
+
+    const startRaf = requestAnimationFrame(() => {
       rafId = requestAnimationFrame(frame);
-      return () => cancelAnimationFrame(rafId);
     });
 
-    return () => cancelAnimationFrame(startRaf);
-  }, [mounted, gone]);
+    return () => { cancelAnimationFrame(startRaf); cancelAnimationFrame(rafId); };
+  }, [active]);
 
-  if (!mounted || gone) return null;
+  if (!active || gone) return null;
 
   return (
     <div ref={wrapRef} style={{
       position:'fixed', inset:0, zIndex:9999,
-      background:'#000',
+      background:'#050505',
       display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center',
       pointerEvents:'none',
     }}>
-      <canvas ref={canvasRef} style={{position:'absolute',inset:0}}/>
+      {/* Canvas handles logo + beam */}
+      <canvas ref={canvasRef} style={{ position:'absolute', inset:0 }}/>
 
-      <div ref={logoRef} style={{
-        position:'relative', zIndex:1,
-        width:110, height:110, marginBottom:30,
-        opacity:0, willChange:'transform,filter,opacity',
-      }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/altus-icon.png" alt="Altus"
-          style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
-      </div>
+      {/* Spacer to push text below where the logo is */}
+      <div ref={logoRef} style={{ width:1, height:Math.min(window?.innerWidth*0.22||120, 120)+40 }}/>
 
-      <div ref={lineRef} style={{
-        zIndex:1, position:'relative',
-        width:44, height:1.5, marginBottom:18,
-        background:'linear-gradient(90deg,transparent,#3b82f6,#06b6d4,transparent)',
-        transformOrigin:'center', opacity:0, transform:'scaleX(0)',
-        willChange:'transform,opacity',
-      }}/>
-
-      <div ref={textRef} style={{
-        zIndex:1, position:'relative',
-        textAlign:'center', opacity:0, transform:'translateY(14px)',
-        willChange:'transform,opacity',
-      }}>
-        <p style={{
-          fontFamily:'-apple-system,BlinkMacSystemFont,"SF Pro Display",system-ui,sans-serif',
-          fontSize:12, fontWeight:700, letterSpacing:'0.36em',
-          color:'rgba(255,255,255,0.88)', textTransform:'uppercase', marginBottom:7,
-        }}>Altus Performance</p>
-        <p style={{
-          fontFamily:'-apple-system,BlinkMacSystemFont,system-ui,sans-serif',
-          fontSize:9, fontWeight:300, letterSpacing:'0.2em',
-          color:'rgba(255,255,255,0.32)', textTransform:'uppercase',
-        }}>St Benedict&apos;s College</p>
+      {/* Text block — DOM rendered for crisp fonts */}
+      <div style={{ position:'relative', zIndex:1, textAlign:'center', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+        <div ref={textRef} style={{ opacity:0, transform:'translateY(10px)', transition:'none' }}>
+          <p style={{
+            fontFamily:'-apple-system,"SF Pro Display","Helvetica Neue",system-ui,sans-serif',
+            fontSize: 'clamp(20px,4vw,28px)',
+            fontWeight: 300,
+            letterSpacing: '0.45em',
+            color: 'rgba(255,255,255,0.92)',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}>ALTUS</p>
+        </div>
+        <div ref={subRef} style={{ opacity:0 }}>
+          <p style={{
+            fontFamily:'-apple-system,"SF Pro Text",system-ui,sans-serif',
+            fontSize: 'clamp(8px,1.4vw,11px)',
+            fontWeight: 400,
+            letterSpacing: '0.28em',
+            color: 'rgba(255,255,255,0.22)',
+            textTransform: 'uppercase',
+            margin: 0,
+          }}>Performance Operating System</p>
+        </div>
       </div>
     </div>
   );
