@@ -8,6 +8,7 @@ type Row = Record<string, any>;
 // G8 from hpTests
 const G8 = GRADE8_TESTS;
 const G9 = GRADE9_TESTS;
+const CLASSES = HP_CLASSES;
 
 function toSecs(v: string): number | null {
   if (!v) return null;

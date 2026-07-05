@@ -14,14 +14,14 @@ type Row = Record<string, any>;
 const TERMS = HP_TERMS;
 
 const TESTS = [
-  { key: 'chin_up_hang',      label: 'Chin Up Hang',  unit: 's',     higher: true,  grade: '8' },
-  { key: 'broad_jump',        label: 'Broad Jump',    unit: 'cm',    higher: true,  grade: '8' },
-  { key: 'pushup_2min',       label: 'Push Up (2 min)', unit: 'reps',  higher: true,  grade: '9' },
-  { key: 'pushup_hold',       label: 'Push Up Hold', unit: 'mm:ss', higher: true,  grade: '9' },
-  { key: 'triple_broad_jump', label: 'Triple Jump',   unit: 'cm',    higher: true,  grade: '9' },
-  { key: 'sprint_10m',        label: '10m Sprint',    unit: 's',     higher: false, grade: 'both' },
-  { key: 'sprint_30m',        label: '30m Sprint',    unit: 's',     higher: false, grade: 'both' },
-  { key: 'run_500m',          label: '500m Run',      unit: 'mm:ss', higher: false, grade: 'both' },
+  { key: 'chin_up_hang',      label: 'Chin Up Hang',    unit: 's',     lower: false, grade: '8' },
+  { key: 'broad_jump',        label: 'Broad Jump',      unit: 'cm',    lower: false, grade: '8' },
+  { key: 'pushup_2min',       label: 'Push Up (2 min)', unit: 'reps',  lower: false, grade: '9' },
+  { key: 'pushup_hold',       label: 'Push Up Hold',    unit: 'mm:ss', lower: false, grade: '9' },
+  { key: 'triple_broad_jump', label: 'Triple Jump',     unit: 'cm',    lower: false, grade: '9' },
+  { key: 'sprint_10m',        label: '10m Sprint',      unit: 's',     lower: true,  grade: 'both' },
+  { key: 'sprint_30m',        label: '30m Sprint',      unit: 's',     lower: true,  grade: 'both' },
+  { key: 'run_500m',          label: '500m Run',        unit: 'mm:ss', lower: true,  grade: 'both' },
 ];
 
 
@@ -34,7 +34,7 @@ function fmt(key:string,val:number):string{
 }
 
 // ─── Mini sparkline ───────────────────────────────────────────────────────────
-function Spark({vals,higher}:{vals:(number|null)[];higher:boolean}){
+function Spark({vals,lower}:{vals:(number|null)[];lower:boolean}){
   const v=vals.filter((x):x is number=>x!==null);
   if(v.length<1)return null;
   const W=48,H=20;
@@ -45,7 +45,7 @@ function Spark({vals,higher}:{vals:(number|null)[];higher:boolean}){
     </svg>
   );
   const mn=Math.min(...v),mx=Math.max(...v),rng=mx-mn||1;
-  const improved=higher?v[v.length-1]>v[0]:v[v.length-1]<v[0];
+  const improved=!lower?v[v.length-1]>v[0]:v[v.length-1]<v[0];
   const col=improved?'#10b981':'#f87171';
   const pts=vals.map((x,i)=>x!==null?`${(i/(vals.length-1))*W},${H-3-((x-mn)/rng)*(H-6)}`:null).filter(Boolean).join(' ');
   return(
@@ -339,20 +339,20 @@ export default function HPTrendsPage(){
             {/* ── Test selected ── */}
             {selTest&&testObj&&(()=>{
               const vals=classStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[testObj.key]):NaN;return isNaN(v)?null:{id:s.id,name:s.full_name.trim().split(' ').pop()||s.full_name,val:v,group:s.training_group};}).filter((x):x is{id:string;name:string;val:number;group:number|null}=>x!==null);
-              const sorted=[...vals].sort((a,b)=>testObj.higher?b.val-a.val:a.val-b.val);
+              const sorted=[...vals].sort((a,b)=>!testObj.lower?b.val-a.val:a.val-b.val);
               const avg=vals.length?vals.reduce((a,b)=>a+b.val,0)/vals.length:null;
-              const avgTier=avg!==null?getTier(testObj.key,avg,testObj.higher):null;
+              const avgTier=avg!==null?getTier(testObj.key as any,avg,!testObj.lower):null;
               const avgs=termAvgs(classStudents,testObj.key);
               const validTerms=avgs.filter((v):v is number=>v!==null);
-              const improved=validTerms.length>1&&(testObj.higher?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
+              const improved=validTerms.length>1&&(!testObj.lower?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
               const counts:Record<string,number>={};
-              vals.forEach(x=>{const l=getTier(testObj.key,x.val,testObj.higher).label;counts[l]=(counts[l]||0)+1;});
+              vals.forEach(x=>{const l=getTier(testObj.key as any,x.val,!testObj.lower).label;counts[l]=(counts[l]||0)+1;});
 
               // Bar chart data
               const barData = sorted.slice(0,12).map(x => ({
                 name: x.name.slice(0,6),
                 val: x.val,
-                color: getTier(testObj.key,x.val,testObj.higher).color,
+                color: getTier(testObj.key as any,x.val,!testObj.lower).color,
               }));
 
               return(
@@ -443,13 +443,13 @@ export default function HPTrendsPage(){
                   {/* Athlete rankings */}
                   <div className="divide-y" style={{borderColor:'rgba(255,255,255,0.04)'}}>
                     {sorted.map((x,i)=>{
-                      const tier=getTier(testObj.key,x.val,testObj.higher);
+                      const tier=getTier(testObj.key as any,x.val,!testObj.lower);
                       const r1=results.find(r=>r.student_id===x.id&&r.term==='Term 1'&&r.year===selYear);
                       const r2=results.find(r=>r.student_id===x.id&&r.term==='Term 2'&&r.year===selYear);
                       const v1=r1?parseFloat(r1[testObj.key]):NaN;
                       const v2=r2?parseFloat(r2[testObj.key]):NaN;
                       const hasDelta=!isNaN(v1)&&!isNaN(v2);
-                      const delta=hasDelta?((testObj.higher?v2-v1:v1-v2)):0;
+                      const delta=hasDelta?((!testObj.lower?v2-v1:v1-v2)):0;
                       const pctDelta=hasDelta?Math.abs((delta/v1)*100).toFixed(1):null;
                       return(
                         <div key={x.id} className="flex items-center gap-3 px-5 py-3">
