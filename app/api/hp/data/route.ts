@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyHpCookie } from '@/lib/serverAuth';
 import { createClient } from '@supabase/supabase-js';
+import { getDashboardData, saveTestResult, saveAttendance } from '@/lib/hpRepository';
 
 // Whitelisted tables for HP writes — no arbitrary table injection
 const ALLOWED_HP_TABLES = ['hp_students', 'hp_attendance', 'hp_test_results'] as const;
@@ -124,21 +125,13 @@ export async function POST(req: NextRequest) {
 
   try {
     if (action === 'save_test_result') {
-      const { student_id, term, year, ...testData } = payload;
-      if (!student_id || !term || !year) return NextResponse.json({ error: 'Missing fields.' }, { status: 400 });
-      await admin.from('hp_test_results').delete().eq('student_id', student_id).eq('term', term).eq('year', year);
-      const { error } = await admin.from('hp_test_results').insert([{ student_id, term, year, ...testData }]);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
+      try { await saveTestResult(admin, payload); return NextResponse.json({ ok: true }); }
+      catch (e: any) { return NextResponse.json({ error: e.message }, { status: 400 }); }
     }
     if (action === 'save_attendance') {
       const { date, records } = payload;
-      if (!date || !Array.isArray(records)) return NextResponse.json({ error: 'Missing fields.' }, { status: 400 });
-      const ids = records.map((r: any) => r.student_id);
-      await admin.from('hp_attendance').delete().eq('session_date', date).in('student_id', ids);
-      const { error } = await admin.from('hp_attendance').insert(records);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true });
+      try { await saveAttendance(admin, date, records); return NextResponse.json({ ok: true }); }
+      catch (e: any) { return NextResponse.json({ error: e.message }, { status: 400 }); }
     }
     if (action === 'update') {
       if (!ALLOWED_HP_TABLES.includes(table as AllowedTable)) return NextResponse.json({ error: 'Invalid table.' }, { status: 400 });

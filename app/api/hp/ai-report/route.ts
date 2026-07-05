@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSchoolContext } from '@/lib/hpRepository';
 import { verifyHpCookie } from '@/lib/serverAuth';
 
 export async function POST(req: NextRequest) {
@@ -24,7 +25,8 @@ export async function POST(req: NextRequest) {
     return `  • ${s.surname} (G${s.training_group || '?'}): ${scores}`;
   }).join('\n');
 
-  const prompt = `You are a sports science analyst for the High Performance programme at St Benedict's College, Bedfordview, South Africa.
+  const school = getSchoolContext();
+  const prompt = `You are a sports science analyst for the High Performance programme at ${school.name}, ${school.location}.
 
 Analyse this fitness testing data for class ${classId} (${grade}) and write a concise coaching report.
 
