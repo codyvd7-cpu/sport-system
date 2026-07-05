@@ -68,7 +68,7 @@ function ClassCard({ c, term }: { c: any; term: string }) {
         <Link href={`/hp/testing?class=${c.id}`} className="flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black text-slate-400 hover:bg-slate-800 hover:text-violet-400 transition border-r border-slate-800">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Test
         </Link>
-        <a href={`/hp/export/class/${c.id}`} target="_blank" className="col-span-2 flex items-center justify-center gap-1.5 py-2 text-[10px] font-black text-slate-600 hover:bg-slate-800 hover:text-slate-300 transition border-t border-slate-800">
+        <a href={`/hp-print/class/${c.id}`} target="_blank" className="col-span-2 flex items-center justify-center gap-1.5 py-2 text-[10px] font-black text-slate-600 hover:bg-slate-800 hover:text-slate-300 transition border-t border-slate-800">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3 w-3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export PDF
         </a>
