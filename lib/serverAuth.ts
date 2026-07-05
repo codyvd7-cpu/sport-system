@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export type StaffRole = 'owner' | 'head_of_hockey' | 'coach' | 'viewer';
+export type StaffRole = 'owner' | 'head_of_sport' | 'deputy_head_of_sport' | 'mic' | 'coach' | 'head_of_hockey' | 'viewer';
 
 export type ServerAuthResult = {
   ok: boolean;
@@ -112,6 +112,7 @@ export function verifyHpCookie(req: NextRequest): boolean {
     if (!payload || !sig) return false;
 
     // Verify HMAC signature
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const crypto = require('crypto');
     const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     if (sig !== expected) return false;
