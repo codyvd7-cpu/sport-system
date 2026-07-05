@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
@@ -56,6 +57,7 @@ export default function Rollover() {
       if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
     }
     setDone(d=>[...d, `${g8.length} Grade 8 students promoted to Grade 9`]);
+    // TODO: write to hp_audit_log table when multi-school audit trail is implemented
     showToast(`${g8.length} students promoted to Grade 9 ✓`);
     await load(); setBusy(false); setStep(4);
   }
@@ -138,6 +140,20 @@ export default function Rollover() {
             </div>
           </div>
           <div style={{...card,background:'rgba(0,0,0,0.25)'}}>
+            {/* Simulation preview */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:4}}>
+              {[
+                {label:'Will be archived',  val:g9.length, col:'#f87171', sub:'Grade 9 graduates'},
+                {label:'Will be promoted',  val:g8.length, col:'#38bdf8', sub:'Grade 8 → Grade 9'},
+                {label:'New intake needed', val:0,         col:'#10b981', sub:'Add via Import'},
+              ].map(s=>(
+                <div key={s.label} style={{borderRadius:12,border:`1px solid rgba(255,255,255,0.06)`,background:'rgba(255,255,255,0.03)',padding:'12px',textAlign:'center'}}>
+                  <p style={{fontSize:22,fontWeight:900,color:s.col,lineHeight:1,marginBottom:4}}>{s.val}</p>
+                  <p style={{fontSize:9,fontWeight:700,color:'rgba(255,255,255,0.5)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:2}}>{s.label}</p>
+                  <p style={{fontSize:9,color:'rgba(255,255,255,0.25)'}}>{s.sub}</p>
+                </div>
+              ))}
+            </div>
             <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:8}}>Type <strong style={{color:'white'}}>{CONFIRM}</strong> to confirm</p>
             <input value={confirm} onChange={e=>setConfirm(e.target.value.toUpperCase())} placeholder="Type here…"
               style={{width:'100%',borderRadius:10,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.05)',padding:'10px 14px',color:'white',fontSize:13,outline:'none',fontFamily:'monospace'}}/>
