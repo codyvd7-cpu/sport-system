@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue } from '@/lib/hpTests';
-const TR = TIERS; // alias for backward compat
+const TR = TIERS;
 
 type Row = Record<string,any>;
 
@@ -66,7 +66,7 @@ function Ic({d,sz=16,col='currentColor',sw=1.8}:{d:string;sz?:number;col?:string
   return<svg viewBox="0 0 24 24" fill="none" stroke={col} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{width:sz,height:sz,flexShrink:0}}>{d.split(' M').map((s,i)=><path key={i} d={i===0?s:'M'+s}/>)}</svg>;
 }
 function Bdg({t}:{t:typeof TIERS[0]}){
-  return<span style={{display:'inline-block',fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:20,background:t.bg,color:t.color,border:`1px solid ${t.border}40`,letterSpacing:'0.04em'}}>{t.abbr}</span>;
+  return<span style={{display:'inline-block',fontSize:9,fontWeight:800,padding:'2px 8px',borderRadius:20,background:t.bg,color:t.color,border:`1px solid ${t.border}40`,letterSpacing:'0.04em'}}>{t.bg}</span>;
 }
 function Donut({pct,col,sz=100}:{pct:number;col:string;sz?:number}){
   const r=32,c=2*Math.PI*r,dash=(pct/100)*c;
@@ -321,7 +321,7 @@ function Performance({tr}:any){
     <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>
       {[
         {l:'Tests Done',v:`${done.length}/${TESTS.length}`,c:'#22c55e',i:'M9 11l3 3L22 4'},
-        {l:'Best Tier',v:best.abbr,c:best.border,i:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'},
+        {l:'Best Tier',v:best?.abbr||'—',c:best?.border||'#94a3b8',i:'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'},
         {l:'Personal Bests',v:`${pbs}`,c:'#818cf8',i:'M18 20V10M12 20V4M6 20v-6'},
         {l:'Term',v:lat.term?.replace('Term ','T')||'—',c:'#fbbf24',i:'M8 6h13M8 12h13M3 6h.01M3 12h.01'},
       ].map(s=><Card key={s.l} style={{padding:'16px'}}>

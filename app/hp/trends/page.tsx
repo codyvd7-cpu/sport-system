@@ -14,14 +14,14 @@ type Row = Record<string, any>;
 const TERMS = HP_TERMS;
 
 const TESTS = [
-  { key: 'chin_up_hang',      label: 'Chin Up Hang',    unit: 's',     lower: false, grade: '8' },
-  { key: 'broad_jump',        label: 'Broad Jump',      unit: 'cm',    lower: false, grade: '8' },
-  { key: 'pushup_2min',       label: 'Push Up (2 min)', unit: 'reps',  lower: false, grade: '9' },
-  { key: 'pushup_hold',       label: 'Push Up Hold',    unit: 'mm:ss', lower: false, grade: '9' },
-  { key: 'triple_broad_jump', label: 'Triple Jump',     unit: 'cm',    lower: false, grade: '9' },
-  { key: 'sprint_10m',        label: '10m Sprint',      unit: 's',     lower: true,  grade: 'both' },
-  { key: 'sprint_30m',        label: '30m Sprint',      unit: 's',     lower: true,  grade: 'both' },
-  { key: 'run_500m',          label: '500m Run',        unit: 'mm:ss', lower: true,  grade: 'both' },
+  { key: 'chin_up_hang',      label: 'Chin Up Hang',  unit: 's',     lower: false,  grade: '8' },
+  { key: 'broad_jump',        label: 'Broad Jump',    unit: 'cm',    lower: false,  grade: '8' },
+  { key: 'pushup_2min',       label: 'Push Up (2 min)', unit: 'reps',  lower: false,  grade: '9' },
+  { key: 'pushup_hold',       label: 'Push Up Hold', unit: 'mm:ss', lower: false,  grade: '9' },
+  { key: 'triple_broad_jump', label: 'Triple Jump',   unit: 'cm',    lower: false,  grade: '9' },
+  { key: 'sprint_10m',        label: '10m Sprint',    unit: 's',     lower: true, grade: 'both' },
+  { key: 'sprint_30m',        label: '30m Sprint',    unit: 's',     lower: true, grade: 'both' },
+  { key: 'run_500m',          label: '500m Run',      unit: 'mm:ss', lower: true, grade: 'both' },
 ];
 
 
@@ -34,7 +34,7 @@ function fmt(key:string,val:number):string{
 }
 
 // ─── Mini sparkline ───────────────────────────────────────────────────────────
-function Spark({vals,lower}:{vals:(number|null)[];lower:boolean}){
+function Spark({vals,higher}:{vals:(number|null)[];higher:boolean}){
   const v=vals.filter((x):x is number=>x!==null);
   if(v.length<1)return null;
   const W=48,H=20;
@@ -45,7 +45,7 @@ function Spark({vals,lower}:{vals:(number|null)[];lower:boolean}){
     </svg>
   );
   const mn=Math.min(...v),mx=Math.max(...v),rng=mx-mn||1;
-  const improved=!lower?v[v.length-1]>v[0]:v[v.length-1]<v[0];
+  const improved=higher?v[v.length-1]>v[0]:v[v.length-1]<v[0];
   const col=improved?'#10b981':'#f87171';
   const pts=vals.map((x,i)=>x!==null?`${(i/(vals.length-1))*W},${H-3-((x-mn)/rng)*(H-6)}`:null).filter(Boolean).join(' ');
   return(

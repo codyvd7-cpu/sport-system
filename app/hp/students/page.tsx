@@ -29,7 +29,7 @@ function HPStudentsInner() {
       const res = await fetch('/api/hp/students', { credentials: 'include' });
       if (!res.ok) {
         const d = await res.json();
-        showToast(`Error: ${d.error}`, 'error');
+        showToast(`Error: ${d.error}`);
         setLoading(false);
         return;
       }
@@ -42,7 +42,7 @@ function HPStudentsInner() {
       });
       setStudents(sorted);
     } catch (e: any) {
-      showToast(`Error: ${e.message}`, 'error');
+      showToast(`Error: ${e.message}`);
     }
     setLoading(false);
   }
@@ -59,7 +59,7 @@ function HPStudentsInner() {
       body: JSON.stringify({ action: 'add', full_name: name.trim(), grade, class_group: hpClass }),
     });
     const d = await res.json();
-    if (!res.ok) { showToast(`Error: ${d.error}`, 'error'); setSaving(false); return; }
+    if (!res.ok) { showToast(`Error: ${d.error}`); setSaving(false); return; }
     setName(''); setShowAdd(false);
     showToast(`${name.trim()} added ✓`);
     await load(); setSaving(false);
