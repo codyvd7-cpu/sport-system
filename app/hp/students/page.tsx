@@ -8,7 +8,41 @@ type Row = Record<string, any>;
 const CLASS_OPTIONS = HP_CLASS_IDS;
 
 function HPStudentsInner() {
-  const [toast, setToast] = React.useState('');
+  const [toast,    setToast]    = React.useState('');
+  const [selected,  setSelected]  = React.useState<Set<string>>(new Set());
+  const [bulkBusy,  setBulkBusy]  = React.useState(false);
+  function toggleSelect(id: string) {
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  }
+  function selectAll() {
+    setSelected(prev => prev.size === filtered.length ? new Set() : new Set(filtered.map(s => s.id)));
+  }
+  async function bulkAction(action: string) {
+    if (!selected.size) return;
+    setBulkBusy(true);
+    if (action === 'export') {
+      const rows = students.filter(s => selected.has(s.id));
+      const csv  = ['Name,Grade,Class,Group',
+        ...rows.map(s => `${s.full_name},${s.grade},${s.class_group||''},${s.training_group||''}`)
+      ].join('\n');
+      const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+      a.download = 'hp_students_export.csv'; a.click();
+      showToast(`Exported ${selected.size} students`);
+    }
+    if (action === 'remove') {
+      if (!window.confirm(`Remove ${selected.size} student(s) from HP? This cannot be undone.`)) { setBulkBusy(false); return; }
+      await Promise.all([...selected].map(id =>
+        fetch('/api/hp/students', { method:'POST', credentials:'include',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ action:'remove', id }) })
+      ));
+      setStudents(prev => prev.filter(s => !selected.has(s.id)));
+      setSelected(new Set());
+      showToast(`Removed ${selected.size} students`);
+    }
+    setBulkBusy(false);
+  }
+
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000); }
   const [students, setStudents] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);

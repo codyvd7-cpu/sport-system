@@ -21,8 +21,25 @@ export default function Rollover() {
   const [cls,      setCls]      = React.useState('B');
   const [added,    setAdded]    = React.useState(0);
   const [toast,    setToast]    = React.useState('');
+  const [backing,  setBacking]  = React.useState(false);
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3500); }
+
+  async function downloadBackup() {
+    setBacking(true);
+    try {
+      const res = await fetch('/api/hp/backup', { credentials:'include' });
+      if (!res.ok) { showToast('Backup failed'); setBacking(false); return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `HP_Backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click(); URL.revokeObjectURL(url);
+      showToast('Backup downloaded ✓');
+    } catch { showToast('Backup failed'); }
+    setBacking(false);
+  }
 
   async function load() {
     const { data } = await supabase.from('hp_students').select('*').eq('is_active', true);
@@ -46,6 +63,17 @@ export default function Rollover() {
       if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
     }
     setDone(d=>[...d, `${g9.length} Grade 9 students graduated and archived`]);
+    try {
+      await fetch('/api/hp/audit', {
+        method: 'POST', credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          action: 'students_archived',
+          actor: 'HP Admin',
+          details: { count: g9.length, reason: `Graduated ${year}` }
+        }),
+      });
+    } catch {}
     showToast(`${g9.length} Grade 9 students archived ✓`);
     await load(); setBusy(false); setStep(3);
   }
@@ -57,7 +85,18 @@ export default function Rollover() {
       if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
     }
     setDone(d=>[...d, `${g8.length} Grade 8 students promoted to Grade 9`]);
-    // TODO: write to hp_audit_log table when multi-school audit trail is implemented
+    // Write audit log
+    try {
+      await fetch('/api/hp/audit', {
+        method: 'POST', credentials: 'include',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          action: 'grade_promoted',
+          actor: 'HP Admin',
+          details: { count: g8.length, from: 'Grade 8', to: 'Grade 9', year: year }
+        }),
+      });
+    } catch {}
     showToast(`${g8.length} students promoted to Grade 9 ✓`);
     await load(); setBusy(false); setStep(4);
   }
@@ -140,6 +179,18 @@ export default function Rollover() {
             </div>
           </div>
           <div style={{...card,background:'rgba(0,0,0,0.25)'}}>
+            {/* Backup button */}
+            <div style={{marginBottom:16,padding:'12px 14px',borderRadius:12,border:'1px solid rgba(251,191,36,0.2)',background:'rgba(251,191,36,0.05)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+              <div>
+                <p style={{fontSize:12,fontWeight:800,color:'#fbbf24'}}>Step 0 — Backup first</p>
+                <p style={{fontSize:11,color:'rgba(251,191,36,0.6)',marginTop:2}}>Download all HP data before proceeding</p>
+              </div>
+              <button onClick={downloadBackup} disabled={backing}
+                style={{padding:'8px 16px',borderRadius:10,border:'1px solid rgba(251,191,36,0.35)',background:'rgba(251,191,36,0.12)',color:'#fbbf24',fontWeight:800,fontSize:12,cursor:'pointer',opacity:backing?0.6:1}}>
+                {backing ? 'Backing up…' : '⬇ Download Backup'}
+              </button>
+            </div>
+
             {/* Simulation preview */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:4}}>
               {[

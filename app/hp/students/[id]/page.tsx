@@ -5,8 +5,9 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
 } from 'recharts';
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
-import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, getTests } from '@/lib/hpTests';
+
+import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue } from '@/lib/hpTests';
+import { getSchoolContext } from '@/lib/hpRepository';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -17,17 +18,8 @@ type PageProps = { params: Promise<{ id: string }> };
 
 
 
-function fmt(key: string, val: number): string {
-  if (key === 'run_500m') {
-    const m = Math.floor(val/60), s = Math.round(val%60);
-    return `${m}:${s.toString().padStart(2,'0')}`;
-  }
-  if (key === 'chin_up_hang') {
-    if (val >= 60) { const m = Math.floor(val/60), s = val%60; return s ? `${m}m${s}s` : `${m}min`; }
-    return `${Math.round(val)}s`;
-  }
-  return val % 1 === 0 ? String(val) : val.toFixed(2);
-}
+// fmt → fmtValue from hpTests
+const fmt = (k: string, v: number) => fmtValue(k as any, v);
 
 function BenchBar({ k, val, lower }: { k: string; val: number; lower: boolean }) {
   const b = BENCH[k]; if (!b) return null;
@@ -76,11 +68,14 @@ export default function HPStudentProfile({ params }: PageProps) {
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [results, setResults] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [attTab, setAttTab] = React.useState<'summary'|'history'>('summary');
+  const [attTab, setAttTab] = React.useState<'summary'|'history'|'notes'>('summary');
   const [selectedYear, setSelectedYear] = React.useState(() => new Date().getFullYear());
   const [loadError, setLoadError] = React.useState<string|null>(null);
   const [aiSummary, setAiSummary] = React.useState<string|null>(null);
   const [aiLoading, setAiLoading] = React.useState(false);
+  const [notes,    setNotes]    = React.useState('');
+  const [savingNotes, setSavingNotes] = React.useState(false);
+  const [notesSaved,  setNotesSaved]  = React.useState(false);
   const [aiTerm, setAiTerm] = React.useState(() => {
     const m = new Date().getMonth() + 1;
     if (m <= 3) return 'Term 1'; if (m <= 6) return 'Term 2';
@@ -96,6 +91,7 @@ export default function HPStudentProfile({ params }: PageProps) {
       setStudent(d.student);
       setAttendance(d.attendance || []);
       setResults(d.tests || []);
+      setNotes(d.student?.notes || '');
       setLoading(false);
     }
     load();
@@ -165,6 +161,19 @@ ${testBreakdown || 'No results recorded yet.'}`;
       setAiSummary(`Error: ${e.message || 'Failed to reach server.'}`);
     }
     setAiLoading(false);
+  }
+
+  async function saveNotes() {
+    if (!student) return;
+    setSavingNotes(true);
+    await fetch('/api/hp/students', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update_notes', id: student.id, notes }),
+    });
+    setSavingNotes(false);
+    setNotesSaved(true);
+    setTimeout(() => setNotesSaved(false), 2000);
   }
 
   if (loading) return (
@@ -442,7 +451,7 @@ ${testBreakdown || 'No results recorded yet.'}`;
               <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.3)'}}>{attendance.length} sessions · {present} present</p>
             </div>
             <div className="flex gap-1 rounded-xl p-0.5" style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.07)'}}>
-              {(['summary','history'] as const).map(tab=>(
+              {(['summary','history','notes'] as const).map(tab=>(
                 <button key={tab} onClick={()=>setAttTab(tab)}
                   className="rounded-lg px-3 py-1.5 text-[11px] font-semibold capitalize transition"
                   style={{

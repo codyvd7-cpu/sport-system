@@ -44,6 +44,11 @@ export async function POST(req: NextRequest) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
     }
+    if (action === 'update_notes') {
+      const { error } = await admin.from('hp_students').update({ notes: payload.notes }).eq('id', payload.id);
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
     if (action === 'update_group') {
       const { error } = await admin.from('hp_students').update({ training_group: payload.training_group }).eq('id', payload.id);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
