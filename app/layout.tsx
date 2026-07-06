@@ -36,7 +36,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" style={{ background: "#050505" }}>
       <head>
         <link rel="apple-touch-icon" href="/altus-icon.png"/>
         <link rel="apple-touch-icon" sizes="180x180" href="/altus-icon.png"/>
