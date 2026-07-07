@@ -55,10 +55,21 @@ export function assignTrainingGroups(
 
   const tested  = scored.filter(s => s.score !== null)
                         .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const gs      = Math.ceil(tested.length / numGroups);
+  // Balanced distribution — max difference of 1 student between any two groups
+  // e.g. 25 students, 4 groups → [7, 6, 6, 6] not [7, 7, 7, 4]
+  const base      = Math.floor(tested.length / numGroups);
+  const extra     = tested.length % numGroups;
+  const threshold = extra * (base + 1);  // students that go into larger groups
+
   const groups: Record<string, number> = {};
   tested.forEach((s, i) => {
-    groups[s.id] = Math.min(Math.floor(i / gs) + 1, numGroups);
+    let group: number;
+    if (i < threshold) {
+      group = Math.floor(i / (base + 1)) + 1;
+    } else {
+      group = extra + Math.floor((i - threshold) / base) + 1;
+    }
+    groups[s.id] = Math.min(group, numGroups);
   });
   return groups;
 }
