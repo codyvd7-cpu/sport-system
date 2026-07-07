@@ -3,7 +3,7 @@ import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { createClient } from '@supabase/supabase-js';
 
 // Only player-facing fields — never expose internal metadata
-const ATHLETE_FIELDS = 'id,full_name,team,age_group,position,availability,photo_url,player_code';
+const ATHLETE_FIELDS = 'id,full_name,team,sport,age_group,position,availability,photo_url,player_code';
 
 export async function GET(req: NextRequest) {
   const ip = getClientId(req);
@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
     // Only fetch parent-visible feedback, not internal coach notes
     supabase.from('coach_notes').select('strengths,current_focus,coach_comment').eq('athlete_id', athlete.id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(1),
     supabase.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
-    supabase.from('portal_fixtures').select('opponent,fixture_date,fixture_time,venue').eq('team', athlete.team).gte('fixture_date', new Date().toISOString().split('T')[0]).order('fixture_date').limit(1),
-    supabase.from('portal_results').select('opponent,final_score,result_date,goal_scorers').eq('team', athlete.team).order('result_date', { ascending: false }).limit(5),
+    supabase.from('portal_fixtures').select('opponent,fixture_date,fixture_time,venue').eq('sport', athlete.sport).eq('team', athlete.team).gte('fixture_date', new Date().toISOString().split('T')[0]).order('fixture_date').limit(1),
+    supabase.from('portal_results').select('opponent,final_score,result_date,goal_scorers').eq('sport', athlete.sport).eq('team', athlete.team).order('result_date', { ascending: false }).limit(5),
   ]);
 
   const teamCoach = (coachRes.data || []).find((c: any) =>
