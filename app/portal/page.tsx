@@ -69,10 +69,10 @@ function PortalInner() {
         {/* Sport accent line */}
         <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}/>
 
-        <PortalNav sport={sport} color={color}/>
+        <PortalNav sport={sport}/>
 
         {/* Hero */}
-        <PortalHero sport={sport} color={color} nextFixture={nextFixture}/>
+        <PortalHero sport={sport} nextFixture={nextFixture}/>
 
         {/* Divider */}
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginBottom: 40 }}/>

@@ -28,7 +28,14 @@ export interface SportFeatures {
   coachNotes:     boolean;
 }
 
+export interface PortalConfig {
+  heroImage:   string;
+  headline:    string;
+  description: string;
+}
+
 export interface SportConfig {
+  portal:      PortalConfig;
   label:       string;
   structure:   SportStructure;
   season:      'winter' | 'summer' | 'short';
@@ -42,36 +49,43 @@ export interface SportConfig {
 export const SPORTS: Record<string, SportConfig> = {
   hockey: {
     label: 'Hockey', structure: 'team', season: 'winter', color: '#38bdf8', icon: '🏑',
+    portal: { heroImage:'/sbc-hockey-1.jpg', headline:"ST BENEDICT'S HOCKEY", description:'Fixtures, training updates, programmes and department notices — all in one place.' },
     terminology: { group:'Age Group', unit:'Team', fixture:'Fixture', result:'Result', athlete:'Player', score:'Score', session:'Training' },
     features: { teams:true, fixtures:true, results:true, programs:true, attendance:true, testing:true, playerSpotlight:true, pbTracking:false, eventEntries:false, crews:false, coachNotes:true },
   },
   rugby: {
     label: 'Rugby', structure: 'team', season: 'winter', color: '#f87171', icon: '🏉',
+    portal: { heroImage:'/sbc-rugby-1.jpg', headline:"ST BENEDICT'S RUGBY", description:'Fixtures, team updates, programmes and department notices — all in one place.' },
     terminology: { group:'Age Group', unit:'Team', fixture:'Fixture', result:'Result', athlete:'Player', score:'Score', session:'Training' },
     features: { teams:true, fixtures:true, results:true, programs:true, attendance:true, testing:true, playerSpotlight:true, pbTracking:false, eventEntries:false, crews:false, coachNotes:true },
   },
   cricket: {
     label: 'Cricket', structure: 'team', season: 'summer', color: '#fbbf24', icon: '🏏',
+    portal: { heroImage:'/sbc-cricket-1.jpg', headline:"ST BENEDICT'S CRICKET", description:'Fixtures, match updates, programmes and department notices — all in one place.' },
     terminology: { group:'Age Group', unit:'Team', fixture:'Match', result:'Scorecard', athlete:'Player', score:'Score', session:'Practice' },
     features: { teams:true, fixtures:true, results:true, programs:true, attendance:true, testing:false, playerSpotlight:true, pbTracking:false, eventEntries:false, crews:false, coachNotes:true },
   },
   swimming: {
     label: 'Swimming', structure: 'event', season: 'summer', color: '#818cf8', icon: '🏊',
+    portal: { heroImage:'/sbc-swimming-1.jpg', headline:"ST BENEDICT'S SWIMMING", description:'Galas, squad updates, programmes and department notices — all in one place.' },
     terminology: { group:'Squad', unit:'Squad', fixture:'Gala', result:'Times', athlete:'Swimmer', score:'PB', session:'Session' },
     features: { teams:false, fixtures:true, results:true, programs:true, attendance:true, testing:false, playerSpotlight:true, pbTracking:true, eventEntries:true, crews:false, coachNotes:true },
   },
   rowing: {
     label: 'Rowing', structure: 'crew', season: 'summer', color: '#34d399', icon: '🚣',
+    portal: { heroImage:'/sbc-rowing-1.jpg', headline:"ST BENEDICT'S ROWING", description:'Regattas, crew updates, programmes and department notices — all in one place.' },
     terminology: { group:'Boat Class', unit:'Crew', fixture:'Regatta', result:'Crew Result', athlete:'Rower', score:'Time', session:'Water Session' },
     features: { teams:false, fixtures:true, results:true, programs:true, attendance:true, testing:true, playerSpotlight:true, pbTracking:true, eventEntries:false, crews:true, coachNotes:true },
   },
   waterpolo: {
     label: 'Water Polo', structure: 'team', season: 'summer', color: '#06b6d4', icon: '🤽',
+    portal: { heroImage:'/sbc-waterpolo-1.jpg', headline:"ST BENEDICT'S WATER POLO", description:'Fixtures, team updates, programmes and department notices — all in one place.' },
     terminology: { group:'Age Group', unit:'Team', fixture:'Fixture', result:'Result', athlete:'Player', score:'Score', session:'Training' },
     features: { teams:true, fixtures:true, results:true, programs:true, attendance:true, testing:false, playerSpotlight:true, pbTracking:false, eventEntries:false, crews:false, coachNotes:true },
   },
   football: {
     label: 'Football', structure: 'team', season: 'short', color: '#a3e635', icon: '⚽',
+    portal: { heroImage:'/sbc-football-1.jpg', headline:"ST BENEDICT'S FOOTBALL", description:'Fixtures, match updates, programmes and department notices — all in one place.' },
     terminology: { group:'Age Group', unit:'Team', fixture:'Match', result:'Result', athlete:'Player', score:'Score', session:'Training' },
     features: { teams:true, fixtures:true, results:true, programs:true, attendance:true, testing:false, playerSpotlight:true, pbTracking:false, eventEntries:false, crews:false, coachNotes:true },
   },
