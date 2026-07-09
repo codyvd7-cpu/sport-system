@@ -89,11 +89,13 @@ export default function HPDashboard() {
     fetch('/api/hp/data?type=dashboard&year=' + currentYear, { credentials: 'include' })
       .then(r => r.json())
       .then(d => {
+        if (d.error) { console.error('HP dashboard error:', d.error); }
         setStudents(d.students || []);
         setTestResults(d.tests || []);
         setAttendance(d.attendance || []);
         setLoading(false);
-      });
+      })
+      .catch(e => { console.error('HP dashboard fetch failed:', e); setLoading(false); });
   }, []);
 
   const classStats = CLASSES.map(c => {
