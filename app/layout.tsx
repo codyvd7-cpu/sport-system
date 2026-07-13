@@ -46,18 +46,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes"/>
       </head>
       <body style={{overflowX:"hidden",maxWidth:"100vw"}}>
-        <script dangerouslySetInnerHTML={{__html:`
-          // Prevent page-level title overrides polluting PWA install name
-          if(typeof document!=='undefined'){
-            Object.defineProperty(document,'title',{
-              set:function(v){
-                // Allow title change but ensure manifest name stays Altus
-              },
-              get:function(){ return 'Altus Performance'; },
-              configurable:true
-            });
-          }
-        `}}/>
         <SplashScreen/>
         <ToastProvider>
           {children}

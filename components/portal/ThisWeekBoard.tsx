@@ -37,7 +37,7 @@ export default function ThisWeekBoard({ weekItems, color, loading }: Props) {
 
   return (
     <section id="this-week" style={{ padding: '0 20px 40px', maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', overflow: 'hidden' }}>
+      <div style={{ borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', background: 'linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015))', overflow: 'hidden', boxShadow:'0 8px 32px rgba(0,0,0,0.25)' }}>
         {/* Header */}
         <div style={{ padding: '20px 24px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: 16 }}>This Week</p>

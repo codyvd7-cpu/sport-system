@@ -32,8 +32,8 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
     </div>
   );
 
-  const CARD = { borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', overflow: 'hidden' };
-  const HDR  = { padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+  const CARD = { borderRadius: 20, border: '1px solid rgba(255,255,255,0.1)', background: 'linear-gradient(160deg, rgba(255,255,255,0.05), rgba(255,255,255,0.015))', overflow: 'hidden', boxShadow:'0 8px 32px rgba(0,0,0,0.25)' };
+  const HDR  = { padding: '18px 22px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background:'rgba(255,255,255,0.02)' };
 
   return (
     <section id="fixtures" style={{ padding: '0 20px 40px', maxWidth: 1200, margin: '0 auto' }}>
