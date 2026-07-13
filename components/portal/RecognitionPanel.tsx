@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 type Row = Record<string, any>;
 interface Props { spotlight: Row[]; color: string; loading: boolean; }
 
@@ -23,7 +22,8 @@ export default function RecognitionPanel({ spotlight, color, loading }: Props) {
           }}>
             {s.photo_url && (
               <div style={{ width:64, height:64, borderRadius:'50%', overflow:'hidden', margin:'0 auto 14px', border:`2px solid ${color}50`, boxShadow:`0 0 0 4px ${color}12` }}>
-                <Image src={s.photo_url} alt={s.player_name || ''} width={64} height={64} style={{ objectFit:'cover' }}/>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={s.photo_url} alt={s.player_name || ''} style={{ width:'100%', height:'100%', objectFit:'cover', display:'block' }}/>
               </div>
             )}
             <p style={{ fontSize:9.5, fontWeight:800, color, textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:5 }}>{s.category || 'Recognition'}</p>

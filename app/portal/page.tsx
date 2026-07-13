@@ -56,6 +56,7 @@ function PortalInner() {
       const weekItems = planId
         ? await safeQuery<Row[]>(supabase.from('portal_week_plan_items').select('*').eq('week_plan_id',planId).order('sort_order'), [])
         : [];
+      if (process.env.NODE_ENV !== 'production') console.log('[Portal] sponsors:', sponsors);
       setData({ sponsors, weekItems, reminders, fixtures, results, programs: programs.slice(0,6), spotlight });
       setLoading(false);
     }

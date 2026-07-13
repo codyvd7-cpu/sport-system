@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 type Row = Record<string, any>;
 interface Props { sponsors: Row[]; loading: boolean; }
 
@@ -51,7 +50,8 @@ export default function SponsorStrip({ sponsors, loading }: Props) {
               minWidth:100, cursor:'default',
             }}>
               {s.logo_url ? (
-                <Image src={s.logo_url} alt={s.name || 'Sponsor'} width={120} height={44} style={{ objectFit:'contain' }}/>
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={s.logo_url} alt={s.name || 'Sponsor'} style={{ height:44, width:'auto', objectFit:'contain', display:'block' }}/>
               ) : (
                 <p style={{ fontSize:17, fontWeight:900, color:'rgba(255,255,255,0.5)', whiteSpace:'nowrap' }}>{s.name}</p>
               )}
