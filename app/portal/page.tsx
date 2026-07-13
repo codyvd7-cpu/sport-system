@@ -65,19 +65,13 @@ function PortalInner() {
 
   return (
     <PortalAuthGuard sport={sport}>
-      <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse at top, #0a1120 0%, #030810 60%)', color: 'white', position:'relative' }}>
+      <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse 1400px 900px at 50% -8%, #0d1628 0%, #030810 55%)', color: 'white', position:'relative' }}>
         {/* Subtle grid texture */}
-        <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)', backgroundSize:'48px 48px', pointerEvents:'none', zIndex:0 }}/>
-        {/* Sport accent line */}
-        <div style={{ height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }}/>
-
+        <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize:'56px 56px', pointerEvents:'none', zIndex:0 }}/>
         <PortalNav sport={sport}/>
 
         {/* Hero */}
         <PortalHero sport={sport} nextFixture={nextFixture}/>
-
-        {/* Divider */}
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', marginBottom: 40 }}/>
 
         {/* This Week */}
         <ThisWeekBoard

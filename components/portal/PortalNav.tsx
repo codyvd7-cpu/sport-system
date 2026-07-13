@@ -1,4 +1,5 @@
 'use client';
+import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { type SportKey, getSportLabel, getSportColor } from '@/lib/sports';
@@ -8,63 +9,75 @@ interface Props { sport: SportKey; }
 export default function PortalNav({ sport }: Props) {
   const color = getSportColor(sport);
   const label = getSportLabel(sport);
+  const [scrolled, setScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
     <nav style={{
-      position:'sticky', top:0, zIndex:50,
-      background:'rgba(3,8,16,0.97)', backdropFilter:'blur(16px)',
-      borderBottom:'1px solid rgba(255,255,255,0.06)',
+      position: 'sticky', top: 0, zIndex: 50,
+      background: scrolled ? 'rgba(3,8,16,0.85)' : 'rgba(3,8,16,0.4)',
+      backdropFilter: 'blur(20px) saturate(1.4)',
+      borderBottom: `1px solid ${scrolled ? 'rgba(255,255,255,0.09)' : 'transparent'}`,
+      transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
     }}>
-      <div style={{ maxWidth:1200, margin:'0 auto', padding:'0 24px', height:60, display:'flex', alignItems:'center', gap:20 }}>
+      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', gap: 24 }}>
 
-        {/* Brand */}
-        <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none', flexShrink:0 }}>
-          <Image src="/st-benedicts-logo.png" alt="SBC" width={30} height={30} style={{ objectFit:'contain' }}/>
-          <div style={{ lineHeight:1.25 }}>
-            <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.15em' }}>St Benedict's College</p>
-            <p style={{ fontSize:12, fontWeight:800, color:'rgba(255,255,255,0.85)' }}>{label} Department</p>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
+          <div style={{ position: 'relative' }}>
+            <Image src="/st-benedicts-logo.png" alt="SBC" width={34} height={34} style={{ objectFit: 'contain' }}/>
+          </div>
+          <div style={{ lineHeight: 1.25 }}>
+            <p style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>St Benedict's College</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }}/>
+              <p style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{label}</p>
+            </div>
           </div>
         </Link>
 
-        {/* Accent divider */}
-        <div style={{ width:1, height:28, background:'rgba(255,255,255,0.08)', flexShrink:0 }}/>
+        <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} className="hidden md:block"/>
 
-        {/* Section links */}
-        <div style={{ display:'flex', gap:2, flex:1, overflow:'hidden' }}>
-          {[['#this-week','This Week'],['#fixtures','Fixtures'],['#results','Results'],['#resources','Resources']].map(([href, lbl]) => (
+        <div style={{ display: 'flex', gap: 2, flex: 1 }} className="hidden md:flex">
+          {[['#this-week','This Week'],['#fixtures','Fixtures'],['#resources','Resources']].map(([href, lbl]) => (
             <a key={href} href={href} style={{
-              fontSize:12, fontWeight:600, padding:'6px 12px', borderRadius:8,
-              color:'rgba(255,255,255,0.45)', textDecoration:'none', whiteSpace:'nowrap',
-              transition:'color .15s',
+              fontSize: 12.5, fontWeight: 650, padding: '8px 14px', borderRadius: 9,
+              color: 'rgba(255,255,255,0.55)', textDecoration: 'none', whiteSpace: 'nowrap',
+              transition: 'all .18s',
             }}
-              onMouseEnter={e => (e.currentTarget.style.color='white')}
-              onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.45)')}>
+              onMouseEnter={e => { e.currentTarget.style.color='white'; e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.55)'; e.currentTarget.style.background='transparent'; }}>
               {lbl}
             </a>
           ))}
         </div>
 
-        {/* Coach login — quiet */}
-        <Link href="/portal-login" style={{
-          fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.28)',
-          textDecoration:'none', whiteSpace:'nowrap', flexShrink:0,
-          transition:'color .15s',
-        }}
-          onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}
-          onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.28)')}>
-          Coach Login
-        </Link>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/portal-login" style={{
+            fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.32)',
+            textDecoration: 'none', whiteSpace: 'nowrap', transition: 'color .15s',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.color='rgba(255,255,255,0.65)')}
+            onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.32)')}>
+            Coach
+          </Link>
 
-        {/* Player login — primary CTA */}
-        <Link href="/player/auth" style={{
-          fontSize:12, fontWeight:800, padding:'8px 20px', borderRadius:10, flexShrink:0,
-          background:`${color}18`, color, border:`1px solid ${color}40`,
-          textDecoration:'none', whiteSpace:'nowrap', transition:'all .15s',
-        }}
-          onMouseEnter={e => { e.currentTarget.style.background=`${color}28`; }}
-          onMouseLeave={e => { e.currentTarget.style.background=`${color}18`; }}>
-          Player Login
-        </Link>
+          <Link href="/player/auth" style={{
+            fontSize: 12.5, fontWeight: 800, padding: '9px 20px', borderRadius: 10,
+            background: color, color: '#030810',
+            textDecoration: 'none', whiteSpace: 'nowrap',
+            boxShadow: `0 4px 16px ${color}40`,
+            transition: 'all .18s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.transform='translateY(-1px)'; e.currentTarget.style.boxShadow=`0 6px 20px ${color}60`; }}
+            onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow=`0 4px 16px ${color}40`; }}>
+            Player Login
+          </Link>
+        </div>
       </div>
     </nav>
   );
