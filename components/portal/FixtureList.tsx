@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import { type SportKey, getSportTerm } from '@/lib/sports';
 
 type Row = Record<string, any>;
@@ -43,7 +44,9 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
         <div style={CARD}>
           <div style={HDR}>
             <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.18em' }}>Upcoming {fx}s</p>
-            {fixtures.length > 0 && <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.2)' }}>{fixtures.length} scheduled</span>}
+            <Link href={`/portal/fixtures?sport=${sport}`} style={{ fontSize: 11, fontWeight: 800, color, textDecoration: 'none', display:'flex', alignItems:'center', gap:4 }}>
+              View All <span style={{fontSize:13}}>→</span>
+            </Link>
           </div>
           {fixtures.length === 0 ? (
             <div style={{ padding: '32px 20px', textAlign: 'center' }}>
@@ -52,7 +55,9 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
           ) : (
             <div>
               {fixtures.map((f, i) => (
-                <div key={f.id || i} style={{ padding: '14px 20px', borderBottom: i < fixtures.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <Link key={f.id || i} href={`/portal/fixtures?sport=${sport}`} style={{ padding: '14px 20px', borderBottom: i < fixtures.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', alignItems: 'center', gap: 12, textDecoration:'none', transition:'background .15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.03)')}
+                  onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                       {f.team && <span style={{ fontSize: 10, fontWeight: 800, color, background: `${color}15`, border: `1px solid ${color}25`, borderRadius: 6, padding: '2px 7px' }}>{f.team}</span>}
@@ -68,7 +73,8 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
                       {f.home_away.toUpperCase()}
                     </span>
                   )}
-                </div>
+                  <span style={{ color:'rgba(255,255,255,0.15)', fontSize:14, flexShrink:0 }}>→</span>
+                </Link>
               ))}
             </div>
           )}
@@ -78,6 +84,9 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
         <div style={CARD} id="results">
           <div style={HDR}>
             <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.18em' }}>Latest {rs}s</p>
+            <Link href={`/results?sport=${sport}`} style={{ fontSize: 11, fontWeight: 800, color, textDecoration: 'none', display:'flex', alignItems:'center', gap:4 }}>
+              View All <span style={{fontSize:13}}>→</span>
+            </Link>
           </div>
           {results.length === 0 ? (
             <div style={{ padding: '32px 20px', textAlign: 'center' }}>
@@ -88,7 +97,9 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
               {results.map((r, i) => {
                 const o = outcome(r.final_score || '');
                 return (
-                  <div key={r.id || i} style={{ padding: '14px 20px', borderBottom: i < results.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <Link key={r.id || i} href={`/results?sport=${sport}`} style={{ padding: '14px 20px', borderBottom: i < results.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', alignItems: 'center', gap: 12, textDecoration:'none', transition:'background .15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.03)')}
+                    onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       {r.team && <span style={{ fontSize: 10, fontWeight: 800, color, background: `${color}15`, border: `1px solid ${color}25`, borderRadius: 6, padding: '2px 7px', marginBottom: 4, display: 'inline-block' }}>{r.team}</span>}
                       <p style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 2 }}>vs {r.opponent}</p>
@@ -98,7 +109,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
                       {r.final_score && <p style={{ fontSize: 18, fontWeight: 900, color: o ? OC[o] : 'white', lineHeight: 1 }}>{r.final_score}</p>}
                       {o && <p style={{ fontSize: 9, fontWeight: 800, color: OC[o], letterSpacing: '0.1em' }}>{o}</p>}
                     </div>
-                  </div>
+                  </Link>
                 );
               })}
             </div>

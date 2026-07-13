@@ -28,7 +28,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
       {heroImg && (
         <div style={{ position:'absolute', inset:0, zIndex:0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={heroImg} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', opacity:0.55 }}/>
+          <img src={heroImg} alt="" style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 20%', opacity:0.55 }}/>
           <div style={{ position:'absolute', inset:0, background:`linear-gradient(180deg, rgba(3,8,16,0.55) 0%, rgba(3,8,16,0.85) 55%, #030810 100%)` }}/>
           <div style={{ position:'absolute', inset:0, background:`linear-gradient(100deg, rgba(3,8,16,0.92) 0%, rgba(3,8,16,0.5) 50%, rgba(3,8,16,0.75) 100%)` }}/>
         </div>
@@ -84,11 +84,14 @@ export default function PortalHero({ sport, nextFixture }: Props) {
 
           {/* Right — Next Fixture: bold, unmissable card */}
           {nextFixture ? (
-            <div style={{
-              position:'relative', borderRadius:24, overflow:'hidden',
+            <Link href={`/portal/fixtures?sport=${sport}`} style={{
+              position:'relative', borderRadius:24, overflow:'hidden', display:'block',
               background: `linear-gradient(160deg, ${color} 0%, ${color}dd 40%, #0a1120 100%)`,
               boxShadow: `0 24px 60px -12px ${color}66, 0 0 0 1px ${color}66`,
-            }}>
+              textDecoration:'none', transition:'transform .2s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.transform='translateY(-3px)')}
+              onMouseLeave={e => (e.currentTarget.style.transform='translateY(0)')}>
               {/* Shine overlay */}
               <div style={{ position:'absolute', top:0, left:0, right:0, height:'50%', background:'linear-gradient(180deg, rgba(255,255,255,0.18), transparent)', pointerEvents:'none' }}/>
 
@@ -124,7 +127,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
                   ))}
                 </div>
               </div>
-            </div>
+            </Link>
           ) : (
             <div style={{ borderRadius:24, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.04)', backdropFilter:'blur(8px)', padding:40, display:'flex', alignItems:'center', justifyContent:'center', minHeight:220 }}>
               <p style={{ fontSize:14, color:'rgba(255,255,255,0.3)', fontWeight:700 }}>No upcoming fixtures</p>
