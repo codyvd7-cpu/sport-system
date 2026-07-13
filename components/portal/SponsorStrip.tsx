@@ -5,18 +5,56 @@ interface Props { sponsors: Row[]; loading: boolean; }
 
 export default function SponsorStrip({ sponsors, loading }: Props) {
   if (!loading && sponsors.length === 0) return null;
+
+  // Duplicate list for seamless infinite scroll
+  const loop = [...sponsors, ...sponsors, ...sponsors];
+
   return (
-    <section style={{ padding: '0 24px 60px', maxWidth: 1240, margin: '0 auto' }}>
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 40 }}>
-        <p style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.25)', textTransform: 'uppercase', letterSpacing: '0.22em', textAlign: 'center', marginBottom: 24 }}>Proudly Supported By</p>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 40 }}>
-          {sponsors.map((s, i) => (
-            <div key={s.id || i} style={{ opacity: 0.5, transition: 'opacity .2s' }}
-              onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
-              onMouseLeave={e => (e.currentTarget.style.opacity = '0.5')}>
+    <section style={{ padding: '0 0 72px', maxWidth: '100%', margin: '0 auto', overflow:'hidden' }}>
+      <style>{`
+        @keyframes marquee {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-33.333%); }
+        }
+        .sponsor-track {
+          animation: marquee 28s linear infinite;
+          display: flex;
+          align-items: center;
+          width: fit-content;
+        }
+        .sponsor-track:hover { animation-play-state: paused; }
+        .sponsor-item {
+          transition: all .35s cubic-bezier(0.16,1,0.3,1);
+          filter: brightness(0) invert(1) opacity(0.4);
+        }
+        .sponsor-item:hover {
+          filter: brightness(0) invert(1) opacity(1);
+          transform: scale(1.12);
+        }
+      `}</style>
+
+      <div style={{ maxWidth:1240, margin:'0 auto', padding:'0 24px 28px', display:'flex', alignItems:'center', gap:16 }}>
+        <div style={{ flex:1, height:1, background:'linear-gradient(90deg, transparent, rgba(255,255,255,0.15))' }}/>
+        <p style={{ fontSize:11, fontWeight:800, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'0.28em', whiteSpace:'nowrap' }}>
+          Proudly Supported By
+        </p>
+        <div style={{ flex:1, height:1, background:'linear-gradient(90deg, rgba(255,255,255,0.15), transparent)' }}/>
+      </div>
+
+      {/* Marquee with edge fade masks */}
+      <div style={{ position:'relative' }}>
+        <div style={{ position:'absolute', left:0, top:0, bottom:0, width:120, background:'linear-gradient(90deg, #030810, transparent)', zIndex:2, pointerEvents:'none' }}/>
+        <div style={{ position:'absolute', right:0, top:0, bottom:0, width:120, background:'linear-gradient(270deg, #030810, transparent)', zIndex:2, pointerEvents:'none' }}/>
+
+        <div className="sponsor-track">
+          {loop.map((s, i) => (
+            <div key={i} className="sponsor-item" style={{
+              flexShrink:0, margin:'0 40px', display:'flex', alignItems:'center', justifyContent:'center',
+              minWidth:100, cursor:'default',
+            }}>
               {s.logo_url
-                ? <Image src={s.logo_url} alt={s.name || 'Sponsor'} width={110} height={40} style={{ objectFit: 'contain', filter: 'brightness(0) invert(1)' }}/>
-                : <p style={{ fontSize: 15, fontWeight: 800, color: 'rgba(255,255,255,0.55)' }}>{s.name}</p>
+                ? <Image src={s.logo_url} alt={s.name || 'Sponsor'} width={120} height={44} style={{ objectFit:'contain' }}/>
+                : <p style={{ fontSize:17, fontWeight:900, color:'rgba(255,255,255,0.5)', whiteSpace:'nowrap' }}>{s.name}</p>
               }
             </div>
           ))}
