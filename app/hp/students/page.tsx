@@ -167,7 +167,7 @@ function HPStudentsInner() {
 
         {/* Filters + search */}
         <div className="mb-4 flex flex-wrap gap-2">
-          <div className="relative flex-1 min-w-[160px]">
+          <div className="relative w-full sm:min-w-[160px]">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/35">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
             </svg>

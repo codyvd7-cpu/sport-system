@@ -345,7 +345,7 @@ ${breakdown || 'No results recorded.'}`;
               {yearResults.length === 0 ? (
                 <div style={{...CARD,textAlign:'center',padding:'32px'}}><p style={{color:'rgba(255,255,255,0.25)',fontSize:13}}>No results for {selYear}</p></div>
               ) : (
-                <div style={{...CARD,padding:0,overflow:'hidden'}}>
+                <div style={{...CARD,padding:0,overflow:'hidden',overflowX:'auto'}}>
                   <div style={{overflowX:'auto'}}>
                     <table style={{width:'100%',borderCollapse:'collapse',minWidth:480}}>
                       <thead>
