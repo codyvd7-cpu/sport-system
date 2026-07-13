@@ -12,6 +12,8 @@ const DAY_MAP: Record<string, number> = {
 
 interface Props { weekItems: Row[]; color: string; loading: boolean; }
 
+const PULSE_STYLE = `@keyframes todayPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0.25)}50%{box-shadow:0 0 0 5px rgba(255,255,255,0)}}`;
+
 export default function ThisWeekBoard({ weekItems, color, loading }: Props) {
   const today = new Date().getDay();
   const todayIdx = today === 0 ? 6 : today - 1;
@@ -67,7 +69,11 @@ export default function ThisWeekBoard({ weekItems, color, loading }: Props) {
               overflow:'hidden',
               opacity: hasItems ? 1 : 0.45,
               minHeight: 200,
-            }}>
+              transition:'transform .25s cubic-bezier(0.16,1,0.3,1), box-shadow .25s ease',
+              cursor: hasItems ? 'default' : 'default',
+            }}
+              onMouseEnter={e => { if(hasItems){ e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow='0 12px 32px rgba(0,0,0,0.3)'; } }}
+              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='none'; }}>
               {/* Day header */}
               <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
                 <div>
@@ -75,9 +81,12 @@ export default function ThisWeekBoard({ weekItems, color, loading }: Props) {
                   <p style={{ fontSize:12, fontWeight:600, color:'rgba(255,255,255,0.3)', marginTop:1 }}>{DAYS_FULL[i]}</p>
                 </div>
                 {isToday && (
-                  <span style={{ fontSize:9, fontWeight:800, padding:'3px 8px', borderRadius:100, background:color, color:'#030810', textTransform:'uppercase', letterSpacing:'0.1em' }}>
-                    Today
-                  </span>
+                  <>
+                    <style>{PULSE_STYLE}</style>
+                    <span style={{ fontSize:9, fontWeight:800, padding:'3px 8px', borderRadius:100, background:color, color:'#030810', textTransform:'uppercase', letterSpacing:'0.1em', animation:'todayPulse 2.4s ease-in-out infinite' }}>
+                      Today
+                    </span>
+                  </>
                 )}
               </div>
 

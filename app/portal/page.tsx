@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { SPORTS, type SportKey, getSportColor } from '@/lib/sports';
 import PortalAuthGuard from '@/components/PortalAuthGuard';
+import PortalAmbient     from '@/components/portal/PortalAmbient';
+import ScrollReveal      from '@/components/portal/ScrollReveal';
 import PortalNav         from '@/components/portal/PortalNav';
 import PortalHero        from '@/components/portal/PortalHero';
 import ThisWeekBoard     from '@/components/portal/ThisWeekBoard';
@@ -68,37 +70,50 @@ function PortalInner() {
       <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse 1400px 900px at 50% -8%, #0d1628 0%, #030810 55%)', color: 'white', position:'relative' }}>
         {/* Subtle grid texture */}
         <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize:'56px 56px', pointerEvents:'none', zIndex:0 }}/>
+        <PortalAmbient color={color}/>
         <PortalNav sport={sport}/>
 
         {/* Hero */}
         <PortalHero sport={sport} nextFixture={nextFixture}/>
 
         {/* This Week */}
-        <ThisWeekBoard
-          weekItems={data?.weekItems ?? []}
-          color={color}
-          loading={loading}
-        />
+        <ScrollReveal>
+          <ThisWeekBoard
+            weekItems={data?.weekItems ?? []}
+            color={color}
+            loading={loading}
+          />
+        </ScrollReveal>
 
         {/* Fixtures + Results */}
-        <FixtureList
-          sport={sport} color={color}
-          fixtures={upcoming}
-          results={data?.results ?? []}
-          loading={loading}
-        />
+        <ScrollReveal delay={0.05}>
+          <FixtureList
+            sport={sport} color={color}
+            fixtures={upcoming}
+            results={data?.results ?? []}
+            loading={loading}
+          />
+        </ScrollReveal>
 
         {/* Player Resources */}
-        <PlayerResources programs={data?.programs ?? []} color={color} loading={loading}/>
+        <ScrollReveal>
+          <PlayerResources programs={data?.programs ?? []} color={color} loading={loading}/>
+        </ScrollReveal>
 
         {/* Department Notices */}
-        <DepartmentNotices reminders={data?.reminders ?? []} color={color} loading={loading}/>
+        <ScrollReveal>
+          <DepartmentNotices reminders={data?.reminders ?? []} color={color} loading={loading}/>
+        </ScrollReveal>
 
         {/* Recognition */}
-        <RecognitionPanel spotlight={data?.spotlight ?? []} color={color} loading={loading}/>
+        <ScrollReveal>
+          <RecognitionPanel spotlight={data?.spotlight ?? []} color={color} loading={loading}/>
+        </ScrollReveal>
 
         {/* Sponsors */}
-        <SponsorStrip sponsors={data?.sponsors ?? []} loading={loading}/>
+        <ScrollReveal>
+          <SponsorStrip sponsors={data?.sponsors ?? []} loading={loading}/>
+        </ScrollReveal>
 
         {/* Footer */}
         <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px', textAlign: 'center' }}>

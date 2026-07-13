@@ -46,7 +46,6 @@ export default function PortalHero({ sport, nextFixture }: Props) {
           {/* Layered depth gradients */}
           <div style={{ position:'absolute', inset:0, background:`linear-gradient(180deg, rgba(3,8,16,0.35) 0%, rgba(3,8,16,0.55) 35%, #030810 92%)` }}/>
           <div style={{ position:'absolute', inset:0, background:`linear-gradient(90deg, rgba(3,8,16,0.96) 0%, rgba(3,8,16,0.55) 42%, rgba(3,8,16,0.15) 75%, rgba(3,8,16,0.5) 100%)` }}/>
-          <div style={{ position:'absolute', inset:0, background:`radial-gradient(ellipse 800px 500px at 15% 100%, ${color}25 0%, transparent 60%)` }}/>
         </div>
       )}
 

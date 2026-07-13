@@ -36,10 +36,12 @@ export default function PlayerResources({ programs, color, loading }: Props) {
               <a href={p.file_url} target="_blank" rel="noreferrer" style={{
                 flexShrink:0, padding:'8px 16px', borderRadius:10, fontSize:11.5, fontWeight:800,
                 background:`${color}18`, color, border:`1px solid ${color}35`, textDecoration:'none',
-                transition:'background .15s',
+                transition:'all .15s cubic-bezier(0.16,1,0.3,1)', display:'inline-block',
               }}
-                onMouseEnter={e => (e.currentTarget.style.background=`${color}30`)}
-                onMouseLeave={e => (e.currentTarget.style.background=`${color}18`)}>
+                onMouseEnter={e => { e.currentTarget.style.background=`${color}30`; e.currentTarget.style.transform='scale(1.05)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background=`${color}18`; e.currentTarget.style.transform='scale(1)'; }}
+                onMouseDown={e => { e.currentTarget.style.transform='scale(0.96)'; }}
+                onMouseUp={e => { e.currentTarget.style.transform='scale(1.05)'; }}>
                 Download
               </a>
             )}
