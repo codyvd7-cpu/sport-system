@@ -84,7 +84,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
         <div style={CARD} id="results">
           <div style={HDR}>
             <p style={{ fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.18em' }}>Latest {rs}s</p>
-            <Link href={`/results?sport=${sport}`} style={{ fontSize: 11, fontWeight: 800, color, textDecoration: 'none', display:'flex', alignItems:'center', gap:4 }}>
+            <Link href={`/portal/fixtures/season?sport=${sport}`} style={{ fontSize: 11, fontWeight: 800, color, textDecoration: 'none', display:'flex', alignItems:'center', gap:4 }}>
               View All <span style={{fontSize:13}}>→</span>
             </Link>
           </div>
@@ -97,7 +97,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
               {results.map((r, i) => {
                 const o = outcome(r.final_score || '');
                 return (
-                  <Link key={r.id || i} href={`/results?sport=${sport}`} style={{ padding: '14px 20px', borderBottom: i < results.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', alignItems: 'center', gap: 12, textDecoration:'none', transition:'background .15s' }}
+                  <Link key={r.id || i} href={`/portal/fixtures/season?sport=${sport}`} style={{ padding: '14px 20px', borderBottom: i < results.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none', display: 'flex', alignItems: 'center', gap: 12, textDecoration:'none', transition:'background .15s' }}
                     onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.03)')}
                     onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
                     <div style={{ flex: 1, minWidth: 0 }}>
