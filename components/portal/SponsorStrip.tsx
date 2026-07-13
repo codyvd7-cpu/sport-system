@@ -25,11 +25,13 @@ export default function SponsorStrip({ sponsors, loading }: Props) {
         .sponsor-track:hover { animation-play-state: paused; }
         .sponsor-item {
           transition: all .35s cubic-bezier(0.16,1,0.3,1);
-          filter: brightness(0) invert(1) opacity(0.4);
+          opacity: 0.72;
+          filter: saturate(0.85);
         }
         .sponsor-item:hover {
-          filter: brightness(0) invert(1) opacity(1);
-          transform: scale(1.12);
+          opacity: 1;
+          filter: saturate(1.1);
+          transform: scale(1.1);
         }
       `}</style>
 
@@ -49,13 +51,20 @@ export default function SponsorStrip({ sponsors, loading }: Props) {
         <div className="sponsor-track">
           {loop.map((s, i) => (
             <div key={i} className="sponsor-item" style={{
-              flexShrink:0, margin:'0 40px', display:'flex', alignItems:'center', justifyContent:'center',
+              flexShrink:0, margin:'0 20px', display:'flex', alignItems:'center', justifyContent:'center',
               minWidth:100, cursor:'default',
             }}>
-              {s.logo_url
-                ? <Image src={s.logo_url} alt={s.name || 'Sponsor'} width={120} height={44} style={{ objectFit:'contain' }}/>
-                : <p style={{ fontSize:17, fontWeight:900, color:'rgba(255,255,255,0.5)', whiteSpace:'nowrap' }}>{s.name}</p>
-              }
+              {s.logo_url ? (
+                <div style={{
+                  background:'rgba(255,255,255,0.94)', borderRadius:14, padding:'12px 22px',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  boxShadow:'0 4px 16px rgba(0,0,0,0.15)',
+                }}>
+                  <Image src={s.logo_url} alt={s.name || 'Sponsor'} width={110} height={38} style={{ objectFit:'contain' }}/>
+                </div>
+              ) : (
+                <p style={{ fontSize:17, fontWeight:900, color:'rgba(255,255,255,0.5)', whiteSpace:'nowrap' }}>{s.name}</p>
+              )}
             </div>
           ))}
         </div>
