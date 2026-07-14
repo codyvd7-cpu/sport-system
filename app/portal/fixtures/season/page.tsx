@@ -4,16 +4,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getSportLabel, getSportColor, getSportTerm } from '@/lib/sports';
 
 type Row = Record<string, any>;
-
-const SPORT_CONFIG: Record<string, { label: string; color: string }> = {
-  hockey:   { label:'Hockey',   color:'#38bdf8' },
-  rugby:    { label:'Rugby',    color:'#f87171' },
-  cricket:  { label:'Cricket',  color:'#fbbf24' },
-  swimming: { label:'Swimming', color:'#818cf8' },
-  rowing:   { label:'Rowing',   color:'#34d399' },
-};
 
 function outcomeOf(score: string) {
   if (!score) return null;
@@ -33,8 +26,9 @@ function SeasonInner() {
   const searchParams = useSearchParams();
   const sport = searchParams.get('sport') || 'hockey';
   const initialTab = (searchParams.get('tab') as 'upcoming'|'results') || 'upcoming';
-  const cfg = SPORT_CONFIG[sport] || SPORT_CONFIG.hockey;
-  const C = cfg.color;
+  const label = getSportLabel(sport);
+  const fxTerm = getSportTerm(sport, 'fixture');
+  const C = getSportColor(sport);
   const BG = '#0a0f1e';
   const BORDER = 'rgba(255,255,255,0.07)';
 
@@ -57,7 +51,7 @@ function SeasonInner() {
   }, [sport]);
 
   const upcoming = fixtures.filter(f => f.fixture_date >= today);
-  const past     = fixtures.filter(f => f.fixture_date < today);
+  
 
   // Group upcoming by date
   const groupedUpcoming = upcoming.reduce((acc: Record<string,Row[]>, f) => {
@@ -86,7 +80,7 @@ function SeasonInner() {
               <img src="/st-benedicts-logo.png" alt="SBC" style={{width:34,height:34,objectFit:'contain'}}/>
               <div>
                 <p style={{fontSize:14,fontWeight:700,color:'white',lineHeight:1}}>ST BENEDICT&apos;S COLLEGE</p>
-                <p style={{fontSize:10,fontWeight:500,color:C,letterSpacing:'0.05em',marginTop:2,textTransform:'uppercase'}}>{cfg.label} Department</p>
+                <p style={{fontSize:10,fontWeight:500,color:C,letterSpacing:'0.05em',marginTop:2,textTransform:'uppercase'}}>{label} Department</p>
               </div>
             </div>
             <Link href={`/portal?sport=${sport}`} className="back-link" style={{fontSize:13,color:'rgba(255,255,255,0.45)',textDecoration:'none',display:'flex',alignItems:'center',gap:6,transition:'color 0.2s'}}>
@@ -105,7 +99,7 @@ function SeasonInner() {
               <span style={{fontSize:11,fontWeight:700,letterSpacing:'0.2em',color:C,textTransform:'uppercase'}}>Season Schedule</span>
             </div>
             <h1 style={{fontSize:38,fontWeight:800,color:'white',lineHeight:1.1,marginBottom:6,letterSpacing:'-0.02em'}}>
-              {cfg.label} Fixtures
+              {label} {fxTerm}s
             </h1>
             <p style={{fontSize:14,color:'rgba(255,255,255,0.4)'}}>Full season schedule and results</p>
           </div>

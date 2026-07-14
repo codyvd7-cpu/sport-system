@@ -10,9 +10,10 @@ export default function PortalAuthGuard({ children, sport }: { children: React.R
     fetch('/api/portal/check', { credentials: 'include' })
       .then(r => r.json())
       .then(data => {
-        if (data.ok) {
+        if (data.ok && (!data.sport || data.sport === sport)) {
           setChecked(true);
         } else {
+          // No valid cookie, or the code entered was for a different sport
           router.replace(`/portal-login?sport=${sport}`);
         }
       })

@@ -27,7 +27,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
   const rs = getSportTerm(sport, 'result');
 
   if (loading) return (
-    <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px 56px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px 56px' }}>
       {[0,1].map(i => <div key={i} style={{ height: 320, borderRadius: 20, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}/>)}
     </div>
   );
@@ -41,7 +41,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
 
   return (
     <section id="fixtures" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }} className="md:grid-cols-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* Upcoming fixtures */}
         <div style={CARD}>
@@ -61,7 +61,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
           ) : (
             <div>
               {fixtures.map((f, i) => (
-                <Link key={f.id || i} href={`/portal/fixtures?sport=${sport}`} style={{
+                <Link key={f.id || i} href={`/portal/fixtures?sport=${sport}&date=${f.fixture_date}`} style={{
                   padding:'16px 24px', borderBottom: i < fixtures.length-1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                   display:'flex', alignItems:'center', gap:14, textDecoration:'none', transition:'background .15s',
                 }}

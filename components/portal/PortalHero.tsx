@@ -110,7 +110,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
           {/* Right — Next Fixture: hero-grade card */}
           <div style={fadeUp(0.35)}>
             {nextFixture ? (
-              <Link href={`/portal/fixtures?sport=${sport}`} style={{
+              <Link href={`/portal/fixtures?sport=${sport}&date=${nextFixture.fixture_date}`} style={{
                 position:'relative', borderRadius:26, overflow:'hidden', display:'block',
                 background: `linear-gradient(155deg, ${color} 0%, ${color}cc 45%, #0a1120 100%)`,
                 boxShadow: `0 28px 70px -14px ${color}70, 0 0 0 1px ${color}55`,

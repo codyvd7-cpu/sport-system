@@ -58,6 +58,15 @@ export async function POST(req: NextRequest) {
       path: '/',
       maxAge: Math.floor(TTL_MS / 1000),
     });
+    // Readable by the client — lets /portal, /portal-login and /login default to
+    // the parent's sport when no ?sport= param is present.
+    res.cookies.set('portal_sport', sport || 'hockey', {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: Math.floor(TTL_MS / 1000),
+    });
     return res;
   } catch {
     return NextResponse.json({ error: 'Server error.' }, { status: 500 });
