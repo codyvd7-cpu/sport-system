@@ -35,7 +35,7 @@ function PortalInner() {
   const color = getSportColor(sport);
 
   const [data, setData] = React.useState<{
-    sponsors: Row[]; weekItems: Row[]; reminders: Row[];
+    weekItems: Row[]; reminders: Row[];
     fixtures: Row[]; results: Row[]; programs: Row[]; spotlight: Row[];
   } | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -43,8 +43,7 @@ function PortalInner() {
   React.useEffect(() => {
     async function load() {
       const today = new Date().toISOString().split('T')[0];
-      const [sponsors, planRows, reminders, fixtures, results, programs, spotlight] = await Promise.all([
-        safeQuery<Row[]>(supabase.from('portal_sponsors').select('*').eq('is_published',true).eq('sport',sport).order('sort_order'), []),
+      const [planRows, reminders, fixtures, results, programs, spotlight] = await Promise.all([
         safeQuery<Row[]>(supabase.from('portal_week_plans').select('id').eq('published',true).eq('sport',sport).order('created_at',{ascending:false}).limit(1), []),
         safeQuery<Row[]>(supabase.from('portal_reminders').select('*').eq('is_published',true).eq('sport',sport).order('sort_order'), []),
         safeQuery<Row[]>(supabase.from('portal_fixtures').select('*').eq('is_published',true).eq('sport',sport).order('fixture_date').gte('fixture_date',today).limit(8), []),
@@ -56,8 +55,7 @@ function PortalInner() {
       const weekItems = planId
         ? await safeQuery<Row[]>(supabase.from('portal_week_plan_items').select('*').eq('week_plan_id',planId).order('sort_order'), [])
         : [];
-      if (process.env.NODE_ENV !== 'production') console.log('[Portal] sponsors:', sponsors);
-      setData({ sponsors, weekItems, reminders, fixtures, results, programs: programs.slice(0,6), spotlight });
+      setData({ weekItems, reminders, fixtures, results, programs: programs.slice(0,6), spotlight });
       setLoading(false);
     }
     load();
@@ -113,7 +111,7 @@ function PortalInner() {
 
         {/* Sponsors */}
         <ScrollReveal>
-          <SponsorStrip sponsors={data?.sponsors ?? []} loading={loading}/>
+          <SponsorStrip color={color}/>
         </ScrollReveal>
 
         {/* Footer */}
