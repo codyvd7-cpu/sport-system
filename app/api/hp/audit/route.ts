@@ -17,8 +17,13 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const { data } = await getHpAdmin().from('hp_audit_log')
-      .select('*').order('created_at', { ascending: false }).limit(50);
+    const { searchParams } = req.nextUrl;
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100', 10) || 100, 500);
+    const action = searchParams.get('action');
+    let q = getHpAdmin().from('hp_audit_log')
+      .select('*').order('created_at', { ascending: false }).limit(limit);
+    if (action) q = q.eq('action', action);
+    const { data } = await q;
     return NextResponse.json({ logs: data || [] });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

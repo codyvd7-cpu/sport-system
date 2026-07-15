@@ -13,10 +13,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many attempts. Wait a minute and try again.' }, { status: 429 });
   }
 
-  const expectedCode = process.env.HP_ACCESS_CODE; // server-only, NOT NEXT_PUBLIC
+  const coachCode = process.env.HP_ACCESS_CODE;       // server-only, NOT NEXT_PUBLIC
+  const adminCode = process.env.HP_ADMIN_ACCESS_CODE; // optional elevated code
   const secret = process.env.HP_SESSION_SECRET;
 
-  if (!expectedCode || !secret) {
+  if (!coachCode || !secret) {
     return NextResponse.json({ error: 'HP access not configured on server.' }, { status: 500 });
   }
 
@@ -26,17 +27,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid code.' }, { status: 400 });
     }
 
-    // Constant-time comparison to prevent timing attacks
+    // Constant-time comparison to prevent timing attacks — check both codes
     const provided = Buffer.from(code.trim().toLowerCase());
-    const expected = Buffer.from(expectedCode.toLowerCase());
-    if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+    const matches = (expected?: string) => {
+      if (!expected) return false;
+      const buf = Buffer.from(expected.toLowerCase());
+      return provided.length === buf.length && crypto.timingSafeEqual(provided, buf);
+    };
+    const role = matches(adminCode) ? 'hp-admin' : matches(coachCode) ? 'hp-coach' : null;
+    if (!role) {
       return NextResponse.json({ error: 'Incorrect access code.' }, { status: 401 });
     }
 
-    // Build signed token
+    // Build signed token (role travels in the payload for permissions + audit attribution)
     const payload = Buffer.from(JSON.stringify({
       exp: Date.now() + TTL_MS,
       iat: Date.now(),
+      role,
     })).toString('base64');
     const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     const cookieValue = `${payload}.${sig}`;

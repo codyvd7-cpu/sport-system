@@ -3,17 +3,9 @@
 // All API routes should call these functions rather than querying Supabase directly.
 // When school_id is added, update these functions — not every individual route.
 //
-// ─── Pending DB migrations (run in Supabase SQL editor when ready) ─────────────
-// 1. Upsert constraint:
-//    ALTER TABLE hp_test_results ADD CONSTRAINT hp_test_results_unique
-//      UNIQUE (student_id, year, term);
-//    Then replace delete+insert in saveTestResult() with:
-//    db.from('hp_test_results').upsert([payload], { onConflict: 'student_id,year,term' })
-//
-// 2. Attendance constraint:
-//    ALTER TABLE hp_attendance ADD CONSTRAINT hp_attendance_unique
-//      UNIQUE (student_id, session_date);
-//    Then replace delete+insert in saveAttendance() with .upsert()
+// ─── DB migrations ──────────────────────────────────────────────────────────────
+// 1+2. Upsert constraints + look-back indexes: see supabase-hp-integrity.sql
+//      (saves upsert atomically once run; legacy fallback keeps working before)
 //
 // 3. school_id (multi-school):
 //    ALTER TABLE hp_students     ADD COLUMN school_id uuid REFERENCES schools(id);
@@ -31,6 +23,20 @@ export function getHpAdmin(): SupabaseClient {
   const key  = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error('Server misconfigured: missing Supabase credentials.');
   return createClient(url, key);
+}
+
+// ── Audit logging ──────────────────────────────────────────────────────────────
+// Fire-and-forget change log. Never throws — an audit failure must never block
+// a save. Gives full look-back: who changed what, old → new, when.
+export async function logAudit(
+  db: SupabaseClient,
+  action: string,
+  actor: string,
+  details: Record<string, unknown>
+) {
+  try {
+    await db.from('hp_audit_log').insert([{ action, actor: actor || 'unknown', details }]);
+  } catch { /* never block the save */ }
 }
 
 // ── Students ─────────────────────────────────────────────────────────────────
@@ -71,19 +77,48 @@ export async function getTestResults(
 
 export async function saveTestResult(
   db: SupabaseClient,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
+  actor = 'hp-coach'
 ) {
   const { student_id, term, year } = payload as { student_id: string; term: string; year: number };
   if (!student_id || !term || !year) throw new Error('Missing required fields: student_id, term, year');
-  // Delete-then-insert until DB upsert constraint is added on (student_id, year, term)
-  // TODO: replace with .upsert() once unique constraint exists
-  await db.from('hp_test_results')
-    .delete()
-    .eq('student_id', student_id)
-    .eq('term', term)
-    .eq('year', year);
-  const { error } = await db.from('hp_test_results').insert([payload]);
-  if (error) throw error;
+
+  // Snapshot the existing row for the audit trail (old → new)
+  const { data: existing } = await db.from('hp_test_results')
+    .select('*')
+    .eq('student_id', student_id).eq('term', term).eq('year', year)
+    .maybeSingle();
+
+  // Atomic upsert — requires the unique constraint from supabase-hp-integrity.sql.
+  // Falls back to legacy delete+insert if the constraint hasn't been applied yet.
+  const { error } = await db.from('hp_test_results')
+    .upsert([payload], { onConflict: 'student_id,year,term' });
+  if (error) {
+    if (/no unique|exclusion constraint|ON CONFLICT/i.test(error.message || '')) {
+      await db.from('hp_test_results').delete()
+        .eq('student_id', student_id).eq('term', term).eq('year', year);
+      const { error: insErr } = await db.from('hp_test_results').insert([payload]);
+      if (insErr) throw insErr;
+    } else {
+      throw error;
+    }
+  }
+
+  // Audit: record only the fields that actually changed
+  const changes: Record<string, [unknown, unknown]> = {};
+  Object.keys(payload).forEach(k => {
+    if (k === 'student_id' || k === 'id') return;
+    const before = existing ? existing[k] : undefined;
+    const after = payload[k];
+    if (String(before ?? '') !== String(after ?? '')) changes[k] = [before ?? null, after ?? null];
+  });
+  if (Object.keys(changes).length) {
+    await logAudit(db, 'save_test_result', actor, {
+      student_id, year, term,
+      new_record: !existing,
+      changes,
+    });
+  }
 }
 
 // ── Attendance ────────────────────────────────────────────────────────────────
@@ -102,15 +137,48 @@ export async function getAttendance(
 export async function saveAttendance(
   db: SupabaseClient,
   date: string,
-  records: Array<{ student_id: string; session_date: string; session_type?: string; status: string }>
+  records: Array<{ student_id: string; session_date: string; session_type?: string; status: string }>,
+  actor = 'hp-coach'
 ) {
   if (!date || !records.length) throw new Error('Missing date or records');
   const ids = records.map(r => r.student_id);
-  // Delete existing records for this date + these students, then insert fresh
-  // TODO: replace with upsert once (student_id, session_date) unique constraint exists
-  await db.from('hp_attendance').delete().eq('session_date', date).in('student_id', ids);
-  const { error } = await db.from('hp_attendance').insert(records);
-  if (error) throw error;
+
+  // Snapshot existing register for this date + students (for the audit diff)
+  const { data: existing } = await db.from('hp_attendance')
+    .select('student_id,status')
+    .eq('session_date', date).in('student_id', ids);
+  const prevStatus: Record<string, string> = {};
+  (existing || []).forEach(r => { prevStatus[r.student_id] = r.status; });
+
+  // Atomic upsert — requires the unique constraint from supabase-hp-integrity.sql.
+  // Falls back to legacy delete+insert if the constraint hasn't been applied yet.
+  const { error } = await db.from('hp_attendance')
+    .upsert(records, { onConflict: 'student_id,session_date' });
+  if (error) {
+    if (/no unique|exclusion constraint|ON CONFLICT/i.test(error.message || '')) {
+      await db.from('hp_attendance').delete().eq('session_date', date).in('student_id', ids);
+      const { error: insErr } = await db.from('hp_attendance').insert(records);
+      if (insErr) throw insErr;
+    } else {
+      throw error;
+    }
+  }
+
+  // Audit: log which students' statuses changed (old → new), capped for size
+  const changed = records
+    .filter(r => (prevStatus[r.student_id] ?? null) !== r.status)
+    .map(r => ({ student_id: r.student_id, from: prevStatus[r.student_id] ?? null, to: r.status }))
+    .slice(0, 80);
+  if (changed.length) {
+    await logAudit(db, 'save_attendance', actor, {
+      date,
+      session_type: records[0]?.session_type || 'HP Training',
+      total_records: records.length,
+      changed_count: changed.length,
+      new_session: (existing || []).length === 0,
+      changed,
+    });
+  }
 }
 
 // ── Dashboard aggregation ─────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ const NAV = [
   { href:'/hp/testing',        label:'Testing',         d:'M22 12h-4l-3 9L9 3l-3 9H2' },
   { href:'/hp/trends',         label:'Trends',          d:'M23 6L13.5 15.5 8.5 10.5 1 18 M17 6h6v6' },
   { href:'/hp/classes',        label:'Classes',         d:'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z' },
+  { href:'/hp/history',        label:'History',         d:'M3 3v5h5 M3.05 13A9 9 0 1 0 6 5.3L3 8 M12 7v5l4 2' },
 ];
 
 function Icon({ d, size=16 }: { d:string; size?:number }) {

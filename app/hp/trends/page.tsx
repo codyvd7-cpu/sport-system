@@ -8,6 +8,11 @@ import {
 import { HP_TERMS } from '@/lib/hpTerm';
 import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue } from '@/lib/hpTests';
 import { HP_CLASSES } from '@/lib/hpConfig';
+import {
+  movementSummary, topMovers, watchList,
+  swc as calcSwc, sd as calcSd, median as calcMedian,
+  percentileRank, termSeries, classifyChange,
+} from '@/lib/hpAnalytics';
 
 type Row = Record<string, any>;
 const TERMS = HP_TERMS;
@@ -96,6 +101,19 @@ export default function HPTrendsPage(){
     sorted.forEach(r=>{map[r.student_id]=r;});
     return map;
   },[results,selYear]);
+
+  // ── Cohort insights (SWC-based movement, top movers, watch list) ──────────────
+  const insights = React.useMemo(() => {
+    if (!gradeStudents.length) return null;
+    const move = movementSummary(gradeStudents, results, tests, selYear);
+    if (move.comparisons === 0) return null; // needs 2+ terms of data
+    return {
+      move,
+      movers: topMovers(gradeStudents, results, tests, selYear, 3),
+      watch:  watchList(gradeStudents, results, tests, selYear, 6),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [students, results, grade, selYear]);
 
   // term averages for a set of students + test key
   function termAvgs(ss:Row[],key:string){
@@ -217,6 +235,80 @@ export default function HPTrendsPage(){
               ))}
             </div>
 
+            {/* ── Cohort Insights — SWC-classified movement ── */}
+            {insights&&(
+              <div className="rounded-2xl overflow-hidden"
+                style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
+                <div className="border-b px-5 py-3 flex flex-wrap items-center justify-between gap-2"
+                  style={{borderColor:'rgba(255,255,255,0.06)',background:'#0d1424'}}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{color:'#10b981'}}>Cohort Insights · since previous test</p>
+                  <p className="text-[9px]" style={{color:'rgba(255,255,255,0.25)'}}>Changes measured against SWC (0.2 × cohort SD) — smaller shifts are normal variation</p>
+                </div>
+                <div className="px-5 py-4 space-y-4">
+                  {/* Movement summary */}
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full px-3 py-1.5 text-[11px] font-black"
+                      style={{background:'rgba(16,185,129,0.12)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'}}>
+                      ▲ {insights.move.improved} meaningful improvement{insights.move.improved===1?'':'s'}
+                    </span>
+                    <span className="rounded-full px-3 py-1.5 text-[11px] font-bold"
+                      style={{background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.45)',border:'1px solid rgba(255,255,255,0.1)'}}>
+                      ≈ {insights.move.stable} within normal variation
+                    </span>
+                    <span className="rounded-full px-3 py-1.5 text-[11px] font-black"
+                      style={{background:'rgba(248,113,113,0.1)',color:'#f87171',border:'1px solid rgba(248,113,113,0.3)'}}>
+                      ▼ {insights.move.declined} meaningful decline{insights.move.declined===1?'':'s'}
+                    </span>
+                  </div>
+
+                  {/* Top movers */}
+                  {(insights.movers.up.length>0||insights.movers.down.length>0)&&(
+                    <div>
+                      <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.2em]" style={{color:'rgba(255,255,255,0.3)'}}>Biggest movers</p>
+                      <div className="flex flex-wrap gap-2">
+                        {insights.movers.up.map(m=>(
+                          <Link key={m.id} href={`/hp/students/${m.id}`}
+                            className="rounded-xl border px-3 py-1.5 text-[11.5px] font-bold transition hover:brightness-125"
+                            style={{background:'rgba(16,185,129,0.08)',color:'#34d399',borderColor:'rgba(16,185,129,0.25)',textDecoration:'none'}}>
+                            {m.name} ↑
+                          </Link>
+                        ))}
+                        {insights.movers.down.map(m=>(
+                          <Link key={m.id} href={`/hp/students/${m.id}`}
+                            className="rounded-xl border px-3 py-1.5 text-[11.5px] font-bold transition hover:brightness-125"
+                            style={{background:'rgba(248,113,113,0.07)',color:'#f87171',borderColor:'rgba(248,113,113,0.22)',textDecoration:'none'}}>
+                            {m.name} ↓
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Watch list */}
+                  {insights.watch.length>0&&(
+                    <div>
+                      <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.2em]" style={{color:'rgba(255,255,255,0.3)'}}>Watch list — needs coach attention</p>
+                      <div className="space-y-1.5">
+                        {insights.watch.map(w=>(
+                          <Link key={w.id} href={`/hp/students/${w.id}`}
+                            className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 transition hover:bg-white/[0.03]"
+                            style={{borderColor:'rgba(251,191,36,0.2)',background:'rgba(251,191,36,0.04)',textDecoration:'none'}}>
+                            <span className="text-[12px] font-bold text-white">{w.name}</span>
+                            {w.reasons.map(r=>(
+                              <span key={r} className="rounded-full px-2 py-0.5 text-[9px] font-bold"
+                                style={{background:'rgba(251,191,36,0.12)',color:'#fbbf24',border:'1px solid rgba(251,191,36,0.25)'}}>
+                                {r}
+                              </span>
+                            ))}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Per-test grade summary with recharts term bars */}
             <div className="rounded-2xl overflow-hidden"
               style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.07)'}}>
@@ -229,7 +321,7 @@ export default function HPTrendsPage(){
                 {tests.map(t=>{
                   const vals=gradeStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
                   const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-                  const tier=avg!==null?getTier(t.key as any,avg,!t.lower):null;
+                  const tier=avg!==null?getTier(t.key as any,avg,t.lower):null;
                   const avgs=termAvgs(gradeStudents,t.key);
                   const best=vals.length?(!t.lower?Math.max(...vals):Math.min(...vals)):null;
                   const validTerms=avgs.filter((v):v is number=>v!==null);
@@ -315,7 +407,7 @@ export default function HPTrendsPage(){
                 {tests.map(t=>{
                   const vals=classStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[t.key]):NaN;return isNaN(v)?null:v;}).filter((v):v is number=>v!==null);
                   const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
-                  const tier=avg!==null?getTier(t.key as any,avg,!t.lower):null;
+                  const tier=avg!==null?getTier(t.key as any,avg,t.lower):null;
                   const active=selTest===t.key;
                   return(
                     <button key={t.key} onClick={()=>setSelTest(active?null:t.key)}
@@ -341,18 +433,23 @@ export default function HPTrendsPage(){
               const vals=classStudents.map(s=>{const r=latestMap[s.id];const v=r?parseFloat(r[testObj.key]):NaN;return isNaN(v)?null:{id:s.id,name:s.full_name.trim().split(' ').pop()||s.full_name,val:v,group:s.training_group};}).filter((x):x is{id:string;name:string;val:number;group:number|null}=>x!==null);
               const sorted=[...vals].sort((a,b)=>!testObj.lower?b.val-a.val:a.val-b.val);
               const avg=vals.length?vals.reduce((a,b)=>a+b.val,0)/vals.length:null;
-              const avgTier=avg!==null?getTier(testObj.key as any,avg,!testObj.lower):null;
+              const avgTier=avg!==null?getTier(testObj.key as any,avg,testObj.lower):null;
               const avgs=termAvgs(classStudents,testObj.key);
               const validTerms=avgs.filter((v):v is number=>v!==null);
               const improved=validTerms.length>1&&(!testObj.lower?validTerms[validTerms.length-1]>validTerms[0]:validTerms[validTerms.length-1]<validTerms[0]);
               const counts:Record<string,number>={};
-              vals.forEach(x=>{const l=getTier(testObj.key as any,x.val,!testObj.lower).label;counts[l]=(counts[l]||0)+1;});
+              vals.forEach(x=>{const l=getTier(testObj.key as any,x.val,testObj.lower).label;counts[l]=(counts[l]||0)+1;});
+              const rawVals=vals.map(v=>v.val);
+              const wSwc=calcSwc(rawVals);
+              const dMed=calcMedian(rawVals);
+              const dSd=calcSd(rawVals);
+              const statUnit=testObj.unit==='mm:ss'?'s':testObj.unit;
 
               // Bar chart data
               const barData = sorted.slice(0,12).map(x => ({
                 name: x.name.slice(0,6),
                 val: x.val,
-                color: getTier(testObj.key as any,x.val,!testObj.lower).color,
+                color: getTier(testObj.key as any,x.val,testObj.lower).color,
               }));
 
               return(
@@ -377,6 +474,13 @@ export default function HPTrendsPage(){
                             <TierPill label={avgTier.label}/>
                             <span className="text-[10px]" style={{color:'rgba(255,255,255,0.3)'}}>class avg · {vals.length}/{classStudents.length} tested</span>
                           </div>
+                          {vals.length>2&&(
+                            <p className="mt-2 text-[10px]" style={{color:'rgba(255,255,255,0.35)'}}>
+                              Median {fmtValue(testObj.key as any,dMed)} · SD {dSd.toFixed(2)}{statUnit} ·{' '}
+                              <span style={{color:'rgba(255,255,255,0.55)',fontWeight:700}}>SWC ±{wSwc.toFixed(2)}{statUnit}</span>
+                              {' '}— changes smaller than the SWC are normal variation, not real change
+                            </p>
+                          )}
                         </>
                       )}
                     </div>
@@ -443,23 +547,24 @@ export default function HPTrendsPage(){
                   {/* Athlete rankings */}
                   <div className="divide-y" style={{borderColor:'rgba(255,255,255,0.04)'}}>
                     {sorted.map((x,i)=>{
-                      const tier=getTier(testObj.key as any,x.val,!testObj.lower);
-                      // Use earliest vs latest term available for this student/key
-                      const TORD: Record<string,number> = {'Term 1':1,'Term 2':2,'Term 3':3,'Term 4':4};
-                      const sResults=results
-                        .filter(r=>r.student_id===x.id&&r.year===selYear&&r[testObj.key]!=null)
-                        .sort((a,b)=>(TORD[a.term]??0)-(TORD[b.term]??0));
-                      const v1=sResults.length>1?parseFloat(sResults[0][testObj.key]):NaN;
-                      const v2=sResults.length>1?parseFloat(sResults[sResults.length-1][testObj.key]):NaN;
-                      const hasDelta=!isNaN(v1)&&!isNaN(v2)&&v1!==v2;
-                      const delta=hasDelta?((!testObj.lower?v2-v1:v1-v2)):0;
-                      const pctDelta=hasDelta?Math.abs((delta/v1)*100).toFixed(1):null;
+                      const tier=getTier(testObj.key as any,x.val,testObj.lower);
+                      // Latest vs previous result, classified against the class SWC
+                      const ser=termSeries(results,x.id,testObj.key,selYear);
+                      const hasDelta=ser.length>1;
+                      const prevV=hasDelta?ser[ser.length-2].val:NaN;
+                      const latV=hasDelta?ser[ser.length-1].val:NaN;
+                      const chg=hasDelta?classifyChange(prevV,latV,wSwc,testObj.lower):null;
+                      const rawD=hasDelta?(testObj.lower?prevV-latV:latV-prevV):0;
+                      const pctDelta=hasDelta&&prevV!==0?Math.abs((rawD/prevV)*100).toFixed(1):null;
+                      const pct=percentileRank(rawVals,x.val,testObj.lower);
                       return(
                         <div key={x.id} className="flex items-center gap-3 px-5 py-3">
                           <span className="w-5 shrink-0 text-[10px] text-right" style={{color:'rgba(255,255,255,0.25)'}}>{i+1}</span>
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-bold text-white truncate">{x.name}</p>
-                            {x.group&&<p className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>Group {x.group}</p>}
+                            <p className="text-[10px]" style={{color:'rgba(255,255,255,0.25)'}}>
+                              {x.group?`Group ${x.group}`:''}{x.group&&pct!==null?' · ':''}{pct!==null?`P${pct} in class`:''}
+                            </p>
                           </div>
                           <div className="text-right shrink-0">
                             <p className="text-[13px] font-black" style={{color:tier.color}}>{fmtValue(testObj.key as any,x.val)}</p>
@@ -467,8 +572,9 @@ export default function HPTrendsPage(){
                           </div>
                           {hasDelta&&(
                             <span className="shrink-0 w-14 text-right text-[10px] font-black"
-                              style={{color:delta>0?'#10b981':'#f87171'}}>
-                              {delta>0?'▲':'▼'} {pctDelta}%
+                              title={chg==='stable'?'Within normal variation (below SWC)':chg==='improved'?'Meaningful improvement (beyond SWC)':'Meaningful decline (beyond SWC)'}
+                              style={{color:chg==='improved'?'#10b981':chg==='declined'?'#f87171':'rgba(255,255,255,0.3)'}}>
+                              {chg==='improved'?'▲':chg==='declined'?'▼':'≈'} {pctDelta}%
                             </span>
                           )}
                         </div>

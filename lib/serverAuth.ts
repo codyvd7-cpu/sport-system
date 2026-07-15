@@ -89,6 +89,17 @@ export async function authenticateRequest(
  * Verifies HP access via the secure httpOnly cookie set by /api/hp/login.
  * Cookie value is a signed token tied to the server-side secret.
  */
+/** Actor label from the hp_session cookie payload (for audit attribution). */
+export function getHpActor(req: NextRequest): string {
+  const match = (req.headers.get('cookie') || '').match(/hp_session=([^;]+)/);
+  if (!match) return 'unknown';
+  try {
+    const [payload] = decodeURIComponent(match[1]).split('.');
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+    return decoded.role || 'hp-coach';
+  } catch { return 'unknown'; }
+}
+
 export function verifyHpCookie(req: NextRequest): boolean {
   const cookieHeader = req.headers.get('cookie') || '';
   const match = cookieHeader.match(/hp_session=([^;]+)/);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHpCookie } from '@/lib/serverAuth';
+import { verifyHpCookie, getHpActor } from '@/lib/serverAuth';
 import { createClient } from '@supabase/supabase-js';
 import { getDashboardData, saveTestResult, saveAttendance } from '@/lib/hpRepository';
 
@@ -125,12 +125,12 @@ export async function POST(req: NextRequest) {
 
   try {
     if (action === 'save_test_result') {
-      try { await saveTestResult(admin, payload); return NextResponse.json({ ok: true }); }
+      try { await saveTestResult(admin, payload, getHpActor(req)); return NextResponse.json({ ok: true }); }
       catch (e: any) { return NextResponse.json({ error: e.message }, { status: 400 }); }
     }
     if (action === 'save_attendance') {
       const { date, records } = payload;
-      try { await saveAttendance(admin, date, records); return NextResponse.json({ ok: true }); }
+      try { await saveAttendance(admin, date, records, getHpActor(req)); return NextResponse.json({ ok: true }); }
       catch (e: any) { return NextResponse.json({ error: e.message }, { status: 400 }); }
     }
     if (action === 'update') {
