@@ -12,7 +12,7 @@ import PortalHero        from '@/components/portal/PortalHero';
 import ThisWeekBoard     from '@/components/portal/ThisWeekBoard';
 import FixtureList       from '@/components/portal/FixtureList';
 import PlayerResources   from '@/components/portal/PlayerResources';
-import DepartmentNotices from '@/components/portal/DepartmentNotices';
+import NoticeCard        from '@/components/portal/NoticeCard';
 import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 
@@ -72,6 +72,9 @@ function PortalInner() {
         <PortalAmbient color={color}/>
         <PortalNav sport={sport}/>
 
+        {/* Department notice — dismissible, reappears when a new notice is published */}
+        <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>
+
         {/* Hero */}
         <PortalHero sport={sport} nextFixture={nextFixture}/>
 
@@ -79,7 +82,9 @@ function PortalInner() {
         <ScrollReveal>
           <ThisWeekBoard
             weekItems={data?.weekItems ?? []}
+            fixtures={data?.fixtures ?? []}
             color={color}
+            sport={sport}
             loading={loading}
           />
         </ScrollReveal>
@@ -97,11 +102,6 @@ function PortalInner() {
         {/* Player Resources */}
         <ScrollReveal>
           <PlayerResources programs={data?.programs ?? []} color={color} loading={loading}/>
-        </ScrollReveal>
-
-        {/* Department Notices */}
-        <ScrollReveal>
-          <DepartmentNotices reminders={data?.reminders ?? []} color={color} loading={loading}/>
         </ScrollReveal>
 
         {/* Recognition */}

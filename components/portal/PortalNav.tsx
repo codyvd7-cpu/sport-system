@@ -40,22 +40,6 @@ export default function PortalNav({ sport }: Props) {
           </div>
         </Link>
 
-        <div style={{ width: 1, height: 26, background: 'rgba(255,255,255,0.1)', flexShrink: 0 }} className="hidden md:block"/>
-
-        <div style={{ gap: 2, flex: 1 }} className="hidden md:flex">
-          {[['#this-week','This Week'],['#fixtures','Fixtures'],['#resources','Resources']].map(([href, lbl]) => (
-            <a key={href} href={href} style={{
-              fontSize: 12.5, fontWeight: 650, padding: '8px 14px', borderRadius: 9,
-              color: 'rgba(255,255,255,0.55)', textDecoration: 'none', whiteSpace: 'nowrap',
-              transition: 'all .18s',
-            }}
-              onMouseEnter={e => { e.currentTarget.style.color='white'; e.currentTarget.style.background='rgba(255,255,255,0.06)'; }}
-              onMouseLeave={e => { e.currentTarget.style.color='rgba(255,255,255,0.55)'; e.currentTarget.style.background='transparent'; }}>
-              {lbl}
-            </a>
-          ))}
-        </div>
-
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
           <Link href="/login" style={{
             fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.32)',
