@@ -8,6 +8,7 @@ import {
 import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue } from '@/lib/hpTests';
 import { GROUP_COLORS, GROUP_LABELS } from '@/lib/hpScoring';
 import { getSchoolContext } from '@/lib/hpRepository';
+import { usePrintReport, PrintToast } from '@/components/HPPrintTrigger';
 
 type Row = Record<string, any>;
 type Tab = 'overview' | 'testing' | 'attendance' | 'progress' | 'notes' | 'reports' | 'interventions';
@@ -38,6 +39,7 @@ export default function HPStudentPage({ params }: PageProps) {
 }
 
 function Profile({ params }: PageProps) {
+  const { print, printing } = usePrintReport();
   const { id } = React.use(params);
   const [tab,          setTab]          = React.useState<Tab>('overview');
   const [student,      setStudent]      = React.useState<Row|null>(null);
@@ -238,11 +240,11 @@ ${breakdown || 'No results recorded.'}`;
                 {latest && <span style={{fontSize:11,color:'rgba(255,255,255,0.3)'}}>Tested {latest.term}</span>}
               </div>
             </div>
-            <Link href={`/hp-print/student/${id}`} target="_blank"
-              style={{padding:'8px 14px',borderRadius:10,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.4)',fontSize:12,fontWeight:700,textDecoration:'none',flexShrink:0,display:'flex',alignItems:'center',gap:6}}>
+            <button onClick={() => print(`/hp-print/student/${id}`)}
+              style={{padding:'8px 14px',borderRadius:10,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.4)',fontSize:12,fontWeight:700,flexShrink:0,display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontFamily:'inherit'}}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:13,height:13}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Print Report
-            </Link>
+            </button>
           </div>
 
           {/* Tabs */}
@@ -536,11 +538,11 @@ ${breakdown || 'No results recorded.'}`;
                   </div>
                 )}
               </div>
-              <Link href={`/hp-print/student/${id}`} target="_blank"
-                style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',borderRadius:12,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.5)',textDecoration:'none',fontSize:13,fontWeight:700}}>
+              <button onClick={() => print(`/hp-print/student/${id}`)}
+                style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px',borderRadius:12,border:`1px solid ${BD}`,background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.5)',fontSize:13,fontWeight:700,cursor:'pointer',fontFamily:'inherit',width:'100%'}}>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} style={{width:15,height:15}}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download Print Report
-              </Link>
+              </button>
             </div>
           )}
 
@@ -600,6 +602,7 @@ ${breakdown || 'No results recorded.'}`;
 
         </div>
       </div>
+      <PrintToast show={printing}/>
     </main>
   );
 }

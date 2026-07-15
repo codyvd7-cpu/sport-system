@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { GRADE8_TESTS, GRADE9_TESTS, fmtValue, getCurrentTerm } from '@/lib/hpTests';
 import { HP_CLASS_MAP } from '@/lib/hpConfig';
+import { usePrintReport, PrintToast } from '@/components/HPPrintTrigger';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -36,6 +37,7 @@ export default function ClassPage({ params }: PageProps) {
 }
 
 function ClassInner({ params }: PageProps) {
+  const { print, printing } = usePrintReport();
   const { id }       = React.use(params);
   const classMeta    = HP_CLASS_MAP.find(c => c.id === id);
   const grade        = classMeta?.grade        ?? (id[0] === '8' ? 'Grade 8' : 'Grade 9');
@@ -165,11 +167,11 @@ function ClassInner({ params }: PageProps) {
               <p className="mt-1 text-sm text-white/40">{students.length} students · {term} · {year}</p>
             </div>
             <div className="flex gap-2 flex-wrap">
-              <a href={`/hp-print/class/${id}`} target="_blank"
-                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/3 px-3 py-2 text-xs font-black text-white/40 hover:text-white transition">
+              <button onClick={() => print(`/hp-print/class/${id}`)}
+                className="flex items-center gap-1.5 rounded-xl border border-white/8 bg-white/3 px-3 py-2 text-xs font-black text-white/40 hover:text-white transition cursor-pointer">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Export PDF
-              </a>
+              </button>
               <Link href={`/hp/testing?class=${id}`}
                 className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-black transition"
                 style={{ background:`${accent}15`, color:accent, border:`1px solid ${accent}30` }}>
@@ -402,6 +404,7 @@ function ClassInner({ params }: PageProps) {
           </div>
         )}
       </div>
+      <PrintToast show={printing}/>
     </main>
   );
 }

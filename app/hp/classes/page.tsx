@@ -3,10 +3,12 @@ import * as React from 'react';
 import Link from 'next/link';
 import { HP_CLASS_IDS } from '@/lib/hpConfig';
 import { assignTrainingGroups, GROUP_COLORS, GROUP_LABELS } from '@/lib/hpScoring';
+import { usePrintReport, PrintToast } from '@/components/HPPrintTrigger';
 
 type Row = Record<string, any>;
 
 export default function HPClassesPage() {
+  const { print, printing } = usePrintReport();
   const [students,      setStudents]      = React.useState<Row[]>([]);
   const [latestResults, setLatestResults] = React.useState<Record<string,Row>>({});
   const [loading,       setLoading]       = React.useState(true);
@@ -144,10 +146,10 @@ export default function HPClassesPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Link href={`/hp-print/class/${selectedClass}`} target="_blank"
-                  className="rounded-xl border border-slate-600/50 bg-white/5 px-3 py-1.5 text-xs font-black text-white/50 hover:text-white hover:border-white/20 transition">
+                <button onClick={() => print(`/hp-print/class/${selectedClass}`)}
+                  className="rounded-xl border border-slate-600/50 bg-white/5 px-3 py-1.5 text-xs font-black text-white/50 hover:text-white hover:border-white/20 transition cursor-pointer">
                   Export PDF
-                </Link>
+                </button>
                 <Link href={`/hp/class/${selectedClass}`}
                   className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-black text-emerald-300 hover:bg-emerald-500/20 transition">
                   Full Class View →
@@ -224,6 +226,7 @@ export default function HPClassesPage() {
           </div>
         )}
       </div>
+      <PrintToast show={printing}/>
     </main>
   );
 }
