@@ -104,6 +104,15 @@ export function fmtValue(key: TestKey, value: number): string {
   return value % 1 === 0 ? String(value) : value.toFixed(2);
 }
 
+/** Value with its unit, print-safe: never "2:15mm:ss" or "45ss". */
+export function fmtValueWithUnit(key: TestKey, value: number): string {
+  const v = fmtValue(key, value);
+  if (key === 'run_500m') return v;                          // already mm:ss
+  if (key === 'chin_up_hang') return value >= 60 ? v : `${v}s`;
+  const t = [...GRADE8_TESTS, ...GRADE9_TESTS].find(x => x.key === key);
+  return t?.unit ? `${v}${t.unit}` : v;
+}
+
 // ── 500m parsing (accepts mm:ss or mm.ss coach shorthand) ─────────────────────
 export function parseRunTime(raw: string): number | null {
   if (!raw || raw.trim() === '' || raw.trim() === '-') return null;
