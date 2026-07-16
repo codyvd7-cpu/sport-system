@@ -3,7 +3,7 @@ import { Fixture } from '../types';
 type Props = {
   fixtures: Fixture[];
   busy: boolean;
-  newFixtureTeam: string; setNewFixtureTeam: (v: string) => void;
+  newFixtureTeams: string[]; setNewFixtureTeams: (v: string[]) => void;
   teamOptions: string[];
   newFixtureOpponent: string; setNewFixtureOpponent: (v: string) => void;
   newFixtureDate: string; setNewFixtureDate: (v: string) => void;
@@ -34,19 +34,47 @@ type Props = {
   formatDate: (d?: string | null) => string;
 };
 
-export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureTeam, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixtureCoach, setNewFixtureCoach, newFixtureUmpire, setNewFixtureUmpire, newFixtureNotes, setNewFixtureNotes, newFixtureHomeAway, setNewFixtureHomeAway, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixtureCoach, setEditFixtureCoach, editFixtureUmpire, setEditFixtureUmpire, editFixtureNotes, setEditFixtureNotes, editFixtureHomeAway, setEditFixtureHomeAway, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
+export function FixturesSection({ fixtures, busy, newFixtureTeams, setNewFixtureTeams, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixtureCoach, setNewFixtureCoach, newFixtureUmpire, setNewFixtureUmpire, newFixtureNotes, setNewFixtureNotes, newFixtureHomeAway, setNewFixtureHomeAway, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixtureCoach, setEditFixtureCoach, editFixtureUmpire, setEditFixtureUmpire, editFixtureNotes, setEditFixtureNotes, editFixtureHomeAway, setEditFixtureHomeAway, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
       {/* Create */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
         <h2 className="mb-4 text-lg font-semibold">Add Fixture</h2>
         <form onSubmit={handleCreateFixture} className="space-y-4">
+
+          {/* Teams playing — tick every team facing this opponent, e.g. when the
+              whole school plays St John's on the same day */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <p className="text-xs font-bold text-slate-400">Teams Playing</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => setNewFixtureTeams(teamOptions)}
+                  className="text-[11px] font-bold text-sky-400 hover:text-sky-300">Select all</button>
+                <button type="button" onClick={() => setNewFixtureTeams([])}
+                  className="text-[11px] font-bold text-slate-500 hover:text-slate-400">Clear</button>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] p-3 sm:grid-cols-3">
+              {teamOptions.map(t => {
+                const checked = newFixtureTeams.includes(t);
+                return (
+                  <label key={t} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs font-semibold transition ${checked ? 'border-sky-500 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-950 text-slate-400'}`}>
+                    <input type="checkbox" checked={checked} className="h-3.5 w-3.5 accent-sky-500"
+                      onChange={(e) => setNewFixtureTeams(e.target.checked ? [...newFixtureTeams, t] : newFixtureTeams.filter(x => x !== t))} />
+                    {t}
+                  </label>
+                );
+              })}
+            </div>
+            {newFixtureTeams.length > 0 && (
+              <p className="mt-1.5 text-[11px] text-slate-500">
+                Will create <span className="font-bold text-sky-400">{newFixtureTeams.length}</span> fixture{newFixtureTeams.length===1?'':'s'} — one per selected team, same opponent/date/venue.
+              </p>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
-            <select value={newFixtureTeam} onChange={(e) => setNewFixtureTeam(e.target.value)} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
-              <option value="">Select Team</option>
-              {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <input value={newFixtureOpponent} onChange={(e) => setNewFixtureOpponent(e.target.value)} placeholder="Opponent" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+            <input value={newFixtureOpponent} onChange={(e) => setNewFixtureOpponent(e.target.value)} placeholder="Opponent" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input type="date" value={newFixtureDate} onChange={(e) => setNewFixtureDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input type="time" value={newFixtureTime} onChange={(e) => setNewFixtureTime(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
             <input value={newFixtureVenue} onChange={(e) => setNewFixtureVenue(e.target.value)} placeholder="Venue" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
@@ -62,7 +90,9 @@ export function FixturesSection({ fixtures, busy, newFixtureTeam, setNewFixtureT
           <label className="flex items-center gap-3 text-sm text-slate-300">
             <input type="checkbox" checked={newFixturePublished} onChange={(e) => setNewFixturePublished(e.target.checked)} className="h-4 w-4" /> Published
           </label>
-          <button type="submit" disabled={busy} className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 disabled:opacity-50">Add Fixture</button>
+          <button type="submit" disabled={busy || newFixtureTeams.length === 0} className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 disabled:opacity-50">
+            {newFixtureTeams.length > 1 ? `Add ${newFixtureTeams.length} Fixtures` : 'Add Fixture'}
+          </button>
         </form>
       </div>
 
