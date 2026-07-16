@@ -23,7 +23,7 @@ type GenericRow = Record<string, any>;
 type WeekPlan = { id: string; created_at: string | null; week_label: string; published: boolean; };
 type WeekPlanItem = { id: string; created_at: string | null; week_plan_id: string; day_label: string; title: string; details: string; sort_order: number; };
 type Reminder = { id: string; created_at: string | null; title: string; details: string; is_published: boolean; sort_order: number; };
-type Fixture = { id: string; created_at: string | null; team: string; opponent: string; fixture_date: string; fixture_time: string; venue: string; is_published: boolean; sort_order: number; };
+import type { Fixture } from './types';
 type Result = { id: string; created_at: string | null; team: string; opponent: string; result_date: string; final_score: string; goal_scorers: string; is_published: boolean; sort_order: number; };
 type Program = { id: string; created_at: string | null; title: string; category: string; day_label: string; details: string; is_published: boolean; sort_order: number; file_name: string; file_path: string; file_url: string; };
 type Sponsor = { id: string; created_at: string | null; name: string; image_name: string; image_path: string; image_url: string; sponsor_link: string; is_published: boolean; sort_order: number; };
@@ -113,6 +113,11 @@ function normalizeFixture(row: GenericRow): Fixture {
     venue: firstString(row.venue),
     is_published: firstBoolean(row.is_published),
     sort_order: firstNumber(row.sort_order),
+    coach: firstString(row.coach) || null,
+    umpire: firstString(row.umpire) || null,
+    notes: firstString(row.notes) || null,
+    home_away: firstString(row.home_away) || null,
+    sport: firstString(row.sport) || undefined,
   };
 }
 
@@ -227,39 +232,67 @@ async function handleLogout() {
   const [newSpotlightName, setNewSpotlightName] = useState('');
   const [newSpotlightDesc, setNewSpotlightDesc] = useState('');
 
-  // Bulk fixture entry — one opponent "tie" can span several dates and even
-  // several venues on the same date (e.g. some teams away, some still at home),
-  // with different times/coaches/umpires/duration per team. So: one shared
-  // opponent + published toggle, then independent rows for everything else.
-  type FixtureRow = {
-    _key: string; team: string; date: string; time: string; venue: string;
-    homeAway: string; duration: string; coach: string; umpire: string; notes: string;
+  // Bulk fixture entry — one opponent "tie" is a set of BLOCKS (a block = one
+  // date + venue + home/away + default duration, e.g. "Sat 20 June, away at
+  // St David's"), each holding several team slots (team/time/coach/umpire).
+  // Editing a block's date/venue/duration updates every team inside it at
+  // once — no more re-editing four near-identical rows to fix one typo.
+  type TeamSlot = { _key: string; team: string; time: string; coach: string; umpire: string; durationOverride: string };
+  type FixtureBlock = {
+    _key: string; date: string; venue: string; homeAway: string; duration: string; note: string;
+    slots: TeamSlot[];
   };
-  const blankFixtureRow = (): FixtureRow => ({
-    _key: Math.random().toString(36).slice(2), team: '', date: '', time: '',
-    venue: '', homeAway: 'home', duration: '', coach: '', umpire: '', notes: '',
+  const blankSlot = (time = ''): TeamSlot => ({
+    _key: Math.random().toString(36).slice(2), team: '', time, coach: '', umpire: '', durationOverride: '',
+  });
+  const blankBlock = (): FixtureBlock => ({
+    _key: Math.random().toString(36).slice(2), date: '', venue: '', homeAway: 'home', duration: '', note: '',
+    slots: [blankSlot()],
   });
   const [newFixtureOpponent, setNewFixtureOpponent] = useState('');
   const [newFixturePublished, setNewFixturePublished] = useState(true);
-  const [newFixtureRows, setNewFixtureRows] = useState<FixtureRow[]>([blankFixtureRow()]);
+  const [newFixtureBlocks, setNewFixtureBlocks] = useState<FixtureBlock[]>([blankBlock()]);
   const [newFixtureSortOrder, setNewFixtureSortOrder] = useState('1');
 
-  function addFixtureRow() {
-    setNewFixtureRows(rows => {
-      const last = rows[rows.length - 1];
-      // New row inherits date/venue/home-away/duration from the last one — the
-      // common case is several teams on the same day at the same venue, so only
-      // team/time/coach/umpire usually need to change.
-      const next = blankFixtureRow();
-      if (last) { next.date = last.date; next.venue = last.venue; next.homeAway = last.homeAway; next.duration = last.duration; }
-      return [...rows, next];
+  function addFixtureBlock() {
+    setNewFixtureBlocks(blocks => {
+      const last = blocks[blocks.length - 1];
+      // New block starts from the previous one's date/duration — the common case
+      // is the same day, different venue/home-away (away leg → home leg).
+      const next = blankBlock();
+      if (last) { next.date = last.date; next.duration = last.duration; }
+      return [...blocks, next];
     });
   }
-  function updateFixtureRow(key: string, field: keyof FixtureRow, value: string) {
-    setNewFixtureRows(rows => rows.map(r => r._key === key ? { ...r, [field]: value } : r));
+  function removeFixtureBlock(key: string) {
+    setNewFixtureBlocks(blocks => blocks.length > 1 ? blocks.filter(b => b._key !== key) : blocks);
   }
-  function removeFixtureRow(key: string) {
-    setNewFixtureRows(rows => rows.length > 1 ? rows.filter(r => r._key !== key) : rows);
+  function updateFixtureBlock(key: string, field: 'date'|'venue'|'homeAway'|'duration'|'note', value: string) {
+    setNewFixtureBlocks(blocks => blocks.map(b => b._key === key ? { ...b, [field]: value } : b));
+  }
+  function addTeamSlot(blockKey: string) {
+    setNewFixtureBlocks(blocks => blocks.map(b => {
+      if (b._key !== blockKey) return b;
+      const last = b.slots[b.slots.length - 1];
+      // Auto-advance the time by an hour — matches how these sheets are laid
+      // out (15:15, 16:15, 17:15…), still fully editable per slot.
+      let nextTime = '';
+      if (last?.time && /^\d{2}:\d{2}$/.test(last.time)) {
+        const [h, m] = last.time.split(':').map(Number);
+        nextTime = `${String((h + 1) % 24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+      }
+      return { ...b, slots: [...b.slots, blankSlot(nextTime)] };
+    }));
+  }
+  function updateTeamSlot(blockKey: string, slotKey: string, field: keyof TeamSlot, value: string) {
+    setNewFixtureBlocks(blocks => blocks.map(b => b._key !== blockKey ? b : {
+      ...b, slots: b.slots.map(s => s._key === slotKey ? { ...s, [field]: value } : s),
+    }));
+  }
+  function removeTeamSlot(blockKey: string, slotKey: string) {
+    setNewFixtureBlocks(blocks => blocks.map(b => b._key !== blockKey ? b : {
+      ...b, slots: b.slots.length > 1 ? b.slots.filter(s => s._key !== slotKey) : b.slots,
+    }));
   }
 
   const [newResultTeam, setNewResultTeam] = useState('');
@@ -739,27 +772,47 @@ async function handleLogout() {
         setError('Opponent is required.');
         return;
       }
-      const validRows = newFixtureRows.filter(r => r.team.trim() && r.date);
-      if (validRows.length === 0) {
-        setError('Each row needs at least a team and a date.');
+      // Flatten blocks × team slots into individual fixture rows. A slot only
+      // counts once it has a team AND its block has a date.
+      type FlatRow = {
+        team: string; date: string; time: string; venue: string; homeAway: string;
+        coach: string; umpire: string; notes: string;
+      };
+      const flat: FlatRow[] = [];
+      newFixtureBlocks.forEach(block => {
+        if (!block.date) return;
+        block.slots.forEach(slot => {
+          if (!slot.team.trim()) return;
+          const duration = (slot.durationOverride || block.duration).trim();
+          flat.push({
+            team: slot.team.trim(),
+            date: block.date,
+            time: slot.time.trim(),
+            venue: block.venue.trim(),
+            homeAway: block.homeAway,
+            coach: slot.coach.trim(),
+            umpire: slot.umpire.trim(),
+            notes: [duration, block.note.trim()].filter(Boolean).join(' · '),
+          });
+        });
+      });
+      if (flat.length === 0) {
+        setError('Each block needs a date, and at least one team slot filled in.');
         return;
       }
 
-      // One row per fixture-row — each keeps its OWN date/time/venue/duration/
-      // coach/umpire, since a single opponent tie (e.g. "vs St David's") can span
-      // several dates and even several venues on the same date.
       const baseSort = Number(newFixtureSortOrder) || 0;
-      const rows = validRows.map((r, i) => ({
-        team: r.team.trim(),
+      const rows = flat.map((r, i) => ({
+        team: r.team,
         opponent: newFixtureOpponent.trim(),
         fixture_date: r.date,
-        fixture_time: r.time.trim(),
-        venue: r.venue.trim(),
+        fixture_time: r.time,
+        venue: r.venue,
         is_published: newFixturePublished,
         sort_order: baseSort + i,
-        coach: r.coach.trim() || null,
-        umpire: r.umpire.trim() || null,
-        notes: [r.duration.trim(), r.notes.trim()].filter(Boolean).join(' · ') || null,
+        coach: r.coach || null,
+        umpire: r.umpire || null,
+        notes: r.notes || null,
         home_away: r.homeAway,
         sport: activeSport,
       }));
@@ -775,7 +828,7 @@ async function handleLogout() {
       setNewFixtureOpponent('');
       setNewFixturePublished(true);
       setNewFixtureSortOrder('1');
-      setNewFixtureRows([blankFixtureRow()]);
+      setNewFixtureBlocks([blankBlock()]);
       await loadPortalAdminData();
     });
   }
@@ -1464,7 +1517,7 @@ async function handleLogout() {
           </div>
         ) : (
           <div>
-            {activeTab === 'fixtures' && <FixturesSection fixtures={fixtures} busy={busy} newFixtureOpponent={newFixtureOpponent} setNewFixtureOpponent={setNewFixtureOpponent} newFixtureRows={newFixtureRows} addFixtureRow={addFixtureRow} updateFixtureRow={updateFixtureRow} removeFixtureRow={removeFixtureRow} newFixturePublished={newFixturePublished} setNewFixturePublished={setNewFixturePublished} handleCreateFixture={handleCreateFixture} editingFixtureId={editingFixtureId} editFixtureTeam={editFixtureTeam} setEditFixtureTeam={setEditFixtureTeam} editFixtureOpponent={editFixtureOpponent} setEditFixtureOpponent={setEditFixtureOpponent} editFixtureDate={editFixtureDate} setEditFixtureDate={setEditFixtureDate} editFixtureTime={editFixtureTime} setEditFixtureTime={setEditFixtureTime} editFixtureVenue={editFixtureVenue} setEditFixtureVenue={setEditFixtureVenue} editFixtureCoach={editFixtureCoach} setEditFixtureCoach={setEditFixtureCoach} editFixtureUmpire={editFixtureUmpire} setEditFixtureUmpire={setEditFixtureUmpire} editFixtureNotes={editFixtureNotes} setEditFixtureNotes={setEditFixtureNotes} editFixtureHomeAway={editFixtureHomeAway} setEditFixtureHomeAway={setEditFixtureHomeAway} editFixturePublished={editFixturePublished} setEditFixturePublished={setEditFixturePublished} handleSaveFixture={handleSaveFixture} cancelEditFixture={cancelEditFixture} startEditFixture={startEditFixture} handleDeleteFixture={handleDeleteFixture} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
+            {activeTab === 'fixtures' && <FixturesSection fixtures={fixtures} busy={busy} newFixtureOpponent={newFixtureOpponent} setNewFixtureOpponent={setNewFixtureOpponent} newFixtureBlocks={newFixtureBlocks} addFixtureBlock={addFixtureBlock} removeFixtureBlock={removeFixtureBlock} updateFixtureBlock={updateFixtureBlock} addTeamSlot={addTeamSlot} updateTeamSlot={updateTeamSlot} removeTeamSlot={removeTeamSlot} newFixturePublished={newFixturePublished} setNewFixturePublished={setNewFixturePublished} handleCreateFixture={handleCreateFixture} editingFixtureId={editingFixtureId} editFixtureTeam={editFixtureTeam} setEditFixtureTeam={setEditFixtureTeam} editFixtureOpponent={editFixtureOpponent} setEditFixtureOpponent={setEditFixtureOpponent} editFixtureDate={editFixtureDate} setEditFixtureDate={setEditFixtureDate} editFixtureTime={editFixtureTime} setEditFixtureTime={setEditFixtureTime} editFixtureVenue={editFixtureVenue} setEditFixtureVenue={setEditFixtureVenue} editFixtureCoach={editFixtureCoach} setEditFixtureCoach={setEditFixtureCoach} editFixtureUmpire={editFixtureUmpire} setEditFixtureUmpire={setEditFixtureUmpire} editFixtureNotes={editFixtureNotes} setEditFixtureNotes={setEditFixtureNotes} editFixtureHomeAway={editFixtureHomeAway} setEditFixtureHomeAway={setEditFixtureHomeAway} editFixturePublished={editFixturePublished} setEditFixturePublished={setEditFixturePublished} handleSaveFixture={handleSaveFixture} cancelEditFixture={cancelEditFixture} startEditFixture={startEditFixture} handleDeleteFixture={handleDeleteFixture} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
             {activeTab === 'results' && <ResultsSection results={results} busy={busy} newResultTeam={newResultTeam} setNewResultTeam={setNewResultTeam} newResultOpponent={newResultOpponent} setNewResultOpponent={setNewResultOpponent} newResultDate={newResultDate} setNewResultDate={setNewResultDate} newResultFinalScore={newResultFinalScore} setNewResultFinalScore={setNewResultFinalScore} newResultGoalScorers={newResultGoalScorers} setNewResultGoalScorers={setNewResultGoalScorers} newResultPublished={newResultPublished} setNewResultPublished={setNewResultPublished} handleCreateResult={handleCreateResult} editingResultId={editingResultId} editResultTeam={editResultTeam} setEditResultTeam={setEditResultTeam} editResultOpponent={editResultOpponent} setEditResultOpponent={setEditResultOpponent} editResultDate={editResultDate} setEditResultDate={setEditResultDate} editResultFinalScore={editResultFinalScore} setEditResultFinalScore={setEditResultFinalScore} editResultGoalScorers={editResultGoalScorers} setEditResultGoalScorers={setEditResultGoalScorers} editResultPublished={editResultPublished} setEditResultPublished={setEditResultPublished} handleSaveResult={handleSaveResult} cancelEditResult={cancelEditResult} startEditResult={startEditResult} handleDeleteResult={handleDeleteResult} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
             {activeTab === 'week' && <WeekSection weekPlans={weekPlans} selectedWeekPlan={selectedWeekPlan} selectedWeekItems={selectedWeekItems} busy={busy} selectedWeekPlanId={selectedWeekPlanId} setSelectedWeekPlanId={setSelectedWeekPlanId} newWeekLabel={newWeekLabel} setNewWeekLabel={setNewWeekLabel} newWeekPublished={newWeekPublished} setNewWeekPublished={setNewWeekPublished} handleCreateWeekPlan={handleCreateWeekPlan} newDayLabel={newDayLabel} setNewDayLabel={setNewDayLabel} newWeekItemTitle={newWeekItemTitle} setNewWeekItemTitle={setNewWeekItemTitle} newWeekItemDetails={newWeekItemDetails} setNewWeekItemDetails={setNewWeekItemDetails} handleCreateWeekItem={handleCreateWeekItem} editingWeekPlanId={editingWeekPlanId} editWeekLabel={editWeekLabel} setEditWeekLabel={setEditWeekLabel} editWeekPublished={editWeekPublished} setEditWeekPublished={setEditWeekPublished} handleSaveWeekPlan={handleSaveWeekPlan} cancelEditWeekPlan={cancelEditWeekPlan} startEditWeekPlan={startEditWeekPlan} handleDeleteWeekPlan={handleDeleteWeekPlan} editingWeekItemId={editingWeekItemId} editDayLabel={editDayLabel} setEditDayLabel={setEditDayLabel} editWeekItemTitle={editWeekItemTitle} setEditWeekItemTitle={setEditWeekItemTitle} editWeekItemDetails={editWeekItemDetails} setEditWeekItemDetails={setEditWeekItemDetails} handleSaveWeekItem={handleSaveWeekItem} cancelEditWeekItem={cancelEditWeekItem} startEditWeekItem={startEditWeekItem} handleDeleteWeekItem={handleDeleteWeekItem} moveItem={moveItem} formatDate={formatDate} />}
             {activeTab === 'programs' && <ProgramsSection programs={programs} busy={busy} newProgramTitle={newProgramTitle} setNewProgramTitle={setNewProgramTitle} newProgramCategory={newProgramCategory} setNewProgramCategory={setNewProgramCategory} newProgramDayLabel={newProgramDayLabel} setNewProgramDayLabel={setNewProgramDayLabel} newProgramDetails={newProgramDetails} setNewProgramDetails={setNewProgramDetails} newProgramPublished={newProgramPublished} setNewProgramPublished={setNewProgramPublished} newProgramFile={newProgramFile} setNewProgramFile={setNewProgramFile} handleCreateProgram={handleCreateProgram} editingProgramId={editingProgramId} editProgramTitle={editProgramTitle} setEditProgramTitle={setEditProgramTitle} editProgramCategory={editProgramCategory} setEditProgramCategory={setEditProgramCategory} editProgramDayLabel={editProgramDayLabel} setEditProgramDayLabel={setEditProgramDayLabel} editProgramDetails={editProgramDetails} setEditProgramDetails={setEditProgramDetails} editProgramPublished={editProgramPublished} setEditProgramPublished={setEditProgramPublished} editProgramFile={editProgramFile} setEditProgramFile={setEditProgramFile} handleSaveProgram={handleSaveProgram} resetProgramEditFields={resetProgramEditFields} startEditProgram={startEditProgram} handleDeleteProgram={handleDeleteProgram} moveItem={moveItem} />}
