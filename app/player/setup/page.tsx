@@ -38,6 +38,17 @@ export default function PlayerSetupPage() {
     });
   }, [router]);
 
+  async function api(body: Record<string, unknown>) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.replace('/player/auth'); return null; }
+    const r = await fetch('/api/player/me', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(body),
+    });
+    return r.json();
+  }
+
   function toggleSport(s: string) {
     setSports(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   }
@@ -56,23 +67,22 @@ export default function PlayerSetupPage() {
     }
 
     setStep('matching');
-    const { data: athleteMatches } = await supabase
-      .from('athletes').select('id,full_name,team,sport')
-      .ilike('full_name', `%${fullName.trim()}%`).limit(5);
-
-    setMatches(athleteMatches || []);
-    setStep(athleteMatches && athleteMatches.length > 0 ? 'matched' : 'nomatch');
+    // Matching runs server-side — athlete data is staff-gated by RLS, so the
+    // API verifies your login and returns only safe fields for linking.
+    const d = await api({ action: 'match', name: fullName.trim() });
+    const athleteMatches = d?.matches || [];
+    setMatches(athleteMatches);
+    setStep(athleteMatches.length > 0 ? 'matched' : 'nomatch');
   }
 
   async function saveProfile(athleteId: string | null) {
     if (!userId) return;
-    await supabase.from('player_profiles').upsert({
-      user_id: userId,
-      full_name: fullName.trim(),
-      grade,
-      sports,
-      athlete_id: athleteId,
-    }, { onConflict: 'user_id' });
+    const saved = await api({ action: 'save_profile', full_name: fullName.trim(), grade, sports });
+    if (saved?.error) { setError(saved.error); setStep('form'); return; }
+    if (athleteId) {
+      const linked = await api({ action: 'link', athlete_id: athleteId });
+      if (linked?.error) { setError(linked.error); setStep('form'); return; }
+    }
     router.push('/player/profile');
   }
 
