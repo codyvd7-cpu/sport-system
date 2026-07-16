@@ -1,18 +1,19 @@
 import { Fixture } from '../types';
 
+type FixtureRow = {
+  _key: string; team: string; date: string; time: string; venue: string;
+  homeAway: string; duration: string; coach: string; umpire: string; notes: string;
+};
+
 type Props = {
   fixtures: Fixture[];
   busy: boolean;
-  newFixtureTeams: string[]; setNewFixtureTeams: (v: string[]) => void;
   teamOptions: string[];
   newFixtureOpponent: string; setNewFixtureOpponent: (v: string) => void;
-  newFixtureDate: string; setNewFixtureDate: (v: string) => void;
-  newFixtureTime: string; setNewFixtureTime: (v: string) => void;
-  newFixtureVenue: string; setNewFixtureVenue: (v: string) => void;
-  newFixtureCoach: string; setNewFixtureCoach: (v: string) => void;
-  newFixtureUmpire: string; setNewFixtureUmpire: (v: string) => void;
-  newFixtureNotes: string; setNewFixtureNotes: (v: string) => void;
-  newFixtureHomeAway: string; setNewFixtureHomeAway: (v: string) => void;
+  newFixtureRows: FixtureRow[];
+  addFixtureRow: () => void;
+  updateFixtureRow: (key: string, field: keyof FixtureRow, value: string) => void;
+  removeFixtureRow: (key: string) => void;
   newFixturePublished: boolean; setNewFixturePublished: (v: boolean) => void;
   handleCreateFixture: (e: React.FormEvent) => void;
   editingFixtureId: string | null;
@@ -34,64 +35,70 @@ type Props = {
   formatDate: (d?: string | null) => string;
 };
 
-export function FixturesSection({ fixtures, busy, newFixtureTeams, setNewFixtureTeams, newFixtureOpponent, setNewFixtureOpponent, newFixtureDate, setNewFixtureDate, newFixtureTime, setNewFixtureTime, newFixtureVenue, setNewFixtureVenue, newFixtureCoach, setNewFixtureCoach, newFixtureUmpire, setNewFixtureUmpire, newFixtureNotes, setNewFixtureNotes, newFixtureHomeAway, setNewFixtureHomeAway, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixtureCoach, setEditFixtureCoach, editFixtureUmpire, setEditFixtureUmpire, editFixtureNotes, setEditFixtureNotes, editFixtureHomeAway, setEditFixtureHomeAway, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
+export function FixturesSection({ fixtures, busy, newFixtureOpponent, setNewFixtureOpponent, newFixtureRows, addFixtureRow, updateFixtureRow, removeFixtureRow, newFixturePublished, setNewFixturePublished, handleCreateFixture, editingFixtureId, editFixtureTeam, setEditFixtureTeam, editFixtureOpponent, setEditFixtureOpponent, editFixtureDate, setEditFixtureDate, editFixtureTime, setEditFixtureTime, editFixtureVenue, setEditFixtureVenue, editFixtureCoach, setEditFixtureCoach, editFixtureUmpire, setEditFixtureUmpire, editFixtureNotes, setEditFixtureNotes, editFixtureHomeAway, setEditFixtureHomeAway, editFixturePublished, setEditFixturePublished, handleSaveFixture, cancelEditFixture, startEditFixture, handleDeleteFixture, moveItem, formatDate, teamOptions }: Props) {
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-      {/* Create */}
+      {/* Create — bulk row entry. One opponent tie (e.g. "vs St David's") can span
+          several dates and even several venues on the same date, with different
+          times/coaches/umpires/duration per team — so each row is independent. */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5">
-        <h2 className="mb-4 text-lg font-semibold">Add Fixture</h2>
+        <h2 className="mb-1 text-lg font-semibold">Add Fixtures</h2>
+        <p className="mb-4 text-[11px] text-slate-500">One opponent, as many rows as you need — each row is its own date/time/team/venue.</p>
         <form onSubmit={handleCreateFixture} className="space-y-4">
 
-          {/* Teams playing — tick every team facing this opponent, e.g. when the
-              whole school plays St John's on the same day */}
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-400">Teams Playing</p>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setNewFixtureTeams(teamOptions)}
-                  className="text-[11px] font-bold text-sky-400 hover:text-sky-300">Select all</button>
-                <button type="button" onClick={() => setNewFixtureTeams([])}
-                  className="text-[11px] font-bold text-slate-500 hover:text-slate-400">Clear</button>
+          <input value={newFixtureOpponent} onChange={(e) => setNewFixtureOpponent(e.target.value)}
+            placeholder="Opponent (e.g. St David's)"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm font-semibold text-white outline-none focus:border-sky-500" />
+
+          <div className="space-y-2.5">
+            {newFixtureRows.map((row, i) => (
+              <div key={row._key} className="rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Row {i + 1}</span>
+                  <button type="button" onClick={() => removeFixtureRow(row._key)} disabled={newFixtureRows.length === 1}
+                    className="text-[11px] font-bold text-red-400 hover:text-red-300 disabled:opacity-20 disabled:hover:text-red-400">Remove</button>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input type="date" value={row.date} onChange={(e) => updateFixtureRow(row._key, 'date', e.target.value)}
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <input type="time" value={row.time} onChange={(e) => updateFixtureRow(row._key, 'time', e.target.value)}
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <select value={row.team} onChange={(e) => updateFixtureRow(row._key, 'team', e.target.value)}
+                    className="rounded-lg border border-white/8 bg-[rgba(255,255,255,0.02)] px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500">
+                    <option value="">Team…</option>
+                    {teamOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  <select value={row.homeAway} onChange={(e) => updateFixtureRow(row._key, 'homeAway', e.target.value)}
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500">
+                    <option value="home">Home</option>
+                    <option value="away">Away</option>
+                    <option value="neutral">Neutral</option>
+                  </select>
+                  <input value={row.venue} onChange={(e) => updateFixtureRow(row._key, 'venue', e.target.value)} placeholder="Venue / field"
+                    className="col-span-2 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <input value={row.duration} onChange={(e) => updateFixtureRow(row._key, 'duration', e.target.value)} placeholder="Duration (e.g. 4 x 12 min)"
+                    className="col-span-2 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <input value={row.coach} onChange={(e) => updateFixtureRow(row._key, 'coach', e.target.value)} placeholder="Coach"
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <input value={row.umpire} onChange={(e) => updateFixtureRow(row._key, 'umpire', e.target.value)} placeholder="Umpire"
+                    className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                  <input value={row.notes} onChange={(e) => updateFixtureRow(row._key, 'notes', e.target.value)} placeholder="Notes (optional)"
+                    className="col-span-2 rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-2 text-xs text-white outline-none focus:border-sky-500" />
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/8 bg-[rgba(255,255,255,0.02)] p-3 sm:grid-cols-3">
-              {teamOptions.map(t => {
-                const checked = newFixtureTeams.includes(t);
-                return (
-                  <label key={t} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs font-semibold transition ${checked ? 'border-sky-500 bg-sky-500/15 text-sky-300' : 'border-slate-700 bg-slate-950 text-slate-400'}`}>
-                    <input type="checkbox" checked={checked} className="h-3.5 w-3.5 accent-sky-500"
-                      onChange={(e) => setNewFixtureTeams(e.target.checked ? [...newFixtureTeams, t] : newFixtureTeams.filter(x => x !== t))} />
-                    {t}
-                  </label>
-                );
-              })}
-            </div>
-            {newFixtureTeams.length > 0 && (
-              <p className="mt-1.5 text-[11px] text-slate-500">
-                Will create <span className="font-bold text-sky-400">{newFixtureTeams.length}</span> fixture{newFixtureTeams.length===1?'':'s'} — one per selected team, same opponent/date/venue.
-              </p>
-            )}
+            ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <input value={newFixtureOpponent} onChange={(e) => setNewFixtureOpponent(e.target.value)} placeholder="Opponent" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-            <input type="date" value={newFixtureDate} onChange={(e) => setNewFixtureDate(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-            <input type="time" value={newFixtureTime} onChange={(e) => setNewFixtureTime(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-            <input value={newFixtureVenue} onChange={(e) => setNewFixtureVenue(e.target.value)} placeholder="Venue" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-            <select value={newFixtureHomeAway} onChange={(e) => setNewFixtureHomeAway(e.target.value)} className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
-              <option value="home">Home</option>
-              <option value="away">Away</option>
-              <option value="neutral">Neutral</option>
-            </select>
-            <input value={newFixtureCoach} onChange={(e) => setNewFixtureCoach(e.target.value)} placeholder="Coach" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-            <input value={newFixtureUmpire} onChange={(e) => setNewFixtureUmpire(e.target.value)} placeholder="Umpire" className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-            <input value={newFixtureNotes} onChange={(e) => setNewFixtureNotes(e.target.value)} placeholder="Notes (optional)" className="col-span-2 rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-          </div>
+          <button type="button" onClick={addFixtureRow}
+            className="w-full rounded-xl border border-dashed border-slate-700 py-2 text-xs font-bold text-slate-400 hover:border-sky-500/50 hover:text-sky-300">
+            + Add Row
+          </button>
+
           <label className="flex items-center gap-3 text-sm text-slate-300">
             <input type="checkbox" checked={newFixturePublished} onChange={(e) => setNewFixturePublished(e.target.checked)} className="h-4 w-4" /> Published
           </label>
-          <button type="submit" disabled={busy || newFixtureTeams.length === 0} className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 disabled:opacity-50">
-            {newFixtureTeams.length > 1 ? `Add ${newFixtureTeams.length} Fixtures` : 'Add Fixture'}
+          <button type="submit" disabled={busy} className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 disabled:opacity-50">
+            {newFixtureRows.length > 1 ? `Add ${newFixtureRows.length} Fixtures` : 'Add Fixture'}
           </button>
         </form>
       </div>
