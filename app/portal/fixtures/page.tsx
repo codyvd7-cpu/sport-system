@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSportLabel, getSportColor, getSportTerm } from '@/lib/sports';
+import WeatherChip from '@/components/WeatherChip';
 
 type Row = Record<string, any>;
 
@@ -86,6 +87,17 @@ function FixturesInner() {
   );
 
   const fmt = selected ? formatDate(selected) : null;
+
+  // Fixture-day weather — decorative, never blocks the page
+  const [weather, setWeather] = React.useState<any>(null);
+  React.useEffect(() => {
+    setWeather(null);
+    if (!selected) return;
+    let cancelled = false;
+    fetch(`/api/weather?date=${selected}`).then(r => r.json())
+      .then(d => { if (!cancelled) setWeather(d.weather || null); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [selected]);
   const homeCount = fixtures.filter(f => f.home_away?.toLowerCase() === 'home').length;
   const awayCount = fixtures.filter(f => f.home_away?.toLowerCase() === 'away').length;
 
@@ -141,6 +153,18 @@ function FixturesInner() {
               {fmt?.day || `${label} ${fxTerm}s`}
             </h1>
             <p style={{ fontSize:15, color:'rgba(255,255,255,0.45)' }}>{fmt?.full || 'Upcoming schedule'}</p>
+            {weather && (
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, marginTop:10, padding:'7px 14px', borderRadius:12,
+                background: weather.storm ? 'rgba(251,191,36,0.1)' : 'rgba(255,255,255,0.035)',
+                border: `1px solid ${weather.storm ? 'rgba(251,191,36,0.35)' : 'rgba(255,255,255,0.09)'}` }}>
+                <span style={{ fontSize:16 }}>{weather.icon}</span>
+                <span style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.75)' }}>
+                  {weather.label} · {weather.tMax}°{weather.tMin != null ? `/${weather.tMin}°` : ''}
+                  {weather.rain != null && weather.rain > 15 ? ` · ${weather.rain}% rain` : ''}
+                </span>
+                {weather.storm && <span style={{ fontSize:9.5, fontWeight:900, color:'#fbbf24', letterSpacing:'0.06em' }}>STORM RISK</span>}
+              </div>
+            )}
           </div>
 
           {/* ── DAY SWITCHER ── */}
@@ -196,7 +220,7 @@ function FixturesInner() {
                   <table style={{ width:'100%', borderCollapse:'collapse' }}>
                     <thead>
                       <tr style={{ borderBottom:`1px solid ${BORDER}` }}>
-                        {['Time','Team','Opponent','Venue','H/A','Coach','Umpire','Notes'].map(h => (
+                        {['Time','Team','Opponent','Venue','Weather','H/A','Coach','Umpire','Notes'].map(h => (
                           <th key={h} style={{ padding:'14px 18px', textAlign:'left', fontSize:10, fontWeight:700, letterSpacing:'0.15em', color:C, textTransform:'uppercase', whiteSpace:'nowrap' }}>
                             {h}
                           </th>
@@ -228,6 +252,9 @@ function FixturesInner() {
                             <span style={{ fontSize:13, color:'rgba(255,255,255,0.55)' }}>{f.venue || '—'}</span>
                           </td>
                           <td style={{ padding:'16px 18px' }}>
+                            <WeatherChip venue={f.venue} date={f.fixture_date} compact/>
+                          </td>
+                          <td style={{ padding:'16px 18px' }}>
                             {f.home_away ? (
                               <span style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', padding:'3px 9px', borderRadius:20, background: f.home_away.toLowerCase()==='home' ? `${C}20` : 'rgba(255,255,255,0.07)', color: f.home_away.toLowerCase()==='home' ? C : 'rgba(255,255,255,0.45)' }}>
                                 {f.home_away.toUpperCase()}
@@ -256,7 +283,10 @@ function FixturesInner() {
                   <div key={f.id} style={{ borderRadius:16, border:`1px solid ${BORDER}`, background:'rgba(255,255,255,0.03)', overflow:'hidden', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.06)' }}>
                     {/* Top: time + H/A */}
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 16px', borderBottom:`1px solid ${BORDER}`, background:`${C}0c` }}>
-                      <span style={{ fontSize:16, fontWeight:900, color:C }}>{fTime(f.fixture_time)}</span>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <span style={{ fontSize:16, fontWeight:900, color:C }}>{fTime(f.fixture_time)}</span>
+                        <WeatherChip venue={f.venue} date={f.fixture_date} compact/>
+                      </div>
                       {f.home_away && (
                         <span style={{ fontSize:9, fontWeight:800, letterSpacing:'0.1em', padding:'3px 10px', borderRadius:20, background: f.home_away.toLowerCase()==='home' ? `${C}22` : 'rgba(255,255,255,0.08)', color: f.home_away.toLowerCase()==='home' ? C : 'rgba(255,255,255,0.5)' }}>
                           {f.home_away.toUpperCase()}

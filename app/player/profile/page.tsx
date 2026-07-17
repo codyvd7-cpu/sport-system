@@ -6,6 +6,9 @@ import { supabase } from '@/lib/supabase';
 import { GRADE8_TESTS, GRADE9_TESTS, TIERS, fmtValue, fmtValueWithUnit, TERM_ORDER, type TestKey } from '@/lib/hpTests';
 import { getSportColor, getSportLabel } from '@/lib/sports';
 import QrScanModal from '@/components/QrScanModal';
+import PushAlerts from '@/components/PushAlerts';
+import AlertOptIn from '@/components/AlertOptIn';
+import SafetyBanner from '@/components/SafetyBanner';
 
 type Row = Record<string, any>;
 
@@ -691,7 +694,8 @@ function Settings({ D, C, out, onPhoto, uploading }: any) {
   const fileRef = React.useRef<HTMLInputElement>(null);
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
     <h2 className="rise" style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.01em' }}>Settings</h2>
-    <Card className="rise d1">
+    <div className="rise d1"><AlertOptIn C={C} email={P.email}/></div>
+    <Card className="rise d2">
       <SecHead label="Account"/>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {[{ l: 'Full Name', v: P.full_name }, { l: 'Email', v: P.email }, { l: 'Grade', v: P.grade }, { l: 'Linked athlete', v: D.athlete ? `${D.athlete.full_name} · ${D.athlete.team}` : 'Not linked' }].map(item => (
@@ -711,6 +715,7 @@ function Settings({ D, C, out, onPhoto, uploading }: any) {
     </button>
     <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
       onChange={e => { const f = e.target.files?.[0]; if (f) onPhoto(f); e.target.value = ''; }}/>
+    <PushAlerts color={C}/>
     <Link href="/player/setup" className="rise d3" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 18px', borderRadius: 14, border: `1px solid ${B}`, background: CARD, textDecoration: 'none', color: 'white' }}>
       <div style={{ width: 38, height: 38, borderRadius: 10, background: `${C}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Ic d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" sz={15} col={C}/></div>
       <div style={{ flex: 1 }}><p style={{ fontSize: 13, fontWeight: 700, marginBottom: 2 }}>Edit Profile & Athlete Link</p><p style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Update your details or re-link your athlete record</p></div>
@@ -879,6 +884,7 @@ export default function PlayerProfile() {
     <div className="orb" style={{ width: 460, height: 460, top: '-12%', right: '-8%', background: `${C}14` }}/>
     <div className="orb" style={{ width: 380, height: 380, bottom: '-10%', left: '6%', background: `${C}0d`, animationDelay: '4s' }}/>
 
+    <SafetyBanner/>
     <div style={{ display: 'flex', minHeight: '100vh', background: BG }}>
       {/* ── SIDEBAR ── */}
       <aside className="sidebar">

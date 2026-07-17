@@ -1,82 +1,31 @@
-const CACHE_NAME = 'kinetiq-v2';
-const STATIC_ASSETS = ['/', '/portal', '/player', '/manifest.json'];
+// Altus Performance service worker — web push + notification click handling
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)));
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
-
-self.addEventListener('fetch', (event) => {
-  // Never intercept navigation requests — let the browser handle redirects
-  if (event.request.mode === 'navigate') {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  if (event.request.url.includes('supabase.co') || event.request.url.includes('/api/')) {
-    event.respondWith(fetch(event.request).catch(() => new Response('{}', { headers: { 'Content-Type': 'application/json' } })));
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response.ok && event.request.method === 'GET') {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      }).catch(() => cached || new Response('Offline', { status: 503 }));
-    })
-  );
-});
-
-// ── PUSH NOTIFICATIONS ────────────────────────────────────
 self.addEventListener('push', (event) => {
-  if (!event.data) return;
-  
-  let data;
-  try { data = event.data.json(); } 
-  catch { data = { title: 'Kinetiq Sport', body: event.data.text() }; }
-
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch {}
+  const title = data.title || 'Altus Performance';
   const options = {
-    body:    data.body    || '',
-    icon:    data.icon    || '/icons/icon-192.png',
-    badge:   data.badge   || '/icons/icon-192.png',
-    tag:     data.tag     || 'kinetiq-notification',
-    data:    data.url     ? { url: data.url } : {},
-    actions: data.actions || [],
-    vibrate: [100, 50, 100],
-    requireInteraction: data.requireInteraction || false,
+    body: data.body || '',
+    icon: '/altus-icon.png',
+    badge: '/altus-icon.png',
+    vibrate: data.urgent ? [200, 100, 200, 100, 300] : [100],
+    tag: data.tag || 'altus',
+    renotify: !!data.urgent,
+    requireInteraction: !!data.urgent,
+    data: { url: data.url || '/' },
   };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'Kinetiq Sport', options)
-  );
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/dashboard';
+  const url = event.notification.data?.url || '/';
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus();
-          client.navigate(url);
-          return;
-        }
-      }
-      if (clients.openWindow) return clients.openWindow(url);
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const c of list) { if ('focus' in c) { c.navigate(url); return c.focus(); } }
+      return self.clients.openWindow(url);
     })
   );
 });
