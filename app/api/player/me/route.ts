@@ -119,18 +119,21 @@ export async function POST(req: NextRequest) {
 
     // Athlete-linked data
     let athlete: any = null, attendance: any[] = [], perfTests: any[] = [], feedback: any = null, coachName: string | null = null;
+    let gymCheckins: any[] = [];
     if (profile.athlete_id) {
-      const [aR, attR, pR, fbR, coachR] = await Promise.all([
+      const [aR, attR, pR, fbR, coachR, gymR] = await Promise.all([
         db.from('athletes').select(ATHLETE_FIELDS).eq('id', profile.athlete_id).maybeSingle(),
         db.from('attendance').select('id,status,session_date,session_type').eq('athlete_id', profile.athlete_id).order('session_date', { ascending: false }).limit(200),
         db.from('performance_tests').select('id,test_type,value,unit,test_date').eq('athlete_id', profile.athlete_id).order('test_date', { ascending: false }).limit(100),
         db.from('coach_notes').select('strengths,current_focus,coach_comment,created_at').eq('athlete_id', profile.athlete_id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(3),
         db.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
+        db.from('gym_checkins').select('id,checkin_date,checkin_time,venue').eq('athlete_id', profile.athlete_id).order('checkin_date', { ascending: false }).limit(180),
       ]);
       athlete = aR.data;
       attendance = attR.data || [];
       perfTests = pR.data || [];
       feedback = fbR.data || [];
+      gymCheckins = gymR.data || [];
       if (athlete) {
         const teamCoach = (coachR.data || []).find((c: any) => Array.isArray(c.teams) && c.teams.includes(athlete.team));
         coachName = teamCoach ? (teamCoach.full_name || teamCoach.email?.split('@')[0]?.replace(/[._]/g, ' ')) : null;
@@ -177,6 +180,7 @@ export async function POST(req: NextRequest) {
       profile, athlete, hpStudent,
       attendance, perfTests, feedback, coachName,
       hpTests, hpInsights,
+      gymCheckins,
       fixtures: fxR.data || [], results: resR.data || [],
       reminders: remR.data || [], weekItems,
       programs: progR.data || [],

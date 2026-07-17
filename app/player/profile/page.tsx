@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { GRADE8_TESTS, GRADE9_TESTS, TIERS, fmtValue, fmtValueWithUnit, TERM_ORDER, type TestKey } from '@/lib/hpTests';
 import { getSportColor, getSportLabel } from '@/lib/sports';
+import QrScanModal from '@/components/QrScanModal';
 
 type Row = Record<string, any>;
 
@@ -203,8 +204,99 @@ function Hero({ D, C, radarCats, onPhoto, uploading }: any) {
   );
 }
 
+// ─── training log (QR gym check-ins) ─────────────────────────────────────────
+function localISO(d: Date) { return d.toLocaleDateString('en-CA'); }
+function gymStats(checkins: Row[]) {
+  const dates = new Set(checkins.map(c => c.checkin_date));
+  // Streak: consecutive days ending today or yesterday
+  let streak = 0;
+  const cur = new Date();
+  if (!dates.has(localISO(cur))) cur.setDate(cur.getDate() - 1); // allow "yesterday" to keep streak alive
+  while (dates.has(localISO(cur))) { streak++; cur.setDate(cur.getDate() - 1); }
+  // This week (Mon-start)
+  const now = new Date(); const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7)); mon.setHours(0,0,0,0);
+  const thisWeek = checkins.filter(c => new Date(c.checkin_date) >= mon).length;
+  // Last 8 weeks histogram (oldest → newest)
+  const weeks: number[] = [];
+  for (let w = 7; w >= 0; w--) {
+    const start = new Date(mon); start.setDate(mon.getDate() - w * 7);
+    const end = new Date(start); end.setDate(start.getDate() + 7);
+    weeks.push(checkins.filter(c => { const d = new Date(c.checkin_date); return d >= start && d < end; }).length);
+  }
+  return { streak, thisWeek, weeks, total: checkins.length };
+}
+
+function TrainingLog({ D, C, onScan }: any) {
+  const checkins: Row[] = D.gymCheckins || [];
+  const g = gymStats(checkins);
+  const streakShown = useCountUp(g.streak, 800);
+  const maxW = Math.max(1, ...g.weeks);
+  return <Card className="rise d1" style={{ position: 'relative', overflow: 'hidden', border: `1px solid ${C}25` }}>
+    <div style={{ position: 'absolute', top: -70, right: -50, width: 220, height: 220, borderRadius: '50%', background: `radial-gradient(circle, ${C}18, transparent 65%)`, pointerEvents: 'none' }}/>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div>
+        <p style={{ fontSize: 10, fontWeight: 800, color: C, textTransform: 'uppercase', letterSpacing: '0.18em' }}>Training Log</p>
+        <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>Scan the gym poster to log your sessions</p>
+      </div>
+      <button onClick={onScan} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 18px', borderRadius: 13, background: C, border: 'none', cursor: 'pointer', color: '#04070f', fontSize: 12.5, fontWeight: 900, boxShadow: `0 6px 22px ${C}45`, letterSpacing: '0.02em' }}>
+        <Ic d="M3 7V5a2 2 0 0 1 2-2h2 M17 3h2a2 2 0 0 1 2 2v2 M21 17v2a2 2 0 0 1-2 2h-2 M7 21H5a2 2 0 0 1-2-2v-2 M7 12h10" sz={15} col="#04070f" sw={2.4}/>
+        Scan to Check In
+      </button>
+    </div>
+
+    <div style={{ display: 'flex', gap: 20, alignItems: 'stretch', flexWrap: 'wrap' }}>
+      {/* Streak */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: `1px solid ${B}`, minWidth: 150 }}>
+        <span style={{ fontSize: 26 }}>🔥</span>
+        <div>
+          <p style={{ fontSize: 24, fontWeight: 900, lineHeight: 1, color: g.streak > 0 ? '#fbbf24' : 'rgba(255,255,255,0.3)' }}>{streakShown}</p>
+          <p style={{ fontSize: 8.5, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>Day streak</p>
+        </div>
+      </div>
+      {/* This week + total */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: `1px solid ${B}`, minWidth: 150 }}>
+        <div>
+          <p style={{ fontSize: 24, fontWeight: 900, lineHeight: 1, color: C }}>{g.thisWeek}</p>
+          <p style={{ fontSize: 8.5, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>This week</p>
+        </div>
+        <div style={{ width: 1, height: 32, background: B }}/>
+        <div>
+          <p style={{ fontSize: 24, fontWeight: 900, lineHeight: 1 }}>{g.total}</p>
+          <p style={{ fontSize: 8.5, fontWeight: 800, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.1em', marginTop: 3 }}>All time</p>
+        </div>
+      </div>
+      {/* 8-week bars */}
+      <div style={{ flex: 1, minWidth: 160, display: 'flex', alignItems: 'flex-end', gap: 6, padding: '10px 4px 4px' }}>
+        {g.weeks.map((w, i) => (
+          <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <div style={{ width: '100%', maxWidth: 22, height: 44, borderRadius: 6, background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'flex-end', overflow: 'hidden' }}>
+              <div style={{ width: '100%', height: `${(w / maxW) * 100}%`, minHeight: w > 0 ? 5 : 0, background: i === 7 ? C : `${C}55`, borderRadius: 6, transition: 'height 0.8s cubic-bezier(0.16,1,0.3,1)' }}/>
+            </div>
+            <span style={{ fontSize: 7.5, fontWeight: 700, color: i === 7 ? C : 'rgba(255,255,255,0.22)' }}>{i === 7 ? 'NOW' : ''}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+
+    {checkins.length > 0 && (
+      <div style={{ marginTop: 14, paddingTop: 12, borderTop: `1px solid ${B}`, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        {checkins.slice(0, 5).map((c: Row) => (
+          <span key={c.id} style={{ fontSize: 10, fontWeight: 700, padding: '4px 11px', borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: `1px solid ${B}`, color: 'rgba(255,255,255,0.5)' }}>
+            {fd(c.checkin_date, { weekday: 'short', day: 'numeric', month: 'short' })} · {c.venue}{c.checkin_time ? ` · ${String(c.checkin_time).slice(0, 5)}` : ''}
+          </span>
+        ))}
+      </div>
+    )}
+    {checkins.length === 0 && (
+      <p style={{ marginTop: 12, fontSize: 11.5, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>
+        No sessions logged yet — hit the button above at your next gym session and start your streak.
+      </p>
+    )}
+  </Card>;
+}
+
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
-function Overview({ D, C, attPct, setNav }: any) {
+function Overview({ D, C, attPct, setNav, onScan }: any) {
   const { athlete: ath, fixtures, results, reminders, hpInsights, hpStudent } = D;
   const teamFx = ath?.team ? fixtures.filter((f: Row) => f.team === ath.team) : fixtures;
   const nxt = teamFx[0] || fixtures[0] || null;
@@ -246,6 +338,9 @@ function Overview({ D, C, attPct, setNav }: any) {
     )}
 
     {/* Animated stat band */}
+    {/* Training log — the thing you actually DO here */}
+    {D.athlete && <TrainingLog D={D} C={C} onScan={onScan}/>}
+
     <div className="stat-grid rise d2">
       {[
         { v: attPct !== null ? `${cAtt}%` : '—', l: 'Attendance', c: attPct !== null ? (attPct >= 80 ? '#22c55e' : attPct >= 60 ? '#fbbf24' : '#f87171') : 'rgba(255,255,255,0.25)' },
@@ -358,6 +453,22 @@ function Performance({ D, C }: any) {
   const year = new Date().getFullYear();
   const tests = hpStudent?.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS;
 
+  // Personal bests across ALL recorded years — best-ever per test
+  const pbs = React.useMemo(() => {
+    const out: Record<string, { val: number; term: string; year: number }> = {};
+    tests.forEach(t => {
+      (hpTests || []).forEach((r: Row) => {
+        const v = parseFloat(r[t.key]);
+        if (isNaN(v)) return;
+        const cur = out[t.key];
+        const better = !cur || (t.lower ? v < cur.val : v > cur.val);
+        if (better) out[t.key] = { val: v, term: r.term, year: r.year };
+      });
+    });
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hpTests, hpStudent?.grade]);
+
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
     <h2 className="rise" style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.01em' }}>Performance</h2>
     {hpStudent ? (
@@ -386,6 +497,12 @@ function Performance({ D, C }: any) {
                   {ins?.percentile !== null && ins?.percentile !== undefined && (
                     <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
                       Better than {ins.percentile}% of {hpStudent.grade}
+                    </p>
+                  )}
+                  {pbs[t.key] && (
+                    <p style={{ fontSize: 10, fontWeight: 800, color: '#fbbf24', marginTop: 3 }}>
+                      🏅 PB {fmtValueWithUnit(t.key as TestKey, pbs[t.key].val)}
+                      <span style={{ color: 'rgba(255,255,255,0.3)', fontWeight: 600 }}> · {pbs[t.key].term} {pbs[t.key].year}{ins?.latest !== null && pbs[t.key].val === ins?.latest ? ' · current!' : ''}</span>
                     </p>
                   )}
                 </div>
@@ -615,6 +732,7 @@ export default function PlayerProfile() {
   const [errMsg, setErrMsg] = React.useState('');
   const [uploading, setUploading] = React.useState(false);
   const [toast, setToast] = React.useState('');
+  const [scanOpen, setScanOpen] = React.useState(false);
 
   React.useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -635,6 +753,28 @@ export default function PlayerProfile() {
       setLoading(false);
     });
   }, [router]);
+
+  async function submitCheckin(token: string) {
+    setScanOpen(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Signed out — please log in again.');
+      const r = await fetch('/api/player/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ token }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Check-in failed');
+      setToast(d.already ? `Already checked in at ${d.venue} today ✓` : `${d.venue} session logged 🔥`);
+      if (!d.already) {
+        // Optimistically add today's check-in so streak/bars update instantly
+        const now = new Date();
+        setD(prev => prev ? { ...prev, gymCheckins: [{ id: `tmp-${Date.now()}`, checkin_date: now.toLocaleDateString('en-CA'), checkin_time: now.toTimeString().slice(0, 8), venue: d.venue }, ...(prev.gymCheckins || [])] } : prev);
+      }
+    } catch (e: any) { setToast(e.message || 'Check-in failed'); }
+    setTimeout(() => setToast(''), 3500);
+  }
 
   async function uploadPhoto(file: File) {
     setUploading(true);
@@ -688,7 +828,7 @@ export default function PlayerProfile() {
   async function signOut() { await supabase.auth.signOut(); router.push('/player/auth'); }
 
   const SECTIONS: Record<string, React.ReactNode> = {
-    overview: <Overview D={D} C={C} attPct={attPct} setNav={setNav}/>,
+    overview: <Overview D={D} C={C} attPct={attPct} setNav={setNav} onScan={() => setScanOpen(true)}/>,
     schedule: <Schedule D={D} C={C}/>,
     perf:     <Performance D={D} C={C}/>,
     att:      <Attendance D={D} attPct={attPct}/>,
@@ -788,6 +928,8 @@ export default function PlayerProfile() {
     </div>
 
     {/* Upload toast */}
+    {scanOpen && <QrScanModal C={C} onToken={submitCheckin} onClose={() => setScanOpen(false)}/>}
+
     {toast && (
       <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', zIndex: 60, padding: '10px 18px', borderRadius: 12, background: 'rgba(10,15,30,0.96)', border: `1px solid ${C}40`, fontSize: 12.5, fontWeight: 700, boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>{toast}</div>
     )}
