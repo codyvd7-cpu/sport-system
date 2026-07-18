@@ -25,14 +25,21 @@ export default function PortalNav({ sport }: Props) {
       borderBottom: `1px solid ${scrolled ? 'rgba(255,255,255,0.09)' : 'transparent'}`,
       transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
     }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', gap: 24 }}>
+      <style>{`
+        @media (max-width: 480px) {
+          .pn-inner { padding: 0 14px !important; gap: 12px !important; height: 60px !important; }
+          .pn-school { display: none !important; }
+          .pn-login { padding: 9px 16px !important; font-size: 12px !important; }
+        }
+      `}</style>
+      <div className="pn-inner" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', gap: 24 }}>
 
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
           <div style={{ position: 'relative' }}>
             <Image src="/st-benedicts-logo.png" alt="SBC" width={34} height={34} style={{ objectFit: 'contain' }}/>
           </div>
           <div style={{ lineHeight: 1.25 }}>
-            <p style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>St Benedict's College</p>
+            <p className="pn-school" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>St Benedict's College</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }}/>
               <p style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{label}</p>
@@ -50,7 +57,7 @@ export default function PortalNav({ sport }: Props) {
             Coach
           </Link>
 
-          <Link href="/player/auth" style={{
+          <Link href="/player/auth" className="pn-login" style={{
             fontSize: 12.5, fontWeight: 800, padding: '9px 20px', borderRadius: 10,
             background: color, color: '#030810',
             textDecoration: 'none', whiteSpace: 'nowrap',

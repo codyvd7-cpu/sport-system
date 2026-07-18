@@ -5,8 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { SPORTS, type SportKey, getSportColor } from '@/lib/sports';
 import PortalAuthGuard from '@/components/PortalAuthGuard';
-import SafetyBanner from '@/components/SafetyBanner';
-import AlertOptIn from '@/components/AlertOptIn';
 import PortalAmbient     from '@/components/portal/PortalAmbient';
 import ScrollReveal      from '@/components/portal/ScrollReveal';
 import PortalNav         from '@/components/portal/PortalNav';
@@ -15,7 +13,6 @@ import ThisWeekBoard     from '@/components/portal/ThisWeekBoard';
 import FixtureList       from '@/components/portal/FixtureList';
 import PlayerResources   from '@/components/portal/PlayerResources';
 import NoticeCard        from '@/components/portal/NoticeCard';
-import PushAlerts        from '@/components/PushAlerts';
 import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 
@@ -69,7 +66,6 @@ function PortalInner() {
 
   return (
     <>
-      <SafetyBanner/>
       <PortalAuthGuard sport={sport}>
       <div style={{ minHeight: '100vh', background: 'radial-gradient(ellipse 1400px 900px at 50% -8%, #0d1628 0%, #030810 55%)', color: 'white', position:'relative' }}>
         {/* Subtle grid texture */}
@@ -79,17 +75,6 @@ function PortalInner() {
 
         {/* Department notice — dismissible, reappears when a new notice is published */}
         <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>
-
-        {/* Push alerts opt-in — lightning & urgent notices */}
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '10px 24px 0', position: 'relative', zIndex: 5, display: 'flex', justifyContent: 'flex-end' }}>
-          <PushAlerts color={color} compact/>
-        </div>
-
-        {/* Safety alert opt-in — parents enable this once, then get an instant
-            push if a lightning alert is activated. Quiet, not pushy. */}
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '10px 24px 0' }}>
-          <AlertOptIn C={color}/>
-        </div>
 
         {/* Hero */}
         <PortalHero sport={sport} nextFixture={nextFixture}/>

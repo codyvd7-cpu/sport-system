@@ -32,7 +32,19 @@ export default function PortalHero({ sport, nextFixture }: Props) {
   });
 
   return (
-    <section style={{ position:'relative', overflow:'hidden', minHeight:'clamp(560px, 88vh, 780px)', display:'flex', alignItems:'flex-end' }}>
+    <section className="ph-section" style={{ position:'relative', overflow:'hidden', minHeight:'clamp(560px, 88vh, 780px)', display:'flex', alignItems:'flex-end' }}>
+      <style>{`
+        @media (max-width: 760px) {
+          .ph-section { min-height: auto !important; }
+          .ph-wrap { padding: 88px 18px 40px !important; }
+          .ph-grid { gap: 26px !important; }
+          .ph-ctas { gap: 10px !important; }
+          .ph-ctas a { flex: 1 1 100%; justify-content: center !important; text-align: center; padding: 14px 20px !important; }
+          .ph-card-pad { padding: 22px 18px 22px !important; }
+          .ph-card-title { font-size: 25px !important; }
+          .ph-card-details { padding: 16px 16px !important; }
+        }
+      `}</style>
 
       {/* ── Full-bleed cinematic image ── */}
       {heroImg && (
@@ -49,8 +61,8 @@ export default function PortalHero({ sport, nextFixture }: Props) {
         </div>
       )}
 
-      <div style={{ position:'relative', zIndex:1, padding:'120px 24px 64px', maxWidth:1240, margin:'0 auto', width:'100%' }}>
-        <div style={{ display:'grid', gap:48, alignItems:'flex-end' }} className="lg:grid-cols-[1fr_400px]">
+      <div className="ph-wrap" style={{ position:'relative', zIndex:1, padding:'120px 24px 64px', maxWidth:1240, margin:'0 auto', width:'100%' }}>
+        <div style={{ display:'grid', gap:48, alignItems:'flex-end' }} className="ph-grid lg:grid-cols-[1fr_400px]">
 
           {/* Left — headline */}
           <div>
@@ -82,7 +94,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
               {cfg?.portal?.description ?? 'Fixtures, training updates, programmes and department notices — all in one place.'}
             </p>
 
-            <div style={{ display:'flex', gap:14, flexWrap:'wrap', ...fadeUp(0.3) }}>
+            <div className="ph-ctas" style={{ display:'flex', gap:14, flexWrap:'wrap', ...fadeUp(0.3) }}>
               <a href="#this-week" style={{
                 fontSize:14.5, fontWeight:800, padding:'15px 30px', borderRadius:13,
                 background:color, color:'#030810', textDecoration:'none',
@@ -124,7 +136,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
                 {/* Corner glow */}
                 <div style={{ position:'absolute', bottom:-40, right:-40, width:160, height:160, borderRadius:'50%', background:'rgba(255,255,255,0.15)', filter:'blur(40px)', pointerEvents:'none' }}/>
 
-                <div style={{ position:'relative', padding:'28px 28px 30px' }}>
+                <div className="ph-card-pad" style={{ position:'relative', padding:'28px 28px 30px' }}>
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                       <span style={{ width:8, height:8, borderRadius:'50%', background:'#030810' }}/>
@@ -141,11 +153,11 @@ export default function PortalHero({ sport, nextFixture }: Props) {
                     </div>
                   )}
 
-                  <p style={{ fontSize:32, fontWeight:900, color:'#030810', marginBottom:22, lineHeight:1.05, letterSpacing:'-0.02em' }}>
+                  <p className="ph-card-title" style={{ fontSize:32, fontWeight:900, color:'#030810', marginBottom:22, lineHeight:1.05, letterSpacing:'-0.02em' }}>
                     vs {nextFixture.opponent}
                   </p>
 
-                  <div style={{ background:'rgba(3,8,16,0.88)', borderRadius:18, padding:'20px 22px', display:'flex', flexDirection:'column', gap:12 }}>
+                  <div className="ph-card-details" style={{ background:'rgba(3,8,16,0.88)', borderRadius:18, padding:'20px 22px', display:'flex', flexDirection:'column', gap:12 }}>
                     {[
                       { icon:'📅', val:fDate(nextFixture.fixture_date) },
                       ...(nextFixture.fixture_time ? [{ icon:'🕐', val:fTime(nextFixture.fixture_time) }] : []),
