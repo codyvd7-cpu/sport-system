@@ -82,5 +82,5 @@ function LightningInner() {
 }
 
 export default function LightningPage() {
-  return <AuthGuard requiredRoles={['owner', 'head_of_sport', 'deputy_head_of_sport', 'head_of_hockey', 'mic', 'coach']}><LightningInner/></AuthGuard>;
+  return <AuthGuard requiredRoles={['owner', 'head_of_sport']}><LightningInner/></AuthGuard>;
 }

@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import WeatherChip from '@/components/WeatherChip';
 
 type Row = Record<string, any>;
 
@@ -214,6 +215,7 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
                   {localISO(weekDates[openDay]) === todayISO ? 'Today' : 'Day Plan'}
                 </p>
                 <p style={{ fontSize:20, fontWeight:900, color:'white', lineHeight:1.1 }}>{fLong(weekDates[openDay])}</p>
+                <div style={{ marginTop: 8 }}><WeatherChip date={localISO(weekDates[openDay])}/></div>
               </div>
               <button onClick={() => setOpenDay(null)} aria-label="Close" style={{
                 width:30, height:30, borderRadius:9, border:'1px solid rgba(255,255,255,0.1)',

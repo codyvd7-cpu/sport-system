@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'head_of_hockey', 'mic', 'coach']);
+  const auth = await authenticateRequest(req, ['owner', 'head_of_sport']);
   if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const db = admin();
