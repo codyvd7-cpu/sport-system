@@ -1,22 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { authenticateRequest } from '@/lib/serverAuth';
-import { broadcastPush } from '@/lib/push';
+import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
+import { getActiveAlert, activateAlert, clearAlert } from '@/lib/alertsService';
 
-// ─── Urgent alerts (lightning) ──────────────────────────────────────────────────
+// ─── /api/alerts ────────────────────────────────────────────────────────────────
+// Thin adapter over lib/alertsService (shared with /api/safety-alert).
 // GET  → current active alert (public — the banner polls this)
-// POST → staff only: { action: 'activate', message } | { action: 'clear' }
-//        Activation broadcasts a push notification to every subscriber.
-
-function admin() {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-}
+// POST → owner / head_of_sport: { action: 'activate', message? } | { action: 'clear' }
 
 export async function GET() {
-  const { data } = await admin().from('urgent_alerts')
-    .select('id,type,message,created_at')
-    .eq('active', true).order('created_at', { ascending: false }).limit(1);
-  const res = NextResponse.json({ alert: data?.[0] || null });
+  if (!adminConfigured()) return NextResponse.json({ alert: null });
+  const alert = await getActiveAlert(getAdmin());
+  const res = NextResponse.json({ alert });
   res.headers.set('Cache-Control', 'no-store');
   return res;
 }
@@ -24,41 +19,25 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const auth = await authenticateRequest(req, ['owner', 'head_of_sport']);
   if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const db = admin();
+  const db = getAdmin();
   let body: Record<string, any> = {};
   try { body = await req.json(); } catch {}
 
-  if (body.action === 'activate') {
-    const message = String(body.message || '').trim() ||
-      'Lightning detected — all outdoor training and matches are suspended. Move indoors immediately.';
-    // Clear any previous active alert, then create the new one
-    await db.from('urgent_alerts').update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
-    const { data, error } = await db.from('urgent_alerts')
-      .insert([{ type: 'lightning', message, created_by: auth.email || 'staff' }])
-      .select().single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    const sent = await broadcastPush(db, {
-      title: '⚡ LIGHTNING ALERT — St Benedict\u2019s Sport',
-      body: message,
-      url: '/portal',
-      urgent: true,
-      tag: 'lightning',
-    });
-    return NextResponse.json({ ok: true, alert: data, pushed: sent });
+  try {
+    if (body.action === 'activate') {
+      const { alert, pushed } = await activateAlert(db, {
+        message: body.message, type: 'lightning', actor: auth.email || 'staff',
+      });
+      return NextResponse.json({ ok: true, alert, pushed });
+    }
+    if (body.action === 'clear') {
+      const { pushed } = await clearAlert(db);
+      return NextResponse.json({ ok: true, pushed });
+    }
+    return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'Alert action failed' }, { status: 500 });
   }
-
-  if (body.action === 'clear') {
-    await db.from('urgent_alerts').update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
-    const sent = await broadcastPush(db, {
-      title: 'All clear — St Benedict\u2019s Sport',
-      body: 'The lightning alert has been lifted. Activities may resume as directed by coaches.',
-      url: '/portal',
-      tag: 'lightning',
-    });
-    return NextResponse.json({ ok: true, pushed: sent });
-  }
-
-  return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
 }

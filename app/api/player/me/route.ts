@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
+import { verifyPlayer } from '@/lib/playerAuth';
 import { GRADE8_TESTS, GRADE9_TESTS, getTier, type TestKey } from '@/lib/hpTests';
 import { cohortStats, termSeries, classifyChange, percentileRank } from '@/lib/hpAnalytics';
 
@@ -19,29 +20,16 @@ import { cohortStats, termSeries, classifyChange, percentileRank } from '@/lib/h
 
 const ATHLETE_FIELDS = 'id,full_name,team,sport,age_group,position,availability,photo_url';
 
-function admin(): SupabaseClient {
-  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-}
-
-async function verifyUser(req: NextRequest, db: SupabaseClient) {
-  const auth = req.headers.get('authorization') || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  if (!token) return null;
-  const { data, error } = await db.auth.getUser(token);
-  if (error || !data.user) return null;
-  return data.user;
-}
-
 export async function POST(req: NextRequest) {
   const ip = getClientId(req);
   const rl = rateLimit(`player-me:${ip}`, { max: 30, windowMs: 60_000 });
   if (!rl.ok) return NextResponse.json({ error: 'Rate limit exceeded.' }, { status: 429 });
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!adminConfigured()) {
     return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
   }
-  const db = admin();
-  const user = await verifyUser(req, db);
+  const db = getAdmin();
+  const user = await verifyPlayer(req);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   let body: Record<string, any> = {};
@@ -64,7 +52,7 @@ export async function POST(req: NextRequest) {
     // ── SAVE PROFILE ───────────────────────────────────────────────────────────
     if (action === 'save_profile') {
       const row = {
-        user_id: user.id,
+        user_id: user.userId,
         email: user.email,
         full_name: String(body.full_name || '').trim(),
         grade: String(body.grade || '').trim() || null,
@@ -90,13 +78,13 @@ export async function POST(req: NextRequest) {
       }
       const { error } = await db.from('player_profiles')
         .update({ athlete_id: athleteId || null, ...(hpStudentId ? { hp_student_id: hpStudentId } : {}) })
-        .eq('user_id', user.id);
+        .eq('user_id', user.userId);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true, hp_linked: !!hpStudentId });
     }
 
     // ── GET: the full portal payload ───────────────────────────────────────────
-    const { data: profile } = await db.from('player_profiles').select('*').eq('user_id', user.id).maybeSingle();
+    const { data: profile } = await db.from('player_profiles').select('*').eq('user_id', user.userId).maybeSingle();
     if (!profile) return NextResponse.json({ profile: null });
 
     const sports: string[] = (profile.sports || []).map((s: string) => s.toLowerCase());
