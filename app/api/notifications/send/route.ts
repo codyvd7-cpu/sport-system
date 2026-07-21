@@ -1,71 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/serverAuth';
-import { createClient } from '@supabase/supabase-js';
+import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
+import { broadcastPush, pushReady } from '@/lib/push';
 
-// Web Push implementation using VAPID
-async function sendPushNotification(subscription: any, payload: any, vapidKeys: { publicKey: string; privateKey: string; email: string }) {
-  const { default: webpush } = await import('web-push');
-  
-  webpush.setVapidDetails(
-    `mailto:${vapidKeys.email}`,
-    vapidKeys.publicKey,
-    vapidKeys.privateKey
-  );
-
-  await webpush.sendNotification(
-    { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth_key } },
-    JSON.stringify(payload)
-  );
-}
+// ─── /api/notifications/send ─────────────────────────────────────────────────────
+// Adapter for the staff broadcast page (app/notifications). Consolidated onto
+// the shared broadcastPush() pipeline instead of its own inline web-push call
+// and its own (mismatched) subscription-column assumptions.
 
 export async function POST(req: NextRequest) {
-  // Require authenticated staff member
   const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic']);
   if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
-
-  const vapidPublic  = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-  const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
-  const serviceKey   = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!vapidPublic || !vapidPrivate || !serviceKey) {
+  if (!adminConfigured() || !pushReady()) {
     return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
   }
 
-  const { title, body, url, targetEmails } = await req.json();
+  const { title, body, url } = await req.json().catch(() => ({}));
   if (!title || !body) return NextResponse.json({ error: 'Title and body required.' }, { status: 400 });
 
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
-
-  // Get subscriptions — target specific emails or all
-  let query = supabase.from('push_subscriptions').select('*');
-  if (targetEmails?.length) query = query.in('email', targetEmails);
-
-  const { data: subs, error: subErr } = await query;
-  if (!subs?.length) return NextResponse.json({ ok: true, sent: 0, debug: subErr?.message });
-
-  const payload = { title, body, url: url || '/dashboard', icon: '/icons/icon-192.png', badge: '/icons/icon-192.png' };
-  const vapidKeys = { publicKey: vapidPublic, privateKey: vapidPrivate, email: 'cody@altusperformance.co.za' };
-
-  let sent = 0, failed = 0;
-  const staleEndpoints: string[] = [];
-
-  await Promise.allSettled(subs.map(async (sub) => {
-    try {
-      console.log('[Send] Sending to endpoint:', sub.endpoint.slice(0, 50));
-      await sendPushNotification(sub, payload, vapidKeys);
-      sent++;
-    } catch (e: any) {
-      failed++;
-      if (e.statusCode === 410 || e.statusCode === 404) {
-        staleEndpoints.push(sub.endpoint);
-      }
-    }
-  }));
-
-  // Clean up stale subscriptions
-  if (staleEndpoints.length) {
-    await supabase.from('push_subscriptions').delete().in('endpoint', staleEndpoints);
+  try {
+    const sent = await broadcastPush(getAdmin(), { title, body, url: url || '/dashboard', tag: 'altus-notify' });
+    return NextResponse.json({ ok: true, sent, failed: 0 });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message || 'Send failed' }, { status: 500 });
   }
-
-  return NextResponse.json({ ok: true, sent, failed });
 }

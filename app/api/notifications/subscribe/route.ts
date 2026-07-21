@@ -1,22 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
+
+// ─── /api/notifications/subscribe ───────────────────────────────────────────────
+// Adapter for the staff NotificationBell — consolidated onto the canonical
+// push_subscriptions schema (lib/push.ts / supabase-alerts-push.sql), the same
+// table /api/push/subscribe and /api/alerts already use. Previously this route
+// wrote email + auth_key into columns that don't exist on that table, so staff
+// "enable notifications" subscriptions were silently going nowhere.
 
 export async function POST(req: NextRequest) {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
-
+  if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
   try {
-    const { subscription, email } = await req.json();
-    if (!subscription?.endpoint) return NextResponse.json({ error: 'Invalid subscription.' }, { status: 400 });
-
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
-    await supabase.from('push_subscriptions').upsert([{
-      email: email || 'unknown',
+    const { subscription } = await req.json();
+    if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+      return NextResponse.json({ error: 'Invalid subscription.' }, { status: 400 });
+    }
+    const { error } = await getAdmin().from('push_subscriptions').upsert({
       endpoint: subscription.endpoint,
-      p256dh:   subscription.keys.p256dh,
-      auth_key: subscription.keys.auth,
-    }], { onConflict: 'endpoint' });
-
+      p256dh: subscription.keys.p256dh,
+      auth: subscription.keys.auth,
+      label: 'staff',
+    }, { onConflict: 'endpoint' });
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
@@ -24,13 +29,11 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
-
+  if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
   try {
     const { endpoint } = await req.json();
-    const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
-    await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+    if (!endpoint) return NextResponse.json({ error: 'Endpoint required.' }, { status: 400 });
+    await getAdmin().from('push_subscriptions').delete().eq('endpoint', endpoint);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
