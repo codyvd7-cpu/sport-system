@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { ToastProvider } from '@/components/Toast';
 import SplashScreen from '@/components/SplashScreen';
+import QueryProvider from '@/components/QueryProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -47,9 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body style={{overflowX:"hidden",maxWidth:"100vw"}}>
         <SplashScreen/>
-        <ToastProvider>
-          {children}
-        </ToastProvider>
+        <QueryProvider>
+          <ToastProvider>
+            {children}
+          </ToastProvider>
+        </QueryProvider>
       </body>
     </html>
   );
