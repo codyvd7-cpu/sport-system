@@ -27,14 +27,14 @@ export async function POST(req: NextRequest) {
 
   try {
     if (body.action === 'activate') {
-      const { alert, pushed } = await activateAlert(db, {
+      const { alert, pushed, pushConfigured } = await activateAlert(db, {
         message: body.message, type: 'lightning', actor: auth.email || 'staff',
       });
-      return NextResponse.json({ ok: true, alert, pushed });
+      return NextResponse.json({ ok: true, alert, pushed, pushConfigured });
     }
     if (body.action === 'clear') {
-      const { pushed } = await clearAlert(db);
-      return NextResponse.json({ ok: true, pushed });
+      const { pushed, pushConfigured } = await clearAlert(db);
+      return NextResponse.json({ ok: true, pushed, pushConfigured });
     }
     return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
   } catch (e: any) {

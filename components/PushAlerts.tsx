@@ -22,6 +22,17 @@ export default function PushAlerts({ color = '#10b981', compact = false }: { col
       try {
         const reg = await navigator.serviceWorker.register('/sw.js');
         const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          // A subscription already exists in this browser. Re-save it (upsert,
+          // so this is always safe/cheap) in case it was previously lost server-
+          // side — silently repairs anyone stuck showing ON with nothing saved.
+          const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } } as any));
+          fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({ subscription: sub.toJSON(), label: session ? 'player' : 'portal' }),
+          }).catch(() => {});
+        }
         setState(sub ? 'on' : 'off');
       } catch { setState('unsupported'); }
     })();
@@ -45,11 +56,19 @@ export default function PushAlerts({ color = '#10b981', compact = false }: { col
       if (perm !== 'granted') { setState(perm === 'denied' ? 'denied' : 'off'); return; }
       const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(pub) });
       const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } } as any));
-      await fetch('/api/push/subscribe', {
+      const saveRes = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
         body: JSON.stringify({ subscription: sub.toJSON(), label: session ? 'player' : 'portal' }),
       });
+      if (!saveRes.ok) {
+        // Browser subscribed fine, but the server never got a matching row —
+        // previously this showed "ON" anyway with nothing actually saved.
+        // Roll the browser subscription back so state stays truthful.
+        await sub.unsubscribe().catch(() => {});
+        const errBody = await saveRes.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Could not save your subscription — try again.');
+      }
       setState('on');
     } catch (e: any) {
       setNote(e?.message?.includes('applicationServerKey') ? 'Alert keys misconfigured.' : 'Could not enable alerts on this device.');

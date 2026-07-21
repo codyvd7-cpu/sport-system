@@ -31,7 +31,9 @@ function LightningInner() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error || 'Failed');
       setResult(action === 'activate'
-        ? `Alert is LIVE — pushed to ${d.pushed} device${d.pushed === 1 ? '' : 's'}.`
+        ? (d.pushConfigured === false
+            ? `Alert is LIVE (banner active). Push not sent — VAPID keys aren't set in Vercel yet, so no devices can receive alerts.`
+            : `Alert is LIVE — pushed to ${d.pushed} device${d.pushed === 1 ? '' : 's'}.`)
         : `All-clear sent to ${d.pushed} device${d.pushed === 1 ? '' : 's'}.`);
       setMsg('');
       load();
