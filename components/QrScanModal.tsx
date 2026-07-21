@@ -45,8 +45,15 @@ export default function QrScanModal({ onToken, onClose, C }: {
           raf = requestAnimationFrame(scan);
         };
         raf = requestAnimationFrame(scan);
-      } catch {
-        setErr('Camera access was blocked. Allow camera permission, or scan the poster with your phone camera app instead.');
+      } catch (e: any) {
+        const name = e?.name || '';
+        setErr(
+          name === 'NotAllowedError' ? 'Camera permission was denied. Check your browser\u2019s site settings and allow Camera for this site, then try again.'
+          : name === 'NotFoundError' ? 'No camera found on this device.'
+          : name === 'NotReadableError' ? 'Camera is already in use by another app — close it and try again.'
+          : name === 'SecurityError' ? 'Camera blocked — this page must be loaded over https://.'
+          : 'Camera access was blocked. Allow camera permission, or scan the poster with your phone camera app instead.'
+        );
       }
     }
     start();

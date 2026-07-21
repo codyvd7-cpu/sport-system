@@ -71,7 +71,12 @@ export default function PushAlerts({ color = '#10b981', compact = false }: { col
       }
       setState('on');
     } catch (e: any) {
-      setNote(e?.message?.includes('applicationServerKey') ? 'Alert keys misconfigured.' : 'Could not enable alerts on this device.');
+      const raw = e?.message || '';
+      setNote(
+        raw.includes('applicationServerKey') ? 'Alert keys misconfigured.'
+        : raw.includes('NotAllowedError') || raw.includes('permission') ? 'Notification permission was blocked — check your browser\u2019s site settings.'
+        : raw || 'Could not enable alerts on this device.'
+      );
       setState('off');
     }
   }
