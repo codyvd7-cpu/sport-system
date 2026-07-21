@@ -26,6 +26,7 @@ const I = {
   menu:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
   close:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M18 6L6 18M6 6l12 12"/></svg>,
   logout:  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  bolt:    <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>,
 };
 
 const COACH_NAV: NavItem[] = [
@@ -74,9 +75,14 @@ export default function CoachNav() {
   const [open, setOpen] = useState(false);
   const { isHOS, isMIC, isOwner, email, sport, loading: roleLoading } = useRole();
 
-  const isHOH = isHOS || isMIC;
-  const navItems = isHOH ? HOH_NAV : COACH_NAV;
-  const tabs     = isHOH ? HOH_TABS : COACH_TABS;
+  const isHOH = isHOS || isMIC || isOwner;
+  const baseNav  = isHOH ? HOH_NAV : COACH_NAV;
+  // Lightning alert trigger — owner + head of sport only (matches /lightning's
+  // own access check), inserted right after Dashboard so it's impossible to miss.
+  const navItems = (isOwner || isHOS)
+    ? [baseNav[0], { href:'/lightning', label:'Lightning Alert', icon:I.bolt }, ...baseNav.slice(1)]
+    : baseNav;
+  const tabs = isHOH ? HOH_TABS : COACH_TABS;
 
   const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports';
   const SPORT_COLORS: Record<string,string> = {
