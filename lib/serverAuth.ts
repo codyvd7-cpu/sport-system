@@ -50,7 +50,15 @@ export async function authenticateRequest(
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // Critical: attach the caller's token to outgoing requests. Without this,
+    // auth.getUser(accessToken) verifies WHO the user is but the client's
+    // subsequent .from() queries carry no auth context at all — so RLS
+    // policies that depend on auth.jwt() (e.g. staff_roles' select policy)
+    // always evaluate as "nobody logged in" and return zero rows. That silently
+    // turned every role-gated route into "Insufficient permissions" for every
+    // user, regardless of actual role — this is the fix.
+    { global: { headers: { Authorization: `Bearer ${accessToken}` } } }
   );
 
   const { data: { user }, error } = await supabase.auth.getUser(accessToken);
