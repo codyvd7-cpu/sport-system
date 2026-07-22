@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import WeatherChip from '@/components/WeatherChip';
+import { fmtTime12h } from '@/lib/format';
 
 type Row = Record<string, any>;
 
@@ -18,12 +19,7 @@ const PULSE_STYLE = `@keyframes todayPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,2
 @keyframes dayModalIn{from{opacity:0;transform:translateY(14px) scale(0.98)}to{opacity:1;transform:none}}
 @keyframes backdropIn{from{opacity:0}to{opacity:1}}`;
 
-function fTime(t?: string) {
-  if (!t) return '';
-  const [h, m] = t.split(':'); const hr = parseInt(h);
-  if (isNaN(hr)) return t;
-  return `${hr > 12 ? hr - 12 : hr}:${m}${hr >= 12 ? 'pm' : 'am'}`;
-}
+const fTime = (t?: string) => fmtTime12h(t);
 function localISO(d: Date) { return d.toLocaleDateString('en-CA'); } // YYYY-MM-DD in local time
 function fShort(d: Date) { return d.toLocaleDateString('en-ZA', { day:'numeric', month:'short' }); }
 function fLong(d: Date)  { return d.toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long' }); }

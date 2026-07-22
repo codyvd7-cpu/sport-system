@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     // HP testing + server-computed cohort insights (percentile/SWC are aggregate
     // stats — safe to share; no other student's individual data leaves the server)
     let hpTests: any[] = [];
-    let hpInsights: Record<string, any> = {};
+    const hpInsights: Record<string, any> = {};
     let hpStudent: any = null;
     if (profile.hp_student_id) {
       const { data: stu } = await db.from('hp_students').select('id,full_name,grade,class_group,training_group').eq('id', profile.hp_student_id).maybeSingle();

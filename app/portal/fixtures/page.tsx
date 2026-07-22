@@ -6,6 +6,7 @@ import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSportLabel, getSportColor, getSportTerm } from '@/lib/sports';
 import WeatherChip from '@/components/WeatherChip';
+import { fmtTime12h } from '@/lib/format';
 
 type Row = Record<string, any>;
 
@@ -20,12 +21,7 @@ function formatDate(dateStr: string) {
     chip:  d.toLocaleDateString('en-ZA', { weekday:'short', day:'numeric', month:'short' }),
   };
 }
-function fTime(t?: string) {
-  if (!t) return 'TBC';
-  const [h, m] = t.split(':'); const hr = parseInt(h);
-  if (isNaN(hr)) return t;
-  return `${hr > 12 ? hr - 12 : hr}:${m}${hr >= 12 ? 'pm' : 'am'}`;
-}
+const fTime = (t?: string) => fmtTime12h(t, 'TBC');
 
 function FixturesInner() {
   const searchParams = useSearchParams();

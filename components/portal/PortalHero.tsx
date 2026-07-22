@@ -2,17 +2,14 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { SPORTS, type SportKey, getSportColor } from '@/lib/sports';
+import { fmtTime12h } from '@/lib/format';
 
 type Row = Record<string, any>;
 
 function fDate(d: string) {
   return new Date(d).toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long' });
 }
-function fTime(t?: string) {
-  if (!t) return '';
-  const [h,m] = t.split(':'); const hr = parseInt(h);
-  return `${hr>12?hr-12:hr}:${m}${hr>=12?'pm':'am'}`;
-}
+const fTime = (t?: string) => fmtTime12h(t);
 
 interface Props { sport: SportKey; nextFixture: Row|null; }
 

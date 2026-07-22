@@ -166,7 +166,7 @@ export default function HPDashboard() {
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict's College</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">St Benedict&apos;s College</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">High Performance</h1>
           <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <div className="mt-3 flex items-center gap-2">

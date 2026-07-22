@@ -154,6 +154,9 @@ export default function LandingPage(){
 
   // Transform: base position + real-time drag offset + scale interpolation
   function mTx(offset:number):React.CSSProperties{
+    // Intentionally reads a ref during render (see call site in the render
+    // loop below for why — suppression lives there since that's where the
+    // linter attributes the violation).
     const T=dragging.current?'none':'transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
     const prog=Math.min(1,Math.abs(dragPx)/180);
     const goNext=dragPx<0;
@@ -317,6 +320,12 @@ export default function LandingPage(){
               setDragPx(0);
             }}>
 
+            {/* mTx (called below) reads dragging.current — a ref — during render
+                on purpose: it toggles the CSS transition instantly without waiting
+                on a state-driven re-render. Converting `dragging` to useState would
+                change this carousel's tuned drag/snap timing, so this is a
+                deliberate, suppressed exception rather than a fix-blind change. */}
+            {/* eslint-disable-next-line react-hooks/refs */}
             {sorted.map((dept,idx)=>{
               const offset=circOff(idx);
               if(Math.abs(offset)>2)return null;

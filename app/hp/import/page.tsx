@@ -374,7 +374,7 @@ export default function HPImport() {
               <div style={{ ...CARD, background: 'rgba(248,113,113,0.06)', border: '1px solid rgba(248,113,113,0.2)' }}>
                 <p style={{ fontSize: 12, fontWeight: 800, color: '#f87171', marginBottom: 6 }}>⚠ {unmatched} unmatched names</p>
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                  These rows won't be imported. Check spelling matches the student names in the HP system, or go back and adjust the name column.
+                  These rows won&apos;t be imported. Check spelling matches the student names in the HP system, or go back and adjust the name column.
                 </p>
               </div>
             )}

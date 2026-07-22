@@ -118,7 +118,7 @@ function PortalInner() {
         {/* Footer */}
         <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px', textAlign: 'center' }}>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>
-            Powered by <span style={{ color, fontWeight: 700 }}>Altus Performance</span> · St Benedict's College
+            Powered by <span style={{ color, fontWeight: 700 }}>Altus Performance</span> · St Benedict&apos;s College
           </p>
         </footer>
       </div>

@@ -5,22 +5,12 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getSportLabel, getSportColor, getSportTerm } from '@/lib/sports';
+import { matchOutcome, outcomeColor as outcomeColorShared } from '@/lib/format';
 
 type Row = Record<string, any>;
 
-function outcomeOf(score: string) {
-  if (!score) return null;
-  const p = score.split(/[-–]/);
-  if (p.length !== 2) return null;
-  const a = parseInt(p[0]), b = parseInt(p[1]);
-  if (a > b) return 'WIN'; if (a < b) return 'LOSS'; return 'DRAW';
-}
-function outcomeColor(o: string | null) {
-  if (o === 'WIN') return '#22c55e';
-  if (o === 'DRAW') return '#fbbf24';
-  if (o === 'LOSS') return '#f87171';
-  return null;
-}
+const outcomeOf = (score: string) => matchOutcome(score);
+const outcomeColor = (o: string | null) => outcomeColorShared(o as any);
 
 function SeasonInner() {
   const searchParams = useSearchParams();

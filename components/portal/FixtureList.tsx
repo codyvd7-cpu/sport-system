@@ -1,24 +1,16 @@
 'use client';
 import Link from 'next/link';
 import { type SportKey, getSportTerm } from '@/lib/sports';
+import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
 
 type Row = Record<string, any>;
 
 function fDate(d: string) {
   return new Date(d).toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' });
 }
-function fTime(t?: string) {
-  if (!t) return '';
-  const [h, m] = t.split(':'); const hr = parseInt(h);
-  return ` · ${hr>12?hr-12:hr}:${m}${hr>=12?'pm':'am'}`;
-}
-function outcome(score: string): 'WIN'|'DRAW'|'LOSS'|null {
-  if (!score) return null;
-  const [a, b] = score.split(/[-–]/).map(Number);
-  if (isNaN(a) || isNaN(b)) return null;
-  return a > b ? 'WIN' : a < b ? 'LOSS' : 'DRAW';
-}
-const OC: Record<string,string> = { WIN:'#22c55e', DRAW:'#fbbf24', LOSS:'#f87171' };
+const fTime = (t?: string) => t ? ` · ${fmtTime12h(t)}` : '';
+const outcome = matchOutcome;
+const OC = OUTCOME_COLOR;
 
 interface Props { sport: SportKey; color: string; fixtures: Row[]; results: Row[]; loading: boolean; }
 

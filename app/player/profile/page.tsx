@@ -8,6 +8,7 @@ import { getSportColor, getSportLabel } from '@/lib/sports';
 import QrScanModal from '@/components/QrScanModal';
 import AlertOptIn from '@/components/AlertOptIn';
 import SafetyBanner from '@/components/SafetyBanner';
+import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
 
 type Row = Record<string, any>;
 
@@ -33,9 +34,9 @@ const CATEGORIES: { label: string; keys: string[] }[] = [
 
 const fd = (s: string, o: Intl.DateTimeFormatOptions) => new Date(s).toLocaleDateString('en-ZA', o);
 function ago(s: string) { const d = Math.floor((Date.now() - new Date(s).getTime()) / 86400000); if (d <= 0) return 'Today'; if (d === 1) return 'Yesterday'; if (d < 7) return `${d}d ago`; if (d < 30) return `${Math.floor(d / 7)}w ago`; return `${Math.floor(d / 30)}mo ago`; }
-function fTime(t?: string) { if (!t) return ''; const [h, m] = t.split(':'); const hr = parseInt(h); if (isNaN(hr)) return t; return `${hr > 12 ? hr - 12 : hr}:${m}${hr >= 12 ? 'pm' : 'am'}`; }
-function outcome(score?: string) { const p = (score || '').split(/[-–]/).map(x => parseInt(x.trim())); if (p.length !== 2 || p.some(isNaN)) return null; return p[0] > p[1] ? 'WIN' : p[0] < p[1] ? 'LOSS' : 'DRAW'; }
-const OUT_COL: Record<string, string> = { WIN: '#22c55e', LOSS: '#f87171', DRAW: '#fbbf24' };
+const fTime = (t?: string) => fmtTime12h(t);
+const outcome = matchOutcome;
+const OUT_COL = OUTCOME_COLOR;
 
 // ─── hooks ───────────────────────────────────────────────────────────────────
 function useCountUp(target: number, dur = 1000) {

@@ -61,6 +61,13 @@ function Inner() {
 
   React.useEffect(() => { load(); }, []);
 
+  const classStudents = React.useMemo(() => {
+    if (!selClass) return [];
+    const grade = selClass[0] === '8' ? 'Grade 8' : 'Grade 9';
+    const cls   = selClass[1];
+    return students.filter(s => s.grade === grade && s.class_group === cls);
+  }, [selClass, students]);
+
   // When class + date changes, pre-fill from existing records
   React.useEffect(() => {
     if (!selClass || !students.length) return;
@@ -73,14 +80,7 @@ function Inner() {
         return updated;
       });
     }
-  }, [selClass, date, history]);
-
-  const classStudents = React.useMemo(() => {
-    if (!selClass) return [];
-    const grade = selClass[0] === '8' ? 'Grade 8' : 'Grade 9';
-    const cls   = selClass[1];
-    return students.filter(s => s.grade === grade && s.class_group === cls);
-  }, [selClass, students]);
+  }, [selClass, date, history, classStudents]);
 
   // Check if this session already has data (duplicate warning)
   const alreadySaved = React.useMemo(() => {

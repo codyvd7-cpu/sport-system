@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { safeUUID, generatePlayerCode } from '@/lib/uuid';
+import { safeUUID } from '@/lib/uuid';
 import { AthletePDFButton } from '@/components/PDFButton';
 import { SPORTS, getSportColor, getSportLabel, type SportKey } from '@/lib/sports';
 import {
@@ -401,7 +401,6 @@ export default function AthleteProfile({params}:PageProps) {
   const [availability, setAvailability] = React.useState('Available');
 
   // Player code
-  const [genCode, setGenCode] = React.useState(false);
 
   async function load() {
     setLoading(true);
@@ -457,7 +456,6 @@ export default function AthleteProfile({params}:PageProps) {
   const SPORT_COLORS: Record<string,string> = {hockey:'#38bdf8',rugby:'#f87171',cricket:'#fbbf24',rowing:'#34d399',swimming:'#818cf8',waterpolo:'#06b6d4'};
   const sportColor = SPORT_COLORS[athleteSport] || '#38bdf8';
   const position = fStr(rawAthlete.position)||'—';
-  const playerCode = fStr(rawAthlete.player_code);
 
   const present = attendance.filter(a=>['present','late'].includes(a.status?.toLowerCase()||'')).length;
   const absent  = attendance.filter(a=>a.status?.toLowerCase()==='absent').length;
@@ -521,15 +519,6 @@ export default function AthleteProfile({params}:PageProps) {
     if(latestFeedback) await supabase.from('coach_notes').delete().eq('id',latestFeedback.id);
     await supabase.from('coach_notes').insert([{athlete_id:id,strengths:fbStr,current_focus:fbFoc,coach_comment:fbCom,is_feedback:true,author_email:''}]);
     setEditFb(false); showToast('Feedback saved'); await load(); setSavingFb(false);
-  }
-
-  async function generateCode() {
-    setGenCode(true);
-    let code=''; let tries=0;
-    while(tries<8){ code=generatePlayerCode(); const {data:ex}=await supabase.from('athletes').select('id').eq('player_code',code).maybeSingle(); if(!ex) break; tries++; }
-    if(tries>=8){showToast('Could not generate unique code','error');setGenCode(false);return;}
-    await supabase.from('athletes').update({player_code:code}).eq('id',id);
-    showToast(`Code: ${code}`); await load(); setGenCode(false);
   }
 
   async function generateAI() {
@@ -669,28 +658,6 @@ export default function AthleteProfile({params}:PageProps) {
             ))}
             <div className="ml-auto flex items-center gap-2">
               <AthletePDFButton athleteId={id} name={name}/>
-              {playerCode && (
-                <div className="flex items-center gap-1.5">
-                  <span className="rounded-xl border px-3 py-1.5 text-[11px] font-black font-mono"
-                    style={{borderColor:'rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.04)',color:'rgba(255,255,255,0.6)'}}>
-                    {playerCode}
-                  </span>
-                  <button onClick={() => navigator.clipboard.writeText(playerCode)}
-                    className="rounded-xl border px-2 py-1.5 text-[10px] font-semibold transition hover:text-white"
-                    style={{borderColor:'rgba(255,255,255,0.07)',background:'rgba(255,255,255,0.03)',color:'rgba(255,255,255,0.3)'}}>
-                    Copy
-                  </button>
-                </div>
-              )}
-              <button onClick={generateCode} disabled={genCode}
-                className="rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition disabled:opacity-50 hover:text-white"
-                style={{
-                  borderColor: playerCode ? 'rgba(251,191,36,0.25)' : sportColor+'40',
-                  background:  playerCode ? 'rgba(251,191,36,0.06)' : 'rgba(56,189,248,0.06)',
-                  color:       playerCode ? '#fde68a' : '#7dd3fc',
-                }}>
-                {genCode ? '…' : playerCode ? '↻ Regen' : '+ Gen Code'}
-              </button>
             </div>
           </div>
         </div>

@@ -39,7 +39,7 @@ export default function PortalNav({ sport }: Props) {
             <Image src="/st-benedicts-logo.png" alt="SBC" width={34} height={34} style={{ objectFit: 'contain' }}/>
           </div>
           <div style={{ lineHeight: 1.25 }}>
-            <p className="pn-school" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>St Benedict's College</p>
+            <p className="pn-school" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>St Benedict&apos;s College</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }}/>
               <p style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{label}</p>

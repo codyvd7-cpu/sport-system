@@ -59,7 +59,7 @@ export default function HPNav() {
         <div style={{ padding:'20px', borderBottom:`1px solid ${BORDER}`, display:'flex', alignItems:'center', gap:12 }}>
           <Image src="/st-benedicts-logo.png" alt="SBC" width={36} height={36} style={{ objectFit:'contain', flexShrink:0 }}/>
           <div>
-            <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', textTransform:'uppercase' }}>St Benedict's</p>
+            <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', textTransform:'uppercase' }}>St Benedict&apos;s</p>
             <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
           </div>
         </div>
