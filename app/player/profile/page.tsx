@@ -733,6 +733,13 @@ function Settings({ D, C, out, onPhoto, uploading }: any) {
 export default function PlayerProfile() {
   const router = useRouter();
   const [nav, setNav] = React.useState('overview');
+
+  // Deep-link support: /player/profile?tab=training opens straight on a tab
+  // (used by the QR check-in confirmation page to jump into workout logging).
+  React.useEffect(() => {
+    const tab = new URLSearchParams(window.location.search).get('tab');
+    if (tab) setNav(tab);
+  }, []);
   const [D, setD] = React.useState<Row | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [errMsg, setErrMsg] = React.useState('');
@@ -789,6 +796,7 @@ export default function PlayerProfile() {
         const now = new Date();
         setD(prev => prev ? { ...prev, gymCheckins: [{ id: `tmp-${Date.now()}`, checkin_date: now.toLocaleDateString('en-CA'), checkin_time: now.toTimeString().slice(0, 8), venue: d.venue }, ...(prev.gymCheckins || [])] } : prev);
       }
+      setNav('training');
     } catch (e: any) { setToast(e.message || 'Check-in failed'); }
     setTimeout(() => setToast(''), 3500);
   }

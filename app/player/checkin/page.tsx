@@ -2,7 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 // Landing page for scanning the gym QR with the normal phone camera.
@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 // in automatically; signed-out ones get a login link (token survives in URL).
 
 function CheckinInner() {
+  const router = useRouter();
   const params = useSearchParams();
   const token = params.get('t') || '';
   const [state, setState] = React.useState<'working'|'done'|'already'|'signin'|'error'>('working');
@@ -31,6 +32,8 @@ function CheckinInner() {
         if (!r.ok) throw new Error(d.error || 'Check-in failed');
         setVenue(d.venue || 'Gym');
         setState(d.already ? 'already' : 'done');
+        // Let the checkmark animation play, then go straight into workout logging.
+        setTimeout(() => router.push('/player/profile?tab=training'), 1600);
       } catch (e: any) { setState('error'); setMsg(e.message); }
     })();
   }, [token]);
@@ -65,8 +68,8 @@ function CheckinInner() {
                 ? `${venue} session logged for today. Keep the streak alive.`
                 : `You already checked in at ${venue} today — it's on your log.`}
             </p>
-            <Link href="/player/profile" style={{ display: 'inline-block', marginTop: 20, padding: '12px 26px', borderRadius: 12, background: `${C}1a`, border: `1px solid ${C}50`, color: C, fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>
-              View my training log →
+            <Link href="/player/profile?tab=training" style={{ display: 'inline-block', marginTop: 20, padding: '12px 26px', borderRadius: 12, background: `${C}1a`, border: `1px solid ${C}50`, color: C, fontSize: 13, fontWeight: 800, textDecoration: 'none' }}>
+              Log my workout →
             </Link>
           </>
         )}
