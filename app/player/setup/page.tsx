@@ -111,6 +111,12 @@ export default function PlayerSetupPage() {
           <div style={{ padding: '36px' }}>
 
             {/* Header */}
+            {isEdit && (
+              <button type="button" onClick={() => router.push('/player/profile')}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', marginBottom: 18, padding: 0 }}>
+                ← Cancel and back to profile
+              </button>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
               <Image src="/st-benedicts-logo.png" alt="SBC" width={46} height={46} style={{ objectFit: 'contain' }} />
               <div>
@@ -162,12 +168,6 @@ export default function PlayerSetupPage() {
                     {isEdit ? 'Save Changes' : 'Continue'}
                     <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{ width: 14, height: 14 }}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
                   </button>
-
-                  {isEdit && (
-                    <button type="button" onClick={() => router.push('/player/profile')} style={{ background: 'none', border: 'none', fontSize: 13, color: 'rgba(255,255,255,0.35)', cursor: 'pointer' }}>
-                      ← Back to profile
-                    </button>
-                  )}
                 </div>
               </form>
             )}
