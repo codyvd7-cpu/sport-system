@@ -1,5 +1,6 @@
 'use client';
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { GRADE8_TESTS, GRADE9_TESTS, BENCHMARKS as BENCH, TIERS, getTier, fmtValue, parseTestValue, getTests, TERM_ORDER } from '@/lib/hpTests';
 
 type Row = Record<string, any>;
@@ -12,6 +13,7 @@ function fmt(key:string,val:number):string{
 }
 
 export default function ClassExport({ params }: PageProps) {
+  const router = useRouter();
   const { classId } = React.use(params);
   const grade = classId[0]==='8'?'Grade 8':'Grade 9';
   const gradeNum = classId[0];
@@ -128,6 +130,16 @@ export default function ClassExport({ params }: PageProps) {
 
   return(
     <>
+      <div className="no-print" style={{position:'fixed',top:16,left:16,zIndex:50,display:'flex',gap:8}}>
+        <button onClick={() => router.back()}
+          style={{display:'flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'1px solid #e2e8f0',background:'white',color:'#0f172a',fontSize:13,fontWeight:700,fontFamily:'Inter,sans-serif',cursor:'pointer',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
+          ← Back
+        </button>
+        <a href="/hp"
+          style={{display:'flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'1px solid #e2e8f0',background:'white',color:'#64748b',fontSize:13,fontWeight:700,fontFamily:'Inter,sans-serif',textDecoration:'none',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
+          HP Home
+        </a>
+      </div>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         *{margin:0;padding:0;box-sizing:border-box;}

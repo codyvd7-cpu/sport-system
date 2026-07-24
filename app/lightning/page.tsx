@@ -45,6 +45,9 @@ function LightningInner() {
     <main style={{ minHeight: '100vh', background: '#060916', color: 'white', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       <div style={{ width: '100%', maxWidth: 460 }}>
+        <a href="/dashboard" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textDecoration: 'none', marginBottom: 18 }}>
+          ← Back to Dashboard
+        </a>
         <p style={{ fontSize: 10, fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.3em', marginBottom: 6, textAlign: 'center' }}>Emergency Broadcast</p>
         <h1 style={{ fontSize: 30, fontWeight: 900, textAlign: 'center', marginBottom: 26 }}>⚡ Lightning Alert</h1>
 
