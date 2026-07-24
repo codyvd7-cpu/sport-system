@@ -15,6 +15,7 @@ import { WeekSection } from './sections/WeekSection';
 import { ProgramsSection } from './sections/ProgramsSection';
 import { RemindersSection } from './sections/RemindersSection';
 import { SponsorsSection } from './sections/SponsorsSection';
+import { WorkoutProgramsSection } from './sections/WorkoutProgramsSection';
 import { SpotlightSection } from './sections/SpotlightSection';
 import { PlayerProfilesSection } from './sections/PlayerProfilesSection';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
@@ -23,8 +24,14 @@ type GenericRow = Record<string, any>;
 type WeekPlan = { id: string; created_at: string | null; week_label: string; published: boolean; };
 type WeekPlanItem = { id: string; created_at: string | null; week_plan_id: string; day_label: string; title: string; details: string; sort_order: number; };
 type Reminder = { id: string; created_at: string | null; title: string; details: string; is_published: boolean; sort_order: number; };
-import type { Fixture } from './types';
+import type { Fixture, WorkoutProgram, WorkoutProgramExercise } from './types';
 import { useFixturesAdmin } from './hooks/useFixturesAdmin';
+import { useResultsAdmin } from './hooks/useResultsAdmin';
+import { useRemindersAdmin } from './hooks/useRemindersAdmin';
+import { useWeekPlanAdmin } from './hooks/useWeekPlanAdmin';
+import { useProgramsAdmin } from './hooks/useProgramsAdmin';
+import { useSponsorsAdmin } from './hooks/useSponsorsAdmin';
+import { useWorkoutProgramsAdmin } from './hooks/useWorkoutProgramsAdmin';
 type Result = { id: string; created_at: string | null; team: string; opponent: string; result_date: string; final_score: string; goal_scorers: string; is_published: boolean; sort_order: number; };
 type Program = { id: string; created_at: string | null; title: string; category: string; day_label: string; details: string; is_published: boolean; sort_order: number; file_name: string; file_path: string; file_url: string; };
 type Sponsor = { id: string; created_at: string | null; name: string; image_name: string; image_path: string; image_url: string; sponsor_link: string; is_published: boolean; sort_order: number; };
@@ -168,8 +175,6 @@ function normalizeSponsor(row: GenericRow): Sponsor {
 
 const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const PROGRAM_CATEGORIES = ['Gym', 'Mobility', 'Recovery'];
-const PROGRAM_BUCKET = 'portal-programs';
-const SPONSOR_BUCKET = 'portal-sponsors';
 
 export default function PortalAdminPage() {
 const router = useRouter();
@@ -206,96 +211,14 @@ async function handleLogout() {
   const [resultRows, setResultRows] = useState<GenericRow[]>([]);
   const [programRows, setProgramRows] = useState<GenericRow[]>([]);
   const [sponsorRows, setSponsorRows] = useState<GenericRow[]>([]);
+  const [workoutProgramRows, setWorkoutProgramRows] = useState<GenericRow[]>([]);
+  const [workoutExerciseRows, setWorkoutExerciseRows] = useState<GenericRow[]>([]);
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const [activeTab, setActiveTab] = useState('fixtures');
-  const [selectedWeekPlanId, setSelectedWeekPlanId] = useState('');
-
-  const [newWeekLabel, setNewWeekLabel] = useState('Week at a Glance');
-  const [newWeekPublished, setNewWeekPublished] = useState(true);
-
-  const [newDayLabel, setNewDayLabel] = useState('Monday');
-  const [newWeekItemTitle, setNewWeekItemTitle] = useState('');
-  const [newWeekItemDetails, setNewWeekItemDetails] = useState('');
-  const [newWeekItemSortOrder, setNewWeekItemSortOrder] = useState('1');
-
-  const [newReminderTitle, setNewReminderTitle] = useState('');
-  const [newReminderDetails, setNewReminderDetails] = useState('');
-  const [newReminderPublished, setNewReminderPublished] = useState(true);
-  const [newReminderSortOrder, setNewReminderSortOrder] = useState('1');
-
-  // Spotlight
-  const [spotlight, setSpotlight] = useState<any[]>([]);
-  const [newSpotlightType, setNewSpotlightType] = useState('player_of_week');
-  const [newSpotlightName, setNewSpotlightName] = useState('');
-  const [newSpotlightDesc, setNewSpotlightDesc] = useState('');
-
-  const [newResultTeam, setNewResultTeam] = useState('');
-  const [newResultOpponent, setNewResultOpponent] = useState('');
-  const [newResultDate, setNewResultDate] = useState('');
-  const [newResultFinalScore, setNewResultFinalScore] = useState('');
-  const [newResultGoalScorers, setNewResultGoalScorers] = useState('');
-  const [newResultPublished, setNewResultPublished] = useState(true);
-  const [newResultSortOrder, setNewResultSortOrder] = useState('1');
-
-  const [newProgramTitle, setNewProgramTitle] = useState('');
-  const [newProgramCategory, setNewProgramCategory] = useState('Gym');
-  const [newProgramDayLabel, setNewProgramDayLabel] = useState('Monday');
-  const [newProgramDetails, setNewProgramDetails] = useState('');
-  const [newProgramPublished, setNewProgramPublished] = useState(true);
-  const [newProgramSortOrder, setNewProgramSortOrder] = useState('1');
-  const [newProgramFile, setNewProgramFile] = useState<File | null>(null);
-
-  const [newSponsorName, setNewSponsorName] = useState('');
-  const [newSponsorLink, setNewSponsorLink] = useState('');
-  const [newSponsorPublished, setNewSponsorPublished] = useState(true);
-  const [newSponsorSortOrder, setNewSponsorSortOrder] = useState('1');
-  const [newSponsorImage, setNewSponsorImage] = useState<File | null>(null);
-
-  const [editingWeekPlanId, setEditingWeekPlanId] = useState<string | null>(null);
-  const [editWeekLabel, setEditWeekLabel] = useState('');
-  const [editWeekPublished, setEditWeekPublished] = useState(true);
-
-  const [editingWeekItemId, setEditingWeekItemId] = useState<string | null>(null);
-  const [editDayLabel, setEditDayLabel] = useState('Monday');
-  const [editWeekItemTitle, setEditWeekItemTitle] = useState('');
-  const [editWeekItemDetails, setEditWeekItemDetails] = useState('');
-  const [editWeekItemSortOrder, setEditWeekItemSortOrder] = useState('1');
-
-  const [editingReminderId, setEditingReminderId] = useState<string | null>(null);
-  const [editReminderTitle, setEditReminderTitle] = useState('');
-  const [editReminderDetails, setEditReminderDetails] = useState('');
-  const [editReminderPublished, setEditReminderPublished] = useState(true);
-  const [editReminderSortOrder, setEditReminderSortOrder] = useState('1');
-
-
-  const [editingResultId, setEditingResultId] = useState<string | null>(null);
-  const [editResultTeam, setEditResultTeam] = useState('');
-  const [editResultOpponent, setEditResultOpponent] = useState('');
-  const [editResultDate, setEditResultDate] = useState('');
-  const [editResultFinalScore, setEditResultFinalScore] = useState('');
-  const [editResultGoalScorers, setEditResultGoalScorers] = useState('');
-  const [editResultPublished, setEditResultPublished] = useState(true);
-  const [editResultSortOrder, setEditResultSortOrder] = useState('1');
-
-  const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
-  const [editProgramTitle, setEditProgramTitle] = useState('');
-  const [editProgramCategory, setEditProgramCategory] = useState('Gym');
-  const [editProgramDayLabel, setEditProgramDayLabel] = useState('Monday');
-  const [editProgramDetails, setEditProgramDetails] = useState('');
-  const [editProgramPublished, setEditProgramPublished] = useState(true);
-  const [editProgramSortOrder, setEditProgramSortOrder] = useState('1');
-  const [editProgramFile, setEditProgramFile] = useState<File | null>(null);
-
-  const [editingSponsorId, setEditingSponsorId] = useState<string | null>(null);
-  const [editSponsorName, setEditSponsorName] = useState('');
-  const [editSponsorLink, setEditSponsorLink] = useState('');
-  const [editSponsorPublished, setEditSponsorPublished] = useState(true);
-  const [editSponsorSortOrder, setEditSponsorSortOrder] = useState('1');
-  const [editSponsorImage, setEditSponsorImage] = useState<File | null>(null);
 
   async function loadPortalAdminData() {
     setLoading(true);
@@ -309,6 +232,8 @@ async function handleLogout() {
       resultsRes,
       programsRes,
       sponsorsRes,
+      workoutProgramsRes,
+      workoutExercisesRes,
     ] = await Promise.all([
       supabase.from('portal_week_plans').select('*').order('created_at', { ascending: false }),
       supabase.from('portal_week_plan_items').select('*').order('sort_order', { ascending: true }),
@@ -327,6 +252,8 @@ async function handleLogout() {
         .order('sort_order', { ascending: true }),
       supabase.from('portal_programs').select('*').order('sort_order', { ascending: true }),
       supabase.from('portal_sponsors').select('*').order('sort_order', { ascending: true }),
+      supabase.from('workout_programs').select('*').order('sort_order', { ascending: true }),
+      supabase.from('workout_program_exercises').select('*').order('sort_order', { ascending: true }),
     ]);
 
     if (
@@ -336,7 +263,9 @@ async function handleLogout() {
       fixturesRes.error ||
       resultsRes.error ||
       programsRes.error ||
-      sponsorsRes.error
+      sponsorsRes.error ||
+      workoutProgramsRes.error ||
+      workoutExercisesRes.error
     ) {
       setError(
         weekPlansRes.error?.message ||
@@ -346,6 +275,8 @@ async function handleLogout() {
           resultsRes.error?.message ||
           programsRes.error?.message ||
           sponsorsRes.error?.message ||
+          workoutProgramsRes.error?.message ||
+          workoutExercisesRes.error?.message ||
           'Failed to load portal admin data.'
       );
       setLoading(false);
@@ -359,6 +290,8 @@ async function handleLogout() {
     setResultRows((resultsRes.data as GenericRow[]) || []);
     setProgramRows((programsRes.data as GenericRow[]) || []);
     setSponsorRows((sponsorsRes.data as GenericRow[]) || []);
+    setWorkoutProgramRows((workoutProgramsRes.data as GenericRow[]) || []);
+    setWorkoutExerciseRows((workoutExercisesRes.data as GenericRow[]) || []);
     setLoading(false);
   }
 
@@ -418,25 +351,15 @@ async function handleLogout() {
     [sponsorRows]
   );
 
-  useEffect(() => {
-    if (!selectedWeekPlanId && weekPlans.length > 0) {
-      setSelectedWeekPlanId(weekPlans[0].id);
-    }
-  }, [selectedWeekPlanId, weekPlans]);
+  const workoutPrograms = useMemo(
+    () => (workoutProgramRows as WorkoutProgram[]).slice().sort((a, b) => a.sort_order - b.sort_order),
+    [workoutProgramRows]
+  );
+  const workoutExercises = useMemo(
+    () => workoutExerciseRows as WorkoutProgramExercise[],
+    [workoutExerciseRows]
+  );
 
-
-
-  const selectedWeekPlan = useMemo(() => {
-    if (!selectedWeekPlanId && weekPlans.length > 0) return weekPlans[0];
-    return weekPlans.find((plan) => plan.id === selectedWeekPlanId) || null;
-  }, [selectedWeekPlanId, weekPlans]);
-
-  const selectedWeekItems = useMemo(() => {
-    if (!selectedWeekPlan) return [];
-    return weekPlanItems
-      .filter((item) => item.week_plan_id === selectedWeekPlan.id)
-      .sort((a, b) => a.sort_order - b.sort_order);
-  }, [selectedWeekPlan, weekPlanItems]);
 
   async function runAction(action: () => Promise<void>) {
     setBusy(true);
@@ -452,6 +375,12 @@ async function handleLogout() {
     supabase, activeSport, runAction, showToast, setError,
     refetch: loadPortalAdminData,
   });
+  const res = useResultsAdmin({ supabase, activeSport, runAction, showToast, setError, refetch: loadPortalAdminData });
+  const rem = useRemindersAdmin({ supabase, reminders, runAction, showToast, setError, refetch: loadPortalAdminData });
+  const wk = useWeekPlanAdmin({ supabase, weekPlans, weekPlanItems, runAction, showToast, setError, refetch: loadPortalAdminData });
+  const prog = useProgramsAdmin({ supabase, programs, runAction, showToast, setError, refetch: loadPortalAdminData });
+  const spon = useSponsorsAdmin({ supabase, sponsors, runAction, showToast, setError, refetch: loadPortalAdminData });
+  const wpAdmin = useWorkoutProgramsAdmin({ supabase, programs: workoutPrograms, exercises: workoutExercises, runAction, showToast, setError, refetch: loadPortalAdminData });
 
   async function moveItem(
     table: string,
@@ -476,777 +405,40 @@ async function handleLogout() {
     });
   }
 
-  function resetProgramCreateFields() {
-    setNewProgramTitle('');
-    setNewProgramCategory('Gym');
-    setNewProgramDayLabel('Monday');
-    setNewProgramDetails('');
-    setNewProgramPublished(true);
-    setNewProgramSortOrder(String(programs.length + 1));
-    setNewProgramFile(null);
-  }
-
-  function resetProgramEditFields() {
-    setEditingProgramId(null);
-    setEditProgramTitle('');
-    setEditProgramCategory('Gym');
-    setEditProgramDayLabel('Monday');
-    setEditProgramDetails('');
-    setEditProgramPublished(true);
-    setEditProgramSortOrder('1');
-    setEditProgramFile(null);
-  }
-
-  function resetSponsorCreateFields() {
-    setNewSponsorName('');
-    setNewSponsorLink('');
-    setNewSponsorPublished(true);
-    setNewSponsorSortOrder(String(sponsors.length + 1));
-    setNewSponsorImage(null);
-  }
-
-  function resetSponsorEditFields() {
-    setEditingSponsorId(null);
-    setEditSponsorName('');
-    setEditSponsorLink('');
-    setEditSponsorPublished(true);
-    setEditSponsorSortOrder('1');
-    setEditSponsorImage(null);
-  }
-
-  function validatePdf(file: File | null) {
-    if (!file) return true;
-    const isPdf =
-      file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-    if (!isPdf) {
-      setError('Only PDF files can be uploaded for programs.');
-      return false;
-    }
-
-    return true;
-  }
-
-  function validateImage(file: File | null) {
-    if (!file) return true;
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      setError('Only image files can be uploaded for sponsors.');
-      return false;
-    }
-    return true;
-  }
-
-  async function uploadProgramPdf(file: File, programTitle: string) {
-    const safeTitle = programTitle
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
-    const extension = file.name.split('.').pop() || 'pdf';
-    const path = `programs/${Date.now()}-${safeTitle || 'program'}.${extension}`;
-
-    const uploadRes = await supabase.storage.from(PROGRAM_BUCKET).upload(path, file, {
-      upsert: false,
-      contentType: 'application/pdf',
-    });
-
-    if (uploadRes.error) {
-      throw new Error(uploadRes.error.message || 'Failed to upload PDF.');
-    }
-
-    const publicRes = supabase.storage.from(PROGRAM_BUCKET).getPublicUrl(path);
-    const fileUrl = publicRes.data.publicUrl || '';
-
-    return {
-      file_name: file.name,
-      file_path: path,
-      file_url: fileUrl,
-    };
-  }
-
-  async function uploadSponsorImage(file: File, sponsorName: string) {
-    const safeName = sponsorName
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
-    const extension = file.name.split('.').pop() || 'png';
-    const path = `sponsors/${Date.now()}-${safeName || 'sponsor'}.${extension}`;
-
-    const uploadRes = await supabase.storage.from(SPONSOR_BUCKET).upload(path, file, {
-      upsert: false,
-      contentType: file.type || 'image/png',
-    });
-
-    if (uploadRes.error) {
-      throw new Error(uploadRes.error.message || 'Failed to upload sponsor image.');
-    }
-
-    const publicRes = supabase.storage.from(SPONSOR_BUCKET).getPublicUrl(path);
-    const imageUrl = publicRes.data.publicUrl || '';
-
-    return {
-      image_name: file.name,
-      image_path: path,
-      image_url: imageUrl,
-    };
-  }
-
-  async function tryRemoveStoredFile(bucket: string, filePath?: string) {
-    if (!filePath) return;
-    await supabase.storage.from(bucket).remove([filePath]);
-  }
-
-  async function handleCreateWeekPlan(e: React.FormEvent) {
-    e.preventDefault();
-
-    await runAction(async () => {
-      if (!newWeekLabel.trim()) {
-        setError('Week label is required.');
-        return;
-      }
-
-      const { error: insertError } = await supabase.from('portal_week_plans').insert([
-        {
-          week_label: newWeekLabel.trim(),
-          published: newWeekPublished,
-        },
-      ]);
-
-      if (insertError) {
-        setError(insertError.message || 'Failed to create week plan.');
-        return;
-      }
-
-      setNewWeekLabel('Week at a Glance');
-      setNewWeekPublished(true);
-      showToast('Week plan created.');
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleCreateWeekItem(e: React.FormEvent) {
-    e.preventDefault();
-
-    await runAction(async () => {
-      if (!selectedWeekPlan) {
-        setError('Select a week plan first.');
-        return;
-      }
-      if (!newWeekItemTitle.trim()) {
-        setError('Week item title is required.');
-        return;
-      }
-
-      const { error: insertError } = await supabase.from('portal_week_plan_items').insert([
-        {
-          week_plan_id: selectedWeekPlan.id,
-          day_label: newDayLabel,
-          title: newWeekItemTitle.trim(),
-          details: newWeekItemDetails.trim(),
-          sort_order: Number(newWeekItemSortOrder) || 0,
-        },
-      ]);
-
-      if (insertError) {
-        setError(insertError.message || 'Failed to create week item.');
-        return;
-      }
-
-      setNewDayLabel('Monday');
-      setNewWeekItemTitle('');
-      setNewWeekItemDetails('');
-      setNewWeekItemSortOrder(String(selectedWeekItems.length + 1));
-      showToast('Week item created.');
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleCreateReminder(e: React.FormEvent) {
-    e.preventDefault();
-
-    await runAction(async () => {
-      if (!newReminderTitle.trim()) {
-        setError('Reminder title is required.');
-        return;
-      }
-
-      const { error: insertError } = await supabase.from('portal_reminders').insert([
-        {
-          title: newReminderTitle.trim(),
-          details: newReminderDetails.trim(),
-          is_published: newReminderPublished,
-          sort_order: Number(newReminderSortOrder) || 0,
-        },
-      ]);
-
-      if (insertError) {
-        setError(insertError.message || 'Failed to create reminder.');
-        return;
-      }
-
-      setNewReminderTitle('');
-      setNewReminderDetails('');
-      setNewReminderPublished(true);
-      setNewReminderSortOrder(String(reminders.length + 1));
-      showToast('Reminder created.');
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleCreateResult(e: React.FormEvent) {
-    e.preventDefault();
-
-    await runAction(async () => {
-      if (!newResultTeam.trim() || !newResultOpponent.trim() || !newResultDate || !newResultFinalScore.trim()) {
-        setError('Team, opponent, result date, and final score are required.');
-        return;
-      }
-
-      const { error: insertError } = await supabase.from('portal_results').insert([
-        {
-          team: newResultTeam.trim(),
-          opponent: newResultOpponent.trim(),
-          result_date: newResultDate,
-          final_score: newResultFinalScore.trim(),
-          goal_scorers: newResultGoalScorers.trim(),
-          is_published: newResultPublished,
-          sort_order: Number(newResultSortOrder) || 0,
-          sport: activeSport,
-        },
-      ]);
-
-      if (insertError) {
-        setError(insertError.message || 'Failed to create result.');
-        return;
-      }
-
-      setNewResultTeam('');
-      setNewResultOpponent('');
-      setNewResultDate('');
-      setNewResultFinalScore('');
-      setNewResultGoalScorers('');
-      setNewResultPublished(true);
-      setNewResultSortOrder('1');
-      showToast('Result created.');
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleCreateProgram(e: React.FormEvent) {
-    e.preventDefault();
-
-    await runAction(async () => {
-      if (programs.length >= 4) {
-        setError('Maximum 4 programs at a time. Delete one first if you want another.');
-        return;
-      }
-
-      if (!newProgramTitle.trim()) {
-        setError('Program title is required.');
-        return;
-      }
-
-      if (!validatePdf(newProgramFile)) return;
-
-      let fileData: Partial<Program> = {};
-
-      if (newProgramFile) {
-        fileData = await uploadProgramPdf(newProgramFile, newProgramTitle.trim());
-      }
-
-      const { error: insertError } = await supabase.from('portal_programs').insert([
-        {
-          title: newProgramTitle.trim(),
-          category: newProgramCategory,
-          day_label: newProgramDayLabel,
-          details: newProgramDetails.trim(),
-          is_published: newProgramPublished,
-          sort_order: Number(newProgramSortOrder) || 0,
-          ...fileData,
-        },
-      ]);
-
-      if (insertError) {
-        if ('file_path' in fileData && fileData.file_path) {
-          await tryRemoveStoredFile(PROGRAM_BUCKET, fileData.file_path);
-        }
-        setError(insertError.message || 'Failed to create program.');
-        return;
-      }
-
-      resetProgramCreateFields();
-      showToast('Program created.');
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleCreateSponsor(e: React.FormEvent) {
-    e.preventDefault();
-
-    await runAction(async () => {
-      if (!newSponsorName.trim()) {
-        setError('Sponsor name is required.');
-        return;
-      }
-
-      if (!validateImage(newSponsorImage)) return;
-
-      let imageData: Partial<Sponsor> = {};
-
-      if (newSponsorImage) {
-        imageData = await uploadSponsorImage(newSponsorImage, newSponsorName.trim());
-      }
-
-      const { error: insertError } = await supabase.from('portal_sponsors').insert([
-        {
-          name: newSponsorName.trim(),
-          sponsor_link: newSponsorLink.trim(),
-          is_published: newSponsorPublished,
-          sort_order: Number(newSponsorSortOrder) || 0,
-          ...imageData,
-        },
-      ]);
-
-      if (insertError) {
-        if ('image_path' in imageData && imageData.image_path) {
-          await tryRemoveStoredFile(SPONSOR_BUCKET, imageData.image_path);
-        }
-        setError(insertError.message || 'Failed to create sponsor.');
-        return;
-      }
-
-      resetSponsorCreateFields();
-      showToast('Sponsor created.');
-      await loadPortalAdminData();
-    });
-  }
-
-  function startEditWeekPlan(plan: WeekPlan) {
-    setEditingWeekPlanId(plan.id);
-    setEditWeekLabel(plan.week_label);
-    setEditWeekPublished(plan.published);
-  }
-
-  function cancelEditWeekPlan() {
-    setEditingWeekPlanId(null);
-    setEditWeekLabel('');
-    setEditWeekPublished(true);
-  }
-
-  async function handleSaveWeekPlan(id: string) {
-    await runAction(async () => {
-      if (!editWeekLabel.trim()) {
-        setError('Week label is required.');
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('portal_week_plans')
-        .update({
-          week_label: editWeekLabel.trim(),
-          published: editWeekPublished,
-        })
-        .eq('id', id);
-
-      if (updateError) {
-        setError(updateError.message || 'Failed to update week plan.');
-        return;
-      }
-
-      showToast('Week plan updated.');
-      cancelEditWeekPlan();
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleDeleteWeekPlan(id: string) {
-    const confirmed = window.confirm('Delete this week plan and all its items?');
-    if (!confirmed) return;
-
-    await runAction(async () => {
-      const { error: deleteError } = await supabase.from('portal_week_plans').delete().eq('id', id);
-
-      if (deleteError) {
-        setError(deleteError.message || 'Failed to delete week plan.');
-        return;
-      }
-
-      showToast('Week plan deleted.');
-      await loadPortalAdminData();
-    });
-  }
-
-  function startEditWeekItem(item: WeekPlanItem) {
-    setEditingWeekItemId(item.id);
-    setEditDayLabel(item.day_label || 'Monday');
-    setEditWeekItemTitle(item.title);
-    setEditWeekItemDetails(item.details);
-    setEditWeekItemSortOrder(String(item.sort_order));
-  }
-
-  function cancelEditWeekItem() {
-    setEditingWeekItemId(null);
-    setEditDayLabel('Monday');
-    setEditWeekItemTitle('');
-    setEditWeekItemDetails('');
-    setEditWeekItemSortOrder('1');
-  }
-
-  async function handleSaveWeekItem(id: string) {
-    await runAction(async () => {
-      if (!editWeekItemTitle.trim()) {
-        setError('Week item title is required.');
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('portal_week_plan_items')
-        .update({
-          day_label: editDayLabel,
-          title: editWeekItemTitle.trim(),
-          details: editWeekItemDetails.trim(),
-          sort_order: Number(editWeekItemSortOrder) || 0,
-        })
-        .eq('id', id);
-
-      if (updateError) {
-        setError(updateError.message || 'Failed to update week item.');
-        return;
-      }
-
-      showToast('Week item updated.');
-      cancelEditWeekItem();
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleDeleteWeekItem(id: string) {
-    const confirmed = window.confirm('Delete this week item?');
-    if (!confirmed) return;
-
-    await runAction(async () => {
-      const { error: deleteError } = await supabase.from('portal_week_plan_items').delete().eq('id', id);
-
-      if (deleteError) {
-        setError(deleteError.message || 'Failed to delete week item.');
-        return;
-      }
-
-      showToast('Week item deleted.');
-      await loadPortalAdminData();
-    });
-  }
-
-  function startEditReminder(reminder: Reminder) {
-    setEditingReminderId(reminder.id);
-    setEditReminderTitle(reminder.title);
-    setEditReminderDetails(reminder.details);
-    setEditReminderPublished(reminder.is_published);
-    setEditReminderSortOrder(String(reminder.sort_order));
-  }
-
-  function cancelEditReminder() {
-    setEditingReminderId(null);
-    setEditReminderTitle('');
-    setEditReminderDetails('');
-    setEditReminderPublished(true);
-    setEditReminderSortOrder('1');
-  }
-
-  async function handleSaveReminder(id: string) {
-    await runAction(async () => {
-      if (!editReminderTitle.trim()) {
-        setError('Reminder title is required.');
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('portal_reminders')
-        .update({
-          title: editReminderTitle.trim(),
-          details: editReminderDetails.trim(),
-          is_published: editReminderPublished,
-          sort_order: Number(editReminderSortOrder) || 0,
-        })
-        .eq('id', id);
-
-      if (updateError) {
-        setError(updateError.message || 'Failed to update reminder.');
-        return;
-      }
-
-      showToast('Reminder updated.');
-      cancelEditReminder();
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleDeleteReminder(id: string) {
-    const confirmed = window.confirm('Delete this reminder?');
-    if (!confirmed) return;
-
-    await runAction(async () => {
-      const { error: deleteError } = await supabase.from('portal_reminders').delete().eq('id', id);
-
-      if (deleteError) {
-        setError(deleteError.message || 'Failed to delete reminder.');
-        return;
-      }
-
-      showToast('Reminder deleted.');
-      await loadPortalAdminData();
-    });
-  }
-
-  function startEditResult(result: Result) {
-    setEditingResultId(result.id);
-    setEditResultTeam(result.team);
-    setEditResultOpponent(result.opponent);
-    setEditResultDate(result.result_date);
-    setEditResultFinalScore(result.final_score);
-    setEditResultGoalScorers(result.goal_scorers);
-    setEditResultPublished(result.is_published);
-    setEditResultSortOrder(String(result.sort_order));
-  }
-
-  function cancelEditResult() {
-    setEditingResultId(null);
-    setEditResultTeam('');
-    setEditResultOpponent('');
-    setEditResultDate('');
-    setEditResultFinalScore('');
-    setEditResultGoalScorers('');
-    setEditResultPublished(true);
-    setEditResultSortOrder('1');
-  }
-
-  async function handleSaveResult(id: string) {
-    await runAction(async () => {
-      if (!editResultTeam.trim() || !editResultOpponent.trim() || !editResultDate || !editResultFinalScore.trim()) {
-        setError('Team, opponent, result date, and final score are required.');
-        return;
-      }
-
-      const { error: updateError } = await supabase
-        .from('portal_results')
-        .update({
-          team: editResultTeam.trim(),
-          opponent: editResultOpponent.trim(),
-          result_date: editResultDate,
-          final_score: editResultFinalScore.trim(),
-          goal_scorers: editResultGoalScorers.trim(),
-          is_published: editResultPublished,
-          sort_order: Number(editResultSortOrder) || 0,
-        })
-        .eq('id', id);
-
-      if (updateError) {
-        setError(updateError.message || 'Failed to update result.');
-        return;
-      }
-
-      showToast('Result updated.');
-      cancelEditResult();
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleDeleteResult(id: string) {
-    const confirmed = window.confirm('Delete this result?');
-    if (!confirmed) return;
-
-    await runAction(async () => {
-      const { error: deleteError } = await supabase.from('portal_results').delete().eq('id', id);
-
-      if (deleteError) {
-        setError(deleteError.message || 'Failed to delete result.');
-        return;
-      }
-
-      showToast('Result deleted.');
-      await loadPortalAdminData();
-    });
-  }
-
-  function startEditProgram(program: Program) {
-    setEditingProgramId(program.id);
-    setEditProgramTitle(program.title);
-    setEditProgramCategory(program.category);
-    setEditProgramDayLabel(program.day_label || 'Monday');
-    setEditProgramDetails(program.details);
-    setEditProgramPublished(program.is_published);
-    setEditProgramSortOrder(String(program.sort_order));
-    setEditProgramFile(null);
-  }
-
-  async function handleSaveProgram(id: string) {
-    await runAction(async () => {
-      if (!editProgramTitle.trim()) {
-        setError('Program title is required.');
-        return;
-      }
-
-      if (!validatePdf(editProgramFile)) return;
-
-      const currentProgram = programs.find((program) => program.id === id);
-      if (!currentProgram) {
-        setError('Program not found.');
-        return;
-      }
-
-      let fileData: Partial<Program> = {
-        file_name: currentProgram.file_name,
-        file_path: currentProgram.file_path,
-        file_url: currentProgram.file_url,
-      };
-
-      if (editProgramFile) {
-        const uploaded = await uploadProgramPdf(editProgramFile, editProgramTitle.trim());
-        fileData = uploaded;
-      }
-
-      const { error: updateError } = await supabase
-        .from('portal_programs')
-        .update({
-          title: editProgramTitle.trim(),
-          category: editProgramCategory,
-          day_label: editProgramDayLabel,
-          details: editProgramDetails.trim(),
-          is_published: editProgramPublished,
-          sort_order: Number(editProgramSortOrder) || 0,
-          ...fileData,
-        })
-        .eq('id', id);
-
-      if (updateError) {
-        if (editProgramFile && 'file_path' in fileData && fileData.file_path && fileData.file_path !== currentProgram.file_path) {
-          await tryRemoveStoredFile(PROGRAM_BUCKET, fileData.file_path);
-        }
-        setError(updateError.message || 'Failed to update program.');
-        return;
-      }
-
-      if (editProgramFile && currentProgram.file_path && currentProgram.file_path !== fileData.file_path) {
-        await tryRemoveStoredFile(PROGRAM_BUCKET, currentProgram.file_path);
-      }
-
-      showToast('Program updated.');
-      resetProgramEditFields();
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleDeleteProgram(id: string) {
-    const confirmed = window.confirm('Delete this program?');
-    if (!confirmed) return;
-
-    await runAction(async () => {
-      const currentProgram = programs.find((program) => program.id === id);
-
-      const { error: deleteError } = await supabase.from('portal_programs').delete().eq('id', id);
-
-      if (deleteError) {
-        setError(deleteError.message || 'Failed to delete program.');
-        return;
-      }
-
-      if (currentProgram?.file_path) {
-        await tryRemoveStoredFile(PROGRAM_BUCKET, currentProgram.file_path);
-      }
-
-      showToast('Program deleted.');
-      await loadPortalAdminData();
-    });
-  }
-
-  function startEditSponsor(sponsor: Sponsor) {
-    setEditingSponsorId(sponsor.id);
-    setEditSponsorName(sponsor.name);
-    setEditSponsorLink(sponsor.sponsor_link);
-    setEditSponsorPublished(sponsor.is_published);
-    setEditSponsorSortOrder(String(sponsor.sort_order));
-    setEditSponsorImage(null);
-  }
-
-  async function handleSaveSponsor(id: string) {
-    await runAction(async () => {
-      if (!editSponsorName.trim()) {
-        setError('Sponsor name is required.');
-        return;
-      }
-
-      if (!validateImage(editSponsorImage)) return;
-
-      const currentSponsor = sponsors.find((sponsor) => sponsor.id === id);
-      if (!currentSponsor) {
-        setError('Sponsor not found.');
-        return;
-      }
-
-      let imageData: Partial<Sponsor> = {
-        image_name: currentSponsor.image_name,
-        image_path: currentSponsor.image_path,
-        image_url: currentSponsor.image_url,
-      };
-
-      if (editSponsorImage) {
-        const uploaded = await uploadSponsorImage(editSponsorImage, editSponsorName.trim());
-        imageData = uploaded;
-      }
-
-      const { error: updateError } = await supabase
-        .from('portal_sponsors')
-        .update({
-          name: editSponsorName.trim(),
-          sponsor_link: editSponsorLink.trim(),
-          is_published: editSponsorPublished,
-          sort_order: Number(editSponsorSortOrder) || 0,
-          ...imageData,
-        })
-        .eq('id', id);
-
-      if (updateError) {
-        if (editSponsorImage && 'image_path' in imageData && imageData.image_path && imageData.image_path !== currentSponsor.image_path) {
-          await tryRemoveStoredFile(SPONSOR_BUCKET, imageData.image_path);
-        }
-        setError(updateError.message || 'Failed to update sponsor.');
-        return;
-      }
-
-      if (editSponsorImage && currentSponsor.image_path && currentSponsor.image_path !== imageData.image_path) {
-        await tryRemoveStoredFile(SPONSOR_BUCKET, currentSponsor.image_path);
-      }
-
-      showToast('Sponsor updated.');
-      resetSponsorEditFields();
-      await loadPortalAdminData();
-    });
-  }
-
-  async function handleDeleteSponsor(id: string) {
-    const confirmed = window.confirm('Delete this sponsor?');
-    if (!confirmed) return;
-
-    await runAction(async () => {
-      const currentSponsor = sponsors.find((sponsor) => sponsor.id === id);
-
-      const { error: deleteError } = await supabase.from('portal_sponsors').delete().eq('id', id);
-
-      if (deleteError) {
-        setError(deleteError.message || 'Failed to delete sponsor.');
-        return;
-      }
-
-      if (currentSponsor?.image_path) {
-        await tryRemoveStoredFile(SPONSOR_BUCKET, currentSponsor.image_path);
-      }
-
-      showToast('Sponsor deleted.');
-      await loadPortalAdminData();
-    });
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   return (
@@ -1279,11 +471,11 @@ async function handleLogout() {
         </div>
 
         <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
-          {['fixtures','results','week','programs','reminders','sponsors','spotlight','players'].map((tab) => (
+          {['fixtures','results','week','programs','workouts','reminders','sponsors','spotlight','players'].map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className="rounded-xl px-4 py-2 text-sm font-black capitalize transition border"
               style={{background:activeTab===tab?sportColor+'20':'rgba(255,255,255,0.02)',borderColor:activeTab===tab?sportColor+'66':'rgba(255,255,255,0.07)',color:activeTab===tab?'white':'rgba(255,255,255,0.35)'}}>
-              {tab === 'week' ? 'Week Plan' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'week' ? 'Week Plan' : tab === 'workouts' ? 'Workouts' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -1298,11 +490,12 @@ async function handleLogout() {
         ) : (
           <div>
             {activeTab === 'fixtures' && <FixturesSection fixtures={fixtures} busy={busy} newFixtureOpponent={fx.newFixtureOpponent} setNewFixtureOpponent={fx.setNewFixtureOpponent} newFixtureBlocks={fx.newFixtureBlocks} addFixtureBlock={fx.addFixtureBlock} removeFixtureBlock={fx.removeFixtureBlock} updateFixtureBlock={fx.updateFixtureBlock} addTeamSlot={fx.addTeamSlot} updateTeamSlot={fx.updateTeamSlot} removeTeamSlot={fx.removeTeamSlot} newFixturePublished={fx.newFixturePublished} setNewFixturePublished={fx.setNewFixturePublished} handleCreateFixture={fx.handleCreateFixture} editingFixtureId={fx.editingFixtureId} editFixtureTeam={fx.editFixtureTeam} setEditFixtureTeam={fx.setEditFixtureTeam} editFixtureOpponent={fx.editFixtureOpponent} setEditFixtureOpponent={fx.setEditFixtureOpponent} editFixtureDate={fx.editFixtureDate} setEditFixtureDate={fx.setEditFixtureDate} editFixtureTime={fx.editFixtureTime} setEditFixtureTime={fx.setEditFixtureTime} editFixtureVenue={fx.editFixtureVenue} setEditFixtureVenue={fx.setEditFixtureVenue} editFixtureCoach={fx.editFixtureCoach} setEditFixtureCoach={fx.setEditFixtureCoach} editFixtureUmpire={fx.editFixtureUmpire} setEditFixtureUmpire={fx.setEditFixtureUmpire} editFixtureNotes={fx.editFixtureNotes} setEditFixtureNotes={fx.setEditFixtureNotes} editFixtureHomeAway={fx.editFixtureHomeAway} setEditFixtureHomeAway={fx.setEditFixtureHomeAway} editFixturePublished={fx.editFixturePublished} setEditFixturePublished={fx.setEditFixturePublished} handleSaveFixture={fx.handleSaveFixture} cancelEditFixture={fx.cancelEditFixture} startEditFixture={fx.startEditFixture} handleDeleteFixture={fx.handleDeleteFixture} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
-            {activeTab === 'results' && <ResultsSection results={results} busy={busy} newResultTeam={newResultTeam} setNewResultTeam={setNewResultTeam} newResultOpponent={newResultOpponent} setNewResultOpponent={setNewResultOpponent} newResultDate={newResultDate} setNewResultDate={setNewResultDate} newResultFinalScore={newResultFinalScore} setNewResultFinalScore={setNewResultFinalScore} newResultGoalScorers={newResultGoalScorers} setNewResultGoalScorers={setNewResultGoalScorers} newResultPublished={newResultPublished} setNewResultPublished={setNewResultPublished} handleCreateResult={handleCreateResult} editingResultId={editingResultId} editResultTeam={editResultTeam} setEditResultTeam={setEditResultTeam} editResultOpponent={editResultOpponent} setEditResultOpponent={setEditResultOpponent} editResultDate={editResultDate} setEditResultDate={setEditResultDate} editResultFinalScore={editResultFinalScore} setEditResultFinalScore={setEditResultFinalScore} editResultGoalScorers={editResultGoalScorers} setEditResultGoalScorers={setEditResultGoalScorers} editResultPublished={editResultPublished} setEditResultPublished={setEditResultPublished} handleSaveResult={handleSaveResult} cancelEditResult={cancelEditResult} startEditResult={startEditResult} handleDeleteResult={handleDeleteResult} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
-            {activeTab === 'week' && <WeekSection weekPlans={weekPlans} selectedWeekPlan={selectedWeekPlan} selectedWeekItems={selectedWeekItems} busy={busy} selectedWeekPlanId={selectedWeekPlanId} setSelectedWeekPlanId={setSelectedWeekPlanId} newWeekLabel={newWeekLabel} setNewWeekLabel={setNewWeekLabel} newWeekPublished={newWeekPublished} setNewWeekPublished={setNewWeekPublished} handleCreateWeekPlan={handleCreateWeekPlan} newDayLabel={newDayLabel} setNewDayLabel={setNewDayLabel} newWeekItemTitle={newWeekItemTitle} setNewWeekItemTitle={setNewWeekItemTitle} newWeekItemDetails={newWeekItemDetails} setNewWeekItemDetails={setNewWeekItemDetails} handleCreateWeekItem={handleCreateWeekItem} editingWeekPlanId={editingWeekPlanId} editWeekLabel={editWeekLabel} setEditWeekLabel={setEditWeekLabel} editWeekPublished={editWeekPublished} setEditWeekPublished={setEditWeekPublished} handleSaveWeekPlan={handleSaveWeekPlan} cancelEditWeekPlan={cancelEditWeekPlan} startEditWeekPlan={startEditWeekPlan} handleDeleteWeekPlan={handleDeleteWeekPlan} editingWeekItemId={editingWeekItemId} editDayLabel={editDayLabel} setEditDayLabel={setEditDayLabel} editWeekItemTitle={editWeekItemTitle} setEditWeekItemTitle={setEditWeekItemTitle} editWeekItemDetails={editWeekItemDetails} setEditWeekItemDetails={setEditWeekItemDetails} handleSaveWeekItem={handleSaveWeekItem} cancelEditWeekItem={cancelEditWeekItem} startEditWeekItem={startEditWeekItem} handleDeleteWeekItem={handleDeleteWeekItem} moveItem={moveItem} formatDate={formatDate} />}
-            {activeTab === 'programs' && <ProgramsSection programs={programs} busy={busy} newProgramTitle={newProgramTitle} setNewProgramTitle={setNewProgramTitle} newProgramCategory={newProgramCategory} setNewProgramCategory={setNewProgramCategory} newProgramDayLabel={newProgramDayLabel} setNewProgramDayLabel={setNewProgramDayLabel} newProgramDetails={newProgramDetails} setNewProgramDetails={setNewProgramDetails} newProgramPublished={newProgramPublished} setNewProgramPublished={setNewProgramPublished} newProgramFile={newProgramFile} setNewProgramFile={setNewProgramFile} handleCreateProgram={handleCreateProgram} editingProgramId={editingProgramId} editProgramTitle={editProgramTitle} setEditProgramTitle={setEditProgramTitle} editProgramCategory={editProgramCategory} setEditProgramCategory={setEditProgramCategory} editProgramDayLabel={editProgramDayLabel} setEditProgramDayLabel={setEditProgramDayLabel} editProgramDetails={editProgramDetails} setEditProgramDetails={setEditProgramDetails} editProgramPublished={editProgramPublished} setEditProgramPublished={setEditProgramPublished} editProgramFile={editProgramFile} setEditProgramFile={setEditProgramFile} handleSaveProgram={handleSaveProgram} resetProgramEditFields={resetProgramEditFields} startEditProgram={startEditProgram} handleDeleteProgram={handleDeleteProgram} moveItem={moveItem} />}
-            {activeTab === 'reminders' && <RemindersSection reminders={reminders} busy={busy} newReminderTitle={newReminderTitle} setNewReminderTitle={setNewReminderTitle} newReminderDetails={newReminderDetails} setNewReminderDetails={setNewReminderDetails} newReminderPublished={newReminderPublished} setNewReminderPublished={setNewReminderPublished} handleCreateReminder={handleCreateReminder} editingReminderId={editingReminderId} editReminderTitle={editReminderTitle} setEditReminderTitle={setEditReminderTitle} editReminderDetails={editReminderDetails} setEditReminderDetails={setEditReminderDetails} editReminderPublished={editReminderPublished} setEditReminderPublished={setEditReminderPublished} handleSaveReminder={handleSaveReminder} cancelEditReminder={cancelEditReminder} startEditReminder={startEditReminder} handleDeleteReminder={handleDeleteReminder} moveItem={moveItem} />}
-            {activeTab === 'sponsors' && <SponsorsSection sponsors={sponsors} busy={busy} newSponsorName={newSponsorName} setNewSponsorName={setNewSponsorName} newSponsorLink={newSponsorLink} setNewSponsorLink={setNewSponsorLink} newSponsorPublished={newSponsorPublished} setNewSponsorPublished={setNewSponsorPublished} newSponsorImage={newSponsorImage} setNewSponsorImage={setNewSponsorImage} handleCreateSponsor={handleCreateSponsor} editingSponsorId={editingSponsorId} editSponsorName={editSponsorName} setEditSponsorName={setEditSponsorName} editSponsorLink={editSponsorLink} setEditSponsorLink={setEditSponsorLink} editSponsorPublished={editSponsorPublished} setEditSponsorPublished={setEditSponsorPublished} editSponsorImage={editSponsorImage} setEditSponsorImage={setEditSponsorImage} handleSaveSponsor={handleSaveSponsor} resetSponsorEditFields={resetSponsorEditFields} startEditSponsor={startEditSponsor} handleDeleteSponsor={handleDeleteSponsor} moveItem={moveItem} />}
+            {activeTab === 'results' && <ResultsSection results={results} busy={busy} newResultTeam={res.newResultTeam} setNewResultTeam={res.setNewResultTeam} newResultOpponent={res.newResultOpponent} setNewResultOpponent={res.setNewResultOpponent} newResultDate={res.newResultDate} setNewResultDate={res.setNewResultDate} newResultFinalScore={res.newResultFinalScore} setNewResultFinalScore={res.setNewResultFinalScore} newResultGoalScorers={res.newResultGoalScorers} setNewResultGoalScorers={res.setNewResultGoalScorers} newResultPublished={res.newResultPublished} setNewResultPublished={res.setNewResultPublished} handleCreateResult={res.handleCreateResult} editingResultId={res.editingResultId} editResultTeam={res.editResultTeam} setEditResultTeam={res.setEditResultTeam} editResultOpponent={res.editResultOpponent} setEditResultOpponent={res.setEditResultOpponent} editResultDate={res.editResultDate} setEditResultDate={res.setEditResultDate} editResultFinalScore={res.editResultFinalScore} setEditResultFinalScore={res.setEditResultFinalScore} editResultGoalScorers={res.editResultGoalScorers} setEditResultGoalScorers={res.setEditResultGoalScorers} editResultPublished={res.editResultPublished} setEditResultPublished={res.setEditResultPublished} handleSaveResult={res.handleSaveResult} cancelEditResult={res.cancelEditResult} startEditResult={res.startEditResult} handleDeleteResult={res.handleDeleteResult} moveItem={moveItem} formatDate={formatDate} teamOptions={teamOptions} />}
+            {activeTab === 'week' && <WeekSection weekPlans={weekPlans} selectedWeekPlan={wk.selectedWeekPlan} selectedWeekItems={wk.selectedWeekItems} busy={busy} selectedWeekPlanId={wk.selectedWeekPlanId} setSelectedWeekPlanId={wk.setSelectedWeekPlanId} newWeekLabel={wk.newWeekLabel} setNewWeekLabel={wk.setNewWeekLabel} newWeekPublished={wk.newWeekPublished} setNewWeekPublished={wk.setNewWeekPublished} handleCreateWeekPlan={wk.handleCreateWeekPlan} newDayLabel={wk.newDayLabel} setNewDayLabel={wk.setNewDayLabel} newWeekItemTitle={wk.newWeekItemTitle} setNewWeekItemTitle={wk.setNewWeekItemTitle} newWeekItemDetails={wk.newWeekItemDetails} setNewWeekItemDetails={wk.setNewWeekItemDetails} handleCreateWeekItem={wk.handleCreateWeekItem} editingWeekPlanId={wk.editingWeekPlanId} editWeekLabel={wk.editWeekLabel} setEditWeekLabel={wk.setEditWeekLabel} editWeekPublished={wk.editWeekPublished} setEditWeekPublished={wk.setEditWeekPublished} handleSaveWeekPlan={wk.handleSaveWeekPlan} cancelEditWeekPlan={wk.cancelEditWeekPlan} startEditWeekPlan={wk.startEditWeekPlan} handleDeleteWeekPlan={wk.handleDeleteWeekPlan} editingWeekItemId={wk.editingWeekItemId} editDayLabel={wk.editDayLabel} setEditDayLabel={wk.setEditDayLabel} editWeekItemTitle={wk.editWeekItemTitle} setEditWeekItemTitle={wk.setEditWeekItemTitle} editWeekItemDetails={wk.editWeekItemDetails} setEditWeekItemDetails={wk.setEditWeekItemDetails} handleSaveWeekItem={wk.handleSaveWeekItem} cancelEditWeekItem={wk.cancelEditWeekItem} startEditWeekItem={wk.startEditWeekItem} handleDeleteWeekItem={wk.handleDeleteWeekItem} moveItem={moveItem} formatDate={formatDate} />}
+            {activeTab === 'programs' && <ProgramsSection programs={programs} busy={busy} newProgramTitle={prog.newProgramTitle} setNewProgramTitle={prog.setNewProgramTitle} newProgramCategory={prog.newProgramCategory} setNewProgramCategory={prog.setNewProgramCategory} newProgramDayLabel={prog.newProgramDayLabel} setNewProgramDayLabel={prog.setNewProgramDayLabel} newProgramDetails={prog.newProgramDetails} setNewProgramDetails={prog.setNewProgramDetails} newProgramPublished={prog.newProgramPublished} setNewProgramPublished={prog.setNewProgramPublished} newProgramFile={prog.newProgramFile} setNewProgramFile={prog.setNewProgramFile} handleCreateProgram={prog.handleCreateProgram} editingProgramId={prog.editingProgramId} editProgramTitle={prog.editProgramTitle} setEditProgramTitle={prog.setEditProgramTitle} editProgramCategory={prog.editProgramCategory} setEditProgramCategory={prog.setEditProgramCategory} editProgramDayLabel={prog.editProgramDayLabel} setEditProgramDayLabel={prog.setEditProgramDayLabel} editProgramDetails={prog.editProgramDetails} setEditProgramDetails={prog.setEditProgramDetails} editProgramPublished={prog.editProgramPublished} setEditProgramPublished={prog.setEditProgramPublished} editProgramFile={prog.editProgramFile} setEditProgramFile={prog.setEditProgramFile} handleSaveProgram={prog.handleSaveProgram} resetProgramEditFields={prog.resetProgramEditFields} startEditProgram={prog.startEditProgram} handleDeleteProgram={prog.handleDeleteProgram} moveItem={moveItem} />}
+            {activeTab === 'reminders' && <RemindersSection reminders={reminders} busy={busy} newReminderTitle={rem.newReminderTitle} setNewReminderTitle={rem.setNewReminderTitle} newReminderDetails={rem.newReminderDetails} setNewReminderDetails={rem.setNewReminderDetails} newReminderPublished={rem.newReminderPublished} setNewReminderPublished={rem.setNewReminderPublished} handleCreateReminder={rem.handleCreateReminder} editingReminderId={rem.editingReminderId} editReminderTitle={rem.editReminderTitle} setEditReminderTitle={rem.setEditReminderTitle} editReminderDetails={rem.editReminderDetails} setEditReminderDetails={rem.setEditReminderDetails} editReminderPublished={rem.editReminderPublished} setEditReminderPublished={rem.setEditReminderPublished} handleSaveReminder={rem.handleSaveReminder} cancelEditReminder={rem.cancelEditReminder} startEditReminder={rem.startEditReminder} handleDeleteReminder={rem.handleDeleteReminder} moveItem={moveItem} />}
+            {activeTab === 'sponsors' && <SponsorsSection sponsors={sponsors} busy={busy} newSponsorName={spon.newSponsorName} setNewSponsorName={spon.setNewSponsorName} newSponsorLink={spon.newSponsorLink} setNewSponsorLink={spon.setNewSponsorLink} newSponsorPublished={spon.newSponsorPublished} setNewSponsorPublished={spon.setNewSponsorPublished} newSponsorImage={spon.newSponsorImage} setNewSponsorImage={spon.setNewSponsorImage} handleCreateSponsor={spon.handleCreateSponsor} editingSponsorId={spon.editingSponsorId} editSponsorName={spon.editSponsorName} setEditSponsorName={spon.setEditSponsorName} editSponsorLink={spon.editSponsorLink} setEditSponsorLink={spon.setEditSponsorLink} editSponsorPublished={spon.editSponsorPublished} setEditSponsorPublished={spon.setEditSponsorPublished} editSponsorImage={spon.editSponsorImage} setEditSponsorImage={spon.setEditSponsorImage} handleSaveSponsor={spon.handleSaveSponsor} resetSponsorEditFields={spon.resetSponsorEditFields} startEditSponsor={spon.startEditSponsor} handleDeleteSponsor={spon.handleDeleteSponsor} moveItem={moveItem} />}
+            {activeTab === 'workouts' && <WorkoutProgramsSection programs={workoutPrograms} busy={busy} selectedProgramId={wpAdmin.selectedProgramId} setSelectedProgramId={wpAdmin.setSelectedProgramId} selectedProgram={wpAdmin.selectedProgram} selectedExercises={wpAdmin.selectedExercises} newProgramTitle={wpAdmin.newProgramTitle} setNewProgramTitle={wpAdmin.setNewProgramTitle} newProgramTeam={wpAdmin.newProgramTeam} setNewProgramTeam={wpAdmin.setNewProgramTeam} newProgramSport={wpAdmin.newProgramSport} setNewProgramSport={wpAdmin.setNewProgramSport} handleCreateProgram={wpAdmin.handleCreateProgram} toggleProgramActive={wpAdmin.toggleProgramActive} handleDeleteProgram={wpAdmin.handleDeleteProgram} newExerciseName={wpAdmin.newExerciseName} setNewExerciseName={wpAdmin.setNewExerciseName} newExerciseSets={wpAdmin.newExerciseSets} setNewExerciseSets={wpAdmin.setNewExerciseSets} newExerciseReps={wpAdmin.newExerciseReps} setNewExerciseReps={wpAdmin.setNewExerciseReps} handleAddExercise={wpAdmin.handleAddExercise} editingExerciseId={wpAdmin.editingExerciseId} editExerciseName={wpAdmin.editExerciseName} setEditExerciseName={wpAdmin.setEditExerciseName} editExerciseSets={wpAdmin.editExerciseSets} setEditExerciseSets={wpAdmin.setEditExerciseSets} editExerciseReps={wpAdmin.editExerciseReps} setEditExerciseReps={wpAdmin.setEditExerciseReps} startEditExercise={wpAdmin.startEditExercise} cancelEditExercise={wpAdmin.cancelEditExercise} handleSaveExercise={wpAdmin.handleSaveExercise} handleDeleteExercise={wpAdmin.handleDeleteExercise} />}
             {activeTab === 'spotlight' && <SpotlightSection sport={sport} />}
             {activeTab === 'players' && <PlayerProfilesSection />}
           </div>

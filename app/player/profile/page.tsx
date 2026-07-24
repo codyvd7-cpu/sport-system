@@ -9,6 +9,7 @@ import QrScanModal from '@/components/QrScanModal';
 import AlertOptIn from '@/components/AlertOptIn';
 import SafetyBanner from '@/components/SafetyBanner';
 import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
+import TrainingTab from '@/components/player/TrainingTab';
 
 type Row = Record<string, any>;
 
@@ -18,6 +19,7 @@ const NAV = [
   { id: 'overview', l: 'Overview',       i: 'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10' },
   { id: 'schedule', l: 'Schedule',       i: 'M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01' },
   { id: 'perf',     l: 'Performance',    i: 'M22 12h-4l-3 9L9 3l-3 9H2' },
+  { id: 'training', l: 'Training',       i: 'M6.5 6.5 17.5 17.5 M6.5 17.5 17.5 6.5 M4 4h3v3H4z M17 17h3v3h-3z M4 17h3v3H4z M17 4h3v3h-3z' },
   { id: 'att',      l: 'Attendance',     i: 'M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11' },
   { id: 'programs', l: 'Programs',       i: 'M18 20V10M12 20V4M6 20v-6' },
   { id: 'feedback', l: 'Coach Feedback', i: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' },
@@ -854,6 +856,7 @@ export default function PlayerProfile() {
     overview: <Overview D={D} C={C} attPct={attPct} setNav={setNav} onScan={() => setScanOpen(true)}/>,
     schedule: <Schedule D={D} C={C}/>,
     perf:     <Performance D={D} C={C}/>,
+    training: <TrainingTab C={C}/>,
     att:      <Attendance D={D} attPct={attPct}/>,
     programs: <Programs D={D} C={C}/>,
     feedback: <Feedback D={D} C={C}/>,
