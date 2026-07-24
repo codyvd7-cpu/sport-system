@@ -748,7 +748,18 @@ export default function PlayerProfile() {
           body: JSON.stringify({ action: 'get' }),
         });
         const data = await r.json();
-        if (!r.ok) throw new Error(data.error || 'Failed to load');
+        if (!r.ok) {
+          if (r.status === 401) {
+            // Session looked valid locally but the server rejected it (expired
+            // or invalid token). Previously this dead-ended on a plain
+            // "Unauthorized" screen with nothing clickable. Clear the stale
+            // session and send back to sign-in instead of trapping the user.
+            await supabase.auth.signOut();
+            router.replace('/player/auth?reason=expired');
+            return;
+          }
+          throw new Error(data.error || 'Failed to load');
+        }
         if (!data.profile) { router.replace('/player/setup'); return; }
         setD(data);
       } catch (e: any) {
@@ -817,7 +828,15 @@ export default function PlayerProfile() {
     <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
   </div>;
 
-  if (errMsg || !D) return <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontFamily: 'Inter,sans-serif', fontSize: 14, padding: 24, textAlign: 'center' }}>{errMsg || 'Something went wrong.'}</div>;
+  if (errMsg || !D) return (
+    <div style={{ minHeight: '100vh', background: BG, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.5)', fontFamily: 'Inter,sans-serif', fontSize: 14, padding: 24, textAlign: 'center', gap: 16 }}>
+      <p style={{ margin: 0 }}>{errMsg || 'Something went wrong.'}</p>
+      <button onClick={() => { supabase.auth.signOut(); router.replace('/player/auth'); }}
+        style={{ border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '10px 20px', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+        ← Back to Sign In
+      </button>
+    </div>
+  );
 
   const P = D.profile;
   const ath = D.athlete;

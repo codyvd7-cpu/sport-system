@@ -52,10 +52,27 @@ export default function PlayerAuthPage() {
   const [info, setInfo]           = React.useState('');
   const [loading, setLoading]     = React.useState(false);
 
-  // Redirect if already signed in
   React.useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) router.replace('/player/profile');
+    if (new URLSearchParams(window.location.search).get('reason') === 'expired') {
+      setInfo('Your session expired — please sign in again.');
+    }
+  }, []);
+
+  // Redirect if already signed in — validated server-side, not just trusted
+  // from local storage. A stale local session (expired token) previously
+  // passed this check, got redirected to /player/profile, and dead-ended
+  // there on an "Unauthorized" screen with no way back.
+  React.useEffect(() => {
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return;
+      const { data: userData, error } = await supabase.auth.getUser();
+      if (userData.user && !error) {
+        router.replace('/player/profile');
+      } else {
+        // Session existed locally but the server rejects it — clear it so
+        // this sign-in page renders normally instead of looping.
+        await supabase.auth.signOut();
+      }
     });
   }, [router]);
 
