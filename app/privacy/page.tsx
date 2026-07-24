@@ -22,8 +22,10 @@ export default function PrivacyPolicyPage() {
             <p style={{margin:0,fontSize:13}}>
               <strong style={{color:'white'}}>Altus Performance</strong> is a digital sport management platform operated by{' '}
               <strong style={{color:'white'}}>Altus (Pty) Ltd (Reg. 2026/424230/07)</strong> (&quot;Altus&quot;, &quot;we&quot;, &quot;us&quot;, &quot;our&quot;), a company incorporated in the Republic of South Africa.
-              Altus is the responsible party for the processing of personal information as defined under the Protection of Personal Information Act 4 of 2013 (&quot;POPIA&quot;).
-              This Privacy Policy applies to all users of the Altus Performance platform, including coaches, athletic staff, school administrators, athletes, and parents or guardians who access the platform.
+              Under the Protection of Personal Information Act 4 of 2013 (&quot;POPIA&quot;), Altus acts in two distinct capacities:
+              (a) as the <strong style={{color:'white'}}>responsible party</strong> for personal information of users who register directly with us (staff account credentials, player and parent accounts, and platform usage data); and
+              (b) as an <strong style={{color:'white'}}>operator</strong> processing athlete and school-related information on behalf of, and under the authority of, each licensed school institution, which remains the responsible party for that information.
+              This Privacy Policy applies to all users of the Altus Performance platform across all licensed institutions, including coaches, athletic staff, school administrators, athletes, and parents or guardians.
             </p>
           </section>
 
@@ -31,7 +33,9 @@ export default function PrivacyPolicyPage() {
           <p>We collect the following categories of personal information:</p>
           <ul style={{margin:'12px 0 24px 20px'}}>
             <li style={{marginBottom:8}}><strong style={{color:'white'}}>Identity information:</strong> Full names, email addresses, and role designations of coaching and administrative staff.</li>
-            <li style={{marginBottom:8}}><strong style={{color:'white'}}>Athlete information:</strong> Names, age groups, team assignments, physical performance test results, and attendance records of student athletes.</li>
+            <li style={{marginBottom:8}}><strong style={{color:'white'}}>Athlete information:</strong> Names, age groups, team assignments, physical performance test results, attendance records, training session check-ins, and optional profile photographs of student athletes.</li>
+            <li style={{marginBottom:8}}><strong style={{color:'white'}}>Player and parent account information:</strong> Email addresses, names, and grade information provided when creating a player portal account, and the link between an account and its athlete record.</li>
+            <li style={{marginBottom:8}}><strong style={{color:'white'}}>Notification data:</strong> Browser push-notification subscription tokens for users who opt in to receive alerts (including safety alerts).</li>
             <li style={{marginBottom:8}}><strong style={{color:'white'}}>Authentication data:</strong> Email addresses and encrypted password credentials for staff accounts.</li>
             <li style={{marginBottom:8}}><strong style={{color:'white'}}>Usage data:</strong> Interaction logs, session timestamps, and platform activity for security and audit purposes.</li>
             <li style={{marginBottom:8}}><strong style={{color:'white'}}>Device information:</strong> Browser type, device type, and IP address for security monitoring.</li>
@@ -51,7 +55,8 @@ export default function PrivacyPolicyPage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>3. Legal Basis for Processing</h2>
           <p style={{marginBottom:24}}>
             We process personal information on the basis of contractual necessity (to provide the platform to our licensed clients), legitimate interests (to maintain platform security and improve our services), and compliance with legal obligations under POPIA and other applicable South African legislation.
-            Where we process the personal information of minors (athletes under the age of 18), we do so only under the authority of the licensed school institution and in accordance with the school&apos;s data governance policies.
+            Where we process the personal information of minors (athletes under the age of 18) on behalf of a licensed school, we do so under the authority of that school institution and in accordance with the school&apos;s data governance policies; the school is responsible for obtaining any consent required from a competent person (parent or guardian) as contemplated in section 35 of POPIA.
+            Where a minor registers a player account directly, that registration and continued use must occur with the knowledge and consent of a parent or guardian, and we process the associated information on the basis of that consent.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>4. Data Sharing and Disclosure</h2>
@@ -61,6 +66,10 @@ export default function PrivacyPolicyPage() {
             <li style={{marginBottom:8}}><strong style={{color:'white'}}>Service providers:</strong> We use Supabase (database and authentication, EU-based servers) and Vercel (hosting infrastructure). These providers are bound by appropriate data processing agreements.</li>
             <li style={{marginBottom:8}}><strong style={{color:'white'}}>Legal requirements:</strong> We may disclose information where required by law, court order, or regulatory authority.</li>
           </ul>
+          <p style={{marginBottom:24}}>
+            <strong style={{color:'white'}}>Cross-border transfers:</strong> Platform data is hosted on Supabase infrastructure located in the European Union (Ireland). This constitutes a transfer of personal information outside the Republic of South Africa as contemplated in section 72 of POPIA.
+            Such transfers occur only to jurisdictions whose laws provide an adequate level of protection substantially similar to POPIA (including the EU General Data Protection Regulation), and are governed by binding data processing agreements with our providers.
+          </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>5. Data Retention</h2>
           <p style={{marginBottom:24}}>
@@ -70,7 +79,7 @@ export default function PrivacyPolicyPage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>6. Security</h2>
           <p style={{marginBottom:24}}>
-            We implement industry-standard security measures including encrypted data transmission (TLS), hashed credential storage, role-based access control, and regular security reviews.
+            We implement industry-standard security measures including encryption of data at rest (AES-256) and in transit (TLS 1.2+), hashed credential storage, database-level row security policies, role-based access control, signed access tokens, rate limiting, audit logging of sensitive records, and regular security reviews.
             While we take all reasonable precautions, no system is entirely immune to security risks. We will notify affected parties of any material data breach in accordance with POPIA requirements.
           </p>
 
@@ -86,8 +95,11 @@ export default function PrivacyPolicyPage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>8. Children&apos;s Privacy</h2>
           <p style={{marginBottom:24}}>
-            Altus Performance processes personal information relating to minor athletes solely on behalf of and under the authority of the licensed school institution.
-            Parents or guardians wishing to exercise rights in respect of their child&apos;s personal information should contact their school&apos;s designated Altus Performance administrator.
+            Most athletes on the platform are minors, and we treat their information with heightened care.
+            School-entered athlete information is processed solely on behalf of and under the authority of the licensed school institution, which is responsible for obtaining competent person (parent or guardian) consent where required by section 35 of POPIA.
+            Player accounts created directly by minors require the knowledge and consent of a parent or guardian.
+            Profile photographs are optional, uploaded by the athlete or their family, and may be removed at any time.
+            Parents or guardians wishing to exercise rights in respect of their child&apos;s personal information may contact their school&apos;s designated platform administrator, or contact us directly using the details below.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>9. Changes to This Policy</h2>
@@ -98,7 +110,8 @@ export default function PrivacyPolicyPage() {
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>10. Contact</h2>
           <div style={{padding:20,background:'rgba(255,255,255,0.02)',borderRadius:12,border:'1px solid rgba(255,255,255,0.07)'}}>
-            <p style={{margin:0}}><strong style={{color:'white'}}>Responsible Party:</strong> Altus (Pty) Ltd</p>
+            <p style={{margin:0}}><strong style={{color:'white'}}>Responsible Party / Operator:</strong> Altus (Pty) Ltd</p>
+            <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Information Officer:</strong> Cody Jason Van Dyk</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Product:</strong> Altus Performance</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Contact Person:</strong> Cody Jason Van Dyk</p>
             <p style={{margin:'8px 0 0'}}><strong style={{color:'white'}}>Email:</strong> cody@altusperformance.co.za</p>

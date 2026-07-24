@@ -45,7 +45,8 @@ export default function TermsOfUsePage() {
           <p>The Platform may only be used by:</p>
           <ul style={{margin:'12px 0 24px 20px'}}>
             <li style={{marginBottom:8}}>Coaching and administrative staff of the licensed institution who have been granted platform credentials.</li>
-            <li style={{marginBottom:8}}>Athletes and parents or guardians accessing the player portal via a valid player access code.</li>
+            <li style={{marginBottom:8}}>Athletes and their parents or guardians accessing the player portal via a registered player account. Where the account holder is a minor, the account must be created and used with the knowledge and consent of a parent or guardian.</li>
+            <li style={{marginBottom:8}}>Parents and supporters accessing the public school portal via the access code issued by the licensed institution.</li>
             <li style={{marginBottom:8}}>Altus personnel for platform administration and support purposes.</li>
           </ul>
           <p style={{marginBottom:24}}>
@@ -67,8 +68,9 @@ export default function TermsOfUsePage() {
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>5. Data and Privacy</h2>
           <p style={{marginBottom:24}}>
             Your use of the Platform is subject to our Privacy Policy, which is incorporated into these Terms by reference.
-            The client institution is the responsible party for personal information entered into the Platform by its staff and athletes.
+            The client institution is the responsible party for personal information entered into the Platform by its staff and athletes, and retains ownership of its institutional data at all times.
             Altus processes such information as an operator on behalf of the institution in accordance with the Protection of Personal Information Act 4 of 2013 (&ldquo;POPIA&rdquo;).
+            Upon termination of a licence, Altus will, at the institution&apos;s written election, return the institution&apos;s data in a commonly used electronic format and/or permanently delete it, subject to any retention required by law.
           </p>
 
           <h2 style={{color:'white',fontSize:18,fontWeight:800,marginBottom:12}}>6. Intellectual Property</h2>
