@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
 // ── Player: check in ───────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   const ip = getClientId(req);
-  const rl = rateLimit(`gym-checkin:${ip}`, { max: 12, windowMs: 60_000 });
+  const rl = await rateLimit(`gym-checkin:${ip}`, { max: 12, windowMs: 60_000 });
   if (!rl.ok) return NextResponse.json({ error: 'Slow down — try again in a minute.' }, { status: 429 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
   if (!secret()) return NextResponse.json({ error: 'Check-in not configured on server.' }, { status: 500 });
@@ -74,11 +74,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Link your athlete record first (Profile → Settings).' }, { status: 400 });
   }
 
+  // Max 2 check-ins per athlete/venue/day — e.g. a morning gym session and an
+  // afternoon stretching session both count. Enforced here in the API rather
+  // than a DB constraint, since "at most 2" isn't a plain UNIQUE constraint.
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' }); // YYYY-MM-DD
+  const { count } = await db.from('gym_checkins')
+    .select('id', { count: 'exact', head: true })
+    .eq('athlete_id', athleteId).eq('venue', venue).eq('checkin_date', today);
+
+  if ((count ?? 0) >= 2) {
+    return NextResponse.json({ ok: true, already: true, venue });
+  }
+
   const { error: insErr } = await db.from('gym_checkins').insert([{ athlete_id: athleteId, venue, source: 'qr' }]);
   if (insErr) {
-    if (/duplicate|unique/i.test(insErr.message)) {
-      return NextResponse.json({ ok: true, already: true, venue });
-    }
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }
   return NextResponse.json({ ok: true, already: false, venue });
