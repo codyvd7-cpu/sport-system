@@ -30,8 +30,18 @@ export async function GET(req: NextRequest) {
   // a program saved as "3rds " or "3RDS" silently never showed to the player.
   const norm = (v: string | null | undefined) => (v || '').trim().toLowerCase();
   const visible = (programs || []).filter(p => !norm(p.team) || norm(p.team) === norm(team));
+
+  // When nothing is visible, tell the UI exactly why — team mismatches were
+  // twice reported "still not showing" with no way to see the actual cause.
+  const diagnostic = visible.length === 0 ? {
+    athleteLinked: !!athleteId,
+    athleteTeam: team,
+    totalActivePrograms: (programs || []).length,
+    programTeams: (programs || []).map(p => p.team),
+  } : undefined;
+
   const ids = visible.map(p => p.id);
-  if (ids.length === 0) return NextResponse.json({ programs: [] });
+  if (ids.length === 0) return NextResponse.json({ programs: [], diagnostic });
 
   const { data: exercises, error: exErr } = await db.from('workout_program_exercises')
     .select('id,program_id,name,target_sets,target_reps,sort_order')

@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 type Exercise = { id: string; name: string; target_sets: number | null; target_reps: string | null };
 type Program = { id: string; title: string; team: string | null; sport: string | null; exercises: Exercise[] };
+type Diagnostic = { athleteLinked: boolean; athleteTeam: string | null; totalActivePrograms: number; programTeams: (string | null)[] };
 type LogEntry = { id: string; program_exercise_id: string; exerciseName: string; sets: number; reps: number; weight_kg: number | null; logged_date: string };
 type PersonalBest = { exerciseName: string; weightKg: number };
 type LeaderboardRow = { athleteId: string; name: string; sessionsThisWeek: number };
@@ -29,6 +30,7 @@ export default function TrainingTab({ C }: { C: string }) {
   const [saving, setSaving] = React.useState<string | null>(null);
   const [celebrate, setCelebrate] = React.useState('');
   const [loadErr, setLoadErr] = React.useState('');
+  const [diagnostic, setDiagnostic] = React.useState<Diagnostic | null>(null);
 
   const load = React.useCallback(async () => {
     try {
@@ -41,6 +43,7 @@ export default function TrainingTab({ C }: { C: string }) {
       const meData = await meRes.json();
       const teamData = await teamRes.json();
       setPrograms(progData.programs || []);
+      setDiagnostic(progData.diagnostic || null);
       if (!selectedProgramId && progData.programs?.[0]) setSelectedProgramId(progData.programs[0].id);
       setStreak(meData.streak || 0);
       setPersonalBests(meData.personalBests || []);
@@ -109,7 +112,22 @@ export default function TrainingTab({ C }: { C: string }) {
 
       {/* Program picker + logging */}
       {programs.length === 0 ? (
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', padding: '20px 0' }}>No workout programs published yet — check back once your coach sets one up.</p>
+        <div style={{ borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: 16 }}>
+          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)', textAlign: 'center', margin: 0 }}>No workout programs published yet — check back once your coach sets one up.</p>
+          {diagnostic && (
+            <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.6 }}>
+              {diagnostic.totalActivePrograms === 0 ? (
+                <p style={{ margin: 0 }}>Why: no active programs exist in the system at all right now.</p>
+              ) : (
+                <>
+                  <p style={{ margin: 0 }}>Why: {diagnostic.totalActivePrograms} program{diagnostic.totalActivePrograms === 1 ? ' exists' : 's exist'}, but none match your team.</p>
+                  <p style={{ margin: 0 }}>Your team: <b style={{ color: 'rgba(255,255,255,0.55)' }}>{diagnostic.athleteTeam || (diagnostic.athleteLinked ? '(not set)' : '(no linked athlete record)')}</b></p>
+                  <p style={{ margin: 0 }}>Program team(s): <b style={{ color: 'rgba(255,255,255,0.55)' }}>{diagnostic.programTeams.map(t => t || '(blank/all teams)').join(', ')}</b></p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       ) : (
         <div style={{ borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)', padding: 16 }}>
           {programs.length > 1 && (
