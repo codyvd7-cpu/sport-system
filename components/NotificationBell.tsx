@@ -46,7 +46,13 @@ export default function NotificationBell() {
         setLoading(false); return;
       }
 
-      const reg = await navigator.serviceWorker.ready;
+      // Register explicitly rather than assuming .ready will resolve — if the
+      // service worker was never registered on this device, .ready alone hangs
+      // forever with no error, which is exactly what silently happened here.
+      const withTimeout = <T,>(p: Promise<T>, ms: number, label: string): Promise<T> =>
+        Promise.race([p, new Promise<T>((_, reject) => setTimeout(() => reject(new Error(`${label} timed out — try again, or check your connection.`)), ms))]);
+
+      const reg = await withTimeout(navigator.serviceWorker.register('/sw.js').then(() => navigator.serviceWorker.ready), 10_000, 'Notification setup');
       
       // Convert key - this is the only correct way
       const serverKey = vapidKeyToUint8Array(vapidKey);
