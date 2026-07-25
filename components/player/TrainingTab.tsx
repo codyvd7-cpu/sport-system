@@ -28,6 +28,7 @@ export default function TrainingTab({ C }: { C: string }) {
   const [entries, setEntries] = React.useState<Record<string, { sets: string; reps: string; weight: string }>>({});
   const [saving, setSaving] = React.useState<string | null>(null);
   const [celebrate, setCelebrate] = React.useState('');
+  const [loadErr, setLoadErr] = React.useState('');
 
   const load = React.useCallback(async () => {
     try {
@@ -45,7 +46,10 @@ export default function TrainingTab({ C }: { C: string }) {
       setPersonalBests(meData.personalBests || []);
       setRecent(meData.recent || []);
       setLeaderboard(teamData.leaderboard || []);
-    } catch {}
+      if (!progRes.ok) setLoadErr(progData.error || 'Could not load workout programs.');
+    } catch {
+      setLoadErr('Could not load training data — check your connection and pull to refresh.');
+    }
     setLoading(false);
   }, [selectedProgramId]);
 
@@ -83,6 +87,11 @@ export default function TrainingTab({ C }: { C: string }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {loadErr && (
+        <div style={{ borderRadius: 14, border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)', padding: '12px 16px', fontSize: 12, color: '#fca5a5' }}>
+          {loadErr}
+        </div>
+      )}
       {celebrate && (
         <div style={{ borderRadius: 14, border: `1px solid ${C}50`, background: `${C}15`, padding: '14px 16px', textAlign: 'center', fontWeight: 800, fontSize: 14, color: C }}>
           {celebrate}

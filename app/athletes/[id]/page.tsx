@@ -357,8 +357,10 @@ export default function AthleteProfile({params}:PageProps) {
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [notes, setNotes] = React.useState<Row[]>([]);
   const [sportAssignments, setSportAssignments] = React.useState<Row[]>([]);
+  const [checkins,setCheckins] = React.useState<Row[]>([]);
+  const [workoutLogs,setWorkoutLogs] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'attendance'|'performance'|'notes'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'training'|'attendance'|'performance'|'notes'>('overview');
   const [matchResults, setMatchResults] = React.useState<Row[]>([]);
 
   // Edit states
@@ -430,6 +432,19 @@ export default function AthleteProfile({params}:PageProps) {
     const {data:sports} = await supabase.from('athlete_sports')
       .select('*').eq('athlete_id',id).eq('year',new Date().getFullYear()).order('sport');
     setSportAssignments(sports||[]);
+    // Gym check-ins + workout logs (visible to staff via team-scoped RLS)
+    const [ciRes, wlRes] = await Promise.all([
+      supabase.from('gym_checkins').select('id,checkin_date,checkin_time,venue').eq('athlete_id',id).order('checkin_date',{ascending:false}).limit(30),
+      supabase.from('workout_logs').select('id,logged_date,sets,reps,weight_kg,program_exercise_id').eq('athlete_id',id).order('created_at',{ascending:false}).limit(30),
+    ]);
+    setCheckins(ciRes.data||[]);
+    const wl = wlRes.data||[];
+    const exIds = [...new Set(wl.map((r:Row)=>r.program_exercise_id))];
+    if (exIds.length) {
+      const {data:exs} = await supabase.from('workout_program_exercises').select('id,name').in('id',exIds);
+      const names = new Map((exs||[]).map((e:Row)=>[e.id,e.name]));
+      setWorkoutLogs(wl.map((r:Row)=>({...r,exerciseName:names.get(r.program_exercise_id)||'Exercise'})));
+    } else setWorkoutLogs([]);
     setLoading(false);
   }
 
@@ -537,6 +552,7 @@ export default function AthleteProfile({params}:PageProps) {
   const TABS = [
     {key:'overview',    label:'Overview'},
     {key:'season',      label:'Season'},
+    {key:'training',    label:`Training ${checkins.length+workoutLogs.length>0?`(${checkins.length+workoutLogs.length})`:''}`},
     {key:'attendance',  label:`Attendance ${attendance.length>0?`(${attendance.length})`:''}` },
     {key:'performance', label:`Performance ${pbs.length>0?`(${pbs.length})`:''}`},
     {key:'notes',       label:`Notes ${coachNotes.length>0?`(${coachNotes.length})`:''}`},
@@ -568,15 +584,18 @@ export default function AthleteProfile({params}:PageProps) {
 
           {/* Hero content */}
           <div className="relative px-6 pt-8 pb-6 flex items-start gap-5">
-            {/* Avatar */}
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl text-2xl font-black"
+            {/* Avatar — player-uploaded photo when present, initials otherwise */}
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black"
               style={{
                 background:'linear-gradient(135deg,'+sportColor+'25,rgba(167,139,250,0.15))',
                 border:'1px solid '+sportColor+'30',
                 color:sportColor,
                 boxShadow:'0 8px 32px '+sportColor+'20',
               }}>
-              {initials(name)}
+              {fStr(rawAthlete.photo_url)
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={fStr(rawAthlete.photo_url)} alt={name} className="h-full w-full object-cover"/>
+                : initials(name)}
             </div>
             {/* Info */}
             <div className="flex-1 min-w-0">
@@ -671,6 +690,50 @@ export default function AthleteProfile({params}:PageProps) {
             </button>
           ))}
         </div>
+
+        {/* ══ TRAINING TAB — self-reported gym activity ══ */}
+        {activeTab==='training'&&(
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-white/5 bg-white/[0.015] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Gym check-ins</p>
+                <p className="text-2xl font-black text-white">{checkins.length}<span className="ml-1.5 text-[11px] font-semibold text-white/30">last 30</span></p>
+              </div>
+              <div className="rounded-2xl border border-white/5 bg-white/[0.015] p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-1">Workout entries</p>
+                <p className="text-2xl font-black text-white">{workoutLogs.length}<span className="ml-1.5 text-[11px] font-semibold text-white/30">last 30</span></p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-white/[0.015] overflow-hidden">
+              <p className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white/40 border-b border-white/5">Recent check-ins</p>
+              {checkins.length===0
+                ? <p className="px-5 py-6 text-[12px] text-white/30">No gym check-ins yet — these appear when the player scans the gym QR code.</p>
+                : <div className="divide-y divide-white/5">
+                    {checkins.slice(0,10).map((c:Row)=>(
+                      <div key={c.id} className="flex items-center justify-between px-5 py-2.5 text-[12px]">
+                        <span className="text-white/70">{new Date(c.checkin_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'})}</span>
+                        <span className="text-white/35">{String(c.checkin_time||'').slice(0,5)} · {c.venue}</span>
+                      </div>
+                    ))}
+                  </div>}
+            </div>
+
+            <div className="rounded-2xl border border-white/5 bg-white/[0.015] overflow-hidden">
+              <p className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white/40 border-b border-white/5">Recent workouts</p>
+              {workoutLogs.length===0
+                ? <p className="px-5 py-6 text-[12px] text-white/30">No logged workouts yet — these appear when the player logs sets in their Training tab.</p>
+                : <div className="divide-y divide-white/5">
+                    {workoutLogs.slice(0,12).map((w:Row)=>(
+                      <div key={w.id} className="flex items-center justify-between px-5 py-2.5 text-[12px]">
+                        <span className="text-white/70">{w.exerciseName}</span>
+                        <span className="text-white/35">{w.sets}×{w.reps}{w.weight_kg?` @ ${w.weight_kg}kg`:''} · {new Date(w.logged_date).toLocaleDateString('en-ZA',{day:'numeric',month:'short'})}</span>
+                      </div>
+                    ))}
+                  </div>}
+            </div>
+          </div>
+        )}
 
         {/* ══ OVERVIEW TAB ══ */}
         {activeTab==='overview'&&(

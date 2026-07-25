@@ -26,7 +26,10 @@ export async function GET(req: NextRequest) {
     .order('sort_order', { ascending: true });
   if (progErr) return NextResponse.json({ error: progErr.message }, { status: 500 });
 
-  const visible = (programs || []).filter(p => !p.team || p.team === team);
+  // Trimmed, case-insensitive team match — an exact-string compare here meant
+  // a program saved as "3rds " or "3RDS" silently never showed to the player.
+  const norm = (v: string | null | undefined) => (v || '').trim().toLowerCase();
+  const visible = (programs || []).filter(p => !norm(p.team) || norm(p.team) === norm(team));
   const ids = visible.map(p => p.id);
   if (ids.length === 0) return NextResponse.json({ programs: [] });
 
