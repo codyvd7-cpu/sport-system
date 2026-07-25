@@ -26,7 +26,7 @@ export function useWorkoutProgramsAdmin({ supabase, programs, exercises, runActi
 
   // ── Create program ──────────────────────────────────────────────────────────
   const [newProgramTitle, setNewProgramTitle] = useState('');
-  const [newProgramTeam, setNewProgramTeam] = useState('');
+  const [newProgramCategory, setNewProgramCategory] = useState<'junior'|'senior'|''>('');
   const [newProgramSport, setNewProgramSport] = useState('');
 
   async function handleCreateProgram(e: React.FormEvent) {
@@ -35,13 +35,13 @@ export function useWorkoutProgramsAdmin({ supabase, programs, exercises, runActi
       if (!newProgramTitle.trim()) { setError('Program title is required.'); return; }
       const { error: insertError } = await supabase.from('workout_programs').insert([{
         title: newProgramTitle.trim(),
-        team: newProgramTeam.trim() || null,
+        age_category: newProgramCategory || null,
         sport: newProgramSport.trim() || null,
         is_active: true,
         sort_order: programs.length + 1,
       }]);
       if (insertError) { setError(insertError.message || 'Failed to create program.'); return; }
-      setNewProgramTitle(''); setNewProgramTeam(''); setNewProgramSport('');
+      setNewProgramTitle(''); setNewProgramCategory(''); setNewProgramSport('');
       showToast('Workout program created.');
       await refetch();
     });
@@ -135,7 +135,7 @@ export function useWorkoutProgramsAdmin({ supabase, programs, exercises, runActi
 
   return {
     selectedProgramId, setSelectedProgramId, selectedProgram, selectedExercises,
-    newProgramTitle, setNewProgramTitle, newProgramTeam, setNewProgramTeam, newProgramSport, setNewProgramSport,
+    newProgramTitle, setNewProgramTitle, newProgramCategory, setNewProgramCategory, newProgramSport, setNewProgramSport,
     handleCreateProgram, toggleProgramActive, handleDeleteProgram,
     newExerciseName, setNewExerciseName, newExerciseSets, setNewExerciseSets, newExerciseReps, setNewExerciseReps,
     handleAddExercise,

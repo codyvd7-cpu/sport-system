@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 type Exercise = { id: string; name: string; target_sets: number | null; target_reps: string | null };
 type Program = { id: string; title: string; team: string | null; sport: string | null; exercises: Exercise[] };
-type Diagnostic = { athleteLinked: boolean; athleteTeam: string | null; totalActivePrograms: number; programTeams: (string | null)[] };
+type Diagnostic = { athleteLinked: boolean; athleteAgeGroup: string | null; athleteCategory: string | null; totalActivePrograms: number; programCategories: (string | null)[] };
 type LogEntry = { id: string; program_exercise_id: string; exerciseName: string; sets: number; reps: number; weight_kg: number | null; logged_date: string };
 type PersonalBest = { exerciseName: string; weightKg: number };
 type LeaderboardRow = { athleteId: string; name: string; sessionsThisWeek: number };
@@ -120,9 +120,9 @@ export default function TrainingTab({ C }: { C: string }) {
                 <p style={{ margin: 0 }}>Why: no active programs exist in the system at all right now.</p>
               ) : (
                 <>
-                  <p style={{ margin: 0 }}>Why: {diagnostic.totalActivePrograms} program{diagnostic.totalActivePrograms === 1 ? ' exists' : 's exist'}, but none match your team.</p>
-                  <p style={{ margin: 0 }}>Your team: <b style={{ color: 'rgba(255,255,255,0.55)' }}>{diagnostic.athleteTeam || (diagnostic.athleteLinked ? '(not set)' : '(no linked athlete record)')}</b></p>
-                  <p style={{ margin: 0 }}>Program team(s): <b style={{ color: 'rgba(255,255,255,0.55)' }}>{diagnostic.programTeams.map(t => t || '(blank/all teams)').join(', ')}</b></p>
+                  <p style={{ margin: 0 }}>Why: {diagnostic.totalActivePrograms} program{diagnostic.totalActivePrograms === 1 ? ' exists' : 's exist'}, but none match your age category.</p>
+                  <p style={{ margin: 0 }}>Your age group: <b style={{ color: 'rgba(255,255,255,0.55)' }}>{diagnostic.athleteAgeGroup || (diagnostic.athleteLinked ? '(not set)' : '(no linked athlete record)')}</b> ({diagnostic.athleteCategory || 'unknown'})</p>
+                  <p style={{ margin: 0 }}>Program categories: <b style={{ color: 'rgba(255,255,255,0.55)' }}>{diagnostic.programCategories.map(t => t || '(all)').join(', ')}</b></p>
                 </>
               )}
             </div>

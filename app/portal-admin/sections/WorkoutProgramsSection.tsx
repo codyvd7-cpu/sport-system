@@ -5,7 +5,7 @@ type Props = {
   selectedProgramId: string; setSelectedProgramId: (v: string) => void;
   selectedProgram: WorkoutProgram | null; selectedExercises: WorkoutProgramExercise[];
   newProgramTitle: string; setNewProgramTitle: (v: string) => void;
-  newProgramTeam: string; setNewProgramTeam: (v: string) => void;
+  newProgramCategory: string; setNewProgramCategory: (v: any) => void;
   newProgramSport: string; setNewProgramSport: (v: string) => void;
   handleCreateProgram: (e: React.FormEvent) => void;
   toggleProgramActive: (p: WorkoutProgram) => void;
@@ -24,7 +24,7 @@ type Props = {
 
 export function WorkoutProgramsSection({
   programs, busy, selectedProgramId, setSelectedProgramId, selectedProgram, selectedExercises,
-  newProgramTitle, setNewProgramTitle, newProgramTeam, setNewProgramTeam, newProgramSport, setNewProgramSport,
+  newProgramTitle, setNewProgramTitle, newProgramCategory, setNewProgramCategory, newProgramSport, setNewProgramSport,
   handleCreateProgram, toggleProgramActive, handleDeleteProgram,
   newExerciseName, setNewExerciseName, newExerciseSets, setNewExerciseSets, newExerciseReps, setNewExerciseReps,
   handleAddExercise, editingExerciseId, editExerciseName, setEditExerciseName, editExerciseSets, setEditExerciseSets,
@@ -37,7 +37,11 @@ export function WorkoutProgramsSection({
         <h2 className="mb-4 text-lg font-semibold">New Program</h2>
         <form onSubmit={handleCreateProgram} className="mb-5 space-y-3">
           <input value={newProgramTitle} onChange={(e) => setNewProgramTitle(e.target.value)} placeholder="e.g. Pre-Season Strength" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
-          <input value={newProgramTeam} onChange={(e) => setNewProgramTeam(e.target.value)} placeholder="Team (blank = all teams)" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
+          <select value={newProgramCategory} onChange={(e) => setNewProgramCategory(e.target.value)} className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500">
+            <option value="">All ages</option>
+            <option value="junior">Junior (U14)</option>
+            <option value="senior">Senior / Opens (U16+)</option>
+          </select>
           <input value={newProgramSport} onChange={(e) => setNewProgramSport(e.target.value)} placeholder="Sport (optional)" className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-sky-500" />
           <button type="submit" disabled={busy} className="w-full rounded-xl border border-sky-500 bg-sky-500/15 py-2.5 text-sm font-black text-sky-300 disabled:opacity-50">Create Program</button>
         </form>
@@ -49,7 +53,7 @@ export function WorkoutProgramsSection({
               <button key={p.id} onClick={() => setSelectedProgramId(p.id)}
                 className={`w-full rounded-xl border p-3 text-left transition ${selectedProgramId === p.id || (!selectedProgramId && programs[0]?.id === p.id) ? 'border-sky-500 bg-sky-500/10' : 'border-slate-800 bg-slate-950/40'}`}>
                 <p className="text-sm font-semibold text-white">{p.title}</p>
-                <p className="text-xs text-slate-500">{p.team || 'All teams'}{p.sport ? ` · ${p.sport}` : ''}</p>
+                <p className="text-xs text-slate-500">{p.age_category === 'junior' ? 'Junior (U14)' : p.age_category === 'senior' ? 'Senior/Opens (U16+)' : 'All ages'}{p.sport ? ` · ${p.sport}` : ''}</p>
                 <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-black ${p.is_active ? 'bg-emerald-500/15 text-emerald-300' : 'bg-slate-700 text-slate-400'}`}>{p.is_active ? 'Active' : 'Hidden'}</span>
               </button>
             ))}

@@ -4,7 +4,18 @@ import { verifyPlayer, requireAthleteId } from '@/lib/playerAuth';
 
 // ─── /api/workout/programs ───────────────────────────────────────────────────
 // GET → active workout programs (with their exercises) visible to the signed-in
-// player's team. Used by the Training tab to pick "what am I logging today".
+// player, matched by AGE CATEGORY (junior/senior) rather than exact squad name
+// — squad-name matching failed in practice (a program set to "Opens" never
+// matched an athlete on "3rds"). Coaches think in age categories for training.
+
+// Junior = U14. Senior/Opens = everything "16 and up" (U16, U18, U19, U21,
+// Senior). Adjust here if this split needs to change later.
+function ageCategoryFor(ageGroup: string | null | undefined): 'junior' | 'senior' | null {
+  const g = (ageGroup || '').trim().toUpperCase();
+  if (!g) return null;
+  if (g === 'U14') return 'junior';
+  return 'senior';
+}
 
 export async function GET(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
@@ -14,30 +25,27 @@ export async function GET(req: NextRequest) {
   if (!player) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const athleteId = await requireAthleteId(player.userId);
-  let team: string | null = null;
+  let athleteAgeGroup: string | null = null;
   if (athleteId) {
-    const { data: ath } = await db.from('athletes').select('team').eq('id', athleteId).maybeSingle();
-    team = ath?.team || null;
+    const { data: ath } = await db.from('athletes').select('age_group').eq('id', athleteId).maybeSingle();
+    athleteAgeGroup = ath?.age_group || null;
   }
+  const category = ageCategoryFor(athleteAgeGroup);
 
   const { data: programs, error: progErr } = await db.from('workout_programs')
-    .select('id,title,team,sport,sort_order')
+    .select('id,title,age_category,sport,sort_order')
     .eq('is_active', true)
     .order('sort_order', { ascending: true });
   if (progErr) return NextResponse.json({ error: progErr.message }, { status: 500 });
 
-  // Trimmed, case-insensitive team match — an exact-string compare here meant
-  // a program saved as "3rds " or "3RDS" silently never showed to the player.
-  const norm = (v: string | null | undefined) => (v || '').trim().toLowerCase();
-  const visible = (programs || []).filter(p => !norm(p.team) || norm(p.team) === norm(team));
+  const visible = (programs || []).filter(p => !p.age_category || p.age_category === category);
 
-  // When nothing is visible, tell the UI exactly why — team mismatches were
-  // twice reported "still not showing" with no way to see the actual cause.
   const diagnostic = visible.length === 0 ? {
     athleteLinked: !!athleteId,
-    athleteTeam: team,
+    athleteAgeGroup,
+    athleteCategory: category,
     totalActivePrograms: (programs || []).length,
-    programTeams: (programs || []).map(p => p.team),
+    programCategories: (programs || []).map(p => p.age_category),
   } : undefined;
 
   const ids = visible.map(p => p.id);

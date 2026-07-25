@@ -9,5 +9,5 @@ export const DAY_OPTIONS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frida
 export const PROGRAM_CATEGORIES = ['Gym', 'Mobility', 'Recovery'];
 export const PROGRAM_BUCKET = 'portal-programs';
 export const SPONSOR_BUCKET = 'portal-sponsors';
-export type WorkoutProgram = { id: string; created_at: string | null; title: string; team: string | null; sport: string | null; is_active: boolean; sort_order: number; };
+export type WorkoutProgram = { id: string; created_at: string | null; title: string; age_category: string | null; sport: string | null; is_active: boolean; sort_order: number; };
 export type WorkoutProgramExercise = { id: string; created_at: string | null; program_id: string; name: string; target_sets: number | null; target_reps: string | null; sort_order: number; };
