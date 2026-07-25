@@ -369,6 +369,9 @@ export default function AthleteProfile({params}:PageProps) {
   const [editTeam, setEditTeam] = React.useState('');
   const [editAge, setEditAge] = React.useState('');
   const [editPos, setEditPos] = React.useState('');
+  const [editParentName, setEditParentName] = React.useState('');
+  const [editParentPhone, setEditParentPhone] = React.useState('');
+  const [editParentEmail, setEditParentEmail] = React.useState('');
   const [savingInfo, setSavingInfo] = React.useState(false);
 
   // Quick add attendance
@@ -419,6 +422,9 @@ export default function AthleteProfile({params}:PageProps) {
       setEditTeam(fStr(aRes.data.team));
       setEditAge(fStr(aRes.data.age_group));
       setEditPos(fStr(aRes.data.position));
+      setEditParentName(fStr(aRes.data.parent_name));
+      setEditParentPhone(fStr(aRes.data.parent_phone));
+      setEditParentEmail(fStr(aRes.data.parent_email));
     }
     setAttendance(attRes.data||[]);
     setPerformance(perfRes.data||[]);
@@ -498,7 +504,7 @@ export default function AthleteProfile({params}:PageProps) {
 
   async function saveInfo() {
     setSavingInfo(true);
-    await supabase.from('athletes').update({full_name:editName,team:editTeam,age_group:editAge,position:editPos}).eq('id',id);
+    await supabase.from('athletes').update({full_name:editName,team:editTeam,age_group:editAge,position:editPos,parent_name:editParentName,parent_phone:editParentPhone,parent_email:editParentEmail}).eq('id',id);
     setEditingInfo(false); showToast('Profile updated'); await load(); setSavingInfo(false);
   }
 
@@ -612,6 +618,14 @@ export default function AthleteProfile({params}:PageProps) {
                     <input value={editPos} onChange={e=>setEditPos(e.target.value)} placeholder="Position"
                       className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
                   </div>
+                  <div className="grid grid-cols-3 gap-2 pt-1">
+                    <input value={editParentName} onChange={e=>setEditParentName(e.target.value)} placeholder="Parent/guardian name"
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
+                    <input value={editParentPhone} onChange={e=>setEditParentPhone(e.target.value)} placeholder="Parent phone"
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
+                    <input value={editParentEmail} onChange={e=>setEditParentEmail(e.target.value)} placeholder="Parent email"
+                      className="rounded-xl border border-white/8 bg-[#04060e] px-2.5 py-1.5 text-xs text-white outline-none"/>
+                  </div>
                   <div className="flex gap-2">
                     <button onClick={saveInfo} disabled={savingInfo}
                       className="rounded-xl px-3 py-1.5 text-xs font-black transition disabled:opacity-50"
@@ -655,6 +669,15 @@ export default function AthleteProfile({params}:PageProps) {
                           </span>
                         );
                       })}
+                    </div>
+                  )}
+                  {/* Parent/guardian contact — always visible, not tab-buried, since it's the info a coach needs fastest */}
+                  {(fStr(rawAthlete.parent_name)||fStr(rawAthlete.parent_phone)||fStr(rawAthlete.parent_email)) && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-white/25">Parent/Guardian</span>
+                      {fStr(rawAthlete.parent_name) && <span className="text-[12px] font-semibold text-white/70">{fStr(rawAthlete.parent_name)}</span>}
+                      {fStr(rawAthlete.parent_phone) && <a href={`tel:${fStr(rawAthlete.parent_phone)}`} className="text-[12px] font-semibold text-sky-400 hover:underline">{fStr(rawAthlete.parent_phone)}</a>}
+                      {fStr(rawAthlete.parent_email) && <a href={`mailto:${fStr(rawAthlete.parent_email)}`} className="text-[12px] font-semibold text-sky-400 hover:underline">{fStr(rawAthlete.parent_email)}</a>}
                     </div>
                   )}
                 </>
