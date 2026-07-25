@@ -5,6 +5,7 @@ import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
+import TeamPulse from '@/components/coach/TeamPulse';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { getTeamGroups, type SportKey } from '@/lib/sports';
 import {
@@ -167,6 +168,11 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
         </div>
       </FadeUp>
 
+      {/* ── TEAM PULSE — live intelligence strip ── */}
+      <FadeUp delay={40}>
+        <TeamPulse team={teamName} accent={accent}/>
+      </FadeUp>
+
       {/* ── NEXT MATCH CARD ── */}
       {next&&(
         <FadeUp delay={60}>
@@ -228,6 +234,11 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
                 {late>0&&<span className="text-[11px] font-semibold" style={{color:'#fbbf24'}}>{late} late</span>}
               </div>
               <div className="flex items-center gap-2">
+                <button onClick={()=>{const all:Record<string,string>={};squad.forEach(a=>{all[a.id]='Present';});setStatuses(all);setSaved(false);}}
+                  className="rounded-xl px-3 py-1.5 text-[12px] font-semibold transition"
+                  style={{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.5)'}}>
+                  All present
+                </button>
                 <select value={sessionType} onChange={e=>setSessionType(e.target.value)}
                   className="rounded-xl text-[12px] font-semibold px-3 py-1.5 outline-none transition"
                   style={{background:'rgba(255,255,255,0.05)',border:'1px solid rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.7)'}}>
