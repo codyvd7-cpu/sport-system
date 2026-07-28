@@ -226,7 +226,7 @@ export default function LandingPage(){
       <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',
         padding:isMob?'28px 20px 12px':'36px 20px 16px',flexShrink:0,
         opacity:1}}>
-        <Image src="/st-benedicts-logo.png" alt="SBC" width={isMob?64:80} height={isMob?64:80}
+        <Image src="/school-logo.png" alt="RC" width={isMob?64:80} height={isMob?64:80}
           style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:8}} priority/>
         <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
           ST BENEDICT&apos;S COLLEGE

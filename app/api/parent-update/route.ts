@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   // Verify authenticated session
   // Rate limit
   const ip = getClientId(req);
-  const rl = rateLimit('app/api/parent-update/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
+  const rl = await rateLimit('app/api/parent-update/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
   if (!rl.ok) return NextResponse.json({ text: 'Rate limit exceeded.' }, { status: 429 });
 
   // Authenticate
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const { data } = await req.json();
 
-    const prompt = `You are a professional hockey department administrator at St Benedict's College, Johannesburg.
+    const prompt = `You are a professional hockey department administrator at Ridgemont College, Johannesburg.
 Write a professional, warm parent update message for WhatsApp or email.
 
 Team: ${data.team}

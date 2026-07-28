@@ -45,7 +45,7 @@ export async function activateAlert(db: SupabaseClient, opts: {
   if (error) throw new Error(error.message);
 
   const pushed = await broadcastPush(db, {
-    title: type === 'lightning' ? '⚡ LIGHTNING ALERT — St Benedict\u2019s Sport' : '⚠️ Safety Alert — St Benedict\u2019s Sport',
+    title: type === 'lightning' ? '⚡ LIGHTNING ALERT — Ridgemont Sport' : '⚠️ Safety Alert — Ridgemont Sport',
     body: message,
     url: '/portal',
     urgent: true,
@@ -58,7 +58,7 @@ export async function clearAlert(db: SupabaseClient): Promise<{ pushed: number; 
   await db.from('urgent_alerts')
     .update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
   const pushed = await broadcastPush(db, {
-    title: 'All clear — St Benedict\u2019s Sport',
+    title: 'All clear — Ridgemont Sport',
     body: 'The alert has been lifted. Activities may resume as directed by coaches.',
     url: '/portal',
     tag: 'altus-safety',

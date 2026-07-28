@@ -161,9 +161,9 @@ export default function StudentExport({ params }: PageProps) {
         <div className="doc-header">
           <div className="doc-header-left">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/st-benedicts-logo.png" alt="SBC"/>
+              <img src="/school-logo.png" alt="RC"/>
             <div>
-              <div className="doc-school">St Benedict&apos;s College</div>
+              <div className="doc-school">Ridgemont College</div>
               <div className="doc-subtitle">High Performance Programme</div>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function StudentExport({ params }: PageProps) {
 
         {/* Footer */}
         <div className="doc-footer">
-          <div className="doc-footer-logo">St Benedict&apos;s College · High Performance Programme</div>
+          <div className="doc-footer-logo">Ridgemont College · High Performance Programme</div>
           <div className="doc-footer-conf">Confidential · Coach and Administration Use Only · {new Date().getFullYear()}</div>
         </div>
       </div>

@@ -118,7 +118,7 @@ export default function PlayerSetupPage() {
               </button>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <Image src="/st-benedicts-logo.png" alt="SBC" width={46} height={46} style={{ objectFit: 'contain' }} />
+              <Image src="/school-logo.png" alt="RC" width={46} height={46} style={{ objectFit: 'contain' }} />
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: `${C}cc`, textTransform: 'uppercase', marginBottom: 2 }}>
                   {isEdit ? 'Edit Profile' : 'Player Setup'}

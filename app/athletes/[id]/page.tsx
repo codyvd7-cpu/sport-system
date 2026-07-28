@@ -546,7 +546,7 @@ export default function AthleteProfile({params}:PageProps) {
     setGenAI(true); setAiText('');
     const firstName=name.split(' ')[0];
     const perfLines=pbs.map(p=>`${p.test}: ${p.pb}${p.unit}${p.tier?` (${p.tier.label})`:''}`).join(', ')||'No data';
-    const prompt=`You are a high-performance hockey coach at St Benedict's College. Write a professional 3-4 sentence athlete summary for coach use.\n\nFirst name: ${firstName}\nTeam: ${team} | Age group: ${ageGroup} | Position: ${position}\nAvailability: ${availability}\nAttendance: ${attRate!==null?`${attRate}%`:'No data'} (${present} present, ${absent} absent of ${attendance.length} sessions)\nPersonal bests: ${perfLines}\n\nBe specific, constructive, professional. No medical claims.`;
+    const prompt=`You are a high-performance hockey coach at Ridgemont College. Write a professional 3-4 sentence athlete summary for coach use.\n\nFirst name: ${firstName}\nTeam: ${team} | Age group: ${ageGroup} | Position: ${position}\nAvailability: ${availability}\nAttendance: ${attRate!==null?`${attRate}%`:'No data'} (${present} present, ${absent} absent of ${attendance.length} sessions)\nPersonal bests: ${perfLines}\n\nBe specific, constructive, professional. No medical claims.`;
     try {
       const res=await fetch('/api/athlete-summary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({athlete:{name:firstName,team,ageGroup,position,availability,attendanceRate:attRate,totalSessions:attendance.length,absences:absent,pbs:pbs.map(p=>({testType:p.test,pb:p.pb,unit:p.unit})),tiers:pbs.filter(p=>p.tier).map(p=>({test:p.test,tier:p.tier!.label})),prompt}})});
       const d=await res.json();

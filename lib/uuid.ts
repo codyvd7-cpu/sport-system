@@ -19,11 +19,11 @@ export function safeUUID(): string {
 }
 
 // Cryptographically secure player code generator.
-// Format: SBC + 5 uppercase alphanumeric chars
+// Format: RC + 5 uppercase alphanumeric chars
 // Uses crypto for unpredictability — no Math.random.
 export function generatePlayerCode(): string {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Excludes ambiguous chars (I,O,0,1)
-  let code = 'SBC';
+  let code = 'RC';
   if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
     const bytes = new Uint8Array(5);
     crypto.getRandomValues(bytes);

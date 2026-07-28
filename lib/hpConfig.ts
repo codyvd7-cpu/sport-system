@@ -1,11 +1,17 @@
-// ─── HP school config ──────────────────────────────────────────────────────────
-// Bennies-specific for now. Move to DB table (hp_school_config) for multi-school.
-// All HP pages should import from here — never hardcode grades or classes.
+// ─── School config ──────────────────────────────────────────────────────────────
+// Single source of truth for school branding. ALL pages should import from here —
+// never hardcode the school name, abbreviation, or logo path directly.
+//
+// Currently a placeholder identity ("Ridgemont College") — Bennies is no longer
+// the client, so real school branding/logo was removed. Change the values below
+// and every page picks it up automatically; no more hunting across 39 files.
 
 export const HP_SCHOOL = {
-  name:      "St Benedict's College",
-  shortName: 'Bennies',
-  location:  'Bedfordview',
+  name:         "Ridgemont College",
+  shortName:    'Ridgemont',
+  abbreviation: 'RC',
+  location:     'Bedfordview',
+  logo:         '/school-logo.png',
 } as const;
 
 export const HP_GRADES = [

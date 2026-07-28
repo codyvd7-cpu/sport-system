@@ -208,7 +208,7 @@ export default function SplashScreen() {
           fontFamily:'-apple-system,BlinkMacSystemFont,system-ui,sans-serif',
           fontSize:9, fontWeight:300, letterSpacing:'0.2em',
           color:'rgba(255,255,255,0.32)', textTransform:'uppercase',
-        }}>St Benedict&apos;s College</p>
+        }}>Ridgemont College</p>
       </div>
     </div>
   );

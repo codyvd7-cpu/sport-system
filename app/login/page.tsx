@@ -90,7 +90,7 @@ function LoginForm() {
   if (checkingSession) return (
     <main className="flex min-h-screen items-center justify-center bg-[#04060e] px-4 text-white">
       <div className="rounded-[2rem] border border-white/7 bg-[#04060e] p-6 text-center shadow-2xl">
-        <p className="text-xs font-black uppercase tracking-[0.24em]" style={{color:sportCfg.color}}>St Benedict&apos;s {sportCfg.label}</p>
+        <p className="text-xs font-black uppercase tracking-[0.24em]" style={{color:sportCfg.color}}>Ridgemont {sportCfg.label}</p>
         <h1 className="mt-3 text-2xl font-black">Checking session...</h1>
         <p className="mt-4 text-[10px] text-white/15">
           <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
@@ -111,9 +111,9 @@ function LoginForm() {
       <section className="relative z-10 w-full max-w-md rounded-[2rem] border border-white/8/50 bg-[#04060e]/95 p-6 shadow-2xl shadow-sky-500/5 backdrop-blur-xl ring-1 ring-white/5 sm:p-8">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-2xl bg-white p-2 shadow-2xl shadow-sky-500/20 ring-1 ring-sky-500/20">
-            <Image src="/st-benedicts-logo.png" alt="St Benedict&apos;s College" width={96} height={96} className="h-full w-full object-contain" priority />
+            <Image src="/school-logo.png" alt="Ridgemont College" width={96} height={96} className="h-full w-full object-contain" priority />
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">St Benedict&apos;s College</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">Ridgemont College</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-white">Coach Login</h1>
           <p className="mt-3 text-sm leading-6 text-white/50">Secure staff access · {sportCfg.label} Department</p>
         </div>

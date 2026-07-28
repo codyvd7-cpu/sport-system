@@ -12,8 +12,8 @@ export default function Nav() {
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-sky-400/20 blur-xl" />
               <Image
-                src="/st-benedicts-logo.png"
-                alt="St Benedict's College"
+                src="/school-logo.png"
+                alt="Ridgemont College"
                 width={90}
                 height={90}
                 className="relative h-14 w-14 object-contain sm:h-24 sm:w-24"
@@ -23,11 +23,11 @@ export default function Nav() {
 
             <div className="leading-tight">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-400 sm:text-xs">
-                St Benedict&apos;s College
+                Ridgemont College
               </p>
 
               <h1 className="text-xl font-black tracking-tight sm:text-4xl">
-                St Benedicts Hockey
+                Ridgemont Hockey
               </h1>
 
               <p className="hidden max-w-xl text-sm font-medium text-slate-400 sm:block">
@@ -57,7 +57,7 @@ export default function Nav() {
             Public Portal View
           </span>
           <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-slate-400">
-            Bennies Hockey / Parent &amp; Player Access
+            Ridgemont Hockey / Parent &amp; Player Access
           </span>
         </div>
       </div>

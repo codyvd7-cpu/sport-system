@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   // Verify authenticated session
   // Rate limit
   const ip = getClientId(req);
-  const rl = rateLimit('app/api/session-builder/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
+  const rl = await rateLimit('app/api/session-builder/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
   if (!rl.ok) return NextResponse.json({ text: 'Rate limit exceeded.' }, { status: 429 });
 
   // Authenticate
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const { data } = await req.json();
 
-    const prompt = `You are an elite hockey S&C coach and performance specialist at St Benedict's College, Johannesburg.
+    const prompt = `You are an elite hockey S&C coach and performance specialist at Ridgemont College, Johannesburg.
 Design a complete training session plan.
 
 Team/Age Group: ${data.team}

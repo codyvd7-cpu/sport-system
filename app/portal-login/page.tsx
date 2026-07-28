@@ -104,7 +104,7 @@ function PortalLoginInner() {
 
             {/* Logo */}
             <div style={{marginBottom:18,display:'flex',justifyContent:'center'}}>
-              <Image src="/st-benedicts-logo.png" alt="St Benedict's College" width={68} height={68}
+              <Image src="/school-logo.png" alt="Ridgemont College" width={68} height={68}
                 style={{objectFit:'contain',filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.7))'}} priority/>
             </div>
 

@@ -224,7 +224,7 @@ export function generateAthletePDF(data: {
   setTextColor(doc, BRAND.dim);
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
-  doc.text('Kinetiq Sport · St Benedict\'s College High Performance Programme', 10, 292);
+  doc.text('Kinetiq Sport · Ridgemont College High Performance Programme', 10, 292);
   doc.text(today, W - 10, 292, { align: 'right' });
 
   return doc.output('blob');
@@ -326,7 +326,7 @@ export function generateTeamPDF(data: {
   setTextColor(doc, BRAND.dim);
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
-  doc.text('Kinetiq Sport · St Benedict\'s College Hockey', 10, 292);
+  doc.text('Kinetiq Sport · Ridgemont College Hockey', 10, 292);
   doc.text(today, W - 10, 292, { align: 'right' });
 
   return doc.output('blob');

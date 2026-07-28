@@ -151,7 +151,7 @@ export function getCurrentTerm(): Term {
   return 'Term 4';
 }
 
-// ── HP class config (Bennies — move to DB later) ──────────────────────────────
+// ── HP class config (Ridgemont — move to DB later) ──────────────────────────────
 export const HP_GRADES  = ['Grade 8', 'Grade 9'] as const;
 export const HP_CLASSES = ['B', 'E', 'F', 'J', 'M'] as const;
 export type HPGrade = typeof HP_GRADES[number];

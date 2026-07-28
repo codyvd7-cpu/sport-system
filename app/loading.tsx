@@ -61,7 +61,7 @@ export default function Loading() {
       {/* Badge */}
       <img
         src="/sbc-logo.svg"
-        alt="St Benedict's"
+        alt="Ridgemont"
         style={{
           width: 110, height: 110,
           objectFit: 'contain',

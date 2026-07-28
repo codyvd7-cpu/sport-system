@@ -57,9 +57,9 @@ export default function SetPasswordPage() {
       <section className="relative z-10 w-full max-w-sm rounded-[2rem] border border-white/8 bg-[rgba(255,255,255,0.01)]/95 p-8 shadow-2xl">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-xl">
-            <Image src="/st-benedicts-logo.png" alt="SBC" width={80} height={80} className="h-full w-full object-contain" priority/>
+            <Image src="/school-logo.png" alt="RC" width={80} height={80} className="h-full w-full object-contain" priority/>
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">St Benedict&apos;s College</p>
+          <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">Ridgemont College</p>
           <h1 className="mt-2 text-2xl font-black text-white">Set Your Password</h1>
           <p className="mt-1.5 text-sm text-white/50">Choose a password for your coach account</p>
         </div>

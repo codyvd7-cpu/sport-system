@@ -107,7 +107,7 @@ export function FixturesSection({
                     <option value="away">Away</option>
                     <option value="neutral">Neutral</option>
                   </select>
-                  <input value={block.venue} onChange={(e) => updateFixtureBlock(block._key, 'venue', e.target.value)} placeholder="Venue / field (e.g. SBC Astro)"
+                  <input value={block.venue} onChange={(e) => updateFixtureBlock(block._key, 'venue', e.target.value)} placeholder="Venue / field (e.g. RC Astro)"
                     className={`col-span-2 ${inputCls}`} />
                   <input value={block.duration} onChange={(e) => updateFixtureBlock(block._key, 'duration', e.target.value)} placeholder="Default duration (e.g. 4 x 12 min Chukkas)"
                     className={`col-span-2 ${inputCls}`} />

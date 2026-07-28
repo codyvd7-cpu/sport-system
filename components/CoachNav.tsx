@@ -124,10 +124,10 @@ export default function CoachNav() {
         {/* Logo */}
         <div className="px-5 py-5 border-b" style={{borderColor:'rgba(255,255,255,0.06)'}}>
           <Link href="/" className="flex items-center gap-3">
-            <img src="/st-benedicts-logo.png" alt="SBC"
+            <img src="/school-logo.png" alt="RC"
               className="h-9 w-9 rounded-xl object-contain bg-white p-1 shadow-lg"/>
             <div>
-              <p className="text-[11px] font-bold text-white leading-tight tracking-tight">St Benedict&apos;s</p>
+              <p className="text-[11px] font-bold text-white leading-tight tracking-tight">Ridgemont</p>
               <p className="text-[9px] font-medium tracking-[0.15em] uppercase"
                 style={{color:'var(--sport-color)'}}>{sportCfg.label}</p>
             </div>
@@ -198,9 +198,9 @@ export default function CoachNav() {
           </button>
         ) : (
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <img src="/st-benedicts-logo.png" alt="SBC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5"/>
+            <img src="/school-logo.png" alt="RC" className="h-8 w-8 rounded-lg object-contain bg-white p-0.5"/>
             <div>
-              <p className="text-[11px] font-bold text-white leading-none">St Benedict&apos;s</p>
+              <p className="text-[11px] font-bold text-white leading-none">Ridgemont</p>
               <p className="text-[9px] font-semibold tracking-[0.2em] uppercase" style={{color:'var(--sport-color)'}}>{sportCfg.label}</p>
             </div>
           </Link>

@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   // Verify authenticated session
   // Rate limit
   const ip = getClientId(req);
-  const rl = rateLimit('app/api/athlete-summary/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
+  const rl = await rateLimit('app/api/athlete-summary/route.ts:'+ip, { max: 30, windowMs: 5 * 60_000 });
   if (!rl.ok) return NextResponse.json({ text: 'Rate limit exceeded.' }, { status: 429 });
 
   // Authenticate
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     // This minimises personal data leaving our infrastructure.
     const firstName = (athlete.name || '').split(' ')[0] || 'The athlete';
 
-    const prompt = `You are a high-performance hockey coach analyst at St Benedict's College, Johannesburg. 
+    const prompt = `You are a high-performance hockey coach analyst at Ridgemont College, Johannesburg. 
 Write a professional, concise athlete summary (3-4 sentences) for a coach or parent.
 
 Athlete data:

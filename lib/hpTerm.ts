@@ -1,4 +1,4 @@
-// HP Term utilities — St Benedict's College exact term dates
+// HP Term utilities — Ridgemont College exact term dates
 // Source: official school calendar
 
 export const HP_TERMS = ['Term 1', 'Term 2', 'Term 3'] as const;
