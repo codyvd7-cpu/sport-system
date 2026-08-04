@@ -108,6 +108,26 @@ export function getHpActor(req: NextRequest): string {
   } catch { return 'unknown'; }
 }
 
+/**
+ * School this HP session belongs to, read from the signed session cookie.
+ * HP auth has no user account behind it (it's a shared access code), so the
+ * school is resolved at login from which code was used and baked into the
+ * cookie payload — this reads it back out. Returns null for sessions issued
+ * before multi-school existed; callers should treat null as "School 1" only
+ * where that's genuinely safe, or reject otherwise.
+ *
+ * Always call verifyHpCookie() first — this does NOT verify the signature.
+ */
+export function getHpSchoolId(req: NextRequest): string | null {
+  const match = (req.headers.get('cookie') || '').match(/hp_session=([^;]+)/);
+  if (!match) return null;
+  try {
+    const [payload] = decodeURIComponent(match[1]).split('.');
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+    return decoded.schoolId || null;
+  } catch { return null; }
+}
+
 export function verifyHpCookie(req: NextRequest): boolean {
   const cookieHeader = req.headers.get('cookie') || '';
   const match = cookieHeader.match(/hp_session=([^;]+)/);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHpCookie } from '@/lib/serverAuth';
+import { verifyHpCookie, getHpSchoolId } from '@/lib/serverAuth';
 import { getHpAdmin } from '@/lib/hpRepository';
 
 // GET  → export full HP dataset as JSON download
@@ -8,10 +8,14 @@ export async function GET(req: NextRequest) {
   if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const db = getHpAdmin();
+    const schoolId = getHpSchoolId(req);
+    // Export only this school's data — an unscoped export would hand one
+    // school a full copy of every other school's students and results.
+    const scope = (q: any) => (schoolId ? q.eq('school_id', schoolId) : q);
     const [students, tests, attendance] = await Promise.all([
-      db.from('hp_students').select('*').order('full_name'),
-      db.from('hp_test_results').select('*').order('year').order('term'),
-      db.from('hp_attendance').select('*').order('session_date'),
+      scope(db.from('hp_students').select('*')).order('full_name'),
+      scope(db.from('hp_test_results').select('*')).order('year').order('term'),
+      scope(db.from('hp_attendance').select('*')).order('session_date'),
     ]);
     const backup = {
       exported_at:  new Date().toISOString(),
@@ -42,11 +46,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid backup format.' }, { status: 400 });
     }
     const db = getHpAdmin();
+    const schoolId = getHpSchoolId(req);
+    // Force every incoming row to the restoring session's own school. The
+    // uploaded file is untrusted input — if it carried another school's
+    // school_id, an unscoped restore would write straight into their data.
+    const reTag = (rows: any[]) => (schoolId ? rows.map(r => ({ ...r, school_id: schoolId })) : rows);
+    const safeStudents = reTag(students);
+    const safeTests    = reTag(test_results);
+    const safeAtt      = reTag(attendance);
     // Upsert all records — preserves existing data, fills in gaps
     const results = await Promise.allSettled([
-      students.length     > 0 ? db.from('hp_students').upsert(students, { onConflict: 'id' })         : Promise.resolve(),
-      test_results.length > 0 ? db.from('hp_test_results').upsert(test_results, { onConflict: 'id' }) : Promise.resolve(),
-      attendance.length   > 0 ? db.from('hp_attendance').upsert(attendance, { onConflict: 'id' })     : Promise.resolve(),
+      safeStudents.length > 0 ? db.from('hp_students').upsert(safeStudents, { onConflict: 'id' })  : Promise.resolve(),
+      safeTests.length    > 0 ? db.from('hp_test_results').upsert(safeTests, { onConflict: 'id' }) : Promise.resolve(),
+      safeAtt.length      > 0 ? db.from('hp_attendance').upsert(safeAtt, { onConflict: 'id' })     : Promise.resolve(),
     ]);
     const errors = results.filter(r => r.status === 'rejected').map(r => (r as any).reason?.message);
     if (errors.length) return NextResponse.json({ error: errors.join(', ') }, { status: 500 });
@@ -55,6 +67,7 @@ export async function POST(req: NextRequest) {
       action: 'backup_restored',
       actor: 'HP Admin',
       details: { students: students.length, test_results: test_results.length, attendance: attendance.length },
+      school_id: schoolId,
     }]);
     return NextResponse.json({ ok: true, restored: { students: students.length, test_results: test_results.length, attendance: attendance.length } });
   } catch (e: any) {

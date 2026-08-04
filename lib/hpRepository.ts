@@ -7,11 +7,13 @@
 // 1+2. Upsert constraints + look-back indexes: see supabase-hp-integrity.sql
 //      (saves upsert atomically once run; legacy fallback keeps working before)
 //
-// 3. school_id (multi-school):
-//    ALTER TABLE hp_students     ADD COLUMN school_id uuid REFERENCES schools(id);
-//    ALTER TABLE hp_test_results ADD COLUMN school_id uuid REFERENCES schools(id);
-//    ALTER TABLE hp_attendance   ADD COLUMN school_id uuid REFERENCES schools(id);
-//    Then add .eq('school_id', schoolId) to every query in this file.
+// 3. school_id (multi-school): DONE — every function below takes a schoolId
+//    and scopes its queries by it. HP auth has no user account behind it (a
+//    shared access code), so the school is resolved at login from which code
+//    was used, baked into the signed session cookie, and read back out by
+//    each route via getHpSchoolId(). Passing null means "unscoped" and is
+//    only safe for single-school installs — routes should reject null once
+//    a second school exists.
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -32,25 +34,29 @@ export async function logAudit(
   db: SupabaseClient,
   action: string,
   actor: string,
-  details: Record<string, unknown>
+  details: Record<string, unknown>,
+  schoolId?: string | null
 ) {
   try {
-    await db.from('hp_audit_log').insert([{ action, actor: actor || 'unknown', details }]);
+    await db.from('hp_audit_log').insert([{ action, actor: actor || 'unknown', details, school_id: schoolId ?? null }]);
   } catch { /* never block the save */ }
 }
 
 // ── Students ─────────────────────────────────────────────────────────────────
-export async function getActiveStudents(db: SupabaseClient, grade?: string) {
+export async function getActiveStudents(db: SupabaseClient, grade?: string, schoolId?: string | null) {
   let q = db.from('hp_students').select('*').eq('is_active', true).order('full_name');
+  if (schoolId) q = q.eq('school_id', schoolId);
   if (grade && grade !== 'All') q = q.eq('grade', grade);
   const { data, error } = await q;
   if (error) throw error;
   return data || [];
 }
 
-export async function getStudentById(db: SupabaseClient, id: string) {
+export async function getStudentById(db: SupabaseClient, id: string, schoolId?: string | null) {
+  let studentQ = db.from('hp_students').select('*').eq('id', id);
+  if (schoolId) studentQ = studentQ.eq('school_id', schoolId);
   const [sRes, aRes, tRes] = await Promise.all([
-    db.from('hp_students').select('*').eq('id', id).single(),
+    studentQ.maybeSingle(),
     db.from('hp_attendance').select('*').eq('student_id', id).order('session_date', { ascending: false }),
     db.from('hp_test_results').select('*').eq('student_id', id).order('year').order('term'),
   ]);
@@ -64,9 +70,10 @@ export async function getStudentById(db: SupabaseClient, id: string) {
 // ── Test results ──────────────────────────────────────────────────────────────
 export async function getTestResults(
   db: SupabaseClient,
-  opts: { year?: number; term?: string; studentId?: string }
+  opts: { year?: number; term?: string; studentId?: string; schoolId?: string | null }
 ) {
   let q = db.from('hp_test_results').select('*');
+  if (opts.schoolId)  q = q.eq('school_id', opts.schoolId);
   if (opts.year)      q = q.eq('year', opts.year);
   if (opts.term)      q = q.eq('term', opts.term);
   if (opts.studentId) q = q.eq('student_id', opts.studentId);
@@ -78,10 +85,14 @@ export async function getTestResults(
 export async function saveTestResult(
   db: SupabaseClient,
   payload: Record<string, unknown>,
-  actor = 'hp-coach'
+  actor = 'hp-coach',
+  schoolId?: string | null
 ) {
   const { student_id, term, year } = payload as { student_id: string; term: string; year: number };
   if (!student_id || !term || !year) throw new Error('Missing required fields: student_id, term, year');
+  // Stamp the school onto the row — HP writes go through the service-role
+  // client, which bypasses both RLS and the staff-side auto-fill trigger.
+  if (schoolId) payload = { ...payload, school_id: schoolId };
 
   // Snapshot the existing row for the audit trail (old → new)
   const { data: existing } = await db.from('hp_test_results')
@@ -117,16 +128,17 @@ export async function saveTestResult(
       student_id, year, term,
       new_record: !existing,
       changes,
-    });
+    }, schoolId);
   }
 }
 
 // ── Attendance ────────────────────────────────────────────────────────────────
 export async function getAttendance(
   db: SupabaseClient,
-  opts: { year?: number; studentId?: string; limit?: number }
+  opts: { year?: number; studentId?: string; limit?: number; schoolId?: string | null }
 ) {
   let q = db.from('hp_attendance').select('*').order('session_date', { ascending: false });
+  if (opts.schoolId)  q = q.eq('school_id', opts.schoolId);
   if (opts.studentId) q = q.eq('student_id', opts.studentId);
   if (opts.limit)     q = q.limit(opts.limit);
   const { data, error } = await q;
@@ -138,10 +150,13 @@ export async function saveAttendance(
   db: SupabaseClient,
   date: string,
   records: Array<{ student_id: string; session_date: string; session_type?: string; status: string }>,
-  actor = 'hp-coach'
+  actor = 'hp-coach',
+  schoolId?: string | null
 ) {
   if (!date || !records.length) throw new Error('Missing date or records');
   const ids = records.map(r => r.student_id);
+  // Stamp the school onto every row (see note in saveTestResult).
+  if (schoolId) records = records.map(r => ({ ...r, school_id: schoolId }));
 
   // Snapshot existing register for this date + students (for the audit diff)
   const { data: existing } = await db.from('hp_attendance')
@@ -177,18 +192,22 @@ export async function saveAttendance(
       changed_count: changed.length,
       new_session: (existing || []).length === 0,
       changed,
-    });
+    }, schoolId);
   }
 }
 
 // ── Dashboard aggregation ─────────────────────────────────────────────────────
-export async function getDashboardData(db: SupabaseClient, year: number) {
-  const [students, tests, attendance] = await Promise.all([
-    db.from('hp_students').select('*').eq('is_active', true).order('full_name'),
-    db.from('hp_test_results').select('student_id, term, year').eq('year', year),
-    db.from('hp_attendance').select('student_id, session_date, status')
-       .order('session_date', { ascending: false }).limit(2000),
-  ]);
+export async function getDashboardData(db: SupabaseClient, year: number, schoolId?: string | null) {
+  let studentsQ = db.from('hp_students').select('*').eq('is_active', true).order('full_name');
+  let testsQ = db.from('hp_test_results').select('student_id, term, year').eq('year', year);
+  let attQ = db.from('hp_attendance').select('student_id, session_date, status')
+    .order('session_date', { ascending: false }).limit(2000);
+  if (schoolId) {
+    studentsQ = studentsQ.eq('school_id', schoolId);
+    testsQ = testsQ.eq('school_id', schoolId);
+    attQ = attQ.eq('school_id', schoolId);
+  }
+  const [students, tests, attendance] = await Promise.all([studentsQ, testsQ, attQ]);
   return {
     students:   students.data  || [],
     tests:      tests.data     || [],

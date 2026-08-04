@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHpCookie } from '@/lib/serverAuth';
+import { verifyHpCookie, getHpSchoolId } from '@/lib/serverAuth';
 import { getHpAdmin, getTestResults, saveTestResult } from '@/lib/hpRepository';
 
 export async function GET(req: NextRequest) {
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       year:      searchParams.get('year')  ? Number(searchParams.get('year')) : undefined,
       studentId: searchParams.get('studentId') || undefined,
     };
-    const results = await getTestResults(db, opts);
+    const results = await getTestResults(db, { ...opts, schoolId: getHpSchoolId(req) });
     return NextResponse.json({ results });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   try {
     const { action, payload } = await req.json();
     if (action === 'upsert') {
-      await saveTestResult(getHpAdmin(), payload);
+      await saveTestResult(getHpAdmin(), payload, 'hp-coach', getHpSchoolId(req));
       return NextResponse.json({ ok: true });
     }
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
