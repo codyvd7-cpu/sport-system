@@ -40,27 +40,21 @@ function FixturesInner() {
     let cancelled = false;
     async function load() {
       setLoading(true);
-      const today = new Date().toISOString().split('T')[0];
-      const { data: up } = await supabase
-        .from('portal_fixtures').select('*')
-        .eq('is_published', true).eq('sport', sport)
-        .gte('fixture_date', today)
-        .order('fixture_date').order('fixture_time', { ascending: true });
-      if (cancelled) return;
-      const rows = up || [];
-      setUpcoming(rows);
-
-      // If a specific date was requested but isn't in the upcoming window
-      // (e.g. a link to a past fixture day), fetch that date directly.
-      if (dateParam && !rows.some(f => f.fixture_date === dateParam)) {
-        const { data: ex } = await supabase
-          .from('portal_fixtures').select('*')
-          .eq('is_published', true).eq('sport', sport)
-          .eq('fixture_date', dateParam)
-          .order('fixture_time', { ascending: true });
+      // Server-side fetch so school scoping on the signed portal cookie is
+      // actually enforced (portal_* tables are publicly readable).
+      const qs = new URLSearchParams({ sport });
+      if (dateParam) qs.set('date', dateParam);
+      let rows: Row[] = [];
+      try {
+        const res = await fetch(`/api/portal/fixtures?${qs.toString()}`);
+        const d = await res.json();
         if (cancelled) return;
-        setExtra(ex || []);
-      } else {
+        rows = d.upcoming || [];
+        setUpcoming(rows);
+        setExtra(d.extra || []);
+      } catch {
+        if (cancelled) return;
+        setUpcoming([]);
         setExtra([]);
       }
 

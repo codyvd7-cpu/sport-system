@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 const COOKIE_NAME = 'portal_access';
 const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -19,7 +20,7 @@ function getExpectedCode(sport: string): string | undefined {
 
 export async function POST(req: NextRequest) {
   const ip = getClientId(req);
-  const rl = rateLimit(`portal-login:${ip}`, { max: 8, windowMs: 60_000 });
+  const rl = await rateLimit(`portal-login:${ip}`, { max: 8, windowMs: 60_000 });
   if (!rl.ok) {
     return NextResponse.json({ error: 'Too many attempts. Wait a minute.' }, { status: 429 });
   }
@@ -35,18 +36,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid code.' }, { status: 400 });
     }
 
-    const expectedCode = getExpectedCode(sport || 'hockey');
-    if (!expectedCode) {
-      return NextResponse.json({ error: 'Portal access not configured.' }, { status: 500 });
+    const resolvedSport = sport || 'hockey';
+    const provided = Buffer.from(code.trim().toLowerCase());
+    const matches = (expected?: string) => {
+      if (!expected) return false;
+      const buf = Buffer.from(expected.toLowerCase());
+      return provided.length === buf.length && crypto.timingSafeEqual(provided, buf);
+    };
+
+    // Multi-school: codes live in portal_access_codes, and the code is what
+    // tells us which school this parent belongs to (there's no account behind
+    // portal access). Legacy env-var codes still work and resolve to School 1.
+    let schoolId: string | null = null;
+    let matched = false;
+
+    if (adminConfigured()) {
+      const { data: rows } = await getAdmin()
+        .from('portal_access_codes').select('code,school_id')
+        .eq('sport', resolvedSport).eq('is_active', true);
+      for (const row of rows || []) {
+        if (matches(row.code)) { matched = true; schoolId = row.school_id; break; }
+      }
     }
 
-    const provided = Buffer.from(code.trim().toLowerCase());
-    const expected = Buffer.from(expectedCode.toLowerCase());
-    if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
+    if (!matched && matches(getExpectedCode(resolvedSport))) {
+      matched = true;
+      schoolId = '00000000-0000-0000-0000-000000000001'; // legacy env codes → School 1
+    }
+
+    if (!matched) {
       return NextResponse.json({ error: 'Incorrect access code.' }, { status: 401 });
     }
 
-    const payload = Buffer.from(JSON.stringify({ exp: Date.now() + TTL_MS, iat: Date.now(), sport: sport || 'hockey' })).toString('base64');
+    const payload = Buffer.from(JSON.stringify({ exp: Date.now() + TTL_MS, iat: Date.now(), sport: resolvedSport, schoolId })).toString('base64');
     const sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
     const cookieValue = `${payload}.${sig}`;
 
@@ -60,7 +82,7 @@ export async function POST(req: NextRequest) {
     });
     // Readable by the client — lets /portal, /portal-login and /login default to
     // the parent's sport when no ?sport= param is present.
-    res.cookies.set('portal_sport', sport || 'hockey', {
+    res.cookies.set('portal_sport', resolvedSport, {
       httpOnly: false,
       secure: true,
       sameSite: 'lax',

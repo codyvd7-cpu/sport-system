@@ -3,7 +3,6 @@ import * as React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { supabase } from '@/lib/supabase';
 import { getSportLabel, getSportColor, getSportTerm } from '@/lib/sports';
 import { matchOutcome, outcomeColor as outcomeColorShared } from '@/lib/format';
 
@@ -30,14 +29,20 @@ function SeasonInner() {
   const today = new Date().toISOString().split('T')[0];
 
   React.useEffect(() => {
-    Promise.all([
-      supabase.from('portal_fixtures').select('*').eq('is_published',true).eq('sport',sport).order('fixture_date',{ascending:true}),
-      supabase.from('portal_results').select('*').eq('is_published',true).eq('sport',sport).order('result_date',{ascending:false}),
-    ]).then(([fx, res]) => {
-      setFixtures(fx.data || []);
-      setResults(res.data || []);
-      setLoading(false);
-    });
+    // Server-side fetch so school scoping on the signed portal cookie is
+    // actually enforced (portal_* tables are publicly readable).
+    fetch(`/api/portal/fixtures?mode=season&sport=${encodeURIComponent(sport)}`)
+      .then(r => r.json())
+      .then(d => {
+        setFixtures(d.fixtures || []);
+        setResults(d.results || []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setFixtures([]);
+        setResults([]);
+        setLoading(false);
+      });
   }, [sport]);
 
   const upcoming = fixtures.filter(f => f.fixture_date >= today);

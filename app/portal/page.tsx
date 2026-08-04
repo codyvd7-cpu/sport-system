@@ -2,8 +2,7 @@
 import * as React from 'react';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { SPORTS, type SportKey, getSportColor } from '@/lib/sports';
+import { type SportKey, getSportColor } from '@/lib/sports';
 import PortalAuthGuard from '@/components/PortalAuthGuard';
 import PortalAmbient     from '@/components/portal/PortalAmbient';
 import ScrollReveal      from '@/components/portal/ScrollReveal';
@@ -17,13 +16,6 @@ import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 
 type Row = Record<string, any>;
-
-async function safeQuery<T>(q: PromiseLike<{ data: T | null; error: any }>, fb: T): Promise<T> {
-  try {
-    const r = await Promise.race([q, new Promise<never>((_, rej) => setTimeout(() => rej(), 7000))]);
-    return (r && 'data' in r && r.data && !r.error) ? r.data : fb;
-  } catch { return fb; }
-}
 
 function PortalInner() {
   const searchParams = useSearchParams();
@@ -42,20 +34,25 @@ function PortalInner() {
 
   React.useEffect(() => {
     async function load() {
-      const today = new Date().toISOString().split('T')[0];
-      const [planRows, reminders, fixtures, results, programs, spotlight] = await Promise.all([
-        safeQuery<Row[]>(supabase.from('portal_week_plans').select('id').eq('published',true).eq('sport',sport).order('created_at',{ascending:false}).limit(1), []),
-        safeQuery<Row[]>(supabase.from('portal_reminders').select('*').eq('is_published',true).eq('sport',sport).order('sort_order'), []),
-        safeQuery<Row[]>(supabase.from('portal_fixtures').select('*').eq('is_published',true).eq('sport',sport).order('fixture_date').gte('fixture_date',today).limit(8), []),
-        safeQuery<Row[]>(supabase.from('portal_results').select('*').eq('is_published',true).eq('sport',sport).order('result_date',{ascending:false}).limit(5), []),
-        safeQuery<Row[]>(supabase.from('portal_programs').select('*').eq('is_published',true).eq('sport',sport).order('sort_order').limit(6), []),
-        safeQuery<Row[]>(supabase.from('portal_spotlight').select('*').eq('is_published',true).eq('sport',sport).order('sort_order'), []),
-      ]);
-      const planId = planRows[0]?.id ?? null;
-      const weekItems = planId
-        ? await safeQuery<Row[]>(supabase.from('portal_week_plan_items').select('*').eq('week_plan_id',planId).order('sort_order'), [])
-        : [];
-      setData({ weekItems, reminders, fixtures, results, programs: programs.slice(0,6), spotlight });
+      // Fetched server-side (not queried directly from the browser) so the
+      // school scoping on the signed portal cookie is actually enforced —
+      // portal_* tables are publicly readable, so a browser query would
+      // return every school's fixtures once more than one school exists.
+      try {
+        const res = await fetch(`/api/portal/data?sport=${encodeURIComponent(sport)}`);
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || 'Failed to load');
+        setData({
+          weekItems: d.weekPlanItems || [],
+          reminders: d.reminders || [],
+          fixtures:  d.fixtures || [],
+          results:   d.results || [],
+          programs:  (d.programs || []).slice(0, 6),
+          spotlight: d.spotlight || [],
+        });
+      } catch {
+        setData({ weekItems: [], reminders: [], fixtures: [], results: [], programs: [], spotlight: [] });
+      }
       setLoading(false);
     }
     load();

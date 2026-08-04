@@ -180,3 +180,35 @@ export async function resolveStaffSchoolId(email: string | null | undefined): Pr
   const { data } = await admin.from('staff_roles').select('school_id').eq('email', email).maybeSingle();
   return data?.school_id || null;
 }
+
+/**
+ * Verifies the parent-portal access cookie and returns its payload.
+ * Portal access has no user account behind it (a shared per-sport access
+ * code), so the school is resolved at login from which code was used and
+ * baked into the signed cookie — this reads it back out, verifying the
+ * HMAC signature first so the payload can't be forged client-side.
+ */
+export function verifyPortalCookie(req: NextRequest): { sport: string; schoolId: string | null } | null {
+  const match = (req.headers.get('cookie') || '').match(/portal_access=([^;]+)/);
+  if (!match) return null;
+  const secret = process.env.HP_SESSION_SECRET;
+  try {
+    const value = decodeURIComponent(match[1]);
+    const [payload, sig] = value.split('.');
+    if (!payload) return null;
+
+    if (secret) {
+      if (!sig) return null;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const crypto = require('crypto');
+      const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+      if (sig !== expected) return null;
+    }
+
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+    if (decoded.exp && decoded.exp < Date.now()) return null;
+    return { sport: decoded.sport || 'hockey', schoolId: decoded.schoolId || null };
+  } catch {
+    return null;
+  }
+}
