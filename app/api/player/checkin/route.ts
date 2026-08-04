@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { verifyHpCookie } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
-import { verifyPlayer, requireAthleteId } from '@/lib/playerAuth';
+import { verifyPlayer, requireAthleteContext } from '@/lib/playerAuth';
 
 // ─── /api/player/checkin ────────────────────────────────────────────────────────
 // QR gym check-in.
@@ -69,10 +69,11 @@ export async function POST(req: NextRequest) {
   const venue = parseToken(String(body.token || ''));
   if (!venue) return NextResponse.json({ error: 'That QR code isn\u2019t valid. Ask a coach for the current poster.' }, { status: 400 });
 
-  const athleteId = await requireAthleteId(player.userId);
-  if (!athleteId) {
+  const ctx = await requireAthleteContext(player.userId);
+  if (!ctx) {
     return NextResponse.json({ error: 'Link your athlete record first (Profile → Settings).' }, { status: 400 });
   }
+  const athleteId = ctx.athleteId;
 
   // Max 2 check-ins per athlete/venue/day — e.g. a morning gym session and an
   // afternoon stretching session both count. Enforced here in the API rather
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, already: true, venue });
   }
 
-  const { error: insErr } = await db.from('gym_checkins').insert([{ athlete_id: athleteId, venue, source: 'qr' }]);
+  const { error: insErr } = await db.from('gym_checkins').insert([{ athlete_id: athleteId, venue, source: 'qr', school_id: ctx.schoolId }]);
   if (insErr) {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }

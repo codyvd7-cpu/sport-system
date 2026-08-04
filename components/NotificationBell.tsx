@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
+import { supabase } from '@/lib/supabase';
 
 // Standard VAPID key conversion - tested implementation
 function vapidKeyToUint8Array(vapidKey: string): Uint8Array {
@@ -62,10 +63,14 @@ export default function NotificationBell() {
         applicationServerKey: serverKey as unknown as BufferSource,
       });
 
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
         body: JSON.stringify({ subscription: sub.toJSON() }),
       });
 

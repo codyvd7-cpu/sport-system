@@ -145,3 +145,18 @@ export function verifyHpCookie(req: NextRequest): boolean {
     return false;
   }
 }
+
+// Resolves which school a staff member belongs to, from their email. Needed
+// by any service-role route acting on a staff member's behalf (inviting a
+// coach, activating an alert) — those bypass RLS entirely, so nothing
+// auto-fills school_id the way the staff-side database trigger does for
+// direct browser-session writes. Centralized here since this same lookup
+// was starting to get copy-pasted per-route.
+export async function resolveStaffSchoolId(email: string | null | undefined): Promise<string | null> {
+  if (!email) return null;
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data } = await admin.from('staff_roles').select('school_id').eq('email', email).maybeSingle();
+  return data?.school_id || null;
+}

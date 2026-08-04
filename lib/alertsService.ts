@@ -17,10 +17,12 @@ export interface ActiveAlert {
   created_at: string;
 }
 
-export async function getActiveAlert(db: SupabaseClient): Promise<ActiveAlert | null> {
-  const { data } = await db.from('urgent_alerts')
+export async function getActiveAlert(db: SupabaseClient, schoolId?: string | null): Promise<ActiveAlert | null> {
+  let query = db.from('urgent_alerts')
     .select('id,type,message,created_by,created_at')
     .eq('active', true).order('created_at', { ascending: false }).limit(1);
+  if (schoolId) query = query.eq('school_id', schoolId);
+  const { data } = await query;
   return (data?.[0] as ActiveAlert) || null;
 }
 
@@ -30,17 +32,20 @@ const DEFAULT_MESSAGES: Record<string, string> = {
 };
 
 export async function activateAlert(db: SupabaseClient, opts: {
-  message?: string; type?: string; actor: string;
+  message?: string; type?: string; actor: string; schoolId: string | null;
 }): Promise<{ alert: ActiveAlert; pushed: number; pushConfigured: boolean }> {
   const type = opts.type || 'lightning';
   const message = (opts.message || '').trim() || DEFAULT_MESSAGES[type] || DEFAULT_MESSAGES.general;
 
-  // One active alert at a time: retire any previous one first
-  await db.from('urgent_alerts')
-    .update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
+  // One active alert at a time PER SCHOOL: retire any previous one from the
+  // same school first (not every school's alert — that would let School A
+  // accidentally clear School B's active alert).
+  let retireQuery = db.from('urgent_alerts').update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
+  retireQuery = opts.schoolId ? retireQuery.eq('school_id', opts.schoolId) : retireQuery.is('school_id', null);
+  await retireQuery;
 
   const { data, error } = await db.from('urgent_alerts')
-    .insert([{ type, message, created_by: opts.actor }])
+    .insert([{ type, message, created_by: opts.actor, school_id: opts.schoolId }])
     .select('id,type,message,created_by,created_at').single();
   if (error) throw new Error(error.message);
 
@@ -50,18 +55,19 @@ export async function activateAlert(db: SupabaseClient, opts: {
     url: '/portal',
     urgent: true,
     tag: 'altus-safety',
-  });
+  }, opts.schoolId);
   return { alert: data as ActiveAlert, pushed, pushConfigured: pushReady() };
 }
 
-export async function clearAlert(db: SupabaseClient): Promise<{ pushed: number; pushConfigured: boolean }> {
-  await db.from('urgent_alerts')
-    .update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
+export async function clearAlert(db: SupabaseClient, schoolId: string | null): Promise<{ pushed: number; pushConfigured: boolean }> {
+  let query = db.from('urgent_alerts').update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
+  query = schoolId ? query.eq('school_id', schoolId) : query.is('school_id', null);
+  await query;
   const pushed = await broadcastPush(db, {
     title: 'All clear — Ridgemont Sport',
     body: 'The alert has been lifted. Activities may resume as directed by coaches.',
     url: '/portal',
     tag: 'altus-safety',
-  });
+  }, schoolId);
   return { pushed, pushConfigured: pushReady() };
 }

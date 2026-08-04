@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { broadcastPush, pushReady } from '@/lib/push';
 
@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
   if (!title || !body) return NextResponse.json({ error: 'Title and body required.' }, { status: 400 });
 
   try {
-    const sent = await broadcastPush(getAdmin(), { title, body, url: url || '/dashboard', tag: 'altus-notify' });
+    const schoolId = await resolveStaffSchoolId(auth.email);
+    const sent = await broadcastPush(getAdmin(), { title, body, url: url || '/dashboard', tag: 'altus-notify' }, schoolId);
     return NextResponse.json({ ok: true, sent, failed: 0 });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Send failed' }, { status: 500 });

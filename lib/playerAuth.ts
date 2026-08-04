@@ -30,3 +30,17 @@ export async function requireAthleteId(userId: string): Promise<string | null> {
     .from('player_profiles').select('athlete_id').eq('user_id', userId).maybeSingle();
   return data?.athlete_id || null;
 }
+
+// Resolves both the linked athlete AND their school in one query. Needed by
+// any route inserting into a table with school-scoped RLS (gym_checkins,
+// workout_logs, etc.) — those go through the service-role client, which
+// bypasses RLS entirely, so nothing auto-fills school_id the way the staff-
+// side database trigger does. This is that missing piece for player routes.
+export async function requireAthleteContext(userId: string): Promise<{ athleteId: string; schoolId: string | null } | null> {
+  const { data: profile } = await getAdmin()
+    .from('player_profiles').select('athlete_id').eq('user_id', userId).maybeSingle();
+  if (!profile?.athlete_id) return null;
+  const { data: athlete } = await getAdmin()
+    .from('athletes').select('school_id').eq('id', profile.athlete_id).maybeSingle();
+  return { athleteId: profile.athlete_id, schoolId: athlete?.school_id || null };
+}

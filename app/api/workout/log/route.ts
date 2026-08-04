@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
-import { verifyPlayer, requireAthleteId } from '@/lib/playerAuth';
+import { verifyPlayer, requireAthleteContext } from '@/lib/playerAuth';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 // ─── /api/workout/log ─────────────────────────────────────────────────────────
@@ -37,8 +37,9 @@ export async function POST(req: NextRequest) {
   const player = await verifyPlayer(req);
   if (!player) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const athleteId = await requireAthleteId(player.userId);
-  if (!athleteId) return NextResponse.json({ error: 'Link your athlete record first.' }, { status: 400 });
+  const ctx = await requireAthleteContext(player.userId);
+  if (!ctx) return NextResponse.json({ error: 'Link your athlete record first.' }, { status: 400 });
+  const athleteId = ctx.athleteId;
 
   let body: Record<string, any> = {};
   try { body = await req.json(); } catch {}
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { error: insErr } = await db.from('workout_logs')
-    .insert([{ athlete_id: athleteId, program_exercise_id: programExerciseId, sets, reps, weight_kg: weightKg }]);
+    .insert([{ athlete_id: athleteId, program_exercise_id: programExerciseId, sets, reps, weight_kg: weightKg, school_id: ctx.schoolId }]);
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
 
   const { data: dateRows } = await db.from('workout_logs')

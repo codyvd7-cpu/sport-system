@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
+    // The invite is service-role driven (bypasses RLS entirely), so the new
+    // coach's school_id has to be resolved explicitly — it's whichever school
+    // the inviting owner/HOH themselves belongs to.
+    const { data: inviterRow } = await admin.from('staff_roles')
+      .select('school_id').eq('email', auth.email).maybeSingle();
+    const schoolId = inviterRow?.school_id || null;
+
     // Send invite email
     const { data, error } = await admin.auth.admin.inviteUserByEmail(email.trim().toLowerCase(), {
       data: { role, full_name: name },
@@ -32,6 +39,7 @@ export async function POST(req: NextRequest) {
       role,
       teams: role === 'head_of_hockey' ? [] : (teams || []),
       is_active: true,
+      school_id: schoolId,
     }], { onConflict: 'email' });
 
     if (dbErr) return NextResponse.json({ error: `Invited but role failed: ${dbErr.message}` }, { status: 500 });

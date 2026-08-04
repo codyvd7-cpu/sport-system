@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
+import { resolveStaffSchoolId } from '@/lib/serverAuth';
 
 // ─── /api/notifications/subscribe ───────────────────────────────────────────────
 // Adapter for the staff NotificationBell — consolidated onto the canonical
@@ -15,11 +16,24 @@ export async function POST(req: NextRequest) {
     if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
       return NextResponse.json({ error: 'Invalid subscription.' }, { status: 400 });
     }
+    // Resolve the subscribing staff member's school, so broadcasts can be
+    // scoped correctly. Best-effort: if there's no token, the subscription
+    // still saves (matches prior behavior), just without a school — it'll
+    // fall back to receiving every school's broadcasts until it resubscribes
+    // with a valid session.
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    let schoolId: string | null = null;
+    if (token) {
+      const { data } = await getAdmin().auth.getUser(token);
+      if (data.user?.email) schoolId = await resolveStaffSchoolId(data.user.email);
+    }
     const { error } = await getAdmin().from('push_subscriptions').upsert({
       endpoint: subscription.endpoint,
       p256dh: subscription.keys.p256dh,
       auth: subscription.keys.auth,
       label: 'staff',
+      school_id: schoolId,
     }, { onConflict: 'endpoint' });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });

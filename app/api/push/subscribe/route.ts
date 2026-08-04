@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { getAdmin } from '@/lib/supabaseAdmin';
-import { verifyPlayer } from '@/lib/playerAuth';
+import { verifyPlayer, requireAthleteContext } from '@/lib/playerAuth';
 
 // Store / remove a browser push subscription. Open to anyone (parents on the
 // portal aren't signed in) — endpoint URLs are unguessable, rate limiting
 // keeps abuse out, and all we ever store is the subscription itself.
 
 export async function POST(req: NextRequest) {
-  const rl = rateLimit(`push-sub:${getClientId(req)}`, { max: 10, windowMs: 60_000 });
+  const rl = await rateLimit(`push-sub:${getClientId(req)}`, { max: 10, windowMs: 60_000 });
   if (!rl.ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
   try {
     const body = await req.json();
@@ -16,12 +16,16 @@ export async function POST(req: NextRequest) {
     if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) {
       return NextResponse.json({ error: 'Invalid subscription.' }, { status: 400 });
     }
-    // Optionally attach the signed-in player
+    // Optionally attach the signed-in player, and their school (so future
+    // broadcasts can be scoped correctly — anonymous portal visitors have no
+    // way to resolve a school yet, so this stays null for them for now).
     const player = await verifyPlayer(req);
     const userId: string | null = player?.userId || null;
+    const ctx = player ? await requireAthleteContext(player.userId) : null;
     const { error } = await getAdmin().from('push_subscriptions').upsert({
       endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth,
       user_id: userId, label: String(body.label || 'portal').slice(0, 20),
+      school_id: ctx?.schoolId || null,
     }, { onConflict: 'endpoint' });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true });

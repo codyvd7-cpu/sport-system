@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { getActiveAlert, activateAlert, clearAlert, type ActiveAlert } from '@/lib/alertsService';
 
@@ -34,13 +34,14 @@ export async function POST(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const db = getAdmin();
+  const schoolId = await resolveStaffSchoolId(auth.email);
   const body = await req.json().catch(() => ({}));
   const actor = auth.email || 'Staff';
 
   try {
     if (body.action === 'activate') {
       const { alert, pushed, pushConfigured } = await activateAlert(db, {
-        message: body.message, type: String(body.type || 'lightning'), actor,
+        message: body.message, type: String(body.type || 'lightning'), actor, schoolId,
       });
       return NextResponse.json({
         ok: true,
@@ -49,7 +50,7 @@ export async function POST(req: NextRequest) {
       });
     }
     if (body.action === 'resolve') {
-      const { pushed, pushConfigured } = await clearAlert(db);
+      const { pushed, pushConfigured } = await clearAlert(db, schoolId);
       // UI derives "no active alert" from alert.is_active being falsy
       return NextResponse.json({
         ok: true,

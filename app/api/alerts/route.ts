@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { getActiveAlert, activateAlert, clearAlert } from '@/lib/alertsService';
 
@@ -22,18 +22,19 @@ export async function POST(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const db = getAdmin();
+  const schoolId = await resolveStaffSchoolId(auth.email);
   let body: Record<string, any> = {};
   try { body = await req.json(); } catch {}
 
   try {
     if (body.action === 'activate') {
       const { alert, pushed, pushConfigured } = await activateAlert(db, {
-        message: body.message, type: 'lightning', actor: auth.email || 'staff',
+        message: body.message, type: 'lightning', actor: auth.email || 'staff', schoolId,
       });
       return NextResponse.json({ ok: true, alert, pushed, pushConfigured });
     }
     if (body.action === 'clear') {
-      const { pushed, pushConfigured } = await clearAlert(db);
+      const { pushed, pushConfigured } = await clearAlert(db, schoolId);
       return NextResponse.json({ ok: true, pushed, pushConfigured });
     }
     return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });

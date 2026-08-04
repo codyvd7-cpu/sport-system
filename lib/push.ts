@@ -18,10 +18,23 @@ export function pushReady(): boolean {
 
 export interface PushPayload { title: string; body: string; url?: string; urgent?: boolean; tag?: string; }
 
-/** Broadcast to every stored subscription; prunes dead ones. Returns sent count. */
-export async function broadcastPush(db: SupabaseClient, payload: PushPayload): Promise<number> {
+/**
+ * Broadcast to stored subscriptions, prunes dead ones. Returns sent count.
+ *
+ * `schoolId`, when provided, scopes the broadcast to that school's own
+ * subscribers — critical once more than one school exists, otherwise a
+ * lightning alert at School A would push "training suspended" to School B's
+ * parents too. Subscriptions from before multi-tenancy existed have no
+ * school_id yet (nothing backfilled them, since there's no way to know which
+ * school an old subscription belonged to after the fact) — those are still
+ * included so existing subscribers don't silently stop getting alerts; they
+ * age out naturally as devices resubscribe with a school_id going forward.
+ */
+export async function broadcastPush(db: SupabaseClient, payload: PushPayload, schoolId?: string | null): Promise<number> {
   if (!pushReady()) return 0;
-  const { data: subs } = await db.from('push_subscriptions').select('id,endpoint,p256dh,auth');
+  let query = db.from('push_subscriptions').select('id,endpoint,p256dh,auth');
+  if (schoolId) query = query.or(`school_id.eq.${schoolId},school_id.is.null`);
+  const { data: subs } = await query;
   if (!subs?.length) return 0;
   const body = JSON.stringify(payload);
   let sent = 0;
