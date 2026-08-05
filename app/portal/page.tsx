@@ -14,10 +14,12 @@ import PlayerResources   from '@/components/portal/PlayerResources';
 import NoticeCard        from '@/components/portal/NoticeCard';
 import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
 
 function PortalInner() {
+  const { branding } = useBranding();
   const searchParams = useSearchParams();
   const sport = ((searchParams.get('sport') ||
     (typeof document !== 'undefined'
@@ -115,7 +117,7 @@ function PortalInner() {
         {/* Footer */}
         <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '20px', textAlign: 'center' }}>
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>
-            Powered by <span style={{ color, fontWeight: 700 }}>Altus Performance</span> · Ridgemont College
+            Powered by <span style={{ color, fontWeight: 700 }}>Altus Performance</span> · {branding.name}
           </p>
         </footer>
       </div>

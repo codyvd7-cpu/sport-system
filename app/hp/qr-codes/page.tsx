@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import QRCode from 'qrcode';
+import { useBranding } from '@/components/BrandingProvider';
 
 // ─── /hp/qr-codes — print QR check-in posters ─────────────────────────────────
 // Coaches generate a poster per venue (Gym, Astro, Pool…). The QR encodes a
@@ -10,6 +11,7 @@ import QRCode from 'qrcode';
 const PRESETS = ['Gym', 'Astro', 'Pool', 'Field'];
 
 export default function QrCodesPage() {
+  const { branding } = useBranding();
   const [venue, setVenue] = React.useState('Gym');
   const [custom, setCustom] = React.useState('');
   const [qr, setQr] = React.useState('');
@@ -74,7 +76,7 @@ export default function QrCodesPage() {
         {/* The poster */}
         <div className="print-sheet mx-auto flex max-w-md flex-col items-center rounded-3xl bg-white p-10 text-center" style={{ color: '#0f172a' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/school-logo.png" alt="RC" style={{ width: 56, height: 56, objectFit: 'contain', marginBottom: 10 }}/>
+          <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width: 56, height: 56, objectFit: 'contain', marginBottom: 10 }}/>
           <p style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.04em' }}>ST BENEDICT&apos;S COLLEGE</p>
           <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.16em', marginTop: 2 }}>Altus Performance</p>
           <h2 style={{ fontSize: 30, fontWeight: 900, marginTop: 18, letterSpacing: '-0.01em' }}>{activeVenue} Check-In</h2>

@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Message = { role: 'user' | 'assistant'; content: string };
 type Row = Record<string, any>;
@@ -17,6 +18,7 @@ const QUICK_PROMPTS = [
 ];
 
 export default function AssistantPage() {
+  const { branding } = useBranding();
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -59,7 +61,7 @@ export default function AssistantPage() {
           teamGroups[t].push(a);
         });
 
-        let ctx = `You are the AI coaching assistant for Ridgemont College Hockey Department in Johannesburg, South Africa. You have access to live data:\n\n`;
+        let ctx = `You are the AI coaching assistant for ${branding.name} Hockey Department. You have access to live data:\n\n`;
         ctx += `TOTAL ATHLETES: ${athletes.length}\n\n`;
 
         ctx += `SQUADS:\n`;
@@ -81,7 +83,7 @@ export default function AssistantPage() {
           });
         }
 
-        ctx += `\nBENCHMARKS (Ridgemont standards):\n`;
+        ctx += `\nBENCHMARKS (${branding.shortName} standards):\n`;
         ctx += `U14-15: SBJ Elite>195cm Good>175cm | 10m Elite<1.72s | 30m Elite<4.25s | Yo-Yo Elite>1200m | Push-Ups Elite>40\n`;
         ctx += `U16-18: SBJ Elite>215cm Good>195cm | 10m Elite<1.65s | 30m Elite<4.05s | Yo-Yo Elite>1600m | Push-Ups Elite>50\n`;
 
@@ -96,7 +98,7 @@ export default function AssistantPage() {
 
         setContext(ctx);
       } catch {
-        setContext("You are the AI coaching assistant for Ridgemont College Hockey Department.");
+        setContext(`You are the AI coaching assistant for ${branding.name} Hockey Department.`);
       }
       setContextLoading(false);
     }

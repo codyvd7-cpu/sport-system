@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { usePrintReport, PrintToast } from '@/components/HPPrintTrigger';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
 
@@ -79,6 +80,7 @@ function ClassCard({ c, term, onPrint }: { c: any; term: string; onPrint: (url: 
 }
 
 export default function HPDashboard() {
+  const { branding } = useBranding();
   const { print, printing } = usePrintReport();
   const [students, setStudents] = React.useState<Row[]>([]);
   const [testResults, setTestResults] = React.useState<Row[]>([]);
@@ -166,7 +168,7 @@ export default function HPDashboard() {
 
         {/* Header */}
         <div className="mb-6">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">Ridgemont College</p>
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-400">{branding.name}</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-white sm:text-3xl">High Performance</h1>
           <p className="mt-1 text-sm text-slate-500">{new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
           <div className="mt-3 flex items-center gap-2">

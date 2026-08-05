@@ -1,6 +1,8 @@
 'use client';
+import { useBranding } from '@/components/BrandingProvider';
 
 export default function Loading() {
+  const { branding } = useBranding();
   return (
     <div style={{
       position: 'fixed', inset: 0,
@@ -60,8 +62,8 @@ export default function Loading() {
 
       {/* Badge */}
       <img
-        src="/sbc-logo.svg"
-        alt="Ridgemont"
+        src={branding.logoUrl}
+        alt={branding.name}
         style={{
           width: 110, height: 110,
           objectFit: 'contain',

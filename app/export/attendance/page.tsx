@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { useRouter } from 'next/navigation';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
 
@@ -27,6 +28,7 @@ function fmt(date: string) {
 }
 
 export default function AttendanceExportPage() {
+  const { branding } = useBranding();
   const { isHOH, loading: roleLoading } = useRole();
   const router = useRouter();
   const [athletes, setAthletes] = React.useState<Row[]>([]);
@@ -234,9 +236,9 @@ export default function AttendanceExportPage() {
             <div style={{display:'flex',alignItems:'center',gap:14}}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/school-logo.png" alt="RC" style={{width:44,height:44,objectFit:'contain'}}/>
+              <img src={branding.logoUrl} alt={branding.abbreviation} style={{width:44,height:44,objectFit:'contain'}}/>
               <div>
-                <div style={{fontSize:17,fontWeight:900,lineHeight:1.2}}>Ridgemont College</div>
+                <div style={{fontSize:17,fontWeight:900,lineHeight:1.2}}>{branding.name}</div>
                 <div style={{fontSize:10,color:'#6b7280',marginTop:2,textTransform:'uppercase',letterSpacing:'0.06em',fontWeight:500}}>
                   Hockey Programme · Attendance {exportMode === 'register' ? 'Register' : 'History'}
                 </div>
@@ -394,7 +396,7 @@ export default function AttendanceExportPage() {
 
           {/* Footer */}
           <div style={{marginTop:24,paddingTop:12,borderTop:'1px solid #e5e7eb',display:'flex',justifyContent:'space-between',fontSize:9,color:'#9ca3af'}}>
-            <span>Ridgemont College · Hockey Programme · {selTeam}</span>
+            <span>{branding.name} · Hockey Programme · {selTeam}</span>
             <span>Confidential · Head of Hockey Use Only</span>
             <span>Generated {new Date().toLocaleDateString('en-ZA')}</span>
           </div>

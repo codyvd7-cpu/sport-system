@@ -10,6 +10,7 @@ import AlertOptIn from '@/components/AlertOptIn';
 import SafetyBanner from '@/components/SafetyBanner';
 import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
 import TrainingTab from '@/components/player/TrainingTab';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
 
@@ -731,6 +732,7 @@ function Settings({ D, C, out, onPhoto, uploading }: any) {
 
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 export default function PlayerProfile() {
+  const { branding } = useBranding();
   const router = useRouter();
   const [nav, setNav] = React.useState('overview');
 
@@ -919,7 +921,7 @@ export default function PlayerProfile() {
       <aside className="sidebar">
         <div style={{ padding: '16px 14px', borderBottom: `1px solid ${B}`, display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/school-logo.png" alt="RC" style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }}/>
+          <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }}/>
           <div><p style={{ fontSize: 10, fontWeight: 900, lineHeight: 1.2 }}>ST BENEDICT&apos;S</p><p style={{ fontSize: 9, fontWeight: 700, color: C, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 2 }}>Altus Performance</p></div>
         </div>
         <nav style={{ padding: 8, flex: 1, overflowY: 'auto' }}>
@@ -946,7 +948,7 @@ export default function PlayerProfile() {
         <div className="mob-bar" style={{ position: 'sticky', top: 0, zIndex: 30, alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(5,8,20,0.94)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: `1px solid ${B}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/school-logo.png" alt="RC" style={{ width: 26, height: 26, objectFit: 'contain' }}/>
+            <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width: 26, height: 26, objectFit: 'contain' }}/>
             <p style={{ fontSize: 13, fontWeight: 800 }}>{curLabel}</p>
           </div>
           <div style={{ width: 30, height: 30, borderRadius: '50%', background: `linear-gradient(135deg,#111c3d,${C}66)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, overflow: 'hidden' }} onClick={() => setNav('settings')}>

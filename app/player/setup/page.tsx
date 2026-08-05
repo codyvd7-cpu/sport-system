@@ -3,12 +3,14 @@ import * as React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useBranding } from '@/components/BrandingProvider';
 
 const C = '#3b82f6';
 const SPORTS = ['Hockey','Rugby','Cricket','Swimming','Rowing','Athletics'];
 const GRADES = ['Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
 
 export default function PlayerSetupPage() {
+  const { branding } = useBranding();
   const router = useRouter();
   const [userId, setUserId]         = React.useState<string|null>(null);
   const [existingProfile, setExisting] = React.useState<any>(null);
@@ -118,7 +120,7 @@ export default function PlayerSetupPage() {
               </button>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <Image src="/school-logo.png" alt="RC" width={46} height={46} style={{ objectFit: 'contain' }} />
+              <Image src={branding.logoUrl} alt={branding.abbreviation} width={46} height={46} style={{ objectFit: 'contain' }} />
               <div>
                 <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: `${C}cc`, textTransform: 'uppercase', marginBottom: 2 }}>
                   {isEdit ? 'Edit Profile' : 'Player Setup'}

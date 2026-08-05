@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import * as React from 'react';
 import Image from 'next/image';
+import { useBranding } from '@/components/BrandingProvider';
 
 const PHOTOS=['/sbc-photo-4.jpg','/sbc-photo-1.jpg','/sbc-photo-3.jpg','/sbc-photo-2.jpg'];
 
@@ -100,6 +101,7 @@ function Card({dept,favs,onFav,main=true}:{
 }
 
 export default function LandingPage(){
+  const { branding } = useBranding();
   const [mounted,  setMounted]  = React.useState(false);
   const [photo,    setPhoto]    = React.useState(0);
   const [favs,     setFavs]     = React.useState<string[]>([]);
@@ -226,7 +228,7 @@ export default function LandingPage(){
       <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',
         padding:isMob?'28px 20px 12px':'36px 20px 16px',flexShrink:0,
         opacity:1}}>
-        <Image src="/school-logo.png" alt="RC" width={isMob?64:80} height={isMob?64:80}
+        <Image src={branding.logoUrl} alt={branding.abbreviation} width={isMob?64:80} height={isMob?64:80}
           style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:8}} priority/>
         <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
           ST BENEDICT&apos;S COLLEGE

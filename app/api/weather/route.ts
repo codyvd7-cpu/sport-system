@@ -5,7 +5,9 @@ import { NextRequest, NextResponse } from 'next/server';
 // is regional enough for "small extra info" on fixture cards; forecasts only
 // exist ~14 days out, beyond that we return nothing and the UI shows nothing.
 
-const LAT = -26.17, LNG = 28.14; // Ridgemont, Bedfordview
+// TODO(multi-school): coordinates are still fixed to one location. Add
+// lat/lng columns to the schools table so each school gets its own forecast.
+const LAT = -26.17, LNG = 28.14; // Bedfordview, Johannesburg
 const cache = new Map<string, { at: number; data: any }>();
 const TTL = 3 * 60 * 60 * 1000; // 3h
 

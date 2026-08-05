@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { getSportLabel, getSportColor, getSportTerm } from '@/lib/sports';
 import WeatherChip from '@/components/WeatherChip';
 import { fmtTime12h } from '@/lib/format';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
 
@@ -24,6 +25,7 @@ function formatDate(dateStr: string) {
 const fTime = (t?: string) => fmtTime12h(t, 'TBC');
 
 function FixturesInner() {
+  const { branding } = useBranding();
   const searchParams = useSearchParams();
   const sport = searchParams.get('sport') || 'hockey';
   const dateParam = searchParams.get('date') || '';
@@ -107,7 +109,7 @@ function FixturesInner() {
           <div style={{ maxWidth:1100, margin:'0 auto', padding:'0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', height:60 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/school-logo.png" alt="RC" style={{ width:34, height:34, objectFit:'contain' }}/>
+              <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width:34, height:34, objectFit:'contain' }}/>
               <div>
                 <p style={{ fontSize:14, fontWeight:700, color:'white', lineHeight:1 }}>ST BENEDICT&apos;S COLLEGE</p>
                 <p style={{ fontSize:10, fontWeight:500, color:C, letterSpacing:'0.05em', marginTop:2, textTransform:'uppercase' }}>{label} Department</p>
@@ -206,7 +208,7 @@ function FixturesInner() {
                           <td style={{ padding:'16px 18px' }}>
                             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src="/school-logo.png" alt="RC" style={{ width:22, height:22, objectFit:'contain' }}/>
+                              <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width:22, height:22, objectFit:'contain' }}/>
                               <span style={{ fontSize:13, fontWeight:700, color:'white' }}>{f.team || 'RC'}</span>
                             </div>
                           </td>
@@ -265,7 +267,7 @@ function FixturesInner() {
                     <div style={{ padding:'14px 16px 4px' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4, flexWrap:'wrap' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/school-logo.png" alt="RC" style={{ width:20, height:20, objectFit:'contain' }}/>
+                        <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width:20, height:20, objectFit:'contain' }}/>
                         <span style={{ fontSize:14, fontWeight:800, color:'white' }}>{f.team || 'RC'}</span>
                         <span style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontWeight:700 }}>vs</span>
                         <span style={{ fontSize:14, fontWeight:700, color:'rgba(255,255,255,0.85)' }}>{f.opponent || '—'}</span>

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { getSchoolBranding } from '@/lib/schoolBranding';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 
@@ -17,6 +18,10 @@ export async function POST(req: NextRequest) {
   const auth = await authenticateRequest(req);
   if (!auth.ok) return NextResponse.json({ text: 'Unauthorised' }, { status: 401 });
 
+  // School name comes from the acting staff member's school, not hardcoded —
+  // otherwise every school's AI reports would be branded as School 1.
+  const branding = await getSchoolBranding(await resolveStaffSchoolId(auth.email));
+
   try {
     const { athlete } = await req.json();
 
@@ -24,7 +29,7 @@ export async function POST(req: NextRequest) {
     // This minimises personal data leaving our infrastructure.
     const firstName = (athlete.name || '').split(' ')[0] || 'The athlete';
 
-    const prompt = `You are a high-performance hockey coach analyst at Ridgemont College, Johannesburg. 
+    const prompt = `You are a high-performance hockey coach analyst at ${branding.name}. 
 Write a professional, concise athlete summary (3-4 sentences) for a coach or parent.
 
 Athlete data:

@@ -8,7 +8,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title:       'Altus Performance',
-  description: "Ridgemont College High Performance Platform",
+  description: "Sport management platform for schools — performance, teams, fixtures and results.",
   manifest:    '/manifest.json',
   appleWebApp: {
     capable:       true,
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title:       'Altus Performance',
-    description: "Ridgemont College — High Performance Sport Platform",
+    description: "Sport management platform for schools — performance, teams, fixtures and results.",
     siteName:    'Altus Performance',
   },
 };

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { getSchoolBranding } from '@/lib/schoolBranding';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 
@@ -17,10 +18,14 @@ export async function POST(req: NextRequest) {
   const auth = await authenticateRequest(req);
   if (!auth.ok) return NextResponse.json({ text: 'Unauthorised' }, { status: 401 });
 
+  // School name comes from the acting staff member's school, not hardcoded —
+  // otherwise every school's AI reports would be branded as School 1.
+  const branding = await getSchoolBranding(await resolveStaffSchoolId(auth.email));
+
   try {
     const { data } = await req.json();
 
-    const prompt = `You are a professional hockey department administrator at Ridgemont College, Johannesburg.
+    const prompt = `You are a professional hockey department administrator at ${branding.name}.
 Write a professional, warm parent update message for WhatsApp or email.
 
 Team: ${data.team}

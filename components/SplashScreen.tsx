@@ -1,11 +1,13 @@
 'use client';
 import * as React from 'react';
+import { useBranding } from '@/components/BrandingProvider';
 
 const ease3  = (t:number) => 1 - Math.pow(1-t, 3);
 const clamp  = (v:number, a=0, b=1) => Math.min(b, Math.max(a, v));
 const slice  = (t:number, a:number, b:number) => clamp((t-a)/(b-a));
 
 export default function SplashScreen() {
+  const { branding } = useBranding();
   const wrapRef   = React.useRef<HTMLDivElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const logoRef   = React.useRef<HTMLDivElement>(null);
@@ -208,7 +210,7 @@ export default function SplashScreen() {
           fontFamily:'-apple-system,BlinkMacSystemFont,system-ui,sans-serif',
           fontSize:9, fontWeight:300, letterSpacing:'0.2em',
           color:'rgba(255,255,255,0.32)', textTransform:'uppercase',
-        }}>Ridgemont College</p>
+        }}>{branding.name}</p>
       </div>
     </div>
   );
