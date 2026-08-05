@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useBranding } from '@/components/BrandingProvider';
 
 const G      = '#10b981';
 const BG     = '#060c1a';
@@ -29,6 +30,7 @@ function Icon({ d, size=16 }: { d:string; size?:number }) {
 }
 
 export default function HPNav() {
+  const { branding } = useBranding();
   const pathname  = usePathname();
   const router    = useRouter();
   const [open, setOpen] = React.useState(false);
@@ -57,9 +59,9 @@ export default function HPNav() {
         flexDirection:'column', zIndex:40, overflowY:'auto',
       }}>
         <div style={{ padding:'20px', borderBottom:`1px solid ${BORDER}`, display:'flex', alignItems:'center', gap:12 }}>
-          <Image src="/school-logo.png" alt="RC" width={36} height={36} style={{ objectFit:'contain', flexShrink:0 }}/>
+          <Image src={branding.logoUrl} alt={branding.abbreviation} width={36} height={36} style={{ objectFit:'contain', flexShrink:0 }}/>
           <div>
-            <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', textTransform:'uppercase' }}>Ridgemont</p>
+            <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.4)', letterSpacing:'0.1em', textTransform:'uppercase' }}>{branding.shortName}</p>
             <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
           </div>
         </div>
@@ -113,7 +115,7 @@ export default function HPNav() {
         alignItems:'center', justifyContent:'space-between', padding:'0 16px',
       }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <Image src="/school-logo.png" alt="RC" width={28} height={28} style={{ objectFit:'contain' }}/>
+          <Image src={branding.logoUrl} alt={branding.abbreviation} width={28} height={28} style={{ objectFit:'contain' }}/>
           <p style={{ fontSize:14, fontWeight:800, color:'white' }}>High Performance</p>
         </div>
         <button onClick={() => setOpen(true)} style={{
@@ -141,7 +143,7 @@ export default function HPNav() {
             {/* Header */}
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px', borderBottom:`1px solid ${BORDER}` }}>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <Image src="/school-logo.png" alt="RC" width={28} height={28} style={{ objectFit:'contain' }}/>
+                <Image src={branding.logoUrl} alt={branding.abbreviation} width={28} height={28} style={{ objectFit:'contain' }}/>
                 <p style={{ fontSize:13, fontWeight:800, color:'white' }}>High Performance</p>
               </div>
               <button onClick={() => setOpen(false)} style={{

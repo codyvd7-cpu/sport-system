@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { useBranding } from '@/components/BrandingProvider';
 
 const SPORT_CONFIG: Record<string, {
   label: string; color: string; colorDim: string;
@@ -17,6 +18,7 @@ const SPORT_CONFIG: Record<string, {
 };
 
 function PortalLoginInner() {
+  const { branding } = useBranding();
   const searchParams = useSearchParams();
   const sport = searchParams.get('sport') ||
     (typeof document !== 'undefined'
@@ -104,7 +106,7 @@ function PortalLoginInner() {
 
             {/* Logo */}
             <div style={{marginBottom:18,display:'flex',justifyContent:'center'}}>
-              <Image src="/school-logo.png" alt="Ridgemont College" width={68} height={68}
+              <Image src={branding.logoUrl} alt={branding.name} width={68} height={68}
                 style={{objectFit:'contain',filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.7))'}} priority/>
             </div>
 

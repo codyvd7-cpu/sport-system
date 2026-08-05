@@ -3,10 +3,12 @@ import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { type SportKey, getSportLabel, getSportColor } from '@/lib/sports';
+import { useBranding } from '@/components/BrandingProvider';
 
 interface Props { sport: SportKey; }
 
 export default function PortalNav({ sport }: Props) {
+  const { branding } = useBranding();
   const color = getSportColor(sport);
   const label = getSportLabel(sport);
   const [scrolled, setScrolled] = React.useState(false);
@@ -36,10 +38,10 @@ export default function PortalNav({ sport }: Props) {
 
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
           <div style={{ position: 'relative' }}>
-            <Image src="/school-logo.png" alt="RC" width={34} height={34} style={{ objectFit: 'contain' }}/>
+            <Image src={branding.logoUrl} alt={branding.abbreviation} width={34} height={34} style={{ objectFit: 'contain' }}/>
           </div>
           <div style={{ lineHeight: 1.25 }}>
-            <p className="pn-school" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>Ridgemont College</p>
+            <p className="pn-school" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>{branding.name}</p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ width: 5, height: 5, borderRadius: '50%', background: color }}/>
               <p style={{ fontSize: 13, fontWeight: 800, color: 'white' }}>{label}</p>

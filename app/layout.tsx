@@ -3,6 +3,7 @@ import { ToastProvider } from '@/components/Toast';
 import SplashScreen from '@/components/SplashScreen';
 import QueryProvider from '@/components/QueryProvider';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
+import BrandingProvider from '@/components/BrandingProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -51,9 +52,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SplashScreen/>
         <ServiceWorkerRegistrar/>
         <QueryProvider>
+          <BrandingProvider>
           <ToastProvider>
             {children}
           </ToastProvider>
+          </BrandingProvider>
         </QueryProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
@@ -41,6 +42,7 @@ function Field({ label, type, value, onChange, icon, right }: FieldProps) {
 }
 
 export default function PlayerAuthPage() {
+  const { branding } = useBranding();
   const router = useRouter();
   const [mode, setMode]           = React.useState<Mode>('signin');
   const [email, setEmail]         = React.useState('');
@@ -159,7 +161,7 @@ export default function PlayerAuthPage() {
 
           {/* Logo + school */}
           <div style={{ textAlign: 'center', marginBottom: 24 }}>
-            <Image src="/school-logo.png" alt="RC" width={68} height={68}
+            <Image src={branding.logoUrl} alt={branding.abbreviation} width={68} height={68}
               style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))', marginBottom: 12 }} />
             <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 10 }}>
               ST BENEDICT&apos;S COLLEGE

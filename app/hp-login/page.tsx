@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useBranding } from '@/components/BrandingProvider';
 
 const COLOR = '#10b981';
 const COLOR_DIM = 'rgba(16,185,129,0.12)';
@@ -10,6 +11,7 @@ const BTN_SHADOW = '0 8px 32px rgba(16,185,129,0.45)';
 const PHOTO = '/sbc-photo-1.jpg';
 
 export default function HPLoginPage() {
+  const { branding } = useBranding();
   const [code, setCode] = React.useState('');
   const [error, setError] = React.useState('');
   const [loading, setLoading] = React.useState(false);
@@ -88,7 +90,7 @@ export default function HPLoginPage() {
 
             {/* Logo */}
             <div style={{marginBottom:18,display:'flex',justifyContent:'center'}}>
-              <Image src="/school-logo.png" alt="Ridgemont College" width={68} height={68}
+              <Image src={branding.logoUrl} alt={branding.name} width={68} height={68}
                 style={{objectFit:'contain',filter:'drop-shadow(0 4px 16px rgba(0,0,0,0.7))'}} priority/>
             </div>
 

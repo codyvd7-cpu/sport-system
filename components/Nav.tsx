@@ -2,8 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useBranding } from '@/components/BrandingProvider';
 
 export default function Nav() {
+  const { branding } = useBranding();
   return (
     <header className="border-b border-slate-800 bg-[#020617]/95 text-white shadow-2xl backdrop-blur">
       <div className="mx-auto max-w-6xl px-4 py-3 sm:px-6 sm:py-6">
@@ -12,8 +14,8 @@ export default function Nav() {
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-sky-400/20 blur-xl" />
               <Image
-                src="/school-logo.png"
-                alt="Ridgemont College"
+                src={branding.logoUrl}
+                alt={branding.name}
                 width={90}
                 height={90}
                 className="relative h-14 w-14 object-contain sm:h-24 sm:w-24"
@@ -23,11 +25,11 @@ export default function Nav() {
 
             <div className="leading-tight">
               <p className="text-[10px] font-black uppercase tracking-[0.24em] text-sky-400 sm:text-xs">
-                Ridgemont College
+                {branding.name}
               </p>
 
               <h1 className="text-xl font-black tracking-tight sm:text-4xl">
-                Ridgemont Hockey
+                {branding.shortName} Hockey
               </h1>
 
               <p className="hidden max-w-xl text-sm font-medium text-slate-400 sm:block">
@@ -57,7 +59,7 @@ export default function Nav() {
             Public Portal View
           </span>
           <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-bold text-slate-400">
-            Ridgemont Hockey / Parent &amp; Player Access
+            {branding.shortName} Hockey / Parent &amp; Player Access
           </span>
         </div>
       </div>
