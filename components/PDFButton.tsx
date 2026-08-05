@@ -1,6 +1,7 @@
 'use client';
 import * as React from 'react';
 import { useToast } from '@/components/Toast';
+import { useBranding } from '@/components/BrandingProvider';
 
 interface PDFButtonProps {
   label?: string;
@@ -60,6 +61,7 @@ export function PDFButton({ label = 'Export PDF', filename, onGenerate, classNam
 
 // Athlete profile PDF button
 export function AthletePDFButton({ athleteId, name }: { athleteId: string; name: string }) {
+  const { branding } = useBranding();
   return (
     <PDFButton
       label="Export PDF"
@@ -70,7 +72,7 @@ export function AthletePDFButton({ athleteId, name }: { athleteId: string; name:
         const res = await fetch(`/api/pdf/athlete?id=${athleteId}`);
         const data = await res.json();
         const { generateAthletePDF } = await import('@/lib/generatePDF');
-        return generateAthletePDF(data);
+        return generateAthletePDF({ ...data, schoolName: branding.name });
       }}
     />
   );

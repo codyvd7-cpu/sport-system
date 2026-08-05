@@ -43,7 +43,7 @@ function roundedRect(doc: jsPDF, x: number, y: number, w: number, h: number, r: 
 }
 
 // Page header with branding
-function drawHeader(doc: jsPDF, title: string, subtitle: string) {
+function drawHeader(doc: jsPDF, title: string, subtitle: string, schoolName = 'ALTUS PERFORMANCE') {
   const W = doc.internal.pageSize.width;
 
   // Dark background bar
@@ -58,7 +58,7 @@ function drawHeader(doc: jsPDF, title: string, subtitle: string) {
   setTextColor(doc, BRAND.accent);
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text("ST BENEDICT'S COLLEGE · HIGH PERFORMANCE", 10, 11);
+  doc.text(`${schoolName.toUpperCase()} · HIGH PERFORMANCE`, 10, 11);
 
   // Title
   setTextColor(doc, BRAND.white);
@@ -93,6 +93,7 @@ export function generateAthletePDF(data: {
   pbs: Record<string, { value: number; unit: string; date: string }>;
   notes: any;
   stats: { total: number; present: number; rate: number | null };
+  schoolName?: string;
 }): Blob {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = doc.internal.pageSize.width;
@@ -104,7 +105,7 @@ export function generateAthletePDF(data: {
   setFill(doc, BRAND.bg);
   doc.rect(0, 0, W, 297, 'F');
 
-  drawHeader(doc, name, today);
+  drawHeader(doc, name, today, data.schoolName);
 
   let y = 40;
 

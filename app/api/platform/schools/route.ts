@@ -81,7 +81,51 @@ export async function POST(req: NextRequest) {
   }]).select('id,name,slug').single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, school: data });
+
+  // Generate the school's access codes automatically. Without this, a new
+  // school is created but nobody can actually get into its HP module or
+  // parent portal until someone hand-writes rows in Supabase.
+  const randomCode = (prefix: string) => {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars
+    let out = '';
+    for (let i = 0; i < 6; i++) out += alphabet[Math.floor(Math.random() * alphabet.length)];
+    return `${prefix}-${out}`;
+  };
+
+  const hpCoachCode = randomCode(`${abbreviation}HP`);
+  const hpAdminCode = randomCode(`${abbreviation}ADM`);
+  const sports = ['hockey', 'rugby', 'cricket', 'swimming', 'rowing', 'waterpolo', 'football'];
+  const portalCodes = sports.map(sport => ({
+    school_id: data.id,
+    sport,
+    code: randomCode(`${abbreviation}${sport.slice(0, 3).toUpperCase()}`),
+    is_active: true,
+  }));
+
+  const [hpRes, portalRes] = await Promise.all([
+    db.from('hp_access_codes').insert([
+      { school_id: data.id, code: hpCoachCode, role: 'hp-coach', is_active: true },
+      { school_id: data.id, code: hpAdminCode, role: 'hp-admin', is_active: true },
+    ]),
+    db.from('portal_access_codes').insert(portalCodes),
+  ]);
+
+  // The school itself exists either way — surface code failures rather than
+  // failing the whole creation, so it can be retried without a duplicate school.
+  const codeWarnings: string[] = [];
+  if (hpRes.error) codeWarnings.push(`HP codes: ${hpRes.error.message}`);
+  if (portalRes.error) codeWarnings.push(`Portal codes: ${portalRes.error.message}`);
+
+  return NextResponse.json({
+    ok: true,
+    school: data,
+    codes: {
+      hpCoach: hpCoachCode,
+      hpAdmin: hpAdminCode,
+      portal: Object.fromEntries(portalCodes.map(c => [c.sport, c.code])),
+    },
+    warnings: codeWarnings.length ? codeWarnings : undefined,
+  });
 }
 
 export async function PATCH(req: NextRequest) {

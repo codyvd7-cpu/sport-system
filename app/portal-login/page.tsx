@@ -112,7 +112,7 @@ function PortalLoginInner() {
 
             {/* School name */}
             <p style={{fontSize:11,fontWeight:500,letterSpacing:'0.22em',color:'rgba(255,255,255,0.55)',marginBottom:10}}>
-              ST BENEDICT&apos;S COLLEGE
+              {branding.name.toUpperCase()}
             </p>
 
             {/* Heading */}

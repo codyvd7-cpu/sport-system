@@ -164,7 +164,7 @@ export default function PlayerAuthPage() {
             <Image src={branding.logoUrl} alt={branding.abbreviation} width={68} height={68}
               style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))', marginBottom: 12 }} />
             <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', marginBottom: 10 }}>
-              ST BENEDICT&apos;S COLLEGE
+              {branding.name.toUpperCase()}
             </p>
             <h1 style={{ fontSize: 28, fontWeight: 800, color: 'white', marginBottom: 6, letterSpacing: '-0.01em' }}>
               {mode === 'signin' ? 'Welcome Back' : mode === 'signup' ? 'Create Account' : 'Reset Password'}

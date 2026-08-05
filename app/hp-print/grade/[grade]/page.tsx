@@ -174,7 +174,7 @@ export default function GradeExport({ params }: PageProps) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={branding.logoUrl} alt={branding.abbreviation}/>
             <div>
-              <div className="hdr-name">ST BENEDICT&apos;S COLLEGE</div>
+              <div className="hdr-name">{branding.name.toUpperCase()}</div>
               <div className="hdr-dept">High Performance Department</div>
             </div>
           </div>

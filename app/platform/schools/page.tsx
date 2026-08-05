@@ -23,6 +23,7 @@ export default function PlatformSchoolsPage() {
   const [busy, setBusy] = React.useState(false);
   const [msg, setMsg] = React.useState('');
   const [err, setErr] = React.useState('');
+  const [newCodes, setNewCodes] = React.useState<{ hpCoach: string; hpAdmin: string; portal: Record<string, string>; school: string } | null>(null);
 
   const authedFetch = React.useCallback(async (init?: RequestInit) => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,6 +71,8 @@ export default function PlatformSchoolsPage() {
       const d = await res.json();
       if (!res.ok) throw new Error(d.error || 'Failed to create school.');
       setMsg(`${d.school.name} created.`);
+      if (d.codes) setNewCodes({ ...d.codes, school: d.school.name });
+      if (d.warnings?.length) setErr(d.warnings.join(' · '));
       setForm({ ...BLANK });
       load();
     } catch (e) {
@@ -124,6 +127,37 @@ export default function PlatformSchoolsPage() {
 
         {err && <div style={{ marginBottom: 16, borderRadius: 10, border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)', padding: '10px 14px', fontSize: 12, color: '#fca5a5' }}>{err}</div>}
         {msg && <div style={{ marginBottom: 16, borderRadius: 10, border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)', padding: '10px 14px', fontSize: 12, color: '#6ee7b7' }}>{msg}</div>}
+
+        {/* Newly generated access codes — shown once, right after creation */}
+        {newCodes && (
+          <div style={{ marginBottom: 24, borderRadius: 14, border: '1px solid rgba(56,189,248,0.35)', background: 'rgba(56,189,248,0.06)', padding: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 800, color: '#7dd3fc' }}>{newCodes.school} — access codes</p>
+                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
+                  Save these now — copy them to the school. You can always look them up later in the <code>hp_access_codes</code> and <code>portal_access_codes</code> tables.
+                </p>
+              </div>
+              <button onClick={() => setNewCodes(null)} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
+              <div style={{ borderRadius: 9, background: 'rgba(0,0,0,0.25)', padding: '9px 12px' }}>
+                <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>HP Coach</p>
+                <p style={{ fontSize: 14, fontWeight: 800, fontFamily: 'monospace', color: 'white' }}>{newCodes.hpCoach}</p>
+              </div>
+              <div style={{ borderRadius: 9, background: 'rgba(0,0,0,0.25)', padding: '9px 12px' }}>
+                <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>HP Admin</p>
+                <p style={{ fontSize: 14, fontWeight: 800, fontFamily: 'monospace', color: 'white' }}>{newCodes.hpAdmin}</p>
+              </div>
+              {Object.entries(newCodes.portal).map(([sport, code]) => (
+                <div key={sport} style={{ borderRadius: 9, background: 'rgba(0,0,0,0.25)', padding: '9px 12px' }}>
+                  <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.35)' }}>Portal · {sport}</p>
+                  <p style={{ fontSize: 14, fontWeight: 800, fontFamily: 'monospace', color: 'white' }}>{code}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Existing schools */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 36 }}>
@@ -200,7 +234,7 @@ export default function PlatformSchoolsPage() {
               {busy ? 'Creating…' : 'Create school'}
             </button>
             <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 10, lineHeight: 1.6 }}>
-              After creating: invite the school&apos;s first coach from the admin screen (they&apos;ll be attached to whichever school you belong to, so create their account while signed in appropriately), and add their HP and portal access codes in <code style={{ color: 'rgba(255,255,255,0.5)' }}>hp_access_codes</code> and <code style={{ color: 'rgba(255,255,255,0.5)' }}>portal_access_codes</code>.
+              HP and parent-portal access codes are generated automatically and shown once above. The one remaining manual step is the school&apos;s first staff account: add a row in <code style={{ color: 'rgba(255,255,255,0.5)' }}>staff_roles</code> with their email, role <code style={{ color: 'rgba(255,255,255,0.5)' }}>owner</code>, and this school&apos;s id — after that they can invite their own coaches from inside the app.
             </p>
           </div>
         </form>

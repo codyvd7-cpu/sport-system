@@ -231,7 +231,7 @@ export default function LandingPage(){
         <Image src={branding.logoUrl} alt={branding.abbreviation} width={isMob?64:80} height={isMob?64:80}
           style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:8}} priority/>
         <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
-          ST BENEDICT&apos;S COLLEGE
+          {branding.name.toUpperCase()}
         </p>
         <p style={{fontSize:8,letterSpacing:'.15em',color:'rgba(255,255,255,.25)',marginBottom:6,textAlign:'center'}}>
           EST. 1958 · BEDFORDVIEW

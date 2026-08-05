@@ -111,7 +111,7 @@ function FixturesInner() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width:34, height:34, objectFit:'contain' }}/>
               <div>
-                <p style={{ fontSize:14, fontWeight:700, color:'white', lineHeight:1 }}>ST BENEDICT&apos;S COLLEGE</p>
+                <p style={{ fontSize:14, fontWeight:700, color:'white', lineHeight:1 }}>{branding.name.toUpperCase()}</p>
                 <p style={{ fontSize:10, fontWeight:500, color:C, letterSpacing:'0.05em', marginTop:2, textTransform:'uppercase' }}>{label} Department</p>
               </div>
             </div>

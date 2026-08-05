@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { SPORTS, type SportKey, getSportColor } from '@/lib/sports';
 import { fmtTime12h } from '@/lib/format';
+import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
 
@@ -14,6 +15,7 @@ const fTime = (t?: string) => fmtTime12h(t);
 interface Props { sport: SportKey; nextFixture: Row|null; }
 
 export default function PortalHero({ sport, nextFixture }: Props) {
+  const { branding } = useBranding();
   const cfg   = SPORTS[sport];
   const color = getSportColor(sport);
   const fixTerm = cfg?.terminology?.fixture ?? 'Fixture';
@@ -77,7 +79,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
               lineHeight:0.96, color:'white', marginBottom:20,
               textShadow:'0 8px 50px rgba(0,0,0,0.6)', ...fadeUp(0.08),
             }}>
-              {cfg?.portal?.headline ?? `ST BENEDICT'S ${(cfg?.label ?? sport).toUpperCase()}`}
+              {branding.shortName.toUpperCase()} {cfg?.portal?.headline ?? (cfg?.label ?? sport).toUpperCase()}
             </h1>
 
             <p style={{ fontSize:'clamp(18px,2.6vw,26px)', fontWeight:800, color, marginBottom:18, ...fadeUp(0.16) }}>
