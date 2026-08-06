@@ -15,6 +15,8 @@
 --   (every child row cascades)
 -- ═══════════════════════════════════════════════════════════════════════════════
 
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DO $$
 DECLARE
   demo_id uuid := '00000000-0000-0000-0000-0000000000d0';
@@ -64,11 +66,15 @@ INSERT INTO hp_access_codes (school_id, code, role, is_active) VALUES
   (demo_id, 'AGHP-DEMO24', 'hp-coach', true),
   (demo_id, 'AGADM-DEMO24', 'hp-admin', true);
 
-INSERT INTO portal_access_codes (school_id, sport, code, is_active) VALUES
-  (demo_id, 'rugby',    'AGRUG-DEMO', true),
-  (demo_id, 'cricket',  'AGCRI-DEMO', true),
-  (demo_id, 'hockey',   'AGHOC-DEMO', true),
-  (demo_id, 'swimming', 'AGSWI-DEMO', true);
+-- portal_access_codes stores codes hashed, never in plain text. The login
+-- route lowercases before hashing, so these are the sha256 of the lowercased
+-- code. The human-readable codes are:
+--   rugby AGRUG-DEMO · cricket AGCRI-DEMO · hockey AGHOC-DEMO · swimming AGSWI-DEMO
+INSERT INTO portal_access_codes (school_id, sport, code_hash) VALUES
+  (demo_id, 'rugby',    encode(digest(lower('AGRUG-DEMO'), 'sha256'), 'hex')),
+  (demo_id, 'cricket',  encode(digest(lower('AGCRI-DEMO'), 'sha256'), 'hex')),
+  (demo_id, 'hockey',   encode(digest(lower('AGHOC-DEMO'), 'sha256'), 'hex')),
+  (demo_id, 'swimming', encode(digest(lower('AGSWI-DEMO'), 'sha256'), 'hex'));
 
 -- ── Athletes: 24 across four rugby teams ─────────────────────────────────────
 INSERT INTO athletes (school_id, full_name, first_name, last_name, team, age_group, position, availability, is_active, sport)

@@ -51,11 +51,20 @@ export async function POST(req: NextRequest) {
     let matched = false;
 
     if (adminConfigured()) {
+      // portal_access_codes stores codes HASHED (code_hash), not in plain text —
+      // so we hash what was typed and compare digests, rather than comparing
+      // the raw code. timingSafeEqual on the digests keeps the comparison
+      // constant-time.
+      const providedHash = crypto.createHash('sha256').update(code.trim().toLowerCase()).digest();
       const { data: rows } = await getAdmin()
-        .from('portal_access_codes').select('code,school_id')
-        .eq('sport', resolvedSport).eq('is_active', true);
+        .from('portal_access_codes').select('code_hash,school_id')
+        .eq('sport', resolvedSport);
       for (const row of rows || []) {
-        if (matches(row.code)) { matched = true; schoolId = row.school_id; break; }
+        if (!row.code_hash) continue;
+        const stored = Buffer.from(String(row.code_hash), 'hex');
+        if (stored.length === providedHash.length && crypto.timingSafeEqual(stored, providedHash)) {
+          matched = true; schoolId = row.school_id; break;
+        }
       }
     }
 

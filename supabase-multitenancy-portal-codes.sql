@@ -22,19 +22,23 @@
 -- Codes are per (school, sport): the same school can run a different code for
 -- hockey vs rugby, exactly as the env vars do today.
 
-INSERT INTO portal_access_codes (school_id, sport, code, is_active)
+-- Codes are stored HASHED. Replace the placeholder strings below with your
+-- real current portal codes — the digest is computed for you.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+INSERT INTO portal_access_codes (school_id, sport, code_hash)
 VALUES
-  ('00000000-0000-0000-0000-000000000001', 'hockey',    'REPLACE_ME_HOCKEY',    true),
-  ('00000000-0000-0000-0000-000000000001', 'rugby',     'REPLACE_ME_RUGBY',     true),
-  ('00000000-0000-0000-0000-000000000001', 'cricket',   'REPLACE_ME_CRICKET',   true),
-  ('00000000-0000-0000-0000-000000000001', 'rowing',    'REPLACE_ME_ROWING',    true),
-  ('00000000-0000-0000-0000-000000000001', 'swimming',  'REPLACE_ME_SWIMMING',  true),
-  ('00000000-0000-0000-0000-000000000001', 'waterpolo', 'REPLACE_ME_WATERPOLO', true)
+  ('00000000-0000-0000-0000-000000000001', 'hockey',    encode(digest(lower('REPLACE_ME_HOCKEY'),    'sha256'), 'hex')),
+  ('00000000-0000-0000-0000-000000000001', 'rugby',     encode(digest(lower('REPLACE_ME_RUGBY'),     'sha256'), 'hex')),
+  ('00000000-0000-0000-0000-000000000001', 'cricket',   encode(digest(lower('REPLACE_ME_CRICKET'),   'sha256'), 'hex')),
+  ('00000000-0000-0000-0000-000000000001', 'rowing',    encode(digest(lower('REPLACE_ME_ROWING'),    'sha256'), 'hex')),
+  ('00000000-0000-0000-0000-000000000001', 'swimming',  encode(digest(lower('REPLACE_ME_SWIMMING'),  'sha256'), 'hex')),
+  ('00000000-0000-0000-0000-000000000001', 'waterpolo', encode(digest(lower('REPLACE_ME_WATERPOLO'), 'sha256'), 'hex'))
 ON CONFLICT (school_id, sport) DO NOTHING;
 
 NOTIFY pgrst, 'reload schema';
 
 -- ── VERIFY ────────────────────────────────────────────────────────────────────
-SELECT sport, code, is_active FROM portal_access_codes
+SELECT sport, left(code_hash, 12) || '…' AS code_hash_preview FROM portal_access_codes
 WHERE school_id = '00000000-0000-0000-0000-000000000001'
 ORDER BY sport;

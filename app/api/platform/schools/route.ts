@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
+import { createHash } from 'crypto';
 
 // ─── /api/platform/schools ────────────────────────────────────────────────────
 // Platform-level school management — creating and editing the schools that use
@@ -103,11 +104,16 @@ export async function POST(req: NextRequest) {
     ? body.sports.filter((sp: string) => ALL_SPORTS.includes(sp))
     : ALL_SPORTS;
 
-  const portalCodes = requested.map(sport => ({
-    school_id: data.id,
+  // portal_access_codes stores hashes, not plain codes — keep the readable one
+  // in memory only long enough to show it to the operator once.
+  const portalPlain = requested.map(sport => ({
     sport,
     code: randomCode(`${abbreviation}${sport.slice(0, 3).toUpperCase()}`),
-    is_active: true,
+  }));
+  const portalCodes = portalPlain.map(p => ({
+    school_id: data.id,
+    sport: p.sport,
+    code_hash: createHash('sha256').update(p.code.toLowerCase()).digest('hex'),
   }));
 
   const [hpRes, portalRes, sportsRes] = await Promise.all([
@@ -134,7 +140,7 @@ export async function POST(req: NextRequest) {
     codes: {
       hpCoach: hpCoachCode,
       hpAdmin: hpAdminCode,
-      portal: Object.fromEntries(portalCodes.map(c => [c.sport, c.code])),
+      portal: Object.fromEntries(portalPlain.map(c => [c.sport, c.code])),
     },
     warnings: codeWarnings.length ? codeWarnings : undefined,
   });
