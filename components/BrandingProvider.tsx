@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import type { SchoolBranding } from '@/lib/schoolBranding';
 import { DEFAULT_BRANDING } from '@/lib/schoolBranding';
 
+export interface SchoolSportItem { key: string; label: string; color: string; icon: string }
+
 // ─── BrandingProvider ──────────────────────────────────────────────────────────
 // Loads the current user's school branding once and makes it available
 // everywhere via useBranding(). Also writes the school's colours to CSS
@@ -14,8 +16,9 @@ import { DEFAULT_BRANDING } from '@/lib/schoolBranding';
 // Falls back to neutral Altus branding while loading or when signed out, so
 // nothing flashes blank.
 
-const BrandingContext = React.createContext<{ branding: SchoolBranding; loading: boolean }>({
+const BrandingContext = React.createContext<{ branding: SchoolBranding; sports: SchoolSportItem[]; loading: boolean }>({
   branding: DEFAULT_BRANDING,
+  sports: [],
   loading: true,
 });
 
@@ -25,6 +28,7 @@ export function useBranding() {
 
 export default function BrandingProvider({ children }: { children: React.ReactNode }) {
   const [branding, setBranding] = React.useState<SchoolBranding>(DEFAULT_BRANDING);
+  const [sports, setSports] = React.useState<SchoolSportItem[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -37,11 +41,18 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
         const slug = new URLSearchParams(window.location.search).get('school');
         const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } } as any));
 
-        const res = await fetch(`/api/school/branding${slug ? `?slug=${encodeURIComponent(slug)}` : ''}`, {
-          headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
-        });
-        const d = await res.json();
-        if (!cancelled && d.branding) setBranding(d.branding);
+        const headers = session ? { Authorization: `Bearer ${session.access_token}` } : {};
+        const qs = slug ? `?slug=${encodeURIComponent(slug)}` : '';
+        const [brandRes, sportsRes] = await Promise.all([
+          fetch(`/api/school/branding${qs}`, { headers }),
+          fetch(`/api/school/sports${qs}`, { headers }),
+        ]);
+        const d = await brandRes.json();
+        const sp = await sportsRes.json();
+        if (!cancelled) {
+          if (d.branding) setBranding(d.branding);
+          if (sp.sports) setSports(sp.sports);
+        }
       } catch {
         /* keep defaults */
       }
@@ -60,7 +71,7 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
   }, [branding.primaryColor, branding.accentColor]);
 
   return (
-    <BrandingContext.Provider value={{ branding, loading }}>
+    <BrandingContext.Provider value={{ branding, sports, loading }}>
       {children}
     </BrandingContext.Provider>
   );

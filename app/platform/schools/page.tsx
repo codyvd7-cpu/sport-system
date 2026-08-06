@@ -13,7 +13,10 @@ const BLANK = {
   name: '', shortName: '', abbreviation: '', slug: '',
   logoUrl: '', primaryColor: '#38bdf8', accentColor: '#a78bfa',
   latitude: '', longitude: '',
+  sports: ['hockey'] as string[],
 };
+
+const ALL_SPORTS = ['hockey', 'rugby', 'cricket', 'swimming', 'rowing', 'waterpolo', 'football'];
 
 export default function PlatformSchoolsPage() {
   const [schools, setSchools] = React.useState<School[]>([]);
@@ -228,6 +231,34 @@ export default function PlatformSchoolsPage() {
             <label style={label}>Longitude (for weather)</label>
             <input style={input} value={form.longitude} onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))} placeholder="28.0473" />
           </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={label}>Sports this school runs</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {ALL_SPORTS.map(sp => {
+                const on = form.sports.includes(sp);
+                return (
+                  <button key={sp} type="button"
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      sports: on ? f.sports.filter(x => x !== sp) : [...f.sports, sp],
+                    }))}
+                    style={{
+                      border: `1px solid ${on ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.12)'}`,
+                      background: on ? 'rgba(56,189,248,0.12)' : 'transparent',
+                      color: on ? '#7dd3fc' : 'rgba(255,255,255,0.45)',
+                      borderRadius: 999, padding: '6px 14px', fontSize: 12, fontWeight: 700,
+                      cursor: 'pointer', textTransform: 'capitalize',
+                    }}>
+                    {sp}
+                  </button>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>
+              Only these appear in the school&apos;s navigation, and only these get portal access codes.
+            </p>
+          </div>
+
           <div style={{ gridColumn: '1 / -1' }}>
             <button type="submit" disabled={busy}
               style={{ width: '100%', border: 'none', borderRadius: 10, padding: '12px 0', background: '#38bdf8', color: '#04121f', fontSize: 13, fontWeight: 800, cursor: 'pointer', opacity: busy ? 0.5 : 1 }}>

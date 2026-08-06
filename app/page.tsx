@@ -101,7 +101,7 @@ function Card({dept,favs,onFav,main=true}:{
 }
 
 export default function LandingPage(){
-  const { branding } = useBranding();
+  const { branding, sports } = useBranding();
   const [mounted,  setMounted]  = React.useState(false);
   const [photo,    setPhoto]    = React.useState(0);
   const [favs,     setFavs]     = React.useState<string[]>([]);
@@ -132,11 +132,29 @@ export default function LandingPage(){
     });
   }
 
-  const sorted=React.useMemo(()=>[...DEPTS].sort((a,b)=>{
+  // Departments come from the school's own enabled sports rather than a fixed
+  // list — a school that doesn't run rowing shouldn't see a rowing tile at all,
+  // let alone one saying "coming soon". Falls back to the built-in list while
+  // sports are still loading, so the carousel never renders empty.
+  const depts = React.useMemo(() => {
+    if (!sports.length) return DEPTS;
+    const hp = DEPTS.find(d => d.id === 'hp');
+    const fromSchool = sports.map(sp => ({
+      id: sp.key,
+      label: sp.label.toUpperCase(),
+      lines: ['Fixtures · Results', 'Weekly Schedule'],
+      href: `/portal-login?sport=${sp.key}`,
+      live: true,
+      accent: sp.color,
+    }));
+    return hp ? [fromSchool[0], hp, ...fromSchool.slice(1)].filter(Boolean) : fromSchool;
+  }, [sports]);
+
+  const sorted=React.useMemo(()=>[...depts].sort((a,b)=>{
     const aF=favs.includes(a.id)?0:1,bF=favs.includes(b.id)?0:1;
     if(aF!==bF)return aF-bF;
     return a.live===b.live?0:a.live?-1:1;
-  }),[favs]);
+  }),[favs,depts]);
 
   const dPages=Math.ceil(sorted.length/DPER);
   const n=sorted.length;

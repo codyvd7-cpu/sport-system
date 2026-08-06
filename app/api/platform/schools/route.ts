@@ -94,20 +94,31 @@ export async function POST(req: NextRequest) {
 
   const hpCoachCode = randomCode(`${abbreviation}HP`);
   const hpAdminCode = randomCode(`${abbreviation}ADM`);
-  const sports = ['hockey', 'rugby', 'cricket', 'swimming', 'rowing', 'waterpolo', 'football'];
-  const portalCodes = sports.map(sport => ({
+
+  // Only the sports this school actually runs — generating codes for all seven
+  // would hand a hockey-and-cricket school four codes they'll never use, and
+  // put sports they don't offer into their navigation.
+  const ALL_SPORTS = ['hockey', 'rugby', 'cricket', 'swimming', 'rowing', 'waterpolo', 'football'];
+  const requested: string[] = Array.isArray(body.sports) && body.sports.length
+    ? body.sports.filter((sp: string) => ALL_SPORTS.includes(sp))
+    : ALL_SPORTS;
+
+  const portalCodes = requested.map(sport => ({
     school_id: data.id,
     sport,
     code: randomCode(`${abbreviation}${sport.slice(0, 3).toUpperCase()}`),
     is_active: true,
   }));
 
-  const [hpRes, portalRes] = await Promise.all([
+  const [hpRes, portalRes, sportsRes] = await Promise.all([
     db.from('hp_access_codes').insert([
       { school_id: data.id, code: hpCoachCode, role: 'hp-coach', is_active: true },
       { school_id: data.id, code: hpAdminCode, role: 'hp-admin', is_active: true },
     ]),
     db.from('portal_access_codes').insert(portalCodes),
+    db.from('school_sports').insert(
+      requested.map((sport, i) => ({ school_id: data.id, sport_key: sport, sort_order: i + 1, is_active: true }))
+    ),
   ]);
 
   // The school itself exists either way — surface code failures rather than
@@ -115,6 +126,7 @@ export async function POST(req: NextRequest) {
   const codeWarnings: string[] = [];
   if (hpRes.error) codeWarnings.push(`HP codes: ${hpRes.error.message}`);
   if (portalRes.error) codeWarnings.push(`Portal codes: ${portalRes.error.message}`);
+  if (sportsRes.error) codeWarnings.push(`Sports: ${sportsRes.error.message}`);
 
   return NextResponse.json({
     ok: true,
