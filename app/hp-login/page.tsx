@@ -8,7 +8,7 @@ const COLOR = '#10b981';
 const COLOR_DIM = 'rgba(16,185,129,0.12)';
 const BTN_GRADIENT = 'linear-gradient(135deg,#065f46,#10b981)';
 const BTN_SHADOW = '0 8px 32px rgba(16,185,129,0.45)';
-const PHOTO = '/sbc-photo-1.jpg';
+const PHOTO = '/bg-hero-1.jpg';
 
 export default function HPLoginPage() {
   const { branding } = useBranding();

@@ -123,7 +123,7 @@ function LoginForm() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="mb-2 block text-xs font-black uppercase tracking-wide text-white/50">Email</label>
-            <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="coach@stbenedicts.co.za"
+            <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="coach@yourschool.co.za"
               className="w-full rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/25 focus:border-sky-500" />
           </div>
           <div>

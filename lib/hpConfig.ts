@@ -2,7 +2,7 @@
 // Single source of truth for school branding. ALL pages should import from here —
 // never hardcode the school name, abbreviation, or logo path directly.
 //
-// Currently a placeholder identity ("Ridgemont College") — Bennies is no longer
+// Currently a placeholder identity ("Ridgemont College") — the original pilot school is no longer
 // the client, so real school branding/logo was removed. Change the values below
 // and every page picks it up automatically; no more hunting across 39 files.
 

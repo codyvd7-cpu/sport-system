@@ -138,7 +138,7 @@ export default function CoachesPage() {
               </div>
               <div>
                 <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wide text-white/35">Email</label>
-                <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="coach@stbenedicts.co.za"
+                <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="coach@yourschool.co.za"
                   className="w-full rounded-xl border border-white/8 bg-[#04060e] px-3 py-2.5 text-sm text-white outline-none focus:border-amber-500 transition"/>
               </div>
             </div>
