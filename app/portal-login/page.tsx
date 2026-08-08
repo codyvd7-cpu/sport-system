@@ -201,7 +201,7 @@ function PortalLoginInner() {
         {/* Footer */}
         <div style={{position:'relative',zIndex:10,marginTop:28,textAlign:'center'}}>
           <p style={{fontSize:9,fontWeight:700,letterSpacing:'0.45em',color:`${cfg.color}55`,textTransform:'uppercase',marginBottom:6}}>
-            Veritas In Caritate
+            Performance Operating System
           </p>
           <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'4px 8px',fontSize:9,color:'rgba(255,255,255,0.18)'}}>
             <span>Altus Performance is a product of Altus (Pty) Ltd. Reg. 2026/424230/07</span>

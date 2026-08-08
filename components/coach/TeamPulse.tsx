@@ -96,7 +96,7 @@ export default function TeamPulse({ team, accent }: { team: string; accent: stri
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         {/* Weather */}
         <Card>
-          <CardLabel>Today · Bedfordview</CardLabel>
+          <CardLabel>Today&apos;s forecast</CardLabel>
           {weather ? (
             <div className="flex items-center gap-3">
               <span className="text-2xl leading-none">{weather.icon || '☀️'}</span>

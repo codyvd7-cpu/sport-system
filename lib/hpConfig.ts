@@ -10,7 +10,7 @@ export const HP_SCHOOL = {
   name:         "Ridgemont College",
   shortName:    'Ridgemont',
   abbreviation: 'RC',
-  location:     'Bedfordview',
+  location:     '',
   logo:         '/school-logo.png',
 } as const;
 

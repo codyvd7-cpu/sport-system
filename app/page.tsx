@@ -251,9 +251,6 @@ export default function LandingPage(){
         <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
           {branding.name.toUpperCase()}
         </p>
-        <p style={{fontSize:8,letterSpacing:'.15em',color:'rgba(255,255,255,.25)',marginBottom:6,textAlign:'center'}}>
-          EST. 1958 · BEDFORDVIEW
-        </p>
         <h1 className="anton" style={{fontSize:'clamp(1.9rem,5.5vw,3.8rem)',lineHeight:1,textAlign:'center',letterSpacing:'.03em'}}>
           <span style={{display:'block',color:'white'}}>DRIVEN BY</span>
           <span style={{display:'block',color:'#38bdf8',textShadow:'0 0 40px rgba(56,189,248,.28)'}}>EXCELLENCE</span>
@@ -388,7 +385,7 @@ export default function LandingPage(){
       <div style={{position:'relative',zIndex:10,textAlign:'center',
         padding:isMob?'2px 16px 8px':'8px 16px 14px',flexShrink:0}}>
         <p style={{fontSize:isMob?8:10,fontWeight:700,letterSpacing:'.4em',color:'rgba(56,189,248,.35)',marginBottom:isMob?2:4}}>
-          VERITAS IN CARITATE
+          PERFORMANCE OPERATING SYSTEM
         </p>
         <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:'3px 8px',
           fontSize:isMob?8:10,color:'rgba(255,255,255,.2)'}}>
