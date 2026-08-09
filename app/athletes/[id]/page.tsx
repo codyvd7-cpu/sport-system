@@ -14,6 +14,7 @@ import {
 } from 'recharts';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { useBranding } from '@/components/BrandingProvider';
+import DevelopmentPanel from '@/components/coach/DevelopmentPanel';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -363,7 +364,7 @@ export default function AthleteProfile({params}:PageProps) {
   const [timeline,setTimeline] = React.useState<Row[]>([]);
   const [workoutLogs,setWorkoutLogs] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'timeline'|'training'|'attendance'|'performance'|'notes'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'development'|'timeline'|'training'|'attendance'|'performance'|'notes'>('overview');
   const [matchResults, setMatchResults] = React.useState<Row[]>([]);
 
   // Edit states
@@ -593,6 +594,7 @@ export default function AthleteProfile({params}:PageProps) {
   const TABS = [
     {key:'overview',    label:'Overview'},
     {key:'season',      label:'Season'},
+    {key:'development', label:'Development'},
     {key:'timeline',    label:`Timeline ${timeline.length>0?`(${timeline.length})`:''}`},
     {key:'training',    label:`Training ${checkins.length+workoutLogs.length>0?`(${checkins.length+workoutLogs.length})`:''}`},
     {key:'attendance',  label:`Attendance ${attendance.length>0?`(${attendance.length})`:''}` },
@@ -749,6 +751,11 @@ export default function AthleteProfile({params}:PageProps) {
             </button>
           ))}
         </div>
+
+        {/* ══ DEVELOPMENT TAB — the closed test→goal→retest loop ══ */}
+        {activeTab==='development'&&(
+          <DevelopmentPanel athleteId={id} accent={sportColor}/>
+        )}
 
         {/* ══ TIMELINE TAB — the athlete's history, newest first ══ */}
         {activeTab==='timeline'&&(
