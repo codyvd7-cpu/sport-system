@@ -360,9 +360,10 @@ export default function AthleteProfile({params}:PageProps) {
   const [notes, setNotes] = React.useState<Row[]>([]);
   const [sportAssignments, setSportAssignments] = React.useState<Row[]>([]);
   const [checkins,setCheckins] = React.useState<Row[]>([]);
+  const [timeline,setTimeline] = React.useState<Row[]>([]);
   const [workoutLogs,setWorkoutLogs] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'training'|'attendance'|'performance'|'notes'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'timeline'|'training'|'attendance'|'performance'|'notes'>('overview');
   const [matchResults, setMatchResults] = React.useState<Row[]>([]);
 
   // Edit states
@@ -446,6 +447,14 @@ export default function AthleteProfile({params}:PageProps) {
       supabase.from('workout_logs').select('id,logged_date,sets,reps,weight_kg,program_exercise_id').eq('athlete_id',id).order('created_at',{ascending:false}).limit(30),
     ]);
     setCheckins(ciRes.data||[]);
+    // Athlete history — additive, and never blocks the rest of the profile
+    try {
+      const {data:{session}} = await supabase.auth.getSession();
+      if (session) {
+        const evRes = await fetch(`/api/athlete/events?athleteId=${id}`,{headers:{Authorization:`Bearer ${session.access_token}`}});
+        if (evRes.ok) { const ev = await evRes.json(); setTimeline(ev.events||[]); }
+      }
+    } catch { /* profile still loads without history */ }
     const wl = wlRes.data||[];
     const exIds = [...new Set(wl.map((r:Row)=>r.program_exercise_id))];
     if (exIds.length) {
@@ -510,9 +519,28 @@ export default function AthleteProfile({params}:PageProps) {
     setEditingInfo(false); showToast('Profile updated'); await load(); setSavingInfo(false);
   }
 
+
+  // Records a moment in the athlete's history. Deliberately not awaited by
+  // callers — if it fails, the underlying save still succeeded.
+  async function logEvent(type:string, summary:string, detail?:Record<string,unknown>) {
+    try {
+      const {data:{session}} = await supabase.auth.getSession();
+      if(!session) return;
+      await fetch('/api/athlete/events',{
+        method:'POST',
+        headers:{'Content-Type':'application/json',Authorization:`Bearer ${session.access_token}`},
+        body:JSON.stringify({athleteId:id,type,summary,detail:detail||{}}),
+      });
+    } catch { /* history is never worth failing a save over */ }
+  }
+
   async function setAvail(status:string) {
+    const previous = availability;
     await supabase.from('athletes').update({availability:status}).eq('id',id);
     setAvailability(status); showToast(`Status: ${status}`);
+    if (previous !== status) {
+      void logEvent('availability_changed', `Availability: ${previous} \u2192 ${status}`, {from:previous,to:status});
+    }
   }
 
   async function addAttendance(e:React.FormEvent) {
@@ -526,6 +554,7 @@ export default function AthleteProfile({params}:PageProps) {
     const num=Number(perfVal); if(Number.isNaN(num)){showToast('Result must be a number','error');return;}
     setSavingPerf(true);
     await supabase.from('performance_tests').upsert([{athlete_id:id,test_date:perfDate,test_type:perfTest.trim(),value:num,unit:perfUnit.trim()}],{onConflict:'athlete_id,test_date,test_type'});
+    void logEvent('test_completed', `${perfTest.trim()}: ${num}${perfUnit.trim()}`, {test:perfTest.trim(),value:num,unit:perfUnit.trim()});
     showToast('Result saved'); setPerfTest(''); setPerfVal(''); setPerfUnit(''); await load(); setSavingPerf(false);
   }
 
@@ -534,6 +563,7 @@ export default function AthleteProfile({params}:PageProps) {
     setSavingNote(true);
     const {data:{session}} = await supabase.auth.getSession();
     await supabase.from('coach_notes').insert([{athlete_id:id,note:newNote.trim(),author_email:session?.user?.email||'',is_feedback:false}]);
+    void logEvent('note_added', newNote.trim().slice(0,120), {});
     setNewNote(''); showToast('Note saved'); await load(); setSavingNote(false);
   }
 
@@ -560,6 +590,7 @@ export default function AthleteProfile({params}:PageProps) {
   const TABS = [
     {key:'overview',    label:'Overview'},
     {key:'season',      label:'Season'},
+    {key:'timeline',    label:`Timeline ${timeline.length>0?`(${timeline.length})`:''}`},
     {key:'training',    label:`Training ${checkins.length+workoutLogs.length>0?`(${checkins.length+workoutLogs.length})`:''}`},
     {key:'attendance',  label:`Attendance ${attendance.length>0?`(${attendance.length})`:''}` },
     {key:'performance', label:`Performance ${pbs.length>0?`(${pbs.length})`:''}`},
@@ -715,6 +746,50 @@ export default function AthleteProfile({params}:PageProps) {
             </button>
           ))}
         </div>
+
+        {/* ══ TIMELINE TAB — the athlete's history, newest first ══ */}
+        {activeTab==='timeline'&&(
+          <div className="space-y-5">
+            {timeline.length===0 ? (
+              <div className="rounded-2xl border border-white/5 bg-white/[0.015] p-8 text-center">
+                <p className="text-[13px] text-white/40">No history recorded yet.</p>
+                <p className="mt-1.5 text-[11px] text-white/25">
+                  Availability changes, coach notes, test results, check-ins and personal bests appear here as they happen.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/5 bg-white/[0.015] overflow-hidden">
+                <div className="divide-y divide-white/5">
+                  {timeline.map((ev:Row)=>{
+                    const tone =
+                      ev.event_type==='personal_best' ? {dot:'#34d399', label:'PB'} :
+                      ev.event_type==='availability_changed' ? {dot:'#fbbf24', label:'Status'} :
+                      ev.event_type==='injury_reported' ? {dot:'#f87171', label:'Injury'} :
+                      ev.event_type==='test_completed' ? {dot:'#38bdf8', label:'Test'} :
+                      ev.event_type==='note_added' ? {dot:'#a78bfa', label:'Note'} :
+                      ev.event_type==='checkin' ? {dot:'#22d3ee', label:'Check-in'} :
+                      ev.event_type==='workout_logged' ? {dot:'#818cf8', label:'Workout'} :
+                      {dot:'rgba(255,255,255,0.3)', label:'Event'};
+                    const when = new Date(ev.occurred_at);
+                    return (
+                      <div key={ev.id} className="flex items-start gap-3 px-5 py-3">
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full" style={{background:tone.dot}}/>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12.5px] text-white/80">{ev.summary}</p>
+                          <p className="mt-0.5 text-[10.5px] text-white/30">
+                            {tone.label} · {when.toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'})}
+                            {' · '}{when.toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'})}
+                            {ev.actor && ev.actor!=='system' ? ` · ${ev.actor}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ══ TRAINING TAB — self-reported gym activity ══ */}
         {activeTab==='training'&&(

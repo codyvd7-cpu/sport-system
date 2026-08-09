@@ -4,6 +4,7 @@ import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { verifyHpCookie } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { verifyPlayer, requireAthleteContext } from '@/lib/playerAuth';
+import { recordAthleteEvent } from '@/lib/athleteEvents';
 
 // ─── /api/player/checkin ────────────────────────────────────────────────────────
 // QR gym check-in.
@@ -88,6 +89,15 @@ export async function POST(req: NextRequest) {
   }
 
   const { error: insErr } = await db.from('gym_checkins').insert([{ athlete_id: athleteId, venue, source: 'qr', school_id: ctx.schoolId }]);
+
+  // History (fire-and-forget — must never fail the check-in itself)
+  if (!insErr) {
+    void recordAthleteEvent({
+      athleteId, schoolId: ctx.schoolId, type: 'checkin',
+      summary: `Checked in at ${venue}`,
+      detail: { venue }, sourceTable: 'gym_checkins', actor: 'player',
+    });
+  }
   if (insErr) {
     return NextResponse.json({ error: insErr.message }, { status: 500 });
   }

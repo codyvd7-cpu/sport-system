@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { verifyPlayer, requireAthleteContext } from '@/lib/playerAuth';
+import { recordAthleteEvent } from '@/lib/athleteEvents';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 // ─── /api/workout/log ─────────────────────────────────────────────────────────
@@ -68,6 +69,22 @@ export async function POST(req: NextRequest) {
   const { error: insErr } = await db.from('workout_logs')
     .insert([{ athlete_id: athleteId, program_exercise_id: programExerciseId, sets, reps, weight_kg: weightKg, school_id: ctx.schoolId }]);
   if (insErr) return NextResponse.json({ error: insErr.message }, { status: 500 });
+
+  // History: log the set, and separately mark a genuine personal best.
+  void recordAthleteEvent({
+    athleteId, schoolId: ctx.schoolId, type: 'workout_logged',
+    summary: `Logged ${sets}\u00d7${reps}${weightKg != null ? ` @ ${weightKg}kg` : ''}`,
+    detail: { sets, reps, weightKg, programExerciseId },
+    sourceTable: 'workout_logs', actor: 'player',
+  });
+  if (isNewPb && weightKg != null) {
+    void recordAthleteEvent({
+      athleteId, schoolId: ctx.schoolId, type: 'personal_best',
+      summary: `New personal best \u2014 ${weightKg}kg`,
+      detail: { weightKg, sets, reps, programExerciseId },
+      sourceTable: 'workout_logs', actor: 'player',
+    });
+  }
 
   const { data: dateRows } = await db.from('workout_logs')
     .select('logged_date').eq('athlete_id', athleteId).order('logged_date', { ascending: false }).limit(60);
