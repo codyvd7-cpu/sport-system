@@ -546,6 +546,9 @@ export default function AthleteProfile({params}:PageProps) {
   async function addAttendance(e:React.FormEvent) {
     e.preventDefault(); setSavingAtt(true);
     await supabase.from('attendance').insert([{athlete_id:id,session_date:attDate,session_type:attType,status:attStatus}]);
+    if (attStatus !== 'Present') {
+      void logEvent('attendance_concern', `${attStatus} \u2014 ${attType}`, {status:attStatus,sessionType:attType});
+    }
     showToast('Session added'); await load(); setSavingAtt(false);
   }
 

@@ -9,6 +9,36 @@ import { useToast } from '@/components/Toast';
 import { fDateShort, fISODate } from '@/lib/dates';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 
+// Records attendance events. Deliberately only logs NON-present statuses:
+// marking a full squad present every session would bury the genuinely notable
+// moments in each athlete's timeline. Absences are what a coach looks back for.
+async function logAbsenceEvents(
+  supabase: { auth: { getSession: () => Promise<{ data: { session: { access_token: string } | null } }> } },
+  rows: { athlete_id: string; status: string; session_date: string; session_type?: string }[]
+) {
+  try {
+    const notable = rows.filter(r => r.status && r.status !== 'Present');
+    if (!notable.length) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch('/api/athlete/events/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({
+        events: notable.map(r => ({
+          athleteId: r.athlete_id,
+          type: 'attendance_concern',
+          summary: `${r.status}${r.session_type ? ` \u2014 ${r.session_type}` : ''}`,
+          detail: { status: r.status, sessionType: r.session_type },
+          sourceTable: 'attendance',
+          occurredAt: new Date(r.session_date).toISOString(),
+        })),
+      }),
+    });
+  } catch { /* history must never break saving the register */ }
+}
+
+
 type Row = Record<string, any>;
 
 const SESSION_TYPES = ['Training','Match','Gym','Fitness','Extras','Other'];
@@ -171,6 +201,7 @@ export default function AttendancePage() {
     const {error}=await supabase.from('attendance').insert(rows);
     if(error){showToast(`Error: ${error.message}`,'error');}
     else{
+      void logAbsenceEvents(supabase, rows);
       showToast(`${squad.length} athletes marked ✓`);
       // Refresh history
       const {data}=await supabase.from('attendance').select('*,athletes(full_name,team)').eq('sport', sport || 'hockey').order('session_date',{ascending:false}).limit(500);
