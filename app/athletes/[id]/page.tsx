@@ -16,6 +16,7 @@ import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/componen
 import { useBranding } from '@/components/BrandingProvider';
 import DevelopmentPanel from '@/components/coach/DevelopmentPanel';
 import ReturnToPlayPanel from '@/components/coach/ReturnToPlayPanel';
+import HPResultsPanel from '@/components/coach/HPResultsPanel';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -1071,6 +1072,10 @@ export default function AthleteProfile({params}:PageProps) {
         {/* ══ PERFORMANCE TAB ══ */}
         {activeTab==='performance'&&(
           <div className="space-y-5">
+            {/* HP testing battery — shown when this athlete is linked to an
+                HP student record */}
+            <HPResultsPanel athleteId={id}/>
+
             {/* Quick add */}
             <div className="rounded-2xl border border-white/6 p-5">
               <p className="mb-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/25">Add Result</p>
