@@ -8,6 +8,7 @@ import { useToast } from '@/components/Toast';
 import TeamPulse from '@/components/coach/TeamPulse';
 import CoachInbox from '@/components/coach/CoachInbox';
 import SessionLoadPanel from '@/components/coach/SessionLoadPanel';
+import DepartmentHealth from '@/components/coach/DepartmentHealth';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { getTeamGroups, type SportKey } from '@/lib/sports';
 
@@ -587,6 +588,11 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
           }}>Overview</span>
         </h1>
         <p className="mt-2 text-[13px] font-medium" style={{color:'rgba(255,255,255,0.3)'}}>{dateStr}</p>
+      </FadeUp>
+
+      {/* ── DEPARTMENT HEALTH — component statuses, not a composite score ── */}
+      <FadeUp delay={60}>
+        <DepartmentHealth/>
       </FadeUp>
 
       {/* ── STAT STRIP ── */}

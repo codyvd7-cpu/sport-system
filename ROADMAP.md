@@ -58,8 +58,9 @@ sessions.
       browser; the full checklist (player app, alerts, direct URL access) is
       not yet run. **Should happen before a second real school onboards** —
       this is children's data across institutions
-- [ ] **Head of Sport view** — distinct from the coach view: department health
-      by component, not a composite score
+- [x] **Head of Sport view** — department health by component (attendance,
+      testing coverage, availability, development, coach activity), each with
+      its status and evidence. Per-team breakdown table. No composite score
 - [ ] **Coach-side overhaul part 2** — attendance flow speed-up, athletes
       browsing. Dashboard was part 1 and is done
 
