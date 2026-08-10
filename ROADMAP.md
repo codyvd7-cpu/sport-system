@@ -54,10 +54,15 @@ sessions.
 - [x] **HP student ↔ athlete linking** — `/hp/link`. Explicit, human-confirmed
       links so one person has one development record. HP test results now
       display on the athlete profile Performance tab when linked
-- [ ] **Full isolation test** — `ISOLATION-TEST.md`. Core paths verified in the
-      browser; the full checklist (player app, alerts, direct URL access) is
-      not yet run. **Should happen before a second real school onboards** —
-      this is children's data across institutions
+- [x] **Effective isolation audit** — `supabase-effective-isolation-audit.sql`.
+      **Found and fixed a real leak:** 24 legacy `USING (true)` policies across
+      9 tables (athletes, attendance, coach_notes, hp_students, hp_test_results,
+      performance_tests, staff_roles) were overriding the school-scoped ones.
+      Postgres OR's permissive policies, so one blanket policy defeated every
+      correct policy beside it. Verified fixed by impersonating real users.
+- [ ] **Manual browser checklist** — `ISOLATION-TEST.md`. Database-level
+      isolation is now verified; the UI-level walkthrough (player app, alerts,
+      direct URL access) is still worth doing before a school onboards
 - [x] **Head of Sport view** — department health by component (attendance,
       testing coverage, availability, development, coach activity), each with
       its status and evidence. Per-team breakdown table. No composite score
