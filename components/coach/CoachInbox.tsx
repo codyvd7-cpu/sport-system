@@ -23,6 +23,7 @@ type Inbox = {
 };
 
 const KIND_TONE: Record<string, string> = {
+  rtp: '#fb923c',
   attendance: '#fbbf24',
   availability: '#f87171',
 };

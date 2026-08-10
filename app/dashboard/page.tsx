@@ -7,6 +7,7 @@ import { useRole } from '@/lib/useRole';
 import { useToast } from '@/components/Toast';
 import TeamPulse from '@/components/coach/TeamPulse';
 import CoachInbox from '@/components/coach/CoachInbox';
+import SessionLoadPanel from '@/components/coach/SessionLoadPanel';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { getTeamGroups, type SportKey } from '@/lib/sports';
 
@@ -96,7 +97,7 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
   const [statuses,setStatuses]       = React.useState<Record<string,string>>({});
   const [saving,setSaving]           = React.useState(false);
   const [saved,setSaved]             = React.useState(false);
-  const [tab,setTab]                 = React.useState<'register'|'squad'>('register');
+  const [tab,setTab]                 = React.useState<'register'|'load'|'squad'>('register');
   const [mounted,setMounted]         = React.useState(false);
   React.useEffect(()=>{setTimeout(()=>setMounted(true),50);},[]);
 
@@ -240,14 +241,14 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
       <FadeUp delay={90}>
         <div className="flex gap-1 rounded-2xl p-1 border"
           style={{background:'rgba(255,255,255,0.02)',borderColor:'rgba(255,255,255,0.06)'}}>
-          {(['register','squad'] as const).map(t=>(
+          {(['register','load','squad'] as const).map(t=>(
             <button key={t} onClick={()=>setTab(t)}
               className="flex-1 rounded-xl py-2.5 text-[12px] font-semibold transition-all"
               style={{
                 background:tab===t?'rgba(255,255,255,0.07)':'transparent',
                 color:tab===t?'white':'rgba(255,255,255,0.35)',
               }}>
-              {t==='register'?"Today's Register":"Squad"}
+              {t==='register'?"Today's Register":t==='load'?"Session RPE":"Squad"}
             </button>
           ))}
         </div>
@@ -347,6 +348,13 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
       )}
 
       {/* ── SQUAD TAB ── */}
+      {/* ── SESSION RPE TAB ── */}
+      {tab==='load'&&(
+        <FadeUp delay={110}>
+          <SessionLoadPanel squad={squad} sessionType={sessionType} accent={accent}/>
+        </FadeUp>
+      )}
+
       {tab==='squad'&&(
         <div style={fade(110)} className="space-y-3">
           <div className="overflow-hidden rounded-2xl border"
