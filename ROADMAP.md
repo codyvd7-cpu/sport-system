@@ -49,8 +49,11 @@ sessions.
 ## Outstanding
 
 ### Near-term
-- [ ] **Retest workflow** — "who's overdue for testing". Last outstanding
-      BUILD NOW item from the product audit
+- [x] **Retest workflow** — `/api/coach/retest`. Reports HP and coach-side
+      populations separately and merges them wherever a link exists
+- [x] **HP student ↔ athlete linking** — `/hp/link`. Explicit, human-confirmed
+      links so one person has one development record. **Still to do: a UI to
+      show HP test results on the athlete profile once linked**
 - [ ] **Full isolation test** — `ISOLATION-TEST.md`. Core paths verified in the
       browser; the full checklist (player app, alerts, direct URL access) is
       not yet run. **Should happen before a second real school onboards** —
