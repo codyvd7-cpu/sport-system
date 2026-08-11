@@ -35,6 +35,14 @@ sessions.
   clearance enforced as a gate, baseline comparison built in
 - **Session RPE** — `session_load` table + API (**no UI yet — see below**)
 
+### Video review (Phase 1)
+- **Link-based video tagging** — schools host footage (YouTube unlisted),
+  Altus stores tags. Hotkey tagging, clips, attach to athlete, per-school
+  editable tag sets. Tags are timestamps only, so moving to hosted video
+  later (Cloudflare Stream) changes one column and breaks nothing.
+- **Deliberately NOT self-hosted:** video egress would cost roughly $36/month
+  per school once coaches actually watch, growing with every replay.
+
 ### Legal / compliance
 - Privacy Policy and Terms of Use (POPIA dual-role model)
 - Operator Agreement draft (POPIA s.21 — legally required per school)
