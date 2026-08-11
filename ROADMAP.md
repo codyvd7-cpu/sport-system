@@ -69,6 +69,11 @@ sessions.
 - [ ] **Coach-side overhaul part 2** — attendance flow speed-up, athletes
       browsing. Dashboard was part 1 and is done
 
+- [x] **Athlete self-linking secured** — was: any signed-up user could link to
+      any athlete and read their data, with an unscoped cross-school search.
+      Now a claim requiring approval: auto-approved on parent-email match,
+      otherwise a coach confirms it at `/claims`.
+
 ### Housekeeping
 - [ ] 410 lint warnings (0 errors — non-blocking, but worth a pass)
 - [ ] `hp_sessions` table is empty but load-bearing (`hp_attendance` has an FK

@@ -22,7 +22,7 @@ const ATHLETE_FIELDS = 'id,full_name,team,sport,age_group,position,availability,
 
 export async function POST(req: NextRequest) {
   const ip = getClientId(req);
-  const rl = rateLimit(`player-me:${ip}`, { max: 30, windowMs: 60_000 });
+  const rl = await rateLimit(`player-me:${ip}`, { max: 30, windowMs: 60_000 });
   if (!rl.ok) return NextResponse.json({ error: 'Rate limit exceeded.' }, { status: 429 });
 
   if (!adminConfigured()) {
@@ -41,9 +41,20 @@ export async function POST(req: NextRequest) {
     if (action === 'match') {
       const name = String(body.name || '').trim();
       if (name.length < 3) return NextResponse.json({ matches: [] });
+
+      // Scope to the user's own school. Previously unscoped, so a user at one
+      // school could search and find another school's children by name.
+      const { data: prof } = await db.from('player_profiles')
+        .select('school_id').eq('user_id', user.userId).maybeSingle();
+      if (!prof?.school_id) {
+        return NextResponse.json({ matches: [], error: 'Complete your profile first.' });
+      }
+
       const surname = name.split(' ').pop() || name;
       const { data } = await db.from('athletes')
-        .select('id,full_name,team,sport')
+        .select('id,full_name,team')          // no sport/position/photo before a claim is approved
+        .eq('school_id', prof.school_id)
+        .eq('is_active', true)
         .or(`full_name.ilike.%${name}%,full_name.ilike.%${surname}%`)
         .limit(8);
       return NextResponse.json({ matches: data || [] });
@@ -65,22 +76,65 @@ export async function POST(req: NextRequest) {
     }
 
     // ── LINK: connect this account to an athlete record ────────────────────────
+    // ── LINK: now a verified CLAIM, not an instant self-assignment ───────────
+    // Previously any signed-up user could link to any athlete id and
+    // immediately read that child's attendance, results and photo.
     if (action === 'link') {
       const athleteId = String(body.athlete_id || '');
-      let hpStudentId: string | null = null;
-      if (athleteId) {
-        const { data: ath } = await db.from('athletes').select('id,full_name').eq('id', athleteId).maybeSingle();
-        if (!ath) return NextResponse.json({ error: 'Athlete not found.' }, { status: 404 });
-        // Auto-link the HP record when exactly one active student shares the name
-        const { data: hpMatches } = await db.from('hp_students')
-          .select('id').eq('active', true).ilike('full_name', ath.full_name.trim());
-        if (hpMatches?.length === 1) hpStudentId = hpMatches[0].id;
+
+      // Unlinking is always allowed — a user may remove their own link freely.
+      if (!athleteId) {
+        await db.from('player_profiles').update({ athlete_id: null }).eq('user_id', user.userId);
+        return NextResponse.json({ ok: true, status: 'unlinked' });
       }
-      const { error } = await db.from('player_profiles')
-        .update({ athlete_id: athleteId || null, ...(hpStudentId ? { hp_student_id: hpStudentId } : {}) })
-        .eq('user_id', user.userId);
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-      return NextResponse.json({ ok: true, hp_linked: !!hpStudentId });
+
+      const { data: prof } = await db.from('player_profiles')
+        .select('school_id').eq('user_id', user.userId).maybeSingle();
+      if (!prof?.school_id) {
+        return NextResponse.json({ error: 'Complete your profile first.' }, { status: 400 });
+      }
+
+      const { data: ath } = await db.from('athletes')
+        .select('id,full_name,school_id,parent_email').eq('id', athleteId).maybeSingle();
+      // Same 404 for "doesn't exist" and "different school" — a distinct error
+      // would confirm the existence of another school's athlete.
+      if (!ath || ath.school_id !== prof.school_id) {
+        return NextResponse.json({ error: 'Athlete not found.' }, { status: 404 });
+      }
+
+      // Auto-approve when the signed-up email matches the parent email the
+      // school already holds for that athlete. Real evidence, not a shared code.
+      const emailMatches = !!ath.parent_email && !!user.email &&
+        ath.parent_email.trim().toLowerCase() === user.email.trim().toLowerCase();
+
+      const claim = {
+        school_id: prof.school_id,
+        athlete_id: athleteId,
+        user_id: user.userId,
+        email: user.email || '',
+        claim_type: String(body.claim_type || 'player'),
+        status: emailMatches ? 'approved' : 'pending',
+        approved_via: emailMatches ? 'parent_email_match' : null,
+        approved_at: emailMatches ? new Date().toISOString() : null,
+      };
+
+      const { error: claimErr } = await db.from('athlete_claims')
+        .upsert(claim, { onConflict: 'athlete_id,user_id' });
+      if (claimErr) return NextResponse.json({ error: claimErr.message }, { status: 500 });
+
+      // The profile link is only set once the claim is approved. Until then the
+      // player sees nothing of that athlete.
+      if (emailMatches) {
+        await db.from('player_profiles').update({ athlete_id: athleteId }).eq('user_id', user.userId);
+      }
+
+      return NextResponse.json({
+        ok: true,
+        status: emailMatches ? 'approved' : 'pending',
+        message: emailMatches
+          ? 'Verified — your account is linked.'
+          : 'Request sent. A coach will confirm this shortly.',
+      });
     }
 
     // ── GET: the full portal payload ───────────────────────────────────────────

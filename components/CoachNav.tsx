@@ -50,6 +50,7 @@ const HOH_NAV: NavItem[] = [
   { href:'/portal-admin',    label:'Portal',      icon:I.globe  },
   { href:'/notifications',    label:'Notify',      icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
   { href:'/results',         label:'Results',     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> },
+  { href:'/claims',          label:'Requests',    icon:I.users  },
   { href:'/coaches',         label:'Coaches',     icon:I.star   },
   { href:'/assistant',       label:'AI Assistant',icon:I.chat   },
   { href:'/ai-tools',        label:'AI Tools',    icon:I.brain  },
