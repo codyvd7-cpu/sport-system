@@ -49,6 +49,15 @@ export default function VideoReviewPage() {
 
   const playerRef = React.useRef<any>(null);
   const [ready, setReady] = React.useState(false);
+  // Arriving from a clip link (?t=245) should land on that moment, not the
+  // start. Read from location rather than useSearchParams to avoid forcing a
+  // Suspense boundary around the whole page.
+  const startAtRef = React.useRef<number | null>(null);
+  React.useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get('t');
+    const n = t ? Number(t) : NaN;
+    if (Number.isFinite(n) && n > 0) startAtRef.current = n;
+  }, []);
   const tagTypesRef = React.useRef<TagType[]>([]);
   React.useEffect(() => { tagTypesRef.current = tagTypes; }, [tagTypes]);
 
@@ -84,7 +93,12 @@ export default function VideoReviewPage() {
       playerRef.current = new window.YT.Player('yt-player', {
         videoId: video!.external_id,
         playerVars: { rel: 0, modestbranding: 1, playsinline: 1 },
-        events: { onReady: () => setReady(true) },
+        events: {
+          onReady: (e: { target: { seekTo: (s: number, allow: boolean) => void } }) => {
+            setReady(true);
+            if (startAtRef.current != null) e.target.seekTo(startAtRef.current, true);
+          },
+        },
       });
     }
     if (window.YT?.Player) { build(); return; }

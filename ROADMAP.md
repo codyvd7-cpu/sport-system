@@ -40,6 +40,9 @@ sessions.
   Altus stores tags. Hotkey tagging, clips, attach to athlete, per-school
   editable tag sets. Tags are timestamps only, so moving to hosted video
   later (Cloudflare Stream) changes one column and breaks nothing.
+- **Clips on the athlete profile** — a Video tab showing every clip and tagged
+  moment for that player, each deep-linking into the review room at its exact
+  timestamp.
 - **Deliberately NOT self-hosted:** video egress would cost roughly $36/month
   per school once coaches actually watch, growing with every replay.
 
