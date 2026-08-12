@@ -10,7 +10,13 @@ const cspProd = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://fcm.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com",
+  // Sentry is tunnelled through our own domain (see tunnelRoute), so 'self'
+  // covers it — the explicit host is a fallback for any non-tunnelled traffic.
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://fcm.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.ingest.de.sentry.io",
+  // YouTube player for video review. Without this the embedded player is
+  // blocked by default-src and the review room renders an empty box.
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+  "script-src-elem 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com",
   "frame-ancestors 'self'",
   "form-action 'self'",
   "base-uri 'self'",
@@ -23,7 +29,9 @@ const cspDev = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com ws://localhost:* http://localhost:*",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://*.ingest.de.sentry.io ws://localhost:* http://localhost:*",
+  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
+  "script-src-elem 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com",
   "frame-ancestors 'self'",
   "form-action 'self'",
   "base-uri 'self'",
@@ -72,11 +80,17 @@ export default withSentryConfig(nextConfig, {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Uncomment to route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
-  // This can increase your server load as well as your hosting bill.
-  // Note: Check that the configured route will not match with your Next.js middleware, otherwise reporting of client-
-  // side errors will fail.
-  // tunnelRoute: "/monitoring",
+  // Routes browser error reports through our own domain instead of straight to
+  // sentry.io. Enabled deliberately: ad blockers and privacy extensions block
+  // *.sentry.io by default, so without this a meaningful share of coaches' and
+  // parents' errors never arrive — exactly the users we most need visibility
+  // into. Verified as a real problem, not a theoretical one: requests to the
+  // ingest endpoint failed outright from a normal browser during testing.
+  //
+  // Trade-off: a small amount of extra traffic through our own hosting.
+  // Note: must not collide with middleware matching, or client-side reporting
+  // silently fails.
+  tunnelRoute: "/monitoring",
 
   webpack: {
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
