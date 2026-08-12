@@ -9,6 +9,10 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "https://06d2ec218f597571a276b1dd2aecf190@o4511897612189696.ingest.de.sentry.io/4511897621233744",
 
+  // Send through our own domain rather than directly to sentry.io, so ad blockers
+  // don't silently drop reports. See app/api/telemetry/route.ts.
+  tunnel: "/api/telemetry",
+
   tracesSampleRate: 0.1,
   enableLogs: true,
   environment: process.env.NEXT_PUBLIC_VERCEL_ENV || process.env.NODE_ENV || 'development',

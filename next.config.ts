@@ -10,8 +10,9 @@ const cspProd = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data: https://fonts.gstatic.com",
-  // Sentry is tunnelled through our own domain (see tunnelRoute), so 'self'
-  // covers it — the explicit host is a fallback for any non-tunnelled traffic.
+  // Browser error reports tunnel through our own domain (/api/telemetry), so
+  // 'self' covers them; the explicit Sentry host is a fallback for anything
+  // that bypasses the tunnel.
   "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://api.anthropic.com https://fcm.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com https://*.ingest.de.sentry.io",
   // YouTube player for video review. Without this the embedded player is
   // blocked by default-src and the review room renders an empty box.
@@ -80,17 +81,11 @@ export default withSentryConfig(nextConfig, {
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
 
-  // Routes browser error reports through our own domain instead of straight to
-  // sentry.io. Enabled deliberately: ad blockers and privacy extensions block
-  // *.sentry.io by default, so without this a meaningful share of coaches' and
-  // parents' errors never arrive — exactly the users we most need visibility
-  // into. Verified as a real problem, not a theoretical one: requests to the
-  // ingest endpoint failed outright from a normal browser during testing.
-  //
-  // Trade-off: a small amount of extra traffic through our own hosting.
-  // Note: must not collide with middleware matching, or client-side reporting
-  // silently fails.
-  tunnelRoute: "/monitoring",
+  // NOTE: Sentry's built-in `tunnelRoute` is deliberately NOT used. It is a
+  // build-time rewrite that Turbopack does not generate, and Vercel builds this
+  // project with Turbopack — the result was a 404 and silently zero error
+  // reports. Tunnelling is instead handled by app/api/telemetry/route.ts, which
+  // works regardless of bundler. See the comments in that file.
 
   webpack: {
     // Enables automatic instrumentation of Vercel Cron Monitors. (Does not yet work with App Router route handlers.)
