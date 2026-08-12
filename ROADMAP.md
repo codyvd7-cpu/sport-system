@@ -85,6 +85,15 @@ sessions.
       Now a claim requiring approval: auto-approved on parent-email match,
       otherwise a coach confirms it at `/claims`.
 
+### Monitoring
+- **Sentry** — EU region (Frankfurt, `ingest.de.sentry.io`), same jurisdiction
+  as Supabase. Configured to strip all personal data before sending: no request
+  bodies, cookies, headers, query strings, user info or IP addresses. Session
+  Replay deliberately off (it records real screens = children's records).
+  Verified with a scrubbing test against a realistic payload.
+- [ ] Optional: `SENTRY_AUTH_TOKEN` in Vercel for readable stack traces
+      (source maps). Not required for error capture.
+
 ### Housekeeping
 - [ ] 410 lint warnings (0 errors — non-blocking, but worth a pass)
 - [ ] `hp_sessions` table is empty but load-bearing (`hp_attendance` has an FK

@@ -1,23 +1,32 @@
-// This file configures the initialization of Sentry for edge features (middleware, edge routes, and so on).
-// The config you add here will be used whenever one of the edge features is loaded.
-// Note that this config is unrelated to the Vercel Edge Runtime and is also required when running locally.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+// Sentry — edge runtime (middleware and edge routes).
+// Same privacy posture as the server config; see the comments there.
 
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
   dsn: "https://06d2ec218f597571a276b1dd2aecf190@o4511897612189696.ingest.de.sentry.io/4511897621233744",
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-
-  // Enable logs to be sent to Sentry
+  tracesSampleRate: 0.1,
   enableLogs: true,
+  environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+  enabled: process.env.NODE_ENV === 'production',
 
   dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
+    userInfo: false,
+    httpBodies: [],
   },
+
+  beforeSend(event) {
+    if (event.request) {
+      delete event.request.data;
+      delete event.request.cookies;
+      delete event.request.headers;
+      if (event.request.query_string) delete event.request.query_string;
+      if (event.request.url) event.request.url = event.request.url.split('?')[0];
+    }
+    delete event.user;
+    return event;
+  },
+
+  ignoreErrors: ['Unauthorized', 'Not found.', 'NEXT_NOT_FOUND', 'NEXT_REDIRECT'],
 });
