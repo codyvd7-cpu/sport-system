@@ -18,6 +18,7 @@ import DevelopmentPanel from '@/components/coach/DevelopmentPanel';
 import ReturnToPlayPanel from '@/components/coach/ReturnToPlayPanel';
 import HPResultsPanel from '@/components/coach/HPResultsPanel';
 import AthleteVideoPanel from '@/components/coach/AthleteVideoPanel';
+import AthleteLoadPanel from '@/components/coach/AthleteLoadPanel';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -367,7 +368,7 @@ export default function AthleteProfile({params}:PageProps) {
   const [timeline,setTimeline] = React.useState<Row[]>([]);
   const [workoutLogs,setWorkoutLogs] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'development'|'rtp'|'video'|'timeline'|'training'|'attendance'|'performance'|'notes'>('overview');
+  const [activeTab, setActiveTab] = React.useState<'overview'|'season'|'development'|'rtp'|'video'|'load'|'timeline'|'training'|'attendance'|'performance'|'notes'>('overview');
   const [matchResults, setMatchResults] = React.useState<Row[]>([]);
 
   // Edit states
@@ -600,6 +601,7 @@ export default function AthleteProfile({params}:PageProps) {
     {key:'development', label:'Development'},
     {key:'rtp',         label:'Return to Play'},
     {key:'video',       label:'Video'},
+    {key:'load',        label:'Load'},
     {key:'timeline',    label:`Timeline ${timeline.length>0?`(${timeline.length})`:''}`},
     {key:'training',    label:`Training ${checkins.length+workoutLogs.length>0?`(${checkins.length+workoutLogs.length})`:''}`},
     {key:'attendance',  label:`Attendance ${attendance.length>0?`(${attendance.length})`:''}` },
@@ -770,6 +772,11 @@ export default function AthleteProfile({params}:PageProps) {
         {/* ══ VIDEO TAB — this athlete's clips and tagged moments ══ */}
         {activeTab==='video'&&(
           <AthleteVideoPanel athleteId={id} accent={sportColor}/>
+        )}
+
+        {/* ══ LOAD TAB — session RPE captured from the dashboard, as a weekly trend ══ */}
+        {activeTab==='load'&&(
+          <AthleteLoadPanel athleteId={id} accent={sportColor}/>
         )}
 
         {/* ══ TIMELINE TAB — the athlete's history, newest first ══ */}
