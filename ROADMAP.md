@@ -33,7 +33,11 @@ sessions.
   outcome, linked to real test data
 - **Return-to-Play protocol** — stages configurable per school, medical
   clearance enforced as a gate, baseline comparison built in
-- **Session RPE** — `session_load` table + API (**no UI yet — see below**)
+- **Session RPE** — `session_load` table + API. Capture: dashboard's
+  "Session RPE" tab, one tap per athlete (`SessionLoadPanel`). Review: athlete
+  profile's new "Load" tab shows the weekly trend + session log
+  (`AthleteLoadPanel`, added 2026-08-15) — previously the capture screen had
+  no way to read the data back.
 
 ### Video review (Phase 1)
 - **Link-based video tagging** — schools host footage (YouTube unlisted),
