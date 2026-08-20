@@ -3,6 +3,7 @@ import Link from 'next/link';
 import * as React from 'react';
 import Image from 'next/image';
 import { useBranding } from '@/components/BrandingProvider';
+import SchoolPicker from '@/components/SchoolPicker';
 
 const PHOTOS=['/bg-hero-4.jpg','/bg-hero-1.jpg','/bg-hero-3.jpg','/bg-hero-2.jpg'];
 
@@ -259,6 +260,10 @@ export default function LandingPage(){
         <p style={{fontSize:12,color:'rgba(255,255,255,.3)',textAlign:'center'}}>
           A unified performance platform for athletes, coaches and teams.
         </p>
+
+        {/* For anyone who reached the bare domain rather than their school's
+            own link (/ridgemont). Hides itself when only one school exists. */}
+        <SchoolPicker/>
       </div>
 
       {/* ══════════ DESKTOP CAROUSEL ══════════ */}
