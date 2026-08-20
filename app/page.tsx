@@ -103,6 +103,12 @@ function Card({dept,favs,onFav,main=true}:{
 
 export default function LandingPage(){
   const { branding, sports } = useBranding();
+
+  // True when nobody has told us which school this is — someone typed the bare
+  // domain rather than following their school's link. The sport tiles are
+  // meaningless here (they'd lead to a code prompt with no indication of whose
+  // code), so the school picker becomes the main event instead.
+  const noSchoolContext = branding.slug === 'default';
   const [mounted,  setMounted]  = React.useState(false);
   const [photo,    setPhoto]    = React.useState(0);
   const [favs,     setFavs]     = React.useState<string[]>([]);
@@ -262,12 +268,15 @@ export default function LandingPage(){
         </p>
 
         {/* For anyone who reached the bare domain rather than their school's
-            own link (/ridgemont). Hides itself when only one school exists. */}
-        <SchoolPicker/>
+            own link (/ridgemont). Becomes the primary route in when we have no
+            idea which school they belong to. */}
+        <SchoolPicker prominent={noSchoolContext}/>
       </div>
 
       {/* ══════════ DESKTOP CAROUSEL ══════════ */}
-      {!isMob&&(
+      {/* Hidden without school context: these tiles would lead to a portal code
+          prompt without saying whose code is wanted. */}
+      {!isMob&&!noSchoolContext&&(
         <div style={{position:'relative',zIndex:10,flex:1,minHeight:0,
           display:'flex',flexDirection:'column',padding:'6px 0 4px'}}>
           <div style={{position:'relative',flex:1,minHeight:0,display:'flex',alignItems:'center'}}>
@@ -308,7 +317,7 @@ export default function LandingPage(){
       )}
 
       {/* ══════════ MOBILE 3D CAROUSEL ══════════ */}
-      {isMob&&(
+      {isMob&&!noSchoolContext&&(
         <div style={{position:'relative',zIndex:10,flex:1,minHeight:0,
           display:'flex',flexDirection:'column',padding:'6px 0 4px'}}>
           {/* Stage — fixed height so cards don't go massive */}

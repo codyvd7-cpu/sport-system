@@ -21,7 +21,7 @@ type School = {
   slug: string; primary_color: string; logo_url: string | null;
 };
 
-export default function SchoolPicker() {
+export default function SchoolPicker({ prominent = false }: { prominent?: boolean } = {}) {
   const [schools, setSchools] = React.useState<School[]>([]);
   const [q, setQ] = React.useState('');
   const [loading, setLoading] = React.useState(true);
@@ -35,7 +35,13 @@ export default function SchoolPicker() {
     return () => { stop = true; };
   }, []);
 
-  if (loading || schools.length <= 1) return null;
+  // `prominent` is set on the bare landing page, where this is the primary
+  // way in rather than a fallback. There, it renders even for a single school:
+  // one clear door beats a carousel of sports that lead to a code prompt with
+  // no indication of whose code is wanted.
+  if (loading) return null;
+  if (!prominent && schools.length <= 1) return null;
+  if (schools.length === 0) return null;
 
   const filtered = q.trim()
     ? schools.filter(s =>
@@ -46,7 +52,7 @@ export default function SchoolPicker() {
   return (
     <div className="mx-auto w-full max-w-md px-6 py-10">
       <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-white/30">
-        Find your school
+        {prominent ? 'Select your school' : 'Find your school'}
       </p>
 
       {/* Search only appears once the list is long enough to need it */}
