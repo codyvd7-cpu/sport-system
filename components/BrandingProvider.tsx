@@ -38,18 +38,24 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
       try {
         // Which school's branding to show, in priority order:
         //   1. ?school= in the URL — someone arriving from a school's own link
-        //   2. a slug remembered from an earlier visit
+        //   2. a slug remembered from an earlier visit, but ONLY on pages that
+        //      belong to a school journey (portal, player, that school's page)
         //   3. whatever their session says (staff, player, HP or portal cookie)
         //
-        // Step 2 matters: a parent arriving at /ridgemont then tapping through
-        // to the portal would otherwise revert to generic Altus branding the
-        // moment ?school= dropped off the URL, which looks broken on exactly
-        // the journey this is meant to serve.
+        // Step 2 is deliberately scoped. Remembering the slug stops branding
+        // reverting to generic Altus as a parent taps deeper in from
+        // /ridgemont. But applying it on the ROOT page would mean a visitor
+        // who once opened one school's page sees that school's name and sports
+        // on the front door — including a parent from a different school
+        // entirely. The front door must stay neutral.
+        const path = window.location.pathname;
+        const isNeutralEntry = path === '/' || path === '';
+
         const urlSlug = new URLSearchParams(window.location.search).get('school');
         let slug = urlSlug;
         try {
           if (urlSlug) localStorage.setItem('altus_school', urlSlug);
-          else slug = localStorage.getItem('altus_school');
+          else if (!isNeutralEntry) slug = localStorage.getItem('altus_school');
         } catch { /* private browsing — fall back to session resolution */ }
 
         const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } } as any));
