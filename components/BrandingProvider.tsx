@@ -36,13 +36,30 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
 
     (async () => {
       try {
-        // A slug in the URL wins (public portal links); otherwise the session
-        // decides — bearer token for staff/players, cookies for HP/portal.
-        const slug = new URLSearchParams(window.location.search).get('school');
+        // Which school's branding to show, in priority order:
+        //   1. ?school= in the URL — someone arriving from a school's own link
+        //   2. a slug remembered from an earlier visit
+        //   3. whatever their session says (staff, player, HP or portal cookie)
+        //
+        // Step 2 matters: a parent arriving at /ridgemont then tapping through
+        // to the portal would otherwise revert to generic Altus branding the
+        // moment ?school= dropped off the URL, which looks broken on exactly
+        // the journey this is meant to serve.
+        const urlSlug = new URLSearchParams(window.location.search).get('school');
+        let slug = urlSlug;
+        try {
+          if (urlSlug) localStorage.setItem('altus_school', urlSlug);
+          else slug = localStorage.getItem('altus_school');
+        } catch { /* private browsing — fall back to session resolution */ }
+
         const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } } as any));
 
         const headers = session ? { Authorization: `Bearer ${session.access_token}` } : {};
-        const qs = slug ? `?slug=${encodeURIComponent(slug)}` : '';
+        // A signed-in user's own school always wins over a remembered slug —
+        // otherwise a coach who once opened another school's public page would
+        // keep seeing that school's colours.
+        const useSlug = session ? urlSlug : slug;
+        const qs = useSlug ? `?slug=${encodeURIComponent(useSlug)}` : '';
         const [brandRes, sportsRes] = await Promise.all([
           fetch(`/api/school/branding${qs}`, { headers }),
           fetch(`/api/school/sports${qs}`, { headers }),
