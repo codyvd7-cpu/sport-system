@@ -58,8 +58,8 @@ export default function SchoolPicker({ prominent = false }: { prominent?: boolea
     : schools;
 
   return (
-    <div className="mx-auto w-full max-w-md px-6 py-10">
-      <p className="mb-3 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-white/30">
+    <div className="relative z-10 mx-auto mt-7 w-full max-w-md px-6">
+      <p className="mb-3.5 text-center text-[10px] font-bold uppercase tracking-[0.28em] text-white/35">
         {prominent ? 'Select your school' : 'Find your school'}
       </p>
 

@@ -154,7 +154,9 @@ export default function LandingPage(){
       live: true,
       accent: sp.color,
     }));
-    return hp ? [fromSchool[0], hp, ...fromSchool.slice(1)].filter(Boolean) : fromSchool;
+    // HP Classes goes last — it isn't a sport, and splicing it into the middle
+    // made the looping carousel show the first sport twice.
+    return hp ? [...fromSchool, hp] : fromSchool;
   }, [sports]);
 
   const sorted=React.useMemo(()=>[...depts].sort((a,b)=>{
@@ -267,10 +269,10 @@ export default function LandingPage(){
           A unified performance platform for athletes, coaches and teams.
         </p>
 
-        {/* For anyone who reached the bare domain rather than their school's
-            own link (/ridgemont). Becomes the primary route in when we have no
-            idea which school they belong to. */}
-        <SchoolPicker prominent={noSchoolContext}/>
+        {/* Only for someone at the bare domain with no school context. On a
+            school's own page (/ridgemont) they've already answered this
+            question, so asking again is just noise. */}
+        {noSchoolContext && <SchoolPicker prominent/>}
       </div>
 
       {/* ══════════ DESKTOP CAROUSEL ══════════ */}
