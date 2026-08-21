@@ -25,6 +25,14 @@ export default function SchoolPicker({ prominent = false }: { prominent?: boolea
   const [schools, setSchools] = React.useState<School[]>([]);
   const [q, setQ] = React.useState('');
   const [loading, setLoading] = React.useState(true);
+  // The school this browser last used, offered as a shortcut rather than
+  // applied automatically — a shared family device shouldn't lock everyone
+  // into whoever opened it first.
+  const [lastSlug, setLastSlug] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    try { setLastSlug(localStorage.getItem('altus_school')); } catch { /* private browsing */ }
+  }, []);
 
   React.useEffect(() => {
     let stop = false;
@@ -64,6 +72,27 @@ export default function SchoolPicker({ prominent = false }: { prominent?: boolea
           className="mb-3 w-full rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-[13px] text-white outline-none placeholder:text-white/25 focus:border-white/25"
         />
       )}
+
+      {/* Shortcut for a returning visitor. Explicit, so a shared device never
+          silently becomes one school's. */}
+      {lastSlug && !q && (() => {
+        const last = schools.find(x => x.slug === lastSlug);
+        if (!last) return null;
+        return (
+          <Link href={`/${last.slug}`}
+            className="mb-3 flex items-center gap-3 rounded-2xl border px-4 py-3.5 transition"
+            style={{
+              background: (last.primary_color || '#38bdf8') + '14',
+              borderColor: (last.primary_color || '#38bdf8') + '55',
+            }}>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-white/35">Continue as</span>
+              <span className="block truncate text-[14px] font-bold text-white">{last.name}</span>
+            </span>
+            <span className="shrink-0 text-[13px]" style={{ color: last.primary_color || '#38bdf8' }}>→</span>
+          </Link>
+        );
+      })()}
 
       <div className="space-y-2">
         {filtered.map(s => (

@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useToast } from '@/components/Toast';
 import { useRole } from '@/lib/useRole';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { useBranding } from '@/components/BrandingProvider';
 
 const PRESETS = [
   { title:'Match Result Posted',    body:'A new result has been added. Check the portal.' },
@@ -13,6 +14,7 @@ const PRESETS = [
 ];
 
 export default function NotificationsPage() {
+  const { branding } = useBranding();
   const { showToast } = useToast();
   const { sport } = useRole();
   
@@ -123,7 +125,7 @@ export default function NotificationsPage() {
             <div>
               <p className="text-[13px] font-black text-white">{title}</p>
               <p className="text-[12px] mt-0.5" style={{color:'rgba(255,255,255,0.5)'}}>{body}</p>
-              <p className="text-[10px] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>Altus Performance · now</p>
+              <p className="text-[10px] mt-1" style={{color:'rgba(255,255,255,0.25)'}}>{branding.shortName} · now</p>
             </div>
           </div>
         )}

@@ -260,9 +260,9 @@ export default function LandingPage(){
         </p>
         <h1 className="anton" style={{fontSize:'clamp(1.9rem,5.5vw,3.8rem)',lineHeight:1,textAlign:'center',letterSpacing:'.03em'}}>
           <span style={{display:'block',color:'white'}}>DRIVEN BY</span>
-          <span style={{display:'block',color:'#38bdf8',textShadow:'0 0 40px rgba(56,189,248,.28)'}}>EXCELLENCE</span>
+          <span style={{display:'block',color:branding.primaryColor,textShadow:`0 0 40px ${branding.primaryColor}47`}}>EXCELLENCE</span>
         </h1>
-        <div style={{width:48,height:2,background:'linear-gradient(90deg,transparent,rgba(56,189,248,.7),transparent)',margin:'8px auto 6px'}}/>
+        <div style={{width:48,height:2,background:`linear-gradient(90deg,transparent,${branding.primaryColor}b3,transparent)`,margin:'8px auto 6px'}}/>
         <p style={{fontSize:12,color:'rgba(255,255,255,.3)',textAlign:'center'}}>
           A unified performance platform for athletes, coaches and teams.
         </p>

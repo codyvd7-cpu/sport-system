@@ -78,7 +78,7 @@ export default function QrCodesPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width: 56, height: 56, objectFit: 'contain', marginBottom: 10 }}/>
           <p style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.04em' }}>{branding.name.toUpperCase()}</p>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.16em', marginTop: 2 }}>Altus Performance</p>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.16em', marginTop: 2 }}>{branding.name}</p>
           <h2 style={{ fontSize: 30, fontWeight: 900, marginTop: 18, letterSpacing: '-0.01em' }}>{activeVenue} Check-In</h2>
           <p style={{ fontSize: 12.5, color: '#475569', marginTop: 6, lineHeight: 1.6, maxWidth: 280 }}>
             Scan with your phone camera or the scanner in your Altus profile to log today&apos;s session.

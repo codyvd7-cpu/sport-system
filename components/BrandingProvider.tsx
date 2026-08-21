@@ -16,20 +16,44 @@ export interface SchoolSportItem { key: string; label: string; color: string; ic
 // Falls back to neutral Altus branding while loading or when signed out, so
 // nothing flashes blank.
 
-const BrandingContext = React.createContext<{ branding: SchoolBranding; sports: SchoolSportItem[]; loading: boolean }>({
+const BrandingContext = React.createContext<{
+  branding: SchoolBranding;
+  sports: SchoolSportItem[];
+  loading: boolean;
+  seed: (b: SchoolBranding, sports?: SchoolSportItem[]) => void;
+}>({
   branding: DEFAULT_BRANDING,
   sports: [],
   loading: true,
+  seed: () => {},
 });
 
 export function useBranding() {
   return React.useContext(BrandingContext);
 }
 
+/**
+ * Lets a server-rendered page hand its already-resolved school to the client
+ * context, so there's no flash of generic branding before the fetch lands.
+ */
+export function useSeedBranding() {
+  return React.useContext(BrandingContext).seed;
+}
+
 export default function BrandingProvider({ children }: { children: React.ReactNode }) {
   const [branding, setBranding] = React.useState<SchoolBranding>(DEFAULT_BRANDING);
   const [sports, setSports] = React.useState<SchoolSportItem[]>([]);
   const [loading, setLoading] = React.useState(true);
+  // Once a server-rendered page has seeded a school, the background fetch must
+  // not overwrite it with a slower, less specific answer.
+  const seededRef = React.useRef(false);
+
+  const seed = React.useCallback((b: SchoolBranding, sp?: SchoolSportItem[]) => {
+    seededRef.current = true;
+    setBranding(b);
+    if (sp?.length) setSports(sp);
+    setLoading(false);
+  }, []);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -73,7 +97,9 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
         const d = await brandRes.json();
         const sp = await sportsRes.json();
         if (!cancelled) {
-          if (d.branding) setBranding(d.branding);
+          // A seeded school always wins — it was resolved server-side for this
+          // exact URL and is more specific than anything inferred here.
+          if (d.branding && !seededRef.current) setBranding(d.branding);
           if (sp.sports) setSports(sp.sports);
         }
       } catch {
@@ -94,7 +120,7 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
   }, [branding.primaryColor, branding.accentColor]);
 
   return (
-    <BrandingContext.Provider value={{ branding, sports, loading }}>
+    <BrandingContext.Provider value={{ branding, sports, loading, seed }}>
       {children}
     </BrandingContext.Provider>
   );
