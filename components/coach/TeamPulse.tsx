@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -87,8 +88,8 @@ export default function TeamPulse({ team, accent }: { team: string; accent: stri
               <p className="text-[10px] font-bold uppercase tracking-[0.25em]" style={{ color: '#fca5a5' }}>Alert active now</p>
               <p className="truncate text-[13px] font-bold text-white">{pulse.alert.message}</p>
             </div>
-            <a href="/lightning" className="shrink-0 rounded-lg border px-3 py-1.5 text-[11px] font-bold"
-              style={{ borderColor: 'rgba(220,38,38,0.4)', color: '#fca5a5' }}>Manage</a>
+            <Link href="/lightning" className="shrink-0 rounded-lg border px-3 py-1.5 text-[11px] font-bold"
+              style={{ borderColor: 'rgba(220,38,38,0.4)', color: '#fca5a5' }}>Manage</Link>
           </div>
         </Card>
       )}

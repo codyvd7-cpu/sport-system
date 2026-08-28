@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -56,10 +57,10 @@ export default function StudentExport({ params }: PageProps) {
           style={{display:'flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'1px solid #e2e8f0',background:'white',color:'#0f172a',fontSize:13,fontWeight:700,fontFamily:'Inter,sans-serif',cursor:'pointer',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
           ← Back
         </button>
-        <a href="/hp"
+        <Link href="/hp"
           style={{display:'flex',alignItems:'center',gap:6,padding:'10px 16px',borderRadius:10,border:'1px solid #e2e8f0',background:'white',color:'#64748b',fontSize:13,fontWeight:700,fontFamily:'Inter,sans-serif',textDecoration:'none',boxShadow:'0 4px 12px rgba(0,0,0,0.08)'}}>
           HP Home
-        </a>
+        </Link>
       </div>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');

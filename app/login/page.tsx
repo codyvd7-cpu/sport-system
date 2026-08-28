@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import { Suspense, useEffect, useState } from 'react';
 import Image from 'next/image';
@@ -95,9 +96,9 @@ function LoginForm() {
         <p className="text-xs font-black uppercase tracking-[0.24em]" style={{color:sportCfg.color}}>{branding.shortName} {sportCfg.label}</p>
         <h1 className="mt-3 text-2xl font-black">Checking session...</h1>
         <p className="mt-4 text-[10px] text-white/15">
-          <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
+          <Link href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</Link>
           <span className="mx-2">·</span>
-          <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
+          <Link href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</Link>
         </p>
       </div>
     </main>
@@ -140,15 +141,15 @@ function LoginForm() {
         </form>
 
         <div className="mt-6 flex items-center justify-between text-xs text-white/35">
-          <a href="/portal" className="font-bold text-white/50 transition hover:text-white">Back to Portal</a>
+          <Link href="/portal" className="font-bold text-white/50 transition hover:text-white">Back to Portal</Link>
           <span>Coach Access Only</span>
         </div>
 
         <div className="mt-4 border-t border-white/7 pt-4 text-center">
           <p className="text-[10px] text-white/15">
-            <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
+            <Link href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</Link>
             <span className="mx-2">·</span>
-            <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
+            <Link href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</Link>
           </p>
         </div>
       </section>
@@ -164,9 +165,9 @@ export default function LoginPage() {
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-sky-500 border-t-transparent" />
         <footer className="py-4 text-center">
     <p className="text-[10px] text-white/15">
-      <a href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</a>
+      <Link href="/privacy" className="hover:text-white/35 transition-colors">Privacy Policy</Link>
       <span className="mx-2">·</span>
-      <a href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</a>
+      <Link href="/terms" className="hover:text-white/35 transition-colors">Terms of Use</Link>
     </p>
   </footer>
 </main>

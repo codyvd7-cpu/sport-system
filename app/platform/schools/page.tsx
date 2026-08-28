@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 import * as React from 'react';
 import { supabase } from '@/lib/supabase';
 
@@ -108,7 +109,7 @@ export default function PlatformSchoolsPage() {
           This screen manages every school on Altus, so it&apos;s restricted to the platform operator.
           Add your email to the <code style={{ color: '#7dd3fc' }}>PLATFORM_ADMIN_EMAILS</code> environment variable to gain access.
         </p>
-        <a href="/dashboard" style={{ marginTop: 8, fontSize: 13, color: '#7dd3fc' }}>← Back to dashboard</a>
+        <Link href="/dashboard" style={{ marginTop: 8, fontSize: 13, color: '#7dd3fc' }}>← Back to dashboard</Link>
       </div>
     );
   }

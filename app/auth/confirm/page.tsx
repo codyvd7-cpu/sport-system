@@ -1,4 +1,5 @@
 'use client';
+import Link from 'next/link';
 
 import * as React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -35,7 +36,7 @@ function ConfirmInner() {
           <>
             <p className="text-red-400 font-semibold mb-2">Confirmation failed</p>
             <p className="text-sm text-slate-500 mb-4">{error}</p>
-            <a href="/login" className="text-sky-400 text-sm hover:underline">Go to login</a>
+            <Link href="/login" className="text-sky-400 text-sm hover:underline">Go to login</Link>
           </>
         )}
       </div>

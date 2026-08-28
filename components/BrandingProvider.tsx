@@ -60,36 +60,26 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
 
     (async () => {
       try {
-        // Which school's branding to show, in priority order:
-        //   1. ?school= in the URL — someone arriving from a school's own link
-        //   2. a slug remembered from an earlier visit, but ONLY on pages that
-        //      belong to a school journey (portal, player, that school's page)
-        //   3. whatever their session says (staff, player, HP or portal cookie)
+        // Which school's branding to show:
+        //   1. ?school= in the URL — an explicit request for that school
+        //   2. otherwise, whatever the SESSION says (staff, player, HP or
+        //      portal cookie)
         //
-        // Step 2 is deliberately scoped. Remembering the slug stops branding
-        // reverting to generic Altus as a parent taps deeper in from
-        // /ridgemont. But applying it on the ROOT page would mean a visitor
-        // who once opened one school's page sees that school's name and sports
-        // on the front door — including a parent from a different school
-        // entirely. The front door must stay neutral.
-        const path = window.location.pathname;
-        const isNeutralEntry = path === '/' || path === '';
-
+        // Deliberately NOT remembered across visits (no localStorage). An
+        // earlier version stored the slug so branding survived navigation —
+        // but that made the front door depend on browser history: anyone who
+        // had once opened /ridgemont then saw Ridgemont's name and crest on
+        // the bare domain, including parents from a different school entirely.
+        //
+        // School pages (/ridgemont) seed their branding server-side instead,
+        // and internal pages resolve it from the signed-in session, so nothing
+        // needs remembering.
         const urlSlug = new URLSearchParams(window.location.search).get('school');
-        let slug = urlSlug;
-        try {
-          if (urlSlug) localStorage.setItem('altus_school', urlSlug);
-          else if (!isNeutralEntry) slug = localStorage.getItem('altus_school');
-        } catch { /* private browsing — fall back to session resolution */ }
 
         const { data: { session } } = await supabase.auth.getSession().catch(() => ({ data: { session: null } } as any));
 
         const headers = session ? { Authorization: `Bearer ${session.access_token}` } : {};
-        // A signed-in user's own school always wins over a remembered slug —
-        // otherwise a coach who once opened another school's public page would
-        // keep seeing that school's colours.
-        const useSlug = session ? urlSlug : slug;
-        const qs = useSlug ? `?slug=${encodeURIComponent(useSlug)}` : '';
+        const qs = urlSlug ? `?slug=${encodeURIComponent(urlSlug)}` : '';
         const [brandRes, sportsRes] = await Promise.all([
           fetch(`/api/school/branding${qs}`, { headers }),
           fetch(`/api/school/sports${qs}`, { headers }),

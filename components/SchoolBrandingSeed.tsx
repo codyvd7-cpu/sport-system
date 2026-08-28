@@ -11,8 +11,9 @@ import { useSeedBranding } from '@/components/BrandingProvider';
 // paint generic Altus branding first and then flick to the school's — the
 // exact "this isn't really ours" impression the school URL exists to avoid.
 //
-// Also remembers the slug, so branding survives as the visitor taps deeper in
-// (portal, player pages) and the ?school= parameter drops off the URL.
+// Deliberately does NOT remember the school across visits: doing so made the
+// bare domain show whichever school that browser last opened, which is wrong
+// for anyone else using the device.
 
 export default function SchoolBrandingSeed({
   branding, sports = [],
@@ -23,7 +24,6 @@ export default function SchoolBrandingSeed({
   // rendered, rather than a corrected second frame.
   React.useLayoutEffect(() => {
     seed(branding, sports);
-    try { localStorage.setItem('altus_school', branding.slug); } catch { /* private browsing */ }
   }, [branding, sports, seed]);
 
   return null;

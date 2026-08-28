@@ -63,7 +63,7 @@ export default function HPHistoryPage() {
               Every save is recorded — what changed, old → new, by whom, when.
             </p>
           </div>
-          <a href="/api/hp/backup" className="rounded-xl border px-4 py-2.5 text-[12px] font-bold transition hover:bg-white/5"
+          <a href="/api/hp/backup" download className="rounded-xl border px-4 py-2.5 text-[12px] font-bold transition hover:bg-white/5"
             style={{ borderColor: 'rgba(16,185,129,0.4)', color: '#10b981' }}>
             ↓ Download Full Backup
           </a>
