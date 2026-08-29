@@ -216,21 +216,7 @@ export default function PerformancePage() {
         {step === 'setup' && (
           <div className="space-y-6">
 
-            {/* Timing gates — offered up front, since a coach heading out to
-                sprint test wants this rather than the manual capture grid. */}
-            {athletes.length > 0 && (
-              <button onClick={() => setStep('speedgate')}
-                className="flex w-full items-center gap-3 rounded-2xl border p-5 text-left transition hover:bg-white/[0.03]"
-                style={{ borderColor: 'rgba(56,189,248,0.35)', background: 'rgba(56,189,248,0.06)' }}>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[13.5px] font-black text-white">SpeedGate timing</p>
-                  <p className="mt-0.5 text-[11.5px] text-white/40">
-                    Automatic sprint timing for {athletes.length} athlete{athletes.length === 1 ? '' : 's'} — results save straight to their profile
-                  </p>
-                </div>
-                <span className="shrink-0 text-[16px] text-sky-400">→</span>
-              </button>
-            )}
+
 
             {/* Team + Date */}
             <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-5">
@@ -259,6 +245,37 @@ export default function PerformancePage() {
                 </div>
               </div>
             </div>
+
+            {/* Timing gates. Sits directly after team selection because it
+                needs only a team — not the full manual-session setup — so a
+                coach heading out to sprint test can go straight there. */}
+            <button
+              onClick={async () => {
+                if (!selectedTeam) return;
+                setLoadingAthletes(true);
+                const { data } = await supabase.from('athletes')
+                  .select('id, full_name, team, age_group, position')
+                  .eq('team', selectedTeam).order('full_name');
+                setAthletes(data || []);
+                setLoadingAthletes(false);
+                setStep('speedgate');
+              }}
+              disabled={!selectedTeam || loadingAthletes}
+              className="flex w-full items-center gap-3 rounded-2xl border p-5 text-left transition hover:bg-white/[0.03] disabled:opacity-40"
+              style={{ borderColor: 'rgba(56,189,248,0.35)', background: 'rgba(56,189,248,0.06)' }}>
+              <span className="text-[20px]">⏱</span>
+              <div className="min-w-0 flex-1">
+                <p className="text-[13.5px] font-black text-white">
+                  {loadingAthletes ? 'Loading squad…' : 'SpeedGate timing'}
+                </p>
+                <p className="mt-0.5 text-[11.5px] text-white/40">
+                  {selectedTeam
+                    ? `Automatic sprint timing for ${selectedTeam} — results save straight to the athlete`
+                    : 'Choose a team below to start timed sprint testing'}
+                </p>
+              </div>
+              <span className="shrink-0 text-[16px] text-sky-400">→</span>
+            </button>
 
             {/* Test selection */}
             <div className="rounded-2xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-5">
