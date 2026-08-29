@@ -10,6 +10,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone Node test scripts — run directly with node, not part of the
+    // Next build, and linting them with the Next config produces false errors.
+    "**/*.test.cjs",
   ]),
   {
     rules: {
