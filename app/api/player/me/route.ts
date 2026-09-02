@@ -37,6 +37,27 @@ export async function POST(req: NextRequest) {
   const action = body.action || 'get';
 
   try {
+    // ── STATUS: is this account linked to an athlete yet? ─────────────────────
+    // Used by the portal to decide what to offer: sign in, claim your child,
+    // or go straight to their profile. Returns the link state only — no
+    // athlete data, since the caller may not be approved yet.
+    if (action === 'status') {
+      const { data: profile } = await db.from('player_profiles')
+        .select('athlete_id').eq('user_id', user.userId).maybeSingle();
+
+      if (profile?.athlete_id) {
+        const { data: athlete } = await db.from('athletes')
+          .select('id,full_name').eq('id', profile.athlete_id).maybeSingle();
+        if (athlete) return NextResponse.json({ athlete });
+      }
+
+      // No approved link — is there a request already waiting on a coach?
+      const { data: claim } = await db.from('athlete_claims')
+        .select('status').eq('user_id', user.userId).eq('status', 'pending').maybeSingle();
+
+      return NextResponse.json({ athlete: null, claimPending: !!claim });
+    }
+
     // ── MATCH: athlete name search for linking ─────────────────────────────────
     if (action === 'match') {
       const name = String(body.name || '').trim();

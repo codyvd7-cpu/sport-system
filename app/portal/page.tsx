@@ -16,6 +16,7 @@ import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 import { useBranding } from '@/components/BrandingProvider';
 import PortalSportSwitcher from '@/components/portal/PortalSportSwitcher';
+import MyAthleteCard from '@/components/portal/MyAthleteCard';
 
 type Row = Record<string, any>;
 
@@ -77,6 +78,13 @@ function PortalInner() {
             different sports can move between them here. */}
         <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
           <PortalSportSwitcher current={sport}/>
+        </div>
+
+        {/* The route from the shared portal to a family's own information.
+            Adapts to whether they're signed in, waiting on approval, or
+            already linked. */}
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 24px 0' }}>
+          <MyAthleteCard/>
         </div>
 
         {/* Department notice — dismissible, reappears when a new notice is published */}
