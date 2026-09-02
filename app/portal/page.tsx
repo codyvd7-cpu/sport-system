@@ -15,6 +15,7 @@ import NoticeCard        from '@/components/portal/NoticeCard';
 import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 import { useBranding } from '@/components/BrandingProvider';
+import PortalSportSwitcher from '@/components/portal/PortalSportSwitcher';
 
 type Row = Record<string, any>;
 
@@ -71,6 +72,12 @@ function PortalInner() {
         <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize:'56px 56px', pointerEvents:'none', zIndex:0 }}/>
         <PortalAmbient color={color}/>
         <PortalNav sport={sport}/>
+
+        {/* One code now opens the whole school, so a parent with children in
+            different sports can move between them here. */}
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px' }}>
+          <PortalSportSwitcher current={sport}/>
+        </div>
 
         {/* Department notice — dismissible, reappears when a new notice is published */}
         <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>

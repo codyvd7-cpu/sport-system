@@ -96,25 +96,23 @@ export async function POST(req: NextRequest) {
   const hpCoachCode = randomCode(`${abbreviation}HP`);
   const hpAdminCode = randomCode(`${abbreviation}ADM`);
 
-  // Only the sports this school actually runs — generating codes for all seven
-  // would hand a hockey-and-cricket school four codes they'll never use, and
-  // put sports they don't offer into their navigation.
   const ALL_SPORTS = ['hockey', 'rugby', 'cricket', 'swimming', 'rowing', 'waterpolo', 'football'];
   const requested: string[] = Array.isArray(body.sports) && body.sports.length
     ? body.sports.filter((sp: string) => ALL_SPORTS.includes(sp))
     : ALL_SPORTS;
 
-  // portal_access_codes stores hashes, not plain codes — keep the readable one
-  // in memory only long enough to show it to the operator once.
-  const portalPlain = requested.map(sport => ({
-    sport,
-    code: randomCode(`${abbreviation}${sport.slice(0, 3).toUpperCase()}`),
-  }));
-  const portalCodes = portalPlain.map(p => ({
+  // ONE portal code per school, not one per sport. The portal shows fixtures,
+  // results and notices — nothing personal — so there is nothing to separate
+  // by sport, and per-sport codes meant a parent with children in two sports
+  // needed two codes and had to sign out to switch between them.
+  // Anything about an individual athlete sits behind a real account instead.
+  const schoolCode = randomCode(abbreviation);
+  const portalPlain = [{ sport: 'school', code: schoolCode }];
+  const portalCodes = [{
     school_id: data.id,
-    sport: p.sport,
-    code_hash: createHash('sha256').update(p.code.toLowerCase()).digest('hex'),
-  }));
+    sport: 'school',
+    code_hash: createHash('sha256').update(schoolCode.toLowerCase()).digest('hex'),
+  }];
 
   const [hpRes, portalRes, sportsRes] = await Promise.all([
     db.from('hp_access_codes').insert([

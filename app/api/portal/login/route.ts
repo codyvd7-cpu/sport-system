@@ -4,7 +4,11 @@ import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 const COOKIE_NAME = 'portal_access';
-const TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+// 120 days. The portal shows fixtures, results and notices — nothing
+// personal — so a parent checking Saturday's kick-off time should not be
+// asked for a code every visit. Anything about an individual athlete lives
+// behind a real account instead.
+const TTL_MS = 120 * 24 * 60 * 60 * 1000;
 
 // Sport-specific access codes from env vars
 function getExpectedCode(sport: string): string | undefined {
@@ -56,9 +60,12 @@ export async function POST(req: NextRequest) {
       // the raw code. timingSafeEqual on the digests keeps the comparison
       // constant-time.
       const providedHash = crypto.createHash('sha256').update(code.trim().toLowerCase()).digest();
+      // Deliberately NOT filtered by sport. A code identifies the SCHOOL, and
+      // that opens the whole portal — a parent with children in two sports
+      // previously needed two codes and had to log out to switch between them.
+      // Existing per-sport codes keep working; each simply opens everything.
       const { data: rows } = await getAdmin()
-        .from('portal_access_codes').select('code_hash,school_id')
-        .eq('sport', resolvedSport);
+        .from('portal_access_codes').select('code_hash,school_id');
       for (const row of rows || []) {
         if (!row.code_hash) continue;
         const stored = Buffer.from(String(row.code_hash), 'hex');
