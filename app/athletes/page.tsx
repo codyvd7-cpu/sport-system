@@ -195,12 +195,20 @@ export default function AthletesPage() {
             <h1 className="text-4xl font-black text-white leading-none tracking-tight">Athletes</h1>
             <p className="mt-2 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>{athletes.length} players · {uniqueTeams.length} teams</p>
           </div>
-          <button onClick={() => setShowAddForm(v => !v)}
-            className="flex items-center gap-2 rounded-2xl border border-white/8 px-5 py-3 text-sm font-black text-white transition hover:bg-white/5"
-            style={{background:'rgba(255,255,255,0.03)'}}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            {showAddForm ? 'Cancel' : 'Add Athlete'}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Bulk import — the only realistic way to onboard a full squad. */}
+            <Link href="/athletes/import"
+              className="rounded-2xl border border-white/8 px-4 py-3 text-sm font-black text-white/60 transition hover:bg-white/5 hover:text-white"
+              style={{background:'rgba(255,255,255,0.03)'}}>
+              Import
+            </Link>
+            <button onClick={() => setShowAddForm(v => !v)}
+              className="flex items-center gap-2 rounded-2xl border border-white/8 px-5 py-3 text-sm font-black text-white transition hover:bg-white/5"
+              style={{background:'rgba(255,255,255,0.03)'}}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              {showAddForm ? 'Cancel' : 'Add Athlete'}
+            </button>
+          </div>
         </div>
 
         {error && <div className="mb-5 rounded-2xl border border-red-500/20 bg-red-500/6 px-5 py-3 text-sm text-red-300">{error}</div>}

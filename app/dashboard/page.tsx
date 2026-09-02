@@ -9,6 +9,7 @@ import TeamPulse from '@/components/coach/TeamPulse';
 import CoachInbox from '@/components/coach/CoachInbox';
 import SessionLoadPanel from '@/components/coach/SessionLoadPanel';
 import DepartmentHealth from '@/components/coach/DepartmentHealth';
+import GettingStarted from '@/components/coach/GettingStarted';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import { getTeamGroups, type SportKey } from '@/lib/sports';
 
@@ -588,6 +589,11 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
           }}>Overview</span>
         </h1>
         <p className="mt-2 text-[13px] font-medium" style={{color:'rgba(255,255,255,0.3)'}}>{dateStr}</p>
+      </FadeUp>
+
+      {/* ── FIRST RUN — hides itself once the school is set up ── */}
+      <FadeUp delay={40}>
+        <GettingStarted/>
       </FadeUp>
 
       {/* ── DEPARTMENT HEALTH — component statuses, not a composite score ── */}

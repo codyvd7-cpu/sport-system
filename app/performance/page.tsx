@@ -261,8 +261,17 @@ export default function PerformancePage() {
                 setStep('speedgate');
               }}
               disabled={!selectedTeam || loadingAthletes}
-              className="flex w-full items-center gap-3 rounded-2xl border p-5 text-left transition hover:bg-white/[0.03] disabled:opacity-40"
-              style={{ borderColor: 'rgba(56,189,248,0.35)', background: 'rgba(56,189,248,0.06)' }}>
+              className="flex w-full items-center gap-3 rounded-2xl border p-5 text-left transition hover:bg-white/[0.03]"
+              // Opacity is set inline rather than via disabled: utilities — the
+              // inline style below wins over the Tailwind class, which left the
+              // button looking permanently greyed out even once enabled.
+              style={{
+                borderColor: selectedTeam ? 'rgba(56,189,248,0.55)' : 'rgba(255,255,255,0.08)',
+                background: selectedTeam ? 'rgba(56,189,248,0.10)' : 'rgba(255,255,255,0.02)',
+                opacity: selectedTeam ? 1 : 0.55,
+                cursor: selectedTeam ? 'pointer' : 'not-allowed',
+                boxShadow: selectedTeam ? '0 0 0 1px rgba(56,189,248,0.12), 0 8px 28px rgba(56,189,248,0.08)' : 'none',
+              }}>
               <span className="text-[20px]">⏱</span>
               <div className="min-w-0 flex-1">
                 <p className="text-[13.5px] font-black text-white">
