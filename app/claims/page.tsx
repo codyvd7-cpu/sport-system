@@ -2,6 +2,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import InviteParentsPanel from '@/components/coach/InviteParentsPanel';
 
 // ─── /claims ──────────────────────────────────────────────────────────────────
 // Coaches approve requests from players and parents to access an athlete's
@@ -77,6 +78,12 @@ export default function ClaimsPage() {
         </p>
 
         {err && <p className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2 text-[12px] text-red-300">{err}</p>}
+
+        {/* Inviting is the normal route in; the approvals below are the
+            exception, for parents who found the app themselves. */}
+        <div className="mt-6">
+          <InviteParentsPanel/>
+        </div>
 
         {/* Pending */}
         {data && data.pending.length === 0 ? (
