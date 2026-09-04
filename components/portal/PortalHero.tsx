@@ -15,11 +15,17 @@ const fTime = (t?: string) => fmtTime12h(t);
 interface Props { sport: SportKey; nextFixture: Row|null; }
 
 export default function PortalHero({ sport, nextFixture }: Props) {
-  const { branding } = useBranding();
+  const { branding, sports } = useBranding();
   const cfg   = SPORTS[sport];
   const color = getSportColor(sport);
   const fixTerm = cfg?.terminology?.fixture ?? 'Fixture';
-  const heroImg = cfg?.portal?.heroImage;
+
+  // The school's OWN photograph for this sport, falling back to the shared
+  // graphic. Reading the global image directly meant every school's portal
+  // showed the same picture — so one school's kit and crest appeared on
+  // another school's page.
+  const schoolSport = sports?.find(sp => sp.key === sport);
+  const heroImg = schoolSport?.heroImage || cfg?.portal?.heroImage;
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t); }, []);

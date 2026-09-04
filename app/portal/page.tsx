@@ -23,10 +23,10 @@ type Row = Record<string, any>;
 function PortalInner() {
   const { branding } = useBranding();
   const searchParams = useSearchParams();
-  const sport = ((searchParams.get('sport') ||
-    (typeof document !== 'undefined'
-      ? document.cookie.split(';').find(c => c.trim().startsWith('portal_sport='))?.split('=')[1]
-      : undefined) || 'hockey') as SportKey);
+  // The sport comes from the URL only. A leftover portal_sport cookie from the
+  // old per-sport code model could otherwise override it, sending a parent to
+  // a different sport — and, with it, a different school's content.
+  const sport = ((searchParams.get('sport') || 'hockey') as SportKey);
 
   const color = getSportColor(sport);
 

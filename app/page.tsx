@@ -155,7 +155,19 @@ export default function LandingPage(){
   // let alone one saying "coming soon". Falls back to the built-in list while
   // sports are still loading, so the carousel never renders empty.
   const depts = React.useMemo(() => {
-    if (!sports.length) return DEPTS;
+    // While the school's sports load, fall back to the built-in list — but
+    // still carry the school on every link. Without this a parent who taps
+    // quickly lands on the portal with no school context and gets whichever
+    // school the cookie resolves to, which is exactly the cross-school bug
+    // this whole flow exists to prevent.
+    const schoolQs = branding.slug && branding.slug !== 'default'
+      ? `&school=${encodeURIComponent(branding.slug)}` : '';
+    if (!sports.length) {
+      return DEPTS.map(d => ({
+        ...d,
+        href: d.href.startsWith('/portal?') ? `${d.href}${schoolQs}` : d.href,
+      }));
+    }
     const hp = DEPTS.find(d => d.id === 'hp');
     const fromSchool = sports.map(sp => ({
       id: sp.key,

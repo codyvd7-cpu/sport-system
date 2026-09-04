@@ -183,15 +183,18 @@ export default function SplashScreen() {
         width:'min(320px, 45vw)', height:'min(320px, 45vw)', marginBottom:36,
         opacity:0, willChange:'transform,filter,opacity',
       }}>
+        {/* The school's own crest, not the Altus mark — this is the first
+            thing a parent sees, and it should be their school's. Falls back to
+            the Altus icon only when there's no school context at all. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/altus-icon.png" alt="Altus"
+        <img src={branding.logoUrl || '/altus-icon.png'} alt={branding.name || 'Altus'}
           style={{width:'100%',height:'100%',objectFit:'contain',display:'block'}}/>
       </div>
 
       <div ref={lineRef} style={{
         zIndex:1, position:'relative',
         width:44, height:1.5, marginBottom:18,
-        background:'linear-gradient(90deg,transparent,#3b82f6,#06b6d4,transparent)',
+        background:`linear-gradient(90deg,transparent,${branding.primaryColor},${branding.accentColor},transparent)`,
         transformOrigin:'center', opacity:0, transform:'scaleX(0)',
         willChange:'transform,opacity',
       }}/>
