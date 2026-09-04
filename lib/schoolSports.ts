@@ -15,6 +15,11 @@ export interface SchoolSport {
   label: string;
   color: string;
   icon: string;
+  /** The school's own photography for this sport. Falls back to the shared
+   *  image in lib/sports.ts when a school hasn't supplied one — real
+   *  photography is school-specific, so showing one school's kit on another
+   *  school's page looks immediately wrong. */
+  heroImage: string | null;
   config: SportConfig | undefined;
 }
 
@@ -25,7 +30,7 @@ export async function getSchoolSports(schoolId: string | null | undefined): Prom
   try {
     const { data } = await getAdmin()
       .from('school_sports')
-      .select('sport_key,display_name,color_override,sort_order')
+      .select('sport_key,display_name,color_override,sort_order,hero_image_url')
       .eq('school_id', schoolId).eq('is_active', true)
       .order('sort_order', { ascending: true });
 
@@ -38,6 +43,7 @@ export async function getSchoolSports(schoolId: string | null | undefined): Prom
         label: row.display_name || cfg?.label || row.sport_key,
         color: row.color_override || cfg?.color || '#38bdf8',
         icon: cfg?.icon || '🏆',
+        heroImage: row.hero_image_url || cfg?.portal?.heroImage || null,
         config: cfg,
       };
     });
@@ -57,6 +63,7 @@ function fallbackSports(): SchoolSport[] {
     label: cfg.label,
     color: cfg.color,
     icon: cfg.icon,
+    heroImage: cfg.portal?.heroImage ?? null,
     config: cfg,
   }));
 }

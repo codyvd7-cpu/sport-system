@@ -17,7 +17,7 @@ import { useSeedBranding } from '@/components/BrandingProvider';
 
 export default function SchoolBrandingSeed({
   branding, sports = [],
-}: { branding: SchoolBranding; sports?: { key: string; label: string; color: string; icon: string }[] }) {
+}: { branding: SchoolBranding; sports?: { key: string; label: string; color: string; icon: string; heroImage?: string | null }[] }) {
   const seed = useSeedBranding();
 
   // Runs before paint so the correct crest and colours are the first thing

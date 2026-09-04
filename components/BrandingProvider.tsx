@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { SchoolBranding } from '@/lib/schoolBranding';
 import { DEFAULT_BRANDING } from '@/lib/schoolBranding';
 
-export interface SchoolSportItem { key: string; label: string; color: string; icon: string }
+export interface SchoolSportItem { key: string; label: string; color: string; icon: string; heroImage?: string | null }
 
 // ─── BrandingProvider ──────────────────────────────────────────────────────────
 // Loads the current user's school branding once and makes it available

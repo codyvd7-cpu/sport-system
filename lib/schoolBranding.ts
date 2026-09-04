@@ -19,6 +19,7 @@ export interface SchoolBranding {
   primaryColor: string;
   accentColor: string;
   slug: string;
+  campusImageUrl: string | null;
   latitude: number;
   longitude: number;
   timezone: string;
@@ -33,6 +34,7 @@ export const DEFAULT_BRANDING: SchoolBranding = {
   primaryColor: '#38bdf8',
   accentColor: '#a78bfa',
   slug: 'default',
+  campusImageUrl: null,
   latitude: -26.2041,
   longitude: 28.0473,
   timezone: 'Africa/Johannesburg',
@@ -48,6 +50,7 @@ function rowToBranding(row: Record<string, any>): SchoolBranding {
     primaryColor: row.primary_color || DEFAULT_BRANDING.primaryColor,
     accentColor: row.accent_color || DEFAULT_BRANDING.accentColor,
     slug: row.slug,
+    campusImageUrl: row.campus_image_url ?? null,
     latitude: row.latitude != null ? Number(row.latitude) : DEFAULT_BRANDING.latitude,
     longitude: row.longitude != null ? Number(row.longitude) : DEFAULT_BRANDING.longitude,
     timezone: row.timezone || DEFAULT_BRANDING.timezone,
@@ -60,7 +63,7 @@ export async function getSchoolBranding(schoolId: string | null | undefined): Pr
   try {
     const { data } = await getAdmin()
       .from('schools')
-      .select('id,name,short_name,abbreviation,logo_url,primary_color,accent_color,slug,latitude,longitude,timezone')
+      .select('id,name,short_name,abbreviation,logo_url,primary_color,accent_color,slug,latitude,longitude,timezone,campus_image_url')
       .eq('id', schoolId).maybeSingle();
     return data ? rowToBranding(data) : DEFAULT_BRANDING;
   } catch {
@@ -74,7 +77,7 @@ export async function getSchoolBrandingBySlug(slug: string): Promise<SchoolBrand
   try {
     const { data } = await getAdmin()
       .from('schools')
-      .select('id,name,short_name,abbreviation,logo_url,primary_color,accent_color,slug,latitude,longitude,timezone')
+      .select('id,name,short_name,abbreviation,logo_url,primary_color,accent_color,slug,latitude,longitude,timezone,campus_image_url')
       .eq('slug', slug).eq('is_active', true).maybeSingle();
     return data ? rowToBranding(data) : null;
   } catch {

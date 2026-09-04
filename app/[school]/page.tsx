@@ -64,7 +64,7 @@ export default async function SchoolLandingPage({ params }: Props) {
     <>
       {/* Seeds the branding context before paint, so the crest and colours are
           this school's immediately rather than flashing generic Altus first. */}
-      <SchoolBrandingSeed branding={branding} sports={sports.map(s => ({ key: s.key, label: s.label, color: s.color, icon: s.icon }))} />
+      <SchoolBrandingSeed branding={branding} sports={sports.map(s => ({ key: s.key, label: s.label, color: s.color, icon: s.icon, heroImage: s.heroImage }))} />
       <LandingPage />
     </>
   );
