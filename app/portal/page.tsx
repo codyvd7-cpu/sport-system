@@ -43,7 +43,13 @@ function PortalInner() {
       // portal_* tables are publicly readable, so a browser query would
       // return every school's fixtures once more than one school exists.
       try {
-        const res = await fetch(`/api/portal/data?sport=${encodeURIComponent(sport)}`);
+        // The school must travel with the request: without a code there's no
+        // cookie to carry it, so it comes from the link the school handed out.
+        const schoolSlug = new URLSearchParams(window.location.search).get('school');
+        const res = await fetch(
+          `/api/portal/data?sport=${encodeURIComponent(sport)}` +
+          (schoolSlug ? `&school=${encodeURIComponent(schoolSlug)}` : '')
+        );
         const d = await res.json();
         if (!res.ok) throw new Error(d.error || 'Failed to load');
         setData({

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getSchoolBrandingBySlug } from '@/lib/schoolBranding';
 import { verifyPortalCookie } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
@@ -16,11 +17,26 @@ import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 export async function GET(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
+  // The portal is open — fixtures and results are the same information a
+  // school publishes on its own website. The school comes from ?school= on the
+  // link the school hands out; a portal cookie is still honoured for anyone
+  // who signed in before this changed.
   const session = verifyPortalCookie(req);
-  if (!session) return NextResponse.json({ error: 'Not signed in to the portal.' }, { status: 401 });
+  const slug = req.nextUrl.searchParams.get('school');
 
-  const sport = req.nextUrl.searchParams.get('sport') || session.sport;
-  const schoolId = session.schoolId;
+  let schoolId: string | null = session?.schoolId ?? null;
+  if (slug) {
+    const branding = await getSchoolBrandingBySlug(slug);
+    // An unknown slug must not silently fall through to another school's data.
+    if (!branding) return NextResponse.json({ error: 'Unknown school.' }, { status: 404 });
+    schoolId = branding.id;
+  }
+
+  if (!schoolId) {
+    return NextResponse.json({ error: 'No school specified.' }, { status: 400 });
+  }
+
+  const sport = req.nextUrl.searchParams.get('sport') || session?.sport || 'hockey';
   const db = getAdmin();
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' });
 

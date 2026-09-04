@@ -17,6 +17,14 @@ import { getSportLabel, getSportColor, type SportKey } from '@/lib/sports';
 
 export default function PortalSportSwitcher({ current }: { current: SportKey }) {
   const { sports } = useBranding();
+  // Switching sports must not drop the school — without a portal code there is
+  // no cookie carrying it, so it lives in the URL.
+  const [schoolParam, setSchoolParam] = React.useState('');
+  React.useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get('school');
+    setSchoolParam(slug ? `&school=${encodeURIComponent(slug)}` : '');
+  }, []);
+
   if (!sports || sports.length <= 1) return null;
 
   return (
@@ -28,7 +36,7 @@ export default function PortalSportSwitcher({ current }: { current: SportKey }) 
         const active = s.key === current;
         const colour = getSportColor(s.key as SportKey) || s.color;
         return (
-          <a key={s.key} href={`/portal?sport=${encodeURIComponent(s.key)}`}
+          <a key={s.key} href={`/portal?sport=${encodeURIComponent(s.key)}${schoolParam}`}
             style={{
               flexShrink: 0,
               padding: '7px 14px',

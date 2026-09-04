@@ -1,31 +1,23 @@
 'use client';
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function PortalAuthGuard({ children, sport }: { children: React.ReactNode; sport: string }) {
-  const router = useRouter();
-  const [checked, setChecked] = React.useState(false);
+// ─── PortalAuthGuard ───────────────────────────────────────────────────────────
+// The sport portal shows fixtures, results, the week ahead and department
+// notices — the same information a school publishes on its own website. It
+// holds nothing personal, so it is deliberately NOT gated behind a code.
+//
+// Requiring a code here was the single biggest source of friction in the parent
+// journey: a school had to distribute it, parents had to be told it, and it
+// blocked the one thing they actually wanted (Saturday's kick-off time). Every
+// established platform in this space has learned the same lesson.
+//
+// Anything about an individual athlete — attendance, test results, coach
+// feedback — sits behind a real account instead. That boundary is enforced
+// server-side in the athlete routes, not here.
+//
+// Kept as a component (rather than deleted) so the gate can be reinstated for
+// a school that specifically asks for one, without restructuring the portal.
 
-  React.useEffect(() => {
-    fetch('/api/portal/check', { credentials: 'include' })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok && (!data.sport || data.sport === sport)) {
-          setChecked(true);
-        } else {
-          // No valid cookie, or the code entered was for a different sport
-          router.replace(`/portal-login?sport=${sport}`);
-        }
-      })
-      .catch(() => router.replace(`/portal-login?sport=${sport}`));
-  }, [router, sport]);
-
-  if (!checked) return (
-    <div style={{ minHeight:'100vh', background:'#040810', display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ width:24, height:24, borderRadius:'50%', border:'3px solid #38bdf8', borderTopColor:'transparent', animation:'spin 0.8s linear infinite' }}/>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
-
+export default function PortalAuthGuard({ children }: { children: React.ReactNode; sport?: string }) {
   return <>{children}</>;
 }

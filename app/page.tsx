@@ -18,9 +18,9 @@ const ICON_SVGS:Record<string,{vb:string;svg:string}>={
 };
 
 const DEPTS=[
-  {id:'hockey',   label:'HOCKEY',    lines:['Fixtures · Results','Weekly Schedule'],   href:'/portal-login?sport=hockey',live:true, accent:'#38bdf8'},
+  {id:'hockey',   label:'HOCKEY',    lines:['Fixtures · Results','Weekly Schedule'],   href:'/portal?sport=hockey',live:true, accent:'#38bdf8'},
   {id:'hp',       label:'HP CLASSES',lines:['Testing · Trends','Athletes'],             href:'/hp-login',                 live:true, accent:'#10b981'},
-  {id:'rugby',    label:'RUGBY',     lines:['Fixtures · Results','Weekly Schedule'],   href:'/portal-login?sport=rugby', live:true, accent:'#f87171'},
+  {id:'rugby',    label:'RUGBY',     lines:['Fixtures · Results','Weekly Schedule'],   href:'/portal?sport=rugby', live:true, accent:'#f87171'},
   {id:'cricket',  label:'CRICKET',   lines:['Coming Soon'],href:'#',live:false,accent:'#fbbf24'},
   {id:'swimming', label:'SWIMMING',  lines:['Coming Soon'],href:'#',live:false,accent:'#818cf8'},
   {id:'rowing',   label:'ROWING',    lines:['Coming Soon'],href:'#',live:false,accent:'#34d399'},
@@ -161,7 +161,13 @@ export default function LandingPage(){
       id: sp.key,
       label: sp.label.toUpperCase(),
       lines: ['Fixtures · Results', 'Weekly Schedule'],
-      href: `/portal-login?sport=${sp.key}`,
+      // Straight into the portal — no code. Fixtures and results are the same
+      // information a school publishes publicly, and gating them was the
+      // biggest friction point in the parent journey.
+      // The school slug must travel with the link, or a parent arriving from
+      // /ashford lands with no school context and sees whichever school the
+      // session happens to resolve to.
+      href: `/portal?sport=${sp.key}${branding.slug && branding.slug !== 'default' ? `&school=${encodeURIComponent(branding.slug)}` : ''}`,
       live: true,
       accent: sp.color,
     }));
