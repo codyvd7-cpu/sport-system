@@ -139,6 +139,32 @@ export async function GET(req: NextRequest) {
     return px === py ? x.name.localeCompare(y.name) : px - py;
   });
 
+  // Guarantee every category is represented before the cap is applied.
+  // A straight priority sort meant a department with 15 open injuries filled
+  // all 8 slots with injuries, so its 47 attendance concerns were never seen
+  // at all — the coach would reasonably conclude attendance was fine.
+  const perKind = new Map<string, typeof attention>();
+  for (const item of attention) {
+    if (!perKind.has(item.kind)) perKind.set(item.kind, []);
+    perKind.get(item.kind)!.push(item);
+  }
+  const balanced: typeof attention = [];
+  const kinds = [...perKind.keys()].sort(
+    (a, b) => (KIND_PRIORITY[a] ?? 9) - (KIND_PRIORITY[b] ?? 9)
+  );
+  // Round-robin across categories, so the list reflects the whole department.
+  for (let i = 0; balanced.length < ATTENTION_CAP; i++) {
+    let addedThisRound = false;
+    for (const k of kinds) {
+      const list = perKind.get(k)!;
+      if (i < list.length && balanced.length < ATTENTION_CAP) {
+        balanced.push(list[i]);
+        addedThisRound = true;
+      }
+    }
+    if (!addedThisRound) break;
+  }
+
   // ── RECENT (includes the good news) ────────────────────────────────────────
   const POSITIVE = new Set(['personal_best', 'goal_achieved', 'award', 'injury_cleared']);
   const recent = (eventsRes.data || [])
@@ -162,8 +188,11 @@ export async function GET(req: NextRequest) {
       squadSize: roster.length,
       alert: alert ? { type: alert.type, message: alert.message } : null,
     },
-    attention: attention.slice(0, ATTENTION_CAP),
+    attention: balanced,
     attentionTotal: attention.length,
+    // Per-category totals, so the UI can say "8 of 62" honestly and show what
+    // is being left out rather than silently truncating.
+    attentionByKind: Object.fromEntries([...perKind.entries()].map(([k, v]) => [k, v.length])),
     recent,
     counts: {
       newPBs: recent.filter(r => r.type === 'personal_best').length,

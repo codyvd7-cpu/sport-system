@@ -18,6 +18,7 @@ type Inbox = {
   today: { date: string; fixtures: Fixture[]; unavailableCount: number; squadSize: number; alert: { type: string; message: string } | null };
   attention: Attention[];
   attentionTotal: number;
+  attentionByKind?: Record<string, number>;
   recent: Recent[];
   counts: { newPBs: number; attendanceConcerns: number; unavailable: number };
 };
@@ -111,7 +112,16 @@ export default function CoachInbox({ team, accent = '#38bdf8' }: { team?: string
           <div className="mb-2.5 flex items-baseline justify-between">
             {label('Needs attention')}
             {attentionTotal > attention.length && (
-              <span className="text-[10px] text-white/25">showing {attention.length} of {attentionTotal}</span>
+              <span className="text-[10px] text-white/25">
+                {attention.length} of {attentionTotal}
+                {data.attentionByKind && (
+                  <span className="ml-1.5">
+                    ({Object.entries(data.attentionByKind)
+                        .map(([k, n]) => `${n} ${k === 'rtp' ? 'injured' : k}`)
+                        .join(' · ')})
+                  </span>
+                )}
+              </span>
             )}
           </div>
           <div className="space-y-1.5">
