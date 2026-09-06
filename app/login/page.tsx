@@ -118,7 +118,7 @@ function LoginForm() {
           </div>
           <p className="text-xs font-black uppercase tracking-[0.28em] text-sky-400">{branding.name}</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-white">Coach Login</h1>
-          <p className="mt-3 text-sm leading-6 text-white/50">Secure staff access · {sportCfg.label} Department</p>
+          <p className="mt-3 text-sm leading-6 text-white/50">Secure staff access</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
