@@ -1,40 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { requireStaffContext, canActOnTeam } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 // ─── /api/parents/invite ──────────────────────────────────────────────────────
 // Invites a parent by email, pre-linked to their child.
 //
-// Why this exists: the previous route asked a parent to create a password,
-// search for their child by name, and then wait for a coach to approve the
-// claim. Every established platform in this space has learned that parent
-// onboarding dies at exactly that point — SportsEngine's own parent guide
-// opens by telling people NOT to create a second account, because duplicate
-// logins are their biggest support burden.
+// FIX for A01/A18 (audit ZIP 22): invitations used to be written straight to
+// 'approved' status against a shared placeholder UUID
+// (00000000-0000-0000-0000-000000000000), because the real parent account
+// doesn't exist yet at send time. That had two consequences:
+//   - complete-invite had no genuine per-invite record to check, so it fell
+//     back to trusting the client (A01)
+//   - every unresolved invite collided on that same placeholder id under
+//     UNIQUE(athlete_id, user_id), so a second pending invite for a
+//     different child could silently overwrite the first (A18)
 //
-// The coach already knows who the parent is: their email is on the athlete's
-// record. Sending mail to that address IS the verification, so the claim
-// approval step is unnecessary for an invited parent. The self-claim flow
-// stays as the fallback for anyone who wasn't invited.
+// Fix: invites are now written as status 'pending_activation' with a real
+// expiry (7 days) and no user_id at all until a real account activates them.
+// See supabase-fix-a01-a18-claims.sql for the schema change this depends on.
 //
-// POST { athleteIds: [...] }  → invite the parent on each athlete's record
-// POST { athleteId, email }   → invite a specific address
+// FIX for A10: this route previously called authenticateRequest(req) with no
+// role check, which accepts ANY authenticated Supabase user, not specifically
+// active staff. Replaced with requireStaffContext, which independently
+// re-verifies is_active on both the staff row and the school, and confirms
+// team ownership before a coach can invite a parent for that team's athlete.
 
 interface InviteResult {
   athleteId: string;
   athleteName: string;
   email: string | null;
-  status: 'invited' | 'already_linked' | 'no_email' | 'failed';
+  status: 'invited' | 'already_linked' | 'no_email' | 'not_permitted' | 'failed';
   detail?: string;
 }
 
+const INVITE_TTL_DAYS = 7;
+
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
+  const ctx = await requireStaffContext(req);
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json().catch(() => ({}));
   const ids: string[] = Array.isArray(body.athleteIds)
@@ -49,17 +54,24 @@ export async function POST(req: NextRequest) {
   // Only athletes in the caller's own school. Client-supplied ids are never
   // trusted on their own.
   const { data: athletes } = await db.from('athletes')
-    .select('id,full_name,parent_email,parent_name,school_id')
-    .eq('school_id', schoolId).in('id', ids);
+    .select('id,full_name,team,parent_email,parent_name,school_id')
+    .eq('school_id', ctx.schoolId).in('id', ids);
 
   if (!athletes?.length) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   const { data: school } = await db.from('schools')
-    .select('name,slug').eq('id', schoolId).maybeSingle();
+    .select('name,slug').eq('id', ctx.schoolId).maybeSingle();
 
   const results: InviteResult[] = [];
 
   for (const ath of athletes) {
+    // A10/A11/A12: a team-scoped coach could previously invite a parent for
+    // any athlete in the school, since only school_id was ever compared.
+    if (!canActOnTeam(ctx, ath.team)) {
+      results.push({ athleteId: ath.id, athleteName: ath.full_name, email: null, status: 'not_permitted' });
+      continue;
+    }
+
     const email = (body.email ? String(body.email) : ath.parent_email || '').trim().toLowerCase();
 
     if (!email) {
@@ -67,50 +79,47 @@ export async function POST(req: NextRequest) {
       continue;
     }
 
-    // Already connected — re-inviting would create a confusing second account,
-    // which is precisely the problem this flow exists to avoid.
     const { data: existingClaim } = await db.from('athlete_claims')
-      .select('id,status').eq('athlete_id', ath.id).eq('email', email).maybeSingle();
+      .select('id,status').eq('athlete_id', ath.id).eq('email', email)
+      .in('status', ['approved', 'pending_activation'])
+      .order('created_at', { ascending: false }).maybeSingle();
     if (existingClaim?.status === 'approved') {
       results.push({ athleteId: ath.id, athleteName: ath.full_name, email, status: 'already_linked' });
       continue;
     }
 
     try {
-      // Supabase sends the mail and owns the token lifecycle. redirectTo
-      // carries the athlete, so the link finishes the linking on arrival.
-      const { data: invited, error } = await db.auth.admin.inviteUserByEmail(email, {
+      const { error } = await db.auth.admin.inviteUserByEmail(email, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://app.altusperformance.co.za'}/parent/welcome?athlete=${ath.id}`,
-        data: {
-          role: 'parent',
-          athlete_id: ath.id,
-          athlete_name: ath.full_name,
-          school_id: schoolId,
-          school_name: school?.name ?? null,
-        },
+        data: { role: 'parent', athlete_id: ath.id, athlete_name: ath.full_name, school_id: ctx.schoolId, school_name: school?.name ?? null },
       });
 
-      // An address that already has an account isn't a failure — they can use
-      // the same link, they just won't get a second invitation mail.
       if (error && !/already been registered|already exists/i.test(error.message)) {
         results.push({ athleteId: ath.id, athleteName: ath.full_name, email, status: 'failed', detail: error.message });
         continue;
       }
 
-      // Pre-approve the claim. The coach chose this athlete and the school
-      // already holds this email — mailing it is the verification, so making
-      // them wait for a second approval adds friction without adding safety.
-      await db.from('athlete_claims').upsert({
-        school_id: schoolId,
+      // The claim is the authorization record, written server-side, with no
+      // user_id until a real account consumes it. onConflict targets the new
+      // partial unique index (athlete_id, email) WHERE pending_activation —
+      // re-inviting the same parent for the same child refreshes the expiry
+      // rather than creating a duplicate or colliding with an unrelated one.
+      const { error: claimErr } = await db.from('athlete_claims').upsert({
+        school_id: ctx.schoolId,
         athlete_id: ath.id,
-        user_id: invited?.user?.id ?? '00000000-0000-0000-0000-000000000000',
+        user_id: null,
         email,
         claim_type: 'parent',
-        status: 'approved',
+        status: 'pending_activation',
         approved_via: 'coach_invite',
-        approved_by: auth.email || 'staff',
-        approved_at: new Date().toISOString(),
-      }, { onConflict: 'athlete_id,user_id' });
+        approved_by: ctx.email,
+        expires_at: new Date(Date.now() + INVITE_TTL_DAYS * 86400000).toISOString(),
+      }, { onConflict: 'athlete_id,email' });
+
+      if (claimErr) {
+        results.push({ athleteId: ath.id, athleteName: ath.full_name, email, status: 'failed', detail: claimErr.message });
+        continue;
+      }
 
       results.push({ athleteId: ath.id, athleteName: ath.full_name, email, status: 'invited' });
     } catch (e) {
@@ -126,6 +135,7 @@ export async function POST(req: NextRequest) {
     invited: results.filter(r => r.status === 'invited').length,
     alreadyLinked: results.filter(r => r.status === 'already_linked').length,
     noEmail: results.filter(r => r.status === 'no_email').length,
+    notPermitted: results.filter(r => r.status === 'not_permitted').length,
     failed: results.filter(r => r.status === 'failed').length,
     results,
   });

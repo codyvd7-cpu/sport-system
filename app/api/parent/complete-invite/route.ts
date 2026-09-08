@@ -4,77 +4,92 @@ import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 // ─── /api/parent/complete-invite ──────────────────────────────────────────────
 // Finishes the link when a parent arrives from an invitation email.
 //
-// Authorisation here comes from the invitation itself: Supabase only issues a
-// session if the person actually received mail at that address, and the coach
-// chose which athlete when they sent it. Both facts are carried in the user's
-// metadata, which only the server can write.
+// FIX for A01 (critical, audit ZIP 22): the previous version fell back to
+// `body.athleteId` whenever user_metadata was empty — meta.athlete_id was set
+// by a redirect URL parameter reflected into metadata by other code paths,
+// and in the metadata-empty case the client-supplied athleteId was trusted
+// outright. Any authenticated account could POST an arbitrary athleteId and
+// this route would link it, no invitation required. The inline comment
+// claiming "the URL is therefore NOT trusted" was not backed by the code —
+// exactly the class of thing the audit's methodology exists to catch.
 //
-// The athlete id in the URL is therefore NOT trusted on its own — it's checked
-// against the metadata Supabase holds, so editing the link to point at another
-// child does nothing.
+// The fix: authorization now comes ONLY from a genuine athlete_claims row —
+// created server-side when the invite was sent, matched on email, status
+// 'pending_activation', and consumed exactly once. user_metadata and the
+// request body are read only as a LOOKUP HINT (which athlete to check first),
+// never as proof of anything. If no matching claim row exists, this fails,
+// full stop — there is no fallback path left.
 
 export async function POST(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const token = req.headers.get('authorization')?.replace('Bearer ', '')
     ?? req.cookies.get('sb-access-token')?.value;
-
-  const body = await req.json().catch(() => ({}));
-  const requestedAthleteId = body.athleteId ? String(body.athleteId) : null;
+  if (!token) return NextResponse.json({ error: 'Your invitation link has expired.' }, { status: 401 });
 
   const db = getAdmin();
-
-  // Identify the caller from their session.
-  let userId: string | null = null;
-  let userEmail: string | null = null;
-  let metaAthleteId: string | null = null;
-  let metaSchoolId: string | null = null;
-
-  if (token) {
-    const { data } = await db.auth.getUser(token);
-    if (data.user) {
-      userId = data.user.id;
-      userEmail = data.user.email ?? null;
-      const meta = (data.user.user_metadata ?? {}) as Record<string, unknown>;
-      metaAthleteId = meta.athlete_id ? String(meta.athlete_id) : null;
-      metaSchoolId = meta.school_id ? String(meta.school_id) : null;
-    }
-  }
-
-  if (!userId || !userEmail) {
+  const { data } = await db.auth.getUser(token);
+  const user = data.user;
+  if (!user?.id || !user.email) {
     return NextResponse.json({ error: 'Your invitation link has expired.' }, { status: 401 });
   }
+  const userId = user.id;
+  const email = user.email.toLowerCase();
 
-  // The invitation decides which athlete, not the URL. A parent editing the
-  // link to another child's id gets nothing.
-  const athleteId = metaAthleteId ?? requestedAthleteId;
-  if (!athleteId) {
-    return NextResponse.json({ error: 'This link is missing its athlete.' }, { status: 400 });
-  }
-  if (metaAthleteId && requestedAthleteId && metaAthleteId !== requestedAthleteId) {
-    return NextResponse.json({ error: 'This link is not valid for that athlete.' }, { status: 403 });
+  // The real authorization check: a server-created claim for THIS email,
+  // still awaiting activation, not expired, not already consumed by another
+  // account. This is what makes the invite unforgeable — it was written by
+  // /api/parents/invite at send time, before this user's account existed, and
+  // nothing the client sends can create or alter it.
+  const { data: claim } = await db
+    .from('athlete_claims')
+    .select('id, athlete_id, school_id, status, expires_at, user_id')
+    .eq('email', email)
+    .eq('status', 'pending_activation')
+    .gt('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .maybeSingle();
+
+  if (!claim) {
+    return NextResponse.json({
+      error: 'No active invitation found for this account. Ask your coach to resend it.',
+    }, { status: 403 });
   }
 
   const { data: athlete } = await db.from('athletes')
-    .select('id,full_name,school_id').eq('id', athleteId).maybeSingle();
-  if (!athlete) return NextResponse.json({ error: 'That athlete no longer exists.' }, { status: 404 });
-  if (metaSchoolId && athlete.school_id !== metaSchoolId) {
-    return NextResponse.json({ error: 'This link is not valid for that athlete.' }, { status: 403 });
+    .select('id,full_name,school_id').eq('id', claim.athlete_id).maybeSingle();
+  if (!athlete || athlete.school_id !== claim.school_id) {
+    return NextResponse.json({ error: 'This invitation is no longer valid.' }, { status: 404 });
   }
 
-  // Create or update the profile that connects this account to the athlete.
+  // Consume the claim atomically: move it from pending_activation to
+  // approved, binding it to the now-real user id, and only where it is STILL
+  // pending_activation — a concurrent request (e.g. the email link opened
+  // twice) cannot both succeed and produce two different outcomes.
+  const { data: consumed, error: consumeErr } = await db
+    .from('athlete_claims')
+    .update({ status: 'approved', user_id: userId, approved_at: new Date().toISOString() })
+    .eq('id', claim.id)
+    .eq('status', 'pending_activation')
+    .select('id')
+    .maybeSingle();
+
+  if (consumeErr || !consumed) {
+    return NextResponse.json({ error: 'This invitation was already used.' }, { status: 409 });
+  }
+
+  // One relationship per (user, athlete) is what athlete_claims already
+  // models correctly; player_profiles.athlete_id is legacy single-athlete
+  // convenience state for existing UI and is set to the most recent approval.
+  // A18's "one profile / one athlete" limitation for a parent with multiple
+  // children is a real, separate data-model gap — tracked, not silently
+  // papered over here.
   await db.from('player_profiles').upsert({
     user_id: userId,
-    full_name: userEmail.split('@')[0],
+    full_name: email.split('@')[0],
     athlete_id: athlete.id,
     school_id: athlete.school_id,
   }, { onConflict: 'user_id' });
-
-  // Attach the pre-approved claim to the real user id. The invite created it
-  // before the account existed, so it was stored against a placeholder.
-  await db.from('athlete_claims')
-    .update({ user_id: userId, status: 'approved' })
-    .eq('athlete_id', athlete.id).eq('email', userEmail.toLowerCase());
 
   return NextResponse.json({ ok: true, athleteName: athlete.full_name, athleteId: athlete.id });
 }
