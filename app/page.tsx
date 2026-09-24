@@ -116,12 +116,19 @@ export default function LandingPage(){
   // and its sports, in that order. This is what makes /ridgemont feel like
   // Ridgemont's rather than a product page wearing their crest.
   const PHOTOS = React.useMemo(() => {
+    // On the neutral front door (no school selected) show NOTHING behind the
+    // content. Previously it fell through to the generic sport heroes, which
+    // rotated a muddy wash of unrelated schools' photography behind a page
+    // whose whole job is "which school are you?". A clean dark background
+    // reads as deliberate; a half-visible photo of someone else's team reads
+    // as broken.
+    if (branding.slug === 'default') return [];
     const own = [
       branding.campusImageUrl,
       ...sports.map(sp => sp.heroImage).filter(Boolean),
     ].filter(Boolean) as string[];
     return own.length ? own.slice(0, 5) : DEFAULT_PHOTOS;
-  }, [branding.campusImageUrl, sports]);
+  }, [branding.slug, branding.campusImageUrl, sports]);
   const [favs,     setFavs]     = React.useState<string[]>([]);
   const [isMob,    setIsMob]    = React.useState(false);
   const [dPage,    setDPage]    = React.useState(0);

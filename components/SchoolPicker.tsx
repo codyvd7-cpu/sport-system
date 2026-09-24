@@ -65,31 +65,53 @@ export default function SchoolPicker({ prominent = false }: { prominent?: boolea
         />
       )}
 
-      <div className="space-y-2">
-        {filtered.map(s => (
-          <Link
-            key={s.slug}
-            href={`/${s.slug}`}
-            className="flex items-center gap-3 rounded-2xl border border-white/7 bg-white/[0.02] px-4 py-3 transition hover:border-white/18"
-          >
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg text-[11px] font-black"
+      <div className="space-y-2.5">
+        {filtered.map(s => {
+          const accent = s.primary_color || '#38bdf8';
+          return (
+            <Link
+              key={s.slug}
+              href={`/${s.slug}`}
+              className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border px-4 py-4 transition"
               style={{
-                background: (s.primary_color || '#38bdf8') + '1e',
-                border: `1px solid ${(s.primary_color || '#38bdf8')}44`,
-                color: s.primary_color || '#38bdf8',
+                // The school's own colour carries the row, rather than every
+                // school looking identical in generic white-on-grey. A soft
+                // wash on the left anchors the crest without shouting.
+                borderColor: accent + '2e',
+                background: `linear-gradient(100deg, ${accent}14 0%, rgba(255,255,255,0.02) 55%)`,
               }}
             >
-              {s.logo_url
-                ? <Image src={s.logo_url} alt="" width={36} height={36} className="h-full w-full object-contain p-1" />
-                : s.abbreviation}
-            </span>
-            <span className="min-w-0 flex-1 truncate text-[13.5px] font-semibold text-white/90">
-              {s.name}
-            </span>
-            <span className="shrink-0 text-[12px] text-white/25">→</span>
-          </Link>
-        ))}
+              <span
+                className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl text-[12px] font-black"
+                style={{
+                  background: accent + '1a',
+                  border: `1px solid ${accent}3d`,
+                  color: accent,
+                }}
+              >
+                {s.logo_url
+                  ? <Image src={s.logo_url} alt="" width={48} height={48} className="h-full w-full object-contain p-1" />
+                  : s.abbreviation}
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[15px] font-bold leading-tight text-white">
+                  {s.name}
+                </span>
+                <span className="mt-0.5 block text-[11px] font-medium tracking-wide text-white/35">
+                  Fixtures, results and team information
+                </span>
+              </span>
+
+              <span
+                className="shrink-0 text-[15px] transition group-hover:translate-x-0.5"
+                style={{ color: accent }}
+              >
+                →
+              </span>
+            </Link>
+          );
+        })}
 
         {filtered.length === 0 && (
           <p className="py-6 text-center text-[12px] text-white/30">

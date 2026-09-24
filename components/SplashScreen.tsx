@@ -49,19 +49,25 @@ export default function SplashScreen() {
       ctx.scale(DPR, DPR);
       const CX = W / 2, CY = H / 2 - 15;
 
-      // Particles
-      const COLS = ['#1d4ed8','#2563eb','#3b82f6','#0ea5e9','#06b6d4','#38bdf8'];
+      // Particles.
+      // Previously 80 hardcoded-blue particles firing inward as a dense
+      // starburst — it read as a cheap screensaver, and it stayed blue even
+      // for a maroon school. Now: far fewer, slower, softer, and coloured
+      // from the school's own palette (Altus blue only when no school is
+      // selected). The aim is a quiet settle, not a firework.
+      const accent = branding.primaryColor || '#38bdf8';
+      const COLS = [accent, accent, branding.accentColor || accent, '#ffffff'];
       type P = { x:number; y:number; vx:number; vy:number; size:number; col:string; born:number; trail:{x:number;y:number}[] };
-      const N = 80;
+      const N = 22;
       const parts: P[] = Array.from({length:N}, (_,i) => {
         const angle  = (i/N) * Math.PI * 2 + (Math.random()-0.5) * 0.4;
-        const radius = 200 + Math.random() * 300;
+        const radius = 260 + Math.random() * 260;
         const sx = CX + Math.cos(angle)*radius;
         const sy = CY + Math.sin(angle)*radius;
         const dx = CX-sx, dy = CY-sy;
         const d  = Math.sqrt(dx*dx+dy*dy);
-        const sp = 2.8 + Math.random() * 2.5;
-        return { x:sx, y:sy, vx:(dx/d)*sp, vy:(dy/d)*sp, size:0.8+Math.random()*1.6,
+        const sp = 1.4 + Math.random() * 1.2;
+        return { x:sx, y:sy, vx:(dx/d)*sp, vy:(dy/d)*sp, size:0.5+Math.random()*0.9,
                  col:COLS[i%COLS.length], born:0.05+(i/N)*0.7, trail:[] };
       });
 

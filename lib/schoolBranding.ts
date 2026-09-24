@@ -30,7 +30,7 @@ export const DEFAULT_BRANDING: SchoolBranding = {
   name: 'Altus Performance',
   shortName: 'Altus',
   abbreviation: 'AP',
-  logoUrl: '/school-logo.png',
+  logoUrl: '/altus-icon.png',
   primaryColor: '#38bdf8',
   accentColor: '#a78bfa',
   slug: 'default',
