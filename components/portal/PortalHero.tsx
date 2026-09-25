@@ -5,12 +5,41 @@ import { SPORTS, type SportKey, getSportColor } from '@/lib/sports';
 import { fmtTime12h } from '@/lib/format';
 import { useBranding } from '@/components/BrandingProvider';
 
+// ─── PortalHero ────────────────────────────────────────────────────────────────
+// Rebuilt as a matchday panel rather than a SaaS dashboard header.
+//
+// What was removed, and why — these are the things that made it read as a
+// generic AI-built product rather than a school's own sport page:
+//   · "LIVE SPORT PORTAL" pill with a pulsing dot
+//   · shine sweep + blurred corner glow on the fixture card
+//   · emoji icons (📅 🕐 📍) standing in for real labels
+//   · hover lift-and-scale on the card
+//   · glassmorphism (backdrop blur) on almost every surface
+//   · a full-bleed gradient card in the school colour, which shouted louder
+//     than the actual information on it
+//
+// What replaces it: typography doing the work. A condensed headline at real
+// scale, the fixture presented as a proper scoreboard with labelled fields,
+// and the school colour used as a precise accent rather than a wash. The
+// photograph stays — it's genuinely the school's own and earns its place.
+
 type Row = Record<string, any>;
 
-function fDate(d: string) {
-  return new Date(d).toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long' });
-}
+const fDate = (d: string) =>
+  new Date(d).toLocaleDateString('en-ZA', { weekday:'long', day:'numeric', month:'long' });
 const fTime = (t?: string) => fmtTime12h(t);
+
+/** Days until a fixture, phrased the way a parent would say it. */
+function countdown(dateStr: string): string {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const d = new Date(dateStr); d.setHours(0,0,0,0);
+  const days = Math.round((d.getTime() - today.getTime()) / 86400000);
+  if (days < 0)  return 'Played';
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  if (days < 7)  return `In ${days} days`;
+  return `In ${Math.floor(days / 7)} week${days >= 14 ? 's' : ''}`;
+}
 
 interface Props { sport: SportKey; nextFixture: Row|null; }
 
@@ -20,166 +49,160 @@ export default function PortalHero({ sport, nextFixture }: Props) {
   const color = getSportColor(sport);
   const fixTerm = cfg?.terminology?.fixture ?? 'Fixture';
 
-  // The school's OWN photograph for this sport, falling back to the shared
-  // graphic. Reading the global image directly meant every school's portal
-  // showed the same picture — so one school's kit and crest appeared on
-  // another school's page.
   const schoolSport = sports?.find(sp => sp.key === sport);
   const heroImg = schoolSport?.heroImage || cfg?.portal?.heroImage;
+
   const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => { const t = setTimeout(() => setMounted(true), 40); return () => clearTimeout(t); }, []);
 
-  React.useEffect(() => { const t = setTimeout(() => setMounted(true), 50); return () => clearTimeout(t); }, []);
-
-  const fadeUp = (delay: number): React.CSSProperties => ({
+  const rise = (delay: number): React.CSSProperties => ({
     opacity: mounted ? 1 : 0,
-    transform: mounted ? 'translateY(0)' : 'translateY(16px)',
-    transition: `all 0.7s cubic-bezier(0.16,1,0.3,1) ${delay}s`,
+    transform: mounted ? 'translateY(0)' : 'translateY(14px)',
+    transition: `opacity .6s ease ${delay}s, transform .7s cubic-bezier(.16,1,.3,1) ${delay}s`,
   });
 
+  const detail = nextFixture ? [
+    { label: 'Date',  value: fDate(nextFixture.fixture_date) },
+    ...(nextFixture.fixture_time ? [{ label: 'Time',  value: fTime(nextFixture.fixture_time) }] : []),
+    ...(nextFixture.venue        ? [{ label: 'Venue', value: nextFixture.venue }] : []),
+    ...(nextFixture.home_away    ? [{ label: 'Ground', value: String(nextFixture.home_away).toUpperCase() }] : []),
+  ] : [];
+
   return (
-    <section className="ph-section" style={{ position:'relative', overflow:'hidden', minHeight:'clamp(560px, 88vh, 780px)', display:'flex', alignItems:'flex-end' }}>
+    <section className="ph" style={{ position:'relative', overflow:'hidden', display:'flex', alignItems:'flex-end',
+      minHeight:'clamp(520px, 82vh, 720px)' }}>
       <style>{`
-        @media (max-width: 760px) {
-          .ph-section { min-height: auto !important; }
-          .ph-wrap { padding: 88px 18px 40px !important; }
-          .ph-grid { gap: 26px !important; }
-          .ph-ctas { gap: 10px !important; }
-          .ph-ctas a { flex: 1 1 100%; justify-content: center !important; text-align: center; padding: 14px 20px !important; }
-          .ph-card-pad { padding: 22px 18px 22px !important; }
-          .ph-card-title { font-size: 25px !important; }
-          .ph-card-details { padding: 16px 16px !important; }
+        .ph-anton { font-family: 'Anton', Impact, sans-serif; }
+        @media (max-width: 860px) {
+          .ph { min-height: auto !important; }
+          .ph-wrap { padding: 96px 18px 36px !important; }
+          .ph-grid { grid-template-columns: 1fr !important; gap: 30px !important; }
+          .ph-detail { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (min-width: 861px) {
+          .ph-grid { grid-template-columns: 1fr 380px; }
         }
       `}</style>
 
-      {/* ── Full-bleed cinematic image ── */}
       {heroImg && (
         <div style={{ position:'absolute', inset:0, zIndex:0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={heroImg} alt="" style={{
-            width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 18%',
-            transform: mounted ? 'scale(1.0)' : 'scale(1.06)',
-            transition:'transform 1.6s cubic-bezier(0.16,1,0.3,1)',
+            width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 20%',
+            transform: mounted ? 'scale(1)' : 'scale(1.05)',
+            transition:'transform 1.8s cubic-bezier(.16,1,.3,1)',
           }}/>
-          {/* Layered depth gradients */}
-          <div style={{ position:'absolute', inset:0, background:`linear-gradient(180deg, rgba(3,8,16,0.35) 0%, rgba(3,8,16,0.55) 35%, #030810 92%)` }}/>
-          <div style={{ position:'absolute', inset:0, background:`linear-gradient(90deg, rgba(3,8,16,0.96) 0%, rgba(3,8,16,0.55) 42%, rgba(3,8,16,0.15) 75%, rgba(3,8,16,0.5) 100%)` }}/>
+          <div style={{ position:'absolute', inset:0,
+            background:'linear-gradient(180deg, rgba(3,8,16,0.30) 0%, rgba(3,8,16,0.62) 45%, #030810 94%)' }}/>
         </div>
       )}
 
-      <div className="ph-wrap" style={{ position:'relative', zIndex:1, padding:'120px 24px 64px', maxWidth:1240, margin:'0 auto', width:'100%' }}>
-        <div style={{ display:'grid', gap:48, alignItems:'flex-end' }} className="ph-grid lg:grid-cols-[1fr_400px]">
+      <div className="ph-wrap" style={{ position:'relative', zIndex:1, padding:'120px 28px 60px', maxWidth:1240, margin:'0 auto', width:'100%' }}>
+        <div className="ph-grid" style={{ display:'grid', gap:52, alignItems:'end' }}>
 
-          {/* Left — headline */}
           <div>
-            <div style={{
-              display:'inline-flex', alignItems:'center', gap:9, padding:'7px 16px 7px 11px',
-              borderRadius:100, background:'rgba(255,255,255,0.08)', border:`1px solid ${color}55`,
-              backdropFilter:'blur(12px)', marginBottom:24, ...fadeUp(0),
-            }}>
-              <span style={{ width:7, height:7, borderRadius:'50%', background:color, boxShadow:`0 0 12px ${color}` }}/>
-              <span style={{ fontSize:11, fontWeight:800, color:'white', textTransform:'uppercase', letterSpacing:'0.22em' }}>Live Sport Portal</span>
+            {/* A plain rule and label instead of a glowing pill badge. */}
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, ...rise(0) }}>
+              <span style={{ width:28, height:2, background:color }}/>
+              <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.62)',
+                textTransform:'uppercase', letterSpacing:'0.24em' }}>
+                {branding.name}
+              </span>
             </div>
 
-            <h1 style={{
-              fontSize:'clamp(38px,6.5vw,76px)', fontWeight:900, letterSpacing:'-0.035em',
-              lineHeight:0.96, color:'white', marginBottom:20,
-              textShadow:'0 8px 50px rgba(0,0,0,0.6)', ...fadeUp(0.08),
+            <h1 className="ph-anton" style={{
+              fontSize:'clamp(46px, 9vw, 104px)', lineHeight:0.88, color:'white',
+              letterSpacing:'0.01em', marginBottom:22, ...rise(0.06),
             }}>
-              {branding.shortName.toUpperCase()} {cfg?.portal?.headline ?? (cfg?.label ?? sport).toUpperCase()}
+              {(cfg?.portal?.headline ?? cfg?.label ?? sport).toUpperCase()}
             </h1>
 
-            <p style={{ fontSize:'clamp(18px,2.6vw,26px)', fontWeight:800, color, marginBottom:18, ...fadeUp(0.16) }}>
-              This Week at a Glance
-            </p>
-
             <p style={{
-              fontSize:'clamp(14px,1.6vw,16.5px)', color:'rgba(255,255,255,0.6)', lineHeight:1.7,
-              maxWidth:490, marginBottom:36, ...fadeUp(0.22),
+              fontSize:'clamp(14px,1.6vw,16px)', color:'rgba(255,255,255,0.55)', lineHeight:1.65,
+              maxWidth:440, marginBottom:32, ...rise(0.14),
             }}>
-              {cfg?.portal?.description ?? 'Fixtures, training updates, programmes and department notices — all in one place.'}
+              {cfg?.portal?.description ?? 'Fixtures, results and the week ahead.'}
             </p>
 
-            <div className="ph-ctas" style={{ display:'flex', gap:14, flexWrap:'wrap', ...fadeUp(0.3) }}>
+            <div style={{ display:'flex', gap:10, flexWrap:'wrap', ...rise(0.2) }}>
               <a href="#this-week" style={{
-                fontSize:14.5, fontWeight:800, padding:'15px 30px', borderRadius:13,
-                background:color, color:'#030810', textDecoration:'none',
-                boxShadow:`0 12px 32px ${color}50`, transition:'all .2s cubic-bezier(0.16,1,0.3,1)',
-                display:'inline-flex', alignItems:'center', gap:8,
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3px)'; e.currentTarget.style.boxShadow=`0 16px 40px ${color}70`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow=`0 12px 32px ${color}50`; }}>
-                View This Week
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} style={{width:15,height:15}}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                fontSize:13.5, fontWeight:700, padding:'13px 24px', borderRadius:10,
+                background:color, color:'#03060c', textDecoration:'none',
+              }}>
+                This week
               </a>
               <Link href="/player/auth" style={{
-                fontSize:14.5, fontWeight:700, padding:'15px 30px', borderRadius:13,
-                background:'rgba(255,255,255,0.09)', color:'white',
-                border:'1px solid rgba(255,255,255,0.18)', textDecoration:'none',
-                backdropFilter:'blur(12px)', transition:'all .2s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,0.16)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background='rgba(255,255,255,0.09)'; }}>
-                Player Login
+                fontSize:13.5, fontWeight:600, padding:'13px 24px', borderRadius:10,
+                background:'transparent', color:'rgba(255,255,255,0.75)',
+                border:'1px solid rgba(255,255,255,0.2)', textDecoration:'none',
+              }}>
+                Sign in
               </Link>
             </div>
           </div>
 
-          {/* Right — Next Fixture: hero-grade card */}
-          <div style={fadeUp(0.35)}>
+          {/* ── Next fixture, as a scoreboard panel ── */}
+          <div style={rise(0.26)}>
             {nextFixture ? (
               <Link href={`/portal/fixtures?sport=${sport}&date=${nextFixture.fixture_date}`} style={{
-                position:'relative', borderRadius:26, overflow:'hidden', display:'block',
-                background: `linear-gradient(155deg, ${color} 0%, ${color}cc 45%, #0a1120 100%)`,
-                boxShadow: `0 28px 70px -14px ${color}70, 0 0 0 1px ${color}55`,
-                textDecoration:'none', transition:'all .3s cubic-bezier(0.16,1,0.3,1)',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform='translateY(-6px) scale(1.015)'; e.currentTarget.style.boxShadow=`0 36px 90px -14px ${color}90, 0 0 0 1px ${color}80`; }}
-                onMouseLeave={e => { e.currentTarget.style.transform='translateY(0) scale(1)'; e.currentTarget.style.boxShadow=`0 28px 70px -14px ${color}70, 0 0 0 1px ${color}55`; }}>
+                display:'block', textDecoration:'none', borderRadius:14, overflow:'hidden',
+                background:'rgba(4,9,18,0.86)', border:'1px solid rgba(255,255,255,0.12)',
+              }}>
+                <div style={{
+                  display:'flex', alignItems:'center', justifyContent:'space-between',
+                  padding:'13px 18px', borderBottom:'1px solid rgba(255,255,255,0.09)',
+                }}>
+                  <span style={{ fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.5)',
+                    textTransform:'uppercase', letterSpacing:'0.2em' }}>
+                    Next {fixTerm}
+                  </span>
+                  <span style={{ fontSize:10.5, fontWeight:700, color, textTransform:'uppercase', letterSpacing:'0.14em' }}>
+                    {countdown(nextFixture.fixture_date)}
+                  </span>
+                </div>
 
-                {/* Shine sweep */}
-                <div style={{ position:'absolute', top:0, left:0, right:0, height:'55%', background:'linear-gradient(180deg, rgba(255,255,255,0.22), transparent)', pointerEvents:'none' }}/>
-                {/* Corner glow */}
-                <div style={{ position:'absolute', bottom:-40, right:-40, width:160, height:160, borderRadius:'50%', background:'rgba(255,255,255,0.15)', filter:'blur(40px)', pointerEvents:'none' }}/>
+                <div style={{ padding:'22px 18px 20px' }}>
+                  {nextFixture.team && (
+                    <p style={{ fontSize:11.5, fontWeight:700, color, letterSpacing:'0.12em',
+                      textTransform:'uppercase', marginBottom:8 }}>
+                      {nextFixture.team}
+                    </p>
+                  )}
+                  <p className="ph-anton" style={{ fontSize:34, lineHeight:1, color:'white', letterSpacing:'0.01em' }}>
+                    {String(nextFixture.opponent || '').toUpperCase()}
+                  </p>
+                </div>
 
-                <div className="ph-card-pad" style={{ position:'relative', padding:'28px 28px 30px' }}>
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <span style={{ width:8, height:8, borderRadius:'50%', background:'#030810' }}/>
-                      <p style={{ fontSize:11.5, fontWeight:900, color:'#030810', textTransform:'uppercase', letterSpacing:'0.25em' }}>
-                        Next {fixTerm}
+                {/* Labelled fields — a parent scanning for kick-off time can
+                    find it, which emoji rows made harder, not easier. */}
+                <div className="ph-detail" style={{
+                  display:'grid', gridTemplateColumns:'1fr 1fr', borderTop:'1px solid rgba(255,255,255,0.09)',
+                }}>
+                  {detail.map((d, i) => (
+                    <div key={d.label} style={{
+                      padding:'13px 18px',
+                      borderRight: i % 2 === 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                      borderTop:   i >= 2 ? '1px solid rgba(255,255,255,0.07)' : 'none',
+                    }}>
+                      <p style={{ fontSize:9.5, fontWeight:700, color:'rgba(255,255,255,0.35)',
+                        textTransform:'uppercase', letterSpacing:'0.18em', marginBottom:4 }}>
+                        {d.label}
+                      </p>
+                      <p style={{ fontSize:13.5, fontWeight:600, color:'rgba(255,255,255,0.92)' }}>
+                        {d.value}
                       </p>
                     </div>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="#030810" strokeWidth={2.5} style={{width:16,height:16, opacity:0.6}}><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                  </div>
-
-                  {nextFixture.team && (
-                    <div style={{ display:'inline-block', padding:'5px 13px', borderRadius:9, background:'rgba(3,8,16,0.28)', marginBottom:12 }}>
-                      <span style={{ fontSize:13.5, fontWeight:900, color:'#030810' }}>{nextFixture.team}</span>
-                    </div>
-                  )}
-
-                  <p className="ph-card-title" style={{ fontSize:32, fontWeight:900, color:'#030810', marginBottom:22, lineHeight:1.05, letterSpacing:'-0.02em' }}>
-                    vs {nextFixture.opponent}
-                  </p>
-
-                  <div className="ph-card-details" style={{ background:'rgba(3,8,16,0.88)', borderRadius:18, padding:'20px 22px', display:'flex', flexDirection:'column', gap:12 }}>
-                    {[
-                      { icon:'📅', val:fDate(nextFixture.fixture_date) },
-                      ...(nextFixture.fixture_time ? [{ icon:'🕐', val:fTime(nextFixture.fixture_time) }] : []),
-                      ...(nextFixture.venue        ? [{ icon:'📍', val:nextFixture.venue }] : []),
-                      ...(nextFixture.home_away    ? [{ icon:'🏟️', val:nextFixture.home_away }] : []),
-                    ].map((row,i) => (
-                      <div key={i} style={{ display:'flex', alignItems:'center', gap:11 }}>
-                        <span style={{ fontSize:15 }}>{row.icon}</span>
-                        <span style={{ fontSize:14.5, fontWeight:700, color:'white' }}>{row.val}</span>
-                      </div>
-                    ))}
-                  </div>
+                  ))}
                 </div>
               </Link>
             ) : (
-              <div style={{ borderRadius:26, border:'1px solid rgba(255,255,255,0.12)', background:'rgba(255,255,255,0.05)', backdropFilter:'blur(16px)', padding:44, display:'flex', alignItems:'center', justifyContent:'center', minHeight:240 }}>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.3)', fontWeight:700 }}>No upcoming fixtures</p>
+              <div style={{
+                borderRadius:14, border:'1px solid rgba(255,255,255,0.1)',
+                background:'rgba(4,9,18,0.7)', padding:'36px 20px', textAlign:'center',
+              }}>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.35)' }}>
+                  No {fixTerm.toLowerCase()}s scheduled yet
+                </p>
               </div>
             )}
           </div>
