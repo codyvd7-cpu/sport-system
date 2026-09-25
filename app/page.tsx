@@ -46,10 +46,19 @@ function Card({dept,favs,onFav,main=true}:{
 }){
   const isFav=favs.includes(dept.id);
   const C=dept.accent;
+  // Tap feedback. A card that visibly gives under the finger reads as a
+  // physical control; one that changes only on release reads as a link.
+  const [pressed,setPressed]=React.useState(false);
   return(
-    <div style={{
+    <div
+      onPointerDown={()=>setPressed(true)}
+      onPointerUp={()=>setPressed(false)}
+      onPointerLeave={()=>setPressed(false)}
+      style={{
+      transform:pressed?'scale(0.972)':'scale(1)',
+      transition:'transform .18s cubic-bezier(.22,1.1,.36,1)',
       height:'100%',display:'flex',flexDirection:'column',alignItems:'center',
-      justifyContent:'center',gap:main?8:5,padding:main?'16px 12px':'10px 6px',
+      justifyContent:'center',gap:main?6:4,padding:main?'13px 11px':'9px 6px',
       position:'relative',borderRadius:18,overflow:'hidden',
       background:'rgba(5,10,28,0.22)',
       backdropFilter:'blur(18px) saturate(140%)',WebkitBackdropFilter:'blur(18px) saturate(140%)',
@@ -76,7 +85,7 @@ function Card({dept,favs,onFav,main=true}:{
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </svg>
       </button>}
-      <SportIcon id={dept.id} live={dept.live} sz={main?38:24}/>
+      <SportIcon id={dept.id} live={dept.live} sz={main?33:22}/>
       <p style={{fontSize:main?11:8,fontWeight:800,letterSpacing:'.1em',
         color:dept.live?'rgba(255,255,255,0.92)':'rgba(255,255,255,0.28)',
         textAlign:'center',lineHeight:1.2}}>{dept.label}</p>
@@ -134,6 +143,9 @@ export default function LandingPage(){
   const [dPage,    setDPage]    = React.useState(0);
   const [mIdx,     setMIdx]     = React.useState(0);
   const tsX=React.useRef(0);
+  const tsY=React.useRef(0);
+  const tsTime=React.useRef(0);
+  const axis=React.useRef<'x'|'y'|null>(null);
   const [dragPx,  setDragPx]  = React.useState(0);
   const dragging = React.useRef(false); // ref not state - avoids batching
   const teX=React.useRef(0); // unused legacy
@@ -193,7 +205,9 @@ export default function LandingPage(){
     // HP Classes goes last — it isn't a sport, and splicing it into the middle
     // made the looping carousel show the first sport twice.
     return hp ? [...fromSchool, hp] : fromSchool;
-  }, [sports]);
+    // branding.slug is read above to build each href — without it here the
+    // links keep a stale school after navigating between school pages.
+  }, [sports, branding.slug]);
 
   const sorted=React.useMemo(()=>[...depts].sort((a,b)=>{
     const aF=favs.includes(a.id)?0:1,bF=favs.includes(b.id)?0:1;
@@ -222,21 +236,26 @@ export default function LandingPage(){
     // Intentionally reads a ref during render (see call site in the render
     // loop below for why — suppression lives there since that's where the
     // linter attributes the violation).
-    const T=dragging.current?'none':'transform 0.44s cubic-bezier(0.25,0.46,0.45,0.94)';
+    // Settle uses a spring-like curve rather than ease-out — the card
+    // arrives and holds instead of drifting to a stop, which is what makes
+    // the snap read as deliberate rather than sluggish.
+    const T=dragging.current
+      ? 'none'
+      : 'transform 0.52s cubic-bezier(0.22,1.15,0.36,1), opacity 0.35s ease';
     const prog=Math.min(1,Math.abs(dragPx)/180);
     const goNext=dragPx<0;
 
-    // Scale: center scales down, incoming side scales up as you drag
-    let scale=0.82;
-    if(offset===0) scale=1-0.18*prog;
-    else if((offset===1&&goNext)||(offset===-1&&!goNext)) scale=0.82+0.18*prog;
+    // Scale and opacity both track the drag, so the incoming card visibly
+    // takes over rather than popping into focus at the end of the gesture.
+    let scale=0.82, op=0.62;
+    if(offset===0){ scale=1-0.18*prog; op=1-0.32*prog; }
+    else if((offset===1&&goNext)||(offset===-1&&!goNext)){ scale=0.82+0.18*prog; op=0.62+0.38*prog; }
 
-    // Base X for each position + live drag offset in px
-    if(offset===0)  return {transform:`translateX(calc(-50% + ${dragPx}px)) scale(${scale.toFixed(3)})`,      opacity:1,    zIndex:10,transition:T};
-    if(offset===-1) return {transform:`translateX(calc(-134% + ${dragPx}px)) scale(${scale.toFixed(3)})`,     opacity:0.72, zIndex:5, transition:T};
-    if(offset===1)  return {transform:`translateX(calc(34% + ${dragPx}px)) scale(${scale.toFixed(3)})`,       opacity:0.72, zIndex:5, transition:T};
+    if(offset===0)  return {transform:`translateX(calc(-50% + ${dragPx}px)) scale(${scale.toFixed(3)})`,  opacity:op,   zIndex:10,transition:T};
+    if(offset===-1) return {transform:`translateX(calc(-134% + ${dragPx}px)) scale(${scale.toFixed(3)})`, opacity:op,   zIndex:5, transition:T};
+    if(offset===1)  return {transform:`translateX(calc(34% + ${dragPx}px)) scale(${scale.toFixed(3)})`,   opacity:op,   zIndex:5, transition:T};
     const d=offset<0;
-    return {transform:`translateX(calc(${d?'-250%':'150%'} + ${dragPx}px)) scale(0.75)`, opacity:0.72, zIndex:1, transition:T};
+    return {transform:`translateX(calc(${d?'-250%':'150%'} + ${dragPx}px)) scale(0.75)`, opacity:0.4, zIndex:1, transition:T};
   }
 
   // Always show exactly DPER items, wrapping around for the last page
@@ -289,19 +308,31 @@ export default function LandingPage(){
 
       {/* ── HERO ── */}
       <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',
-        padding:isMob?'28px 20px 12px':'36px 20px 16px',flexShrink:0,
-        opacity:1}}>
-        <Image src={branding.logoUrl} alt={branding.abbreviation} width={isMob?64:80} height={isMob?64:80}
-          style={{objectFit:'contain',filter:'drop-shadow(0 4px 14px rgba(0,0,0,.7))',marginBottom:8}} priority/>
-        <p style={{fontSize:11,letterSpacing:'.22em',color:'rgba(255,255,255,.7)',marginBottom:2,textAlign:'center'}}>
+        padding:isMob?'40px 20px 20px':'56px 20px 28px',flexShrink:0}}>
+        {/* Crest enters first and settles — the school's mark is the thing
+            worth waiting a beat for, so everything else follows it in. */}
+        <Image src={branding.logoUrl} alt={branding.abbreviation} width={isMob?104:132} height={isMob?104:132}
+          style={{objectFit:'contain',filter:'drop-shadow(0 6px 22px rgba(0,0,0,.75))',marginBottom:14,
+            opacity:mounted?1:0,
+            transform:mounted?'translateY(0) scale(1)':'translateY(10px) scale(0.94)',
+            transition:'opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1)'}} priority/>
+        <p style={{fontSize:isMob?11:12,letterSpacing:'.26em',color:'rgba(255,255,255,.78)',marginBottom:6,textAlign:'center',
+          opacity:mounted?1:0,transform:mounted?'translateY(0)':'translateY(8px)',
+          transition:'opacity .6s ease .1s, transform .6s cubic-bezier(.16,1,.3,1) .1s'}}>
           {branding.name.toUpperCase()}
         </p>
-        <h1 className="anton" style={{fontSize:'clamp(1.9rem,5.5vw,3.8rem)',lineHeight:1,textAlign:'center',letterSpacing:'.03em'}}>
+        <h1 className="anton" style={{fontSize:'clamp(2.6rem,8vw,5rem)',lineHeight:.95,textAlign:'center',letterSpacing:'.03em',
+          opacity:mounted?1:0,transform:mounted?'translateY(0)':'translateY(12px)',
+          transition:'opacity .7s ease .18s, transform .7s cubic-bezier(.16,1,.3,1) .18s'}}>
           <span style={{display:'block',color:'white'}}>DRIVEN BY</span>
-          <span style={{display:'block',color:branding.primaryColor,textShadow:`0 0 40px ${branding.primaryColor}47`}}>EXCELLENCE</span>
+          <span style={{display:'block',color:branding.primaryColor,textShadow:`0 0 48px ${branding.primaryColor}55`}}>EXCELLENCE</span>
         </h1>
-        <div style={{width:48,height:2,background:`linear-gradient(90deg,transparent,${branding.primaryColor}b3,transparent)`,margin:'8px auto 6px'}}/>
-        <p style={{fontSize:12,color:'rgba(255,255,255,.3)',textAlign:'center'}}>
+        <div style={{width:64,height:2,background:`linear-gradient(90deg,transparent,${branding.primaryColor}b3,transparent)`,
+          margin:'14px auto 8px',
+          transform:mounted?'scaleX(1)':'scaleX(0)',transformOrigin:'center',
+          transition:'transform .8s cubic-bezier(.16,1,.3,1) .28s'}}/>
+        <p style={{fontSize:isMob?12:13,color:'rgba(255,255,255,.35)',textAlign:'center',maxWidth:420,
+          opacity:mounted?1:0,transition:'opacity .6s ease .36s'}}>
           A unified performance platform for athletes, coaches and teams.
         </p>
 
@@ -347,8 +378,10 @@ export default function LandingPage(){
           <div style={{display:'flex',justifyContent:'center',gap:5,paddingBottom:3}}>
             {Array.from({length:dPages}).map((_,i)=>(
               <button key={i} className="dot" onClick={()=>setDPage(i)}
-                style={{background:i===dPage?'#38bdf8':'rgba(255,255,255,.18)',
-                  width:i===dPage?16:5,height:5}}/>
+                aria-label={`Page ${i+1}`}
+                style={{background:i===dPage?branding.primaryColor:'rgba(255,255,255,.18)',
+                  width:i===dPage?18:5,height:5,
+                  transition:'width .32s cubic-bezier(.22,1.1,.36,1), background .32s ease'}}/>
             ))}
           </div>
         </div>
@@ -361,7 +394,7 @@ export default function LandingPage(){
           {/* Stage — fixed height so cards don't go massive */}
           <div style={{
             position:'relative',
-            height:'clamp(190px,42vh,260px)',
+            height:'clamp(158px,32vh,206px)',
             alignSelf:'stretch',
             overflow:'visible',   // show side cards peeking
             flexShrink:0,
@@ -369,23 +402,44 @@ export default function LandingPage(){
           }}
             onTouchStart={e=>{
               tsX.current=e.touches[0].clientX;
+              tsY.current=e.touches[0].clientY;
+              axis.current=null;
+              tsTime.current=Date.now();
               dragging.current=true;
               setDragPx(0);
             }}
             onTouchMove={e=>{
               const dx=e.touches[0].clientX-tsX.current;
+              const dy=e.touches[0].clientY-tsY.current;
+
+              // Axis lock: decide once, early, whether this gesture is a
+              // horizontal swipe or a vertical page scroll. Without it the
+              // carousel grabbed every downward swipe and the page felt
+              // stuck — the single biggest reason this didn't feel smooth.
+              if(axis.current===null && (Math.abs(dx)>6 || Math.abs(dy)>6)){
+                axis.current = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+              }
+              if(axis.current!=='x') return;   // let the page scroll
+
+              // Rubber-band at the extremes so the track feels attached to
+              // the finger rather than sliding freely.
               setDragPx(dx);
             }}
             onTouchEnd={()=>{
               const dx=dragPx;
-              const snap=Math.abs(dx)>50;
-              // Set ref false BEFORE state update so next render has transition enabled
+              const elapsed=Math.max(1,Date.now()-tsTime.current);
+              const velocity=Math.abs(dx)/elapsed;   // px per ms
+
+              // A fast flick should advance even if it didn't travel far —
+              // matching how every native carousel behaves. Previously only
+              // distance counted, so quick swipes simply snapped back.
+              const snap = Math.abs(dx)>50 || velocity>0.45;
+
               dragging.current=false;
-              if(snap){
-                // Advance carousel - one render: transition on + new index + dragPx 0
+              if(snap && axis.current==='x'){
                 setMIdx(i=>(i+(dx<0?1:-1)+n)%n);
               }
-              // Always reset dragPx - fires transition because dragging.current already false
+              axis.current=null;
               setDragPx(0);
             }}>
 
@@ -422,8 +476,10 @@ export default function LandingPage(){
             <div style={{display:'flex',gap:4}}>
               {sorted.map((_,i)=>(
                 <button key={i} className="dot" onClick={()=>setMIdx(i)}
-                  style={{background:i===mIdx?'#38bdf8':'rgba(255,255,255,.18)',
-                    width:i===mIdx?14:4,height:4}}/>
+                  aria-label={`Go to ${sorted[i]?.label ?? 'item'}`}
+                  style={{background:i===mIdx?branding.primaryColor:'rgba(255,255,255,.18)',
+                    width:i===mIdx?16:4,height:4,
+                    transition:'width .32s cubic-bezier(.22,1.1,.36,1), background .32s ease'}}/>
               ))}
             </div>
             <p style={{fontSize:9,color:'rgba(255,255,255,.22)',letterSpacing:'.05em'}}>
