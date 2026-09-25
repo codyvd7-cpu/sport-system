@@ -156,9 +156,20 @@ export default function LandingPage(){
     try{const s=localStorage.getItem('ks_fav');if(s)setFavs(JSON.parse(s));}catch{}
     const check=()=>setIsMob(window.innerWidth<680);
     check(); window.addEventListener('resize',check);
-    const t=setInterval(()=>setPhoto(p=>(p+1)%PHOTOS.length),5000);
-    return()=>{clearInterval(t);window.removeEventListener('resize',check);};
+    return()=>{window.removeEventListener('resize',check);};
   },[]);
+
+  // Rotation lives in its own effect keyed on the photo count, so when the
+  // school's images load and the array changes length the timer restarts
+  // against the correct modulo. Previously the interval captured the initial
+  // length and the index could point past the end — every layer then sat at
+  // opacity 0 and the background disappeared entirely.
+  React.useEffect(()=>{
+    if(PHOTOS.length<2) return;
+    setPhoto(p=>p%PHOTOS.length);          // pull a stale index back in range
+    const t=setInterval(()=>setPhoto(p=>(p+1)%PHOTOS.length),6500);
+    return()=>clearInterval(t);
+  },[PHOTOS.length]);
 
   function toggleFav(id:string,e:React.MouseEvent){
     e.preventDefault();e.stopPropagation();
@@ -282,29 +293,56 @@ export default function LandingPage(){
       display:'flex',flexDirection:'column',overflow:'hidden',position:'relative'}}>
 
       {/* ── BG desktop ── */}
+      {/* Column count follows the actual photo count — it was hardcoded to 4
+          while PHOTOS can hold 5, leaving one image cropped out of view. */}
       <div style={{position:'absolute',inset:0,zIndex:0,
-        display:isMob?'none':'grid',gridTemplateColumns:'repeat(4,1fr)'}}>
+        display:isMob?'none':'grid',
+        gridTemplateColumns:`repeat(${Math.max(1,PHOTOS.length)},1fr)`}}>
         {PHOTOS.map((src,i)=>(
           <div key={i} style={{position:'relative',overflow:'hidden'}}>
-            <Image src={src} alt="" fill
-              style={{objectFit:'cover',objectPosition:'center',filter:'saturate(.6) brightness(.55)'}}
-              priority={i===0}/>
-            {i>0&&<div style={{position:'absolute',inset:'0 auto 0 0',width:1,background:'rgba(255,255,255,.05)'}}/>}
+            {/* Each panel drifts at a slightly different pace, so the wall
+                breathes instead of reading as four static tiles. */}
+            <div style={{position:'absolute',inset:0,
+              transform:mounted?'scale(1.05)':'scale(1)',
+              transition:`transform ${11+i*1.5}s ease-out`}}>
+              <Image src={src} alt="" fill
+                style={{objectFit:'cover',objectPosition:'center',
+                  filter:'saturate(.72) brightness(.6) contrast(1.05)'}}
+                priority={i===0}/>
+            </div>
+            {i>0&&<div style={{position:'absolute',inset:'0 auto 0 0',width:1,background:'rgba(255,255,255,.06)'}}/>}
           </div>
         ))}
       </div>
       {/* ── BG mobile cycling ── */}
       <div style={{position:'absolute',inset:0,zIndex:0,display:isMob?'block':'none'}}>
-        {PHOTOS.map((src,i)=>(
-          <div key={i} style={{position:'absolute',inset:0,transition:'opacity 1.2s',opacity:mounted&&i===photo?1:0}}>
-            <Image src={src} alt="" fill
-              style={{objectFit:'cover',objectPosition:'center 20%',filter:'saturate(.6) brightness(.55)'}}
-              priority={i===0}/>
-          </div>
-        ))}
+        {PHOTOS.map((src,i)=>{
+          const active = mounted && i===photo;
+          return (
+            <div key={i} style={{position:'absolute',inset:0,
+              transition:'opacity 1.8s cubic-bezier(.4,0,.2,1)',opacity:active?1:0}}>
+              {/* Slow drift on the active image only. Static full-bleed photos
+                  read as wallpaper; a gentle push makes the page feel alive
+                  without anything actually moving on screen. */}
+              <div style={{position:'absolute',inset:0,
+                transform:active?'scale(1.06)':'scale(1)',
+                transition:'transform 9s linear'}}>
+                <Image src={src} alt="" fill
+                  style={{objectFit:'cover',objectPosition:'center 22%',
+                    filter:'saturate(.72) brightness(.62) contrast(1.05)'}}
+                  priority={i===0}/>
+              </div>
+            </div>
+          );
+        })}
       </div>
+      {/* Two passes: a vertical gradient for text legibility, and a soft
+          radial vignette carrying a trace of the school's colour so the
+          photograph sits in the page rather than on top of it. */}
       <div style={{position:'absolute',inset:0,zIndex:1,pointerEvents:'none',
-        background:'linear-gradient(to bottom,rgba(4,8,16,.72) 0%,rgba(4,8,16,.04) 40%,rgba(4,8,16,.72) 100%)'}}/>
+        background:'linear-gradient(to bottom,rgba(4,8,16,.82) 0%,rgba(4,8,16,.10) 42%,rgba(4,8,16,.88) 100%)'}}/>
+      <div style={{position:'absolute',inset:0,zIndex:1,pointerEvents:'none',
+        background:`radial-gradient(120% 78% at 50% 32%, transparent 38%, ${branding.primaryColor}14 72%, rgba(3,6,12,.72) 100%)`}}/>
 
       {/* ── HERO ── */}
       <div style={{position:'relative',zIndex:10,display:'flex',flexDirection:'column',alignItems:'center',
