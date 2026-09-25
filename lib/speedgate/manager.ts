@@ -79,8 +79,24 @@ export class SpeedGateManager {
     try {
       // Filtering by name keeps the chooser to SpeedGate devices only, rather
       // than every BLE device on a busy school field.
+      // Match on the SERVICE UUID first, name second.
+      //
+      // This previously filtered on an exact name match ("SpeedGate-Master").
+      // That fails silently — an empty chooser with no error — if the firmware
+      // advertises anything even slightly different: a suffix for a second set
+      // of gates, different capitalisation, an underscore, or a name carried
+      // in the scan response rather than the advertisement packet. A coach
+      // just sees "no devices found" with nothing to act on.
+      //
+      // Filtering on the service UUID is the reliable route because that's
+      // what the device is defined by. The namePrefix filter is kept as an
+      // alternative for firmware that advertises its name but not its service.
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [{ name: DEVICE_NAME }],
+        filters: [
+          { services: [SERVICE_UUID] },
+          { namePrefix: 'SpeedGate' },
+          { namePrefix: 'Altus' },
+        ],
         optionalServices: [SERVICE_UUID],
       });
       this.log(`discovered ${this.device.name}`);
@@ -91,6 +107,12 @@ export class SpeedGateManager {
       // A user closing the device chooser is a normal action, not an error.
       const msg = err instanceof Error ? err.message : String(err);
       if (/cancell?ed|User cancelled/i.test(msg)) { this.log('scan cancelled by user'); return; }
+      if (/No Scan|not found|No devices/i.test(msg)) {
+        throw new Error('No gates found. Check the master unit is powered on and within range, then try again.');
+      }
+      if (/globally disabled|adapter|turned off/i.test(msg)) {
+        throw new Error('Bluetooth is turned off on this device. Switch it on and try again.');
+      }
       throw err;
     }
   }
