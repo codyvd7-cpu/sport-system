@@ -13,6 +13,7 @@ type School = {
 const BLANK = {
   name: '', shortName: '', abbreviation: '', slug: '',
   logoUrl: '', primaryColor: '#38bdf8', accentColor: '#a78bfa',
+  motto: '', yearTheme: '',
   latitude: '', longitude: '',
   sports: ['hockey'] as string[],
 };
@@ -209,6 +210,14 @@ export default function PlatformSchoolsPage() {
           <div>
             <label style={label}>Logo URL (optional)</label>
             <input style={input} value={form.logoUrl} onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))} placeholder="/school-logo.png" />
+          </div>
+          <div>
+            <label style={label}>Motto (optional)</label>
+            <input style={input} value={form.motto} onChange={e => setForm(f => ({ ...f, motto: e.target.value }))} placeholder="Ad Altiora" />
+          </div>
+          <div>
+            <label style={label}>Year theme (optional)</label>
+            <input style={input} value={form.yearTheme} onChange={e => setForm(f => ({ ...f, yearTheme: e.target.value }))} placeholder="Rise Together" />
           </div>
           <div>
             <label style={label}>Primary colour</label>

@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
     abbreviation,
     slug,
     logo_url: body.logoUrl?.trim() || null,
+    motto: body.motto?.trim() || null,
+    year_theme: body.yearTheme?.trim() || null,
     primary_color: body.primaryColor?.trim() || '#38bdf8',
     accent_color: body.accentColor?.trim() || '#a78bfa',
     latitude: body.latitude != null && body.latitude !== '' ? Number(body.latitude) : -26.2041,
@@ -160,6 +162,8 @@ export async function PATCH(req: NextRequest) {
   if (body.shortName != null)    patch.short_name = String(body.shortName).trim();
   if (body.abbreviation != null) patch.abbreviation = String(body.abbreviation).trim().toUpperCase();
   if (body.logoUrl != null)      patch.logo_url = String(body.logoUrl).trim() || null;
+  if (body.motto != null)        patch.motto = String(body.motto).trim() || null;
+  if (body.yearTheme != null)    patch.year_theme = String(body.yearTheme).trim() || null;
   if (body.primaryColor != null) patch.primary_color = String(body.primaryColor).trim();
   if (body.accentColor != null)  patch.accent_color = String(body.accentColor).trim();
   if (body.latitude != null && body.latitude !== '')   patch.latitude = Number(body.latitude);

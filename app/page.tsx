@@ -321,19 +321,45 @@ export default function LandingPage(){
           transition:'opacity .6s ease .1s, transform .6s cubic-bezier(.16,1,.3,1) .1s'}}>
           {branding.name.toUpperCase()}
         </p>
-        <h1 className="anton" style={{fontSize:'clamp(2.6rem,8vw,5rem)',lineHeight:.95,textAlign:'center',letterSpacing:'.03em',
+        {/* The school's own motto or year theme — NOT Altus's tagline.
+            "Driven by Excellence" is our line; printing it on a school's page
+            makes it look like their claim, which it isn't. Falls back to the
+            Altus line only on the neutral front door, where it IS ours. */}
+        <h1 className="anton" style={{fontSize:'clamp(2.2rem,7vw,4.4rem)',lineHeight:.95,textAlign:'center',letterSpacing:'.03em',
           opacity:mounted?1:0,transform:mounted?'translateY(0)':'translateY(12px)',
           transition:'opacity .7s ease .18s, transform .7s cubic-bezier(.16,1,.3,1) .18s'}}>
-          <span style={{display:'block',color:'white'}}>DRIVEN BY</span>
-          <span style={{display:'block',color:branding.primaryColor,textShadow:`0 0 48px ${branding.primaryColor}55`}}>EXCELLENCE</span>
+          {noSchoolContext ? (<>
+            <span style={{display:'block',color:'white'}}>DRIVEN BY</span>
+            <span style={{display:'block',color:branding.primaryColor,textShadow:`0 0 48px ${branding.primaryColor}55`}}>EXCELLENCE</span>
+          </>) : (
+            <span style={{display:'block',color:'white'}}>
+              {(branding.yearTheme || branding.motto || branding.name).toUpperCase()}
+            </span>
+          )}
         </h1>
+
+        {/* When a school has both, the motto sits quietly under the year
+            theme — the theme changes annually, the motto doesn't. */}
+        {!noSchoolContext && branding.yearTheme && branding.motto && (
+          <p style={{fontSize:isMob?10.5:11.5,letterSpacing:'.2em',color:branding.primaryColor,
+            textAlign:'center',marginTop:8,textTransform:'uppercase',
+            opacity:mounted?1:0,transition:'opacity .6s ease .3s'}}>
+            {branding.motto}
+          </p>
+        )}
         <div style={{width:64,height:2,background:`linear-gradient(90deg,transparent,${branding.primaryColor}b3,transparent)`,
           margin:'14px auto 8px',
           transform:mounted?'scaleX(1)':'scaleX(0)',transformOrigin:'center',
           transition:'transform .8s cubic-bezier(.16,1,.3,1) .28s'}}/>
         <p style={{fontSize:isMob?12:13,color:'rgba(255,255,255,.35)',textAlign:'center',maxWidth:420,
           opacity:mounted?1:0,transition:'opacity .6s ease .36s'}}>
-          A unified performance platform for athletes, coaches and teams.
+          {/* On a school's page this describes THEIR sport department. The
+              Altus product line belongs on the neutral front door only. */}
+          {noSchoolContext
+            ? 'A unified performance platform for athletes, coaches and teams.'
+            : (branding.motto && !branding.yearTheme
+                ? 'Fixtures, results and the week ahead.'
+                : `${branding.shortName} sport — fixtures, results and the week ahead.`)}
         </p>
 
         {/* Only for someone at the bare domain with no school context. On a
