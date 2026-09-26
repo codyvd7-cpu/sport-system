@@ -95,17 +95,21 @@ function PortalInner() {
         {/* The route from the shared portal to a family's own information.
             Adapts to whether they're signed in, waiting on approval, or
             already linked. */}
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 24px 0' }}>
-          <MyAthleteCard/>
-        </div>
+        {/* Hero leads. The sign-in card and department notice used to render
+            ABOVE it, so a parent met a "sign in" prompt and a banner before
+            they ever saw the school's own hero — the page opened with an ask
+            instead of a statement. */}
+        <PortalHero sport={sport} nextFixture={nextFixture}/>
 
         {/* Department notice — dismissible, reappears when a new notice is published */}
         <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>
 
-        {/* Hero */}
-        <PortalHero sport={sport} nextFixture={nextFixture}/>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '20px 24px 0' }}>
+          <MyAthleteCard/>
+        </div>
 
-        {/* This Week */}
+        {/* This Week — ThisWeekBoard carries its own #this-week anchor,
+            which the hero CTA scrolls to. */}
         <ScrollReveal>
           <ThisWeekBoard
             weekItems={data?.weekItems ?? []}

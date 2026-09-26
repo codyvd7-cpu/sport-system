@@ -80,8 +80,11 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
   const openSessions = openDay !== null ? (sessionsByDay[openDay] || []) : [];
   const openFixtures = openDay !== null ? (fixturesByDay[openDay] || []) : [];
 
+  // scrollMarginTop keeps the heading clear of the sticky nav when the hero's
+  // "This week" button scrolls here — without it the section title lands
+  // underneath the header.
   return (
-    <section id="this-week" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto' }}>
+    <section id="this-week" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto', scrollMarginTop: 84 }}>
       <style>{PULSE_STYLE}</style>
 
       {/* Section header */}

@@ -40,12 +40,15 @@ export default function NoticeCard({ reminders, color, sport }: Props) {
 
   return (
     <div style={{ maxWidth: 1240, margin: '0 auto', padding: '16px 24px 0', position: 'relative', zIndex: 5 }}>
+      {/* A notice is information, not decoration — it gets a colour rule and
+          a flat surface rather than a blurred, glowing, gradient-filled panel.
+          Removing the blur and inset highlight is most of what separates this
+          from a generic dashboard widget. */}
       <div style={{
-        borderRadius: 16,
-        border: `1px solid ${color}30`,
-        background: `linear-gradient(150deg, ${color}14, rgba(255,255,255,0.02))`,
-        backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
-        boxShadow: `0 10px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)`,
+        borderRadius: 14,
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderLeft: `2px solid ${color}`,
+        background: 'rgba(255,255,255,0.03)',
         overflow: 'hidden',
       }}>
         <div style={{ display:'flex', alignItems:'flex-start', gap:13, padding:'14px 16px' }}>
