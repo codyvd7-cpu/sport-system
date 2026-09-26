@@ -25,11 +25,14 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
   );
 
   const CARD = {
-    borderRadius: 22, border: '1px solid rgba(255,255,255,0.1)',
-    background: 'linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01))',
-    overflow: 'hidden' as const, boxShadow: '0 12px 40px rgba(0,0,0,0.28)',
+    // Flat, grounded panel. Was 22px radius with a gradient fill and a heavy
+    // drop shadow — the floating-card treatment that makes a page read as a
+    // generic dashboard rather than a school's fixture list.
+    borderRadius: 14, border: '1px solid rgba(255,255,255,0.075)',
+    background: 'rgba(255,255,255,0.022)',
+    overflow: 'hidden' as const,
   };
-  const HDR = { padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+  const HDR = { padding: '15px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
 
   return (
     <section id="fixtures" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto', scrollMarginTop: 84 }}>
@@ -39,11 +42,12 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
         <div style={CARD}>
           <div style={HDR}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:3, height:18, borderRadius:2, background:color }}/>
-              <p style={{ fontSize:13, fontWeight:900, color:'white' }}>Upcoming {fx}s</p>
+              <span style={{ width:20, height:2, background:color }}/>
+              <p style={{ fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.55)',
+                textTransform:'uppercase', letterSpacing:'0.2em' }}>Upcoming {fx}s</p>
             </div>
-            <Link href={`/portal/fixtures?sport=${sport}`} style={{ fontSize:11.5, fontWeight:800, color, textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
-              View All <span style={{fontSize:14}}>→</span>
+            <Link href={`/portal/fixtures?sport=${sport}`} style={{ fontSize:11.5, fontWeight:600, color, textDecoration:'none' }}>
+              View all
             </Link>
           </div>
           {fixtures.length === 0 ? (
@@ -88,11 +92,12 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
         <div style={CARD} id="results">
           <div style={HDR}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:3, height:18, borderRadius:2, background:color }}/>
-              <p style={{ fontSize:13, fontWeight:900, color:'white' }}>Latest {rs}s</p>
+              <span style={{ width:20, height:2, background:color }}/>
+              <p style={{ fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.55)',
+                textTransform:'uppercase', letterSpacing:'0.2em' }}>Latest {rs}s</p>
             </div>
-            <Link href={`/portal/fixtures/season?sport=${sport}`} style={{ fontSize:11.5, fontWeight:800, color, textDecoration:'none', display:'flex', alignItems:'center', gap:4 }}>
-              View All <span style={{fontSize:14}}>→</span>
+            <Link href={`/portal/fixtures/season?sport=${sport}`} style={{ fontSize:11.5, fontWeight:600, color, textDecoration:'none' }}>
+              View all
             </Link>
           </div>
           {results.length === 0 ? (

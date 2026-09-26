@@ -87,20 +87,25 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
     <section id="this-week" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto', scrollMarginTop: 84 }}>
       <style>{PULSE_STYLE}</style>
 
-      {/* Section header */}
-      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:24 }}>
-        <div style={{ width:4, height:24, borderRadius:2, background:color }}/>
-        <div>
-          <p style={{ fontSize:11, fontWeight:800, color, textTransform:'uppercase', letterSpacing:'0.2em' }}>This Week</p>
-          <p style={{ fontSize:20, fontWeight:900, color:'white' }}>Weekly Game Plan</p>
-        </div>
+      {/* Section header. Was a coloured bar plus "Weekly Game Plan" — an
+          invented product label sitting where real information should be.
+          The date range is what a parent actually wants to confirm. */}
+      <div style={{ display:'flex', alignItems:'baseline', gap:12, marginBottom:18,
+        paddingBottom:14, borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <span style={{ width:22, height:2, background:color, alignSelf:'center' }}/>
+        <p style={{ fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.55)',
+          textTransform:'uppercase', letterSpacing:'0.2em' }}>This week</p>
+        <p style={{ marginLeft:'auto', fontSize:11.5, color:'rgba(255,255,255,0.32)' }}>
+          {fShort(weekDates[0])} – {fShort(weekDates[6])}
+        </p>
       </div>
 
-      {/* Timeline grid — 7 day columns on desktop, scroll on mobile */}
-      <div style={{
-        display:'grid', gridAutoFlow:'column', gridAutoColumns:'minmax(220px, 1fr)',
-        gap:14, overflowX:'auto', paddingBottom:8, scrollSnapType:'x mandatory',
-      }}>
+      {/* A week reads as a schedule, not as seven floating cards. The previous
+          layout put 220px cards in a horizontal scroller, so on a phone you
+          saw a day and a half at a time and had to swipe to find Saturday —
+          the one day most parents open this page for. As rows, the whole week
+          is visible at once. */}
+      <div style={{ border:'1px solid rgba(255,255,255,0.075)', borderRadius:14, overflow:'hidden' }}>
         {DAYS.map((day, i) => {
           const sessions = sessionsByDay[i] || [];
           const fx = fixturesByDay[i] || [];
@@ -114,80 +119,77 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
               onClick={() => hasItems && setOpenDay(i)}
               onKeyDown={e => { if (hasItems && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpenDay(i); } }}
               style={{
-                scrollSnapAlign:'start',
-                borderRadius:18,
-                border: isToday ? `1.5px solid ${color}70` : '1px solid rgba(255,255,255,0.08)',
-                background: isToday
-                  ? `linear-gradient(160deg, ${color}18, rgba(255,255,255,0.02))`
-                  : 'rgba(255,255,255,0.02)',
-                overflow:'hidden',
-                opacity: hasItems ? 1 : 0.45,
-                minHeight: 200,
-                transition:'transform .25s cubic-bezier(0.16,1,0.3,1), box-shadow .25s ease, border-color .25s ease',
+                display:'flex', gap:16, alignItems:'flex-start',
+                padding:'14px 16px',
+                borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.055)',
+                borderLeft: isToday ? `2px solid ${color}` : '2px solid transparent',
+                background: isToday ? 'rgba(255,255,255,0.025)' : 'transparent',
                 cursor: hasItems ? 'pointer' : 'default',
+                transition:'background .2s ease',
                 outline:'none',
               }}
-              onMouseEnter={e => { if(hasItems){ e.currentTarget.style.transform='translateY(-4px)'; e.currentTarget.style.boxShadow=`0 12px 32px rgba(0,0,0,0.3), 0 0 0 1px ${color}25`; } }}
-              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='none'; }}>
-
-              {/* Day header — abbrev + actual date */}
-              <div style={{ padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <div>
-                  <p style={{ fontSize:10, fontWeight:800, color: isToday ? color : 'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.15em' }}>{day}</p>
-                  <p style={{ fontSize:13, fontWeight:800, color:'rgba(255,255,255,0.75)', marginTop:2 }}>{fShort(weekDates[i])}</p>
-                </div>
-                {isToday ? (
-                  <span style={{ fontSize:9, fontWeight:800, padding:'3px 8px', borderRadius:100, background:color, color:'#030810', textTransform:'uppercase', letterSpacing:'0.1em', animation:'todayPulse 2.4s ease-in-out infinite' }}>
-                    Today
-                  </span>
-                ) : hasItems && (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth={2} style={{ width:13, height:13 }}><path d="M9 18l6-6-6-6"/></svg>
-                )}
+              onMouseEnter={e => { if (hasItems) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = isToday ? 'rgba(255,255,255,0.025)' : 'transparent'; }}
+            >
+              {/* Fixed-width date column keeps every row aligned, the way a
+                  printed fixture list does. */}
+              <div style={{ width:54, flexShrink:0 }}>
+                <p style={{ fontSize:10.5, fontWeight:700,
+                  color: isToday ? color : 'rgba(255,255,255,0.38)',
+                  textTransform:'uppercase', letterSpacing:'0.14em' }}>{day}</p>
+                <p style={{ fontSize:12.5, fontWeight:600,
+                  color: isToday ? 'white' : 'rgba(255,255,255,0.5)', marginTop:1 }}>
+                  {weekDates[i].getDate()}
+                </p>
               </div>
 
-              {/* Items */}
-              <div style={{ padding: hasItems ? '12px 14px' : '24px 14px', display:'flex', flexDirection:'column', gap:8 }}>
+              <div style={{ flex:1, minWidth:0 }}>
                 {!hasItems ? (
-                  <p style={{ fontSize:12, color:'rgba(255,255,255,0.18)', textAlign:'center' }}>No sessions</p>
+                  <p style={{ fontSize:12.5, color:'rgba(255,255,255,0.18)' }}>—</p>
                 ) : (
-                  <>
+                  <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
                     {fx.map((f, idx) => (
-                      <div key={`fx-${idx}`} style={{
-                        borderRadius:12, background:`${color}12`, border:`1px solid ${color}35`,
-                        padding:'10px 12px',
-                      }}>
-                        <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:8, marginBottom:3 }}>
-                          <p style={{ fontSize:13, fontWeight:800, color:'white', lineHeight:1.3 }}>vs {f.opponent}</p>
-                          {f.fixture_time && <span style={{ fontSize:11, fontWeight:800, color, flexShrink:0 }}>{fTime(f.fixture_time)}</span>}
-                        </div>
-                        {f.venue && <p style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>{f.venue}</p>}
-                        <span style={{ display:'inline-block', marginTop:6, fontSize:9, fontWeight:800, padding:'2px 8px', borderRadius:6, background:color, color:'#030810', letterSpacing:'0.06em' }}>
-                          MATCH{f.team ? ` · ${f.team}` : ''}
+                      <div key={`fx-${idx}`} style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
+                        <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4,
+                          background:color, color:'#030810', letterSpacing:'0.08em', flexShrink:0 }}>
+                          MATCH
                         </span>
-                      </div>
-                    ))}
-                    {sessions.map((item, idx) => (
-                      <div key={`s-${idx}`} style={{
-                        borderRadius:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)',
-                        padding:'10px 12px',
-                      }}>
-                        <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:8, marginBottom:3 }}>
-                          <p style={{ fontSize:13, fontWeight:800, color:'white', lineHeight:1.3 }}>{item.title || item.description}</p>
-                          {item.session_time && (
-                            <span style={{ fontSize:11, fontWeight:800, color, flexShrink:0 }}>{item.session_time.slice(0,5)}</span>
-                          )}
-                        </div>
-                        {item.venue && <p style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>{item.venue}</p>}
-                        {item.team && (
-                          <span style={{ display:'inline-block', marginTop:6, fontSize:9, fontWeight:800, padding:'2px 8px', borderRadius:6, background:`${color}18`, color, border:`1px solid ${color}30` }}>
-                            {item.team}
-                          </span>
+                        <p style={{ fontSize:13.5, fontWeight:600, color:'white', minWidth:0 }}>
+                          vs {f.opponent}
+                        </p>
+                        {f.fixture_time && (
+                          <span style={{ fontSize:12, fontWeight:600, color, flexShrink:0 }}>{fTime(f.fixture_time)}</span>
+                        )}
+                        {f.venue && (
+                          <span style={{ fontSize:11.5, color:'rgba(255,255,255,0.32)' }}>{f.venue}</span>
                         )}
                       </div>
                     ))}
-                  </>
+                    {sessions.map((item, idx) => (
+                      <div key={`s-${idx}`} style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
+                        <p style={{ fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.82)', minWidth:0 }}>
+                          {item.title || item.description}
+                        </p>
+                        {item.session_time && (
+                          <span style={{ fontSize:12, color:'rgba(255,255,255,0.45)', flexShrink:0 }}>
+                            {item.session_time.slice(0,5)}
+                          </span>
+                        )}
+                        {item.team && (
+                          <span style={{ fontSize:11, color:'rgba(255,255,255,0.3)' }}>{item.team}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
+
+              {isToday && (
+                <span style={{ fontSize:9.5, fontWeight:700, color, textTransform:'uppercase',
+                  letterSpacing:'0.14em', flexShrink:0, alignSelf:'center' }}>
+                  Today
+                </span>
+              )}
             </div>
           );
         })}
