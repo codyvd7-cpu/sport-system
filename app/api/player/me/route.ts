@@ -182,9 +182,9 @@ export async function POST(req: NextRequest) {
 
     // Athlete-linked data
     let athlete: any = null, attendance: any[] = [], perfTests: any[] = [], feedback: any = null, coachName: string | null = null;
-    let gymCheckins: any[] = [], goals: any[] = [], clips: any[] = [];
+    let gymCheckins: any[] = [], goals: any[] = [], clips: any[] = [], selections: any[] = [];
     if (profile.athlete_id) {
-      const [aR, attR, pR, fbR, coachR, gymR, goalR, clipR] = await Promise.all([
+      const [aR, attR, pR, fbR, coachR, gymR, goalR, clipR, selR] = await Promise.all([
         db.from('athletes').select(ATHLETE_FIELDS).eq('id', profile.athlete_id).maybeSingle(),
         db.from('attendance').select('id,status,session_date,session_type').eq('athlete_id', profile.athlete_id).order('session_date', { ascending: false }).limit(200),
         db.from('performance_tests').select('id,test_type,value,unit,test_date').eq('athlete_id', profile.athlete_id).order('test_date', { ascending: false }).limit(100),
@@ -204,6 +204,13 @@ export async function POST(req: NextRequest) {
           .select('id,title,coach_note,start_seconds,end_seconds,created_at,video_id')
           .eq('athlete_id', profile.athlete_id).eq('visible_to_player', true)
           .order('created_at', { ascending: false }).limit(20),
+        // Selections this athlete is named in. Only PUBLISHED ones — a coach
+        // working on a draft side must not have it visible to players.
+        db.from('team_selection_players')
+          .select('role,shirt_number,position,note,selection_id,team_selections!inner(id,status,meet_time,meet_place,kit,transport,notes,fixture_id,published_at)')
+          .eq('athlete_id', profile.athlete_id)
+          .eq('team_selections.status', 'published')
+          .limit(10),
       ]);
       athlete = aR.data;
       attendance = attR.data || [];
@@ -212,6 +219,7 @@ export async function POST(req: NextRequest) {
       gymCheckins = gymR.data || [];
       goals = goalR.data || [];
       clips = clipR.data || [];
+      selections = selR.data || [];
       if (athlete) {
         const teamCoach = (coachR.data || []).find((c: any) => Array.isArray(c.teams) && c.teams.includes(athlete.team));
         coachName = teamCoach ? (teamCoach.full_name || teamCoach.email?.split('@')[0]?.replace(/[._]/g, ' ')) : null;
@@ -256,7 +264,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       profile, athlete, hpStudent,
-      attendance, perfTests, feedback, coachName, goals, clips,
+      attendance, perfTests, feedback, coachName, goals, clips, selections,
       hpTests, hpInsights,
       gymCheckins,
       fixtures: fxR.data || [], results: resR.data || [],

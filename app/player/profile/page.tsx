@@ -329,6 +329,73 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
   const daysTo = nxt ? Math.max(0, Math.ceil((new Date(nxt.fixture_date).getTime() - Date.now()) / 86400000)) : null;
 
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    {/* ── SELECTION ───────────────────────────────────────────────────────
+        The single question a player opens this app to answer. Sits above the
+        fixture because the fixture only matters once you know you're in it.
+        Only published selections reach here — drafts stay with the coach. */}
+    {(() => {
+      const sel = (D.selections || []).find((x: Row) => {
+        const t = x.team_selections;
+        return t && nxt && t.fixture_id === nxt.id;
+      }) || (D.selections || [])[0];
+      if (!sel) return null;
+      const t = sel.team_selections || {};
+      const roleLabel = sel.role === 'bench' ? 'On the bench'
+        : sel.role === 'reserve' ? 'Reserve' : 'Selected';
+      const logistics = [
+        t.meet_time ? { l: 'Meet', v: `${String(t.meet_time).slice(0,5)}${t.meet_place ? ` · ${t.meet_place}` : ''}` } : null,
+        t.kit ? { l: 'Kit', v: t.kit } : null,
+        t.transport ? { l: 'Transport', v: t.transport } : null,
+      ].filter(Boolean) as { l: string; v: string }[];
+      return (
+        <div className="rise" style={{
+          borderRadius:16, overflow:'hidden',
+          border:`1px solid ${C}40`, background:`linear-gradient(140deg, ${C}16, rgba(255,255,255,0.02) 62%)`,
+        }}>
+          <div style={{ padding:'16px 18px 14px' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+              <span style={{ fontSize:9.5, fontWeight:800, padding:'3px 9px', borderRadius:5,
+                background:C, color:'#03060c', textTransform:'uppercase', letterSpacing:'0.1em' }}>
+                {roleLabel}
+              </span>
+              {sel.shirt_number != null && (
+                <span style={{ fontSize:11.5, fontWeight:700, color:'rgba(255,255,255,0.6)' }}>
+                  No. {sel.shirt_number}
+                </span>
+              )}
+              {sel.position && (
+                <span style={{ fontSize:11.5, color:'rgba(255,255,255,0.45)' }}>{sel.position}</span>
+              )}
+            </div>
+            {nxt && (
+              <p style={{ fontSize:18, fontWeight:900, color:'white', marginTop:9 }}>
+                vs {nxt.opponent}
+              </p>
+            )}
+            {sel.note && (
+              <p style={{ fontSize:12.5, color:'rgba(255,255,255,0.55)', marginTop:6, lineHeight:1.55 }}>
+                {sel.note}
+              </p>
+            )}
+          </div>
+          {logistics.length > 0 && (
+            /* The details that currently live in a WhatsApp group. */
+            <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(3, logistics.length)},1fr)`,
+              borderTop:`1px solid ${C}28` }}>
+              {logistics.map((x, i) => (
+                <div key={x.l} style={{ padding:'11px 14px',
+                  borderLeft: i === 0 ? 'none' : `1px solid ${C}20` }}>
+                  <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.38)',
+                    textTransform:'uppercase', letterSpacing:'0.16em' }}>{x.l}</p>
+                  <p style={{ fontSize:12.5, fontWeight:600, color:'white', marginTop:2 }}>{x.v}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
+
     {/* Next fixture — countdown card */}
     {nxt ? (
       <div className="rise d1" style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: `1px solid ${C}35`, background: `linear-gradient(120deg, ${C}20, rgba(255,255,255,0.02) 60%)`, padding: '20px 22px', boxShadow: `0 14px 44px ${C}12` }}>
