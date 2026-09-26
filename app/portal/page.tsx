@@ -45,7 +45,13 @@ function PortalInner() {
       try {
         // The school must travel with the request: without a code there's no
         // cookie to carry it, so it comes from the link the school handed out.
-        const schoolSlug = new URLSearchParams(window.location.search).get('school');
+        // School comes from the path (/ashford/portal) or, for legacy links,
+        // the query parameter. The path form is preferred because query
+        // parameters are being stripped in the deployed environment.
+        const pathMatch = window.location.pathname.match(/^\/([^/]+)\/portal/);
+        const schoolSlug = pathMatch
+          ? pathMatch[1]
+          : new URLSearchParams(window.location.search).get('school');
         const res = await fetch(
           `/api/portal/data?sport=${encodeURIComponent(sport)}` +
           (schoolSlug ? `&school=${encodeURIComponent(schoolSlug)}` : '')

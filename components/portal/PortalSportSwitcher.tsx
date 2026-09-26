@@ -19,8 +19,14 @@ export default function PortalSportSwitcher({ current }: { current: SportKey }) 
   const { sports } = useBranding();
   // Switching sports must not drop the school — without a portal code there is
   // no cookie carrying it, so it lives in the URL.
+  // Keep whichever addressing the visitor arrived with: a /[school]/portal
+  // path stays on that path, a legacy ?school= link keeps its parameter.
+  // Switching sports must not quietly drop the school either way.
+  const [base, setBase] = React.useState('/portal');
   const [schoolParam, setSchoolParam] = React.useState('');
   React.useEffect(() => {
+    const m = window.location.pathname.match(/^\/([^/]+)\/portal/);
+    if (m) { setBase(`/${m[1]}/portal`); setSchoolParam(''); return; }
     const slug = new URLSearchParams(window.location.search).get('school');
     setSchoolParam(slug ? `&school=${encodeURIComponent(slug)}` : '');
   }, []);
@@ -36,7 +42,7 @@ export default function PortalSportSwitcher({ current }: { current: SportKey }) 
         const active = s.key === current;
         const colour = getSportColor(s.key as SportKey) || s.color;
         return (
-          <a key={s.key} href={`/portal?sport=${encodeURIComponent(s.key)}${schoolParam}`}
+          <a key={s.key} href={`${base}?sport=${encodeURIComponent(s.key)}${schoolParam}`}
             style={{
               flexShrink: 0,
               padding: '7px 14px',

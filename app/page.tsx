@@ -190,12 +190,11 @@ export default function LandingPage(){
     // quickly lands on the portal with no school context and gets whichever
     // school the cookie resolves to, which is exactly the cross-school bug
     // this whole flow exists to prevent.
-    const schoolQs = branding.slug && branding.slug !== 'default'
-      ? `&school=${encodeURIComponent(branding.slug)}` : '';
+    const base = branding.slug && branding.slug !== 'default' ? `/${branding.slug}` : '';
     if (!sports.length) {
       return DEPTS.map(d => ({
         ...d,
-        href: d.href.startsWith('/portal?') ? `${d.href}${schoolQs}` : d.href,
+        href: d.href.startsWith('/portal?') ? `${base}${d.href}` : d.href,
       }));
     }
     const hp = DEPTS.find(d => d.id === 'hp');
@@ -203,13 +202,14 @@ export default function LandingPage(){
       id: sp.key,
       label: sp.label.toUpperCase(),
       lines: ['Fixtures · Results', 'Weekly Schedule'],
-      // Straight into the portal — no code. Fixtures and results are the same
-      // information a school publishes publicly, and gating them was the
-      // biggest friction point in the parent journey.
-      // The school slug must travel with the link, or a parent arriving from
-      // /ashford lands with no school context and sees whichever school the
-      // session happens to resolve to.
-      href: `/portal?sport=${sp.key}${branding.slug && branding.slug !== 'default' ? `&school=${encodeURIComponent(branding.slug)}` : ''}`,
+      // The school travels in the PATH, not a query parameter. Something in
+      // the deployed environment rewrites /portal?...&school=X to
+      // /portal-login, preserving sport but dropping school — which left the
+      // portal with no school context and showed default Altus branding.
+      // A path segment survives that; a query parameter doesn't.
+      href: branding.slug && branding.slug !== 'default'
+        ? `/${branding.slug}/portal?sport=${sp.key}`
+        : `/portal?sport=${sp.key}`,
       live: true,
       accent: sp.color,
     }));
