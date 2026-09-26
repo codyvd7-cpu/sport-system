@@ -89,8 +89,13 @@ export default function BrandingProvider({ children }: { children: React.ReactNo
         if (!cancelled) {
           // A seeded school always wins — it was resolved server-side for this
           // exact URL and is more specific than anything inferred here.
+          // Both must respect the seed. sports was previously overwritten
+          // unconditionally, so a server-seeded list (which carries each
+          // school'''s own hero photography) was replaced moments later by the
+          // client fetch — the team photo appeared, then reverted to the
+          // generated fallback. That flash was this line.
           if (d.branding && !seededRef.current) setBranding(d.branding);
-          if (sp.sports) setSports(sp.sports);
+          if (sp.sports && !seededRef.current) setSports(sp.sports);
         }
       } catch {
         /* keep defaults */

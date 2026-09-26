@@ -29,6 +29,17 @@ type LinkState =
 export default function MyAthleteCard() {
   const { branding } = useBranding();
   const [s, setS] = React.useState<LinkState>({ state: 'loading' });
+  // The prompt is useful once, not on every visit. Dismissal is remembered
+  // per device — a parent who has already signed in elsewhere, or who simply
+  // isn't interested, shouldn't be asked again each time they check a fixture.
+  const [dismissed, setDismissed] = React.useState(false);
+  React.useEffect(() => {
+    try { setDismissed(localStorage.getItem('altus_hide_signin_prompt') === '1'); } catch {}
+  }, []);
+  const dismiss = () => {
+    setDismissed(true);
+    try { localStorage.setItem('altus_hide_signin_prompt', '1'); } catch {}
+  };
 
   React.useEffect(() => {
     let stop = false;
@@ -120,36 +131,43 @@ export default function MyAthleteCard() {
     );
   }
 
-  // Anonymous — the common case. Explain the value before asking for a signup.
+  // Anonymous — the common case. Now a single quiet line rather than a full
+  // panel: it used to sit high on the page as a large card with two buttons,
+  // which made the portal open with an ask. The information here is genuinely
+  // secondary to the fixtures, so it reads as a footnote.
+  if (dismissed) return null;
+
   return (
-    <div style={shell}>
-      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.32)' }}>
-        Parents &amp; players
-      </p>
-      <p style={{ margin: '6px 0 0', fontSize: 15.5, fontWeight: 900, color: 'white' }}>
-        See your own results
-      </p>
-      <p style={{ margin: '6px 0 14px', fontSize: 12.5, lineHeight: 1.55, color: 'rgba(255,255,255,0.45)' }}>
-        Fixtures and results on this page are for everyone. Attendance, testing and coach feedback are
-        private to each athlete — sign in to see yours.
-      </p>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        <Link href="/player/auth"
-          style={{
-            padding: '11px 20px', borderRadius: 12,
-            background: `${accent}22`, border: `1px solid ${accent}66`,
-            color: accent, fontSize: 13, fontWeight: 800, textDecoration: 'none',
-          }}>
+    <div style={{
+      display:'flex', alignItems:'center', gap:14, flexWrap:'wrap',
+      borderRadius:14, border:'1px solid rgba(255,255,255,0.07)',
+      borderLeft:`2px solid ${accent}`,
+      background:'rgba(255,255,255,0.022)', padding:'14px 16px',
+    }}>
+      <div style={{ minWidth:0, flex:1 }}>
+        <p style={{ margin:0, fontSize:13, fontWeight:700, color:'rgba(255,255,255,0.88)' }}>
+          Parents &amp; players — see your own results
+        </p>
+        <p style={{ margin:'3px 0 0', fontSize:11.5, lineHeight:1.5, color:'rgba(255,255,255,0.38)' }}>
+          Attendance, testing and coach feedback are private to each athlete.
+        </p>
+      </div>
+      <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+        <Link href="/player/auth" style={{
+          padding:'9px 18px', borderRadius:10,
+          background:`${accent}1f`, border:`1px solid ${accent}55`,
+          color:accent, fontSize:12.5, fontWeight:700, textDecoration:'none', whiteSpace:'nowrap',
+        }}>
           Sign in
         </Link>
-        <Link href="/player/auth?mode=signup"
+        <button onClick={dismiss} aria-label="Dismiss"
           style={{
-            padding: '11px 20px', borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.12)',
-            color: 'rgba(255,255,255,0.55)', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+            width:30, height:30, borderRadius:8, flexShrink:0,
+            border:'1px solid rgba(255,255,255,0.09)', background:'transparent',
+            color:'rgba(255,255,255,0.3)', fontSize:15, lineHeight:1, cursor:'pointer',
           }}>
-          Create an account
-        </Link>
+          ×
+        </button>
       </div>
     </div>
   );

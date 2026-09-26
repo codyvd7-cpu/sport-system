@@ -104,10 +104,6 @@ function PortalInner() {
         {/* Department notice — dismissible, reappears when a new notice is published */}
         <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>
 
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '20px 24px 0' }}>
-          <MyAthleteCard/>
-        </div>
-
         {/* This Week — ThisWeekBoard carries its own #this-week anchor,
             which the hero CTA scrolls to. */}
         <ScrollReveal>
@@ -129,6 +125,13 @@ function PortalInner() {
             loading={loading}
           />
         </ScrollReveal>
+
+        {/* Sign-in prompt sits AFTER the fixtures — a parent arrives wanting
+            Saturday's kick-off time, and only then is "see your own results"
+            a useful offer rather than an interruption. */}
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px 44px' }}>
+          <MyAthleteCard/>
+        </div>
 
         {/* Player Resources */}
         <ScrollReveal>

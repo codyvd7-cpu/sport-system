@@ -80,7 +80,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
           .ph-detail { grid-template-columns: 1fr 1fr !important; }
         }
         @media (min-width: 861px) {
-          .ph-grid { grid-template-columns: 1fr 380px; }
+          .ph-grid { grid-template-columns: 1fr 320px; }
         }
       `}</style>
 
@@ -140,19 +140,12 @@ export default function PortalHero({ sport, nextFixture }: Props) {
             {/* One action only. The nav carries "Player Login" and the card
                 further down explains what signing in gets you — three prompts
                 for the same thing on one screen is noise, not emphasis. */}
-            <div style={{ display:'flex', gap:10, flexWrap:'wrap', ...rise(0.2) }}>
+            <div style={{ display:'flex', ...rise(0.2) }}>
               <a href="#this-week" style={{
-                fontSize:13.5, fontWeight:700, padding:'13px 26px', borderRadius:10,
+                fontSize:13.5, fontWeight:700, padding:'13px 28px', borderRadius:10,
                 background:color, color:'#03060c', textDecoration:'none',
               }}>
                 This week
-              </a>
-              <a href="#fixtures" style={{
-                fontSize:13.5, fontWeight:600, padding:'13px 24px', borderRadius:10,
-                background:'transparent', color:'rgba(255,255,255,0.75)',
-                border:'1px solid rgba(255,255,255,0.2)', textDecoration:'none',
-              }}>
-                All {fixTerm.toLowerCase()}s
               </a>
             </div>
           </div>
@@ -166,7 +159,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
               }}>
                 <div style={{
                   display:'flex', alignItems:'center', justifyContent:'space-between',
-                  padding:'13px 18px', borderBottom:'1px solid rgba(255,255,255,0.09)',
+                  padding:'10px 16px', borderBottom:'1px solid rgba(255,255,255,0.09)',
                 }}>
                   <span style={{ fontSize:10.5, fontWeight:700, color:'rgba(255,255,255,0.5)',
                     textTransform:'uppercase', letterSpacing:'0.2em' }}>
@@ -177,14 +170,14 @@ export default function PortalHero({ sport, nextFixture }: Props) {
                   </span>
                 </div>
 
-                <div style={{ padding:'22px 18px 20px' }}>
+                <div style={{ padding:'16px 16px 15px' }}>
                   {nextFixture.team && (
                     <p style={{ fontSize:11.5, fontWeight:700, color, letterSpacing:'0.12em',
                       textTransform:'uppercase', marginBottom:8 }}>
                       {nextFixture.team}
                     </p>
                   )}
-                  <p className="ph-anton" style={{ fontSize:34, lineHeight:1, color:'white', letterSpacing:'0.01em' }}>
+                  <p className="ph-anton" style={{ fontSize:25, lineHeight:1.02, color:'white', letterSpacing:'0.01em' }}>
                     {String(nextFixture.opponent || '').toUpperCase()}
                   </p>
                 </div>
@@ -196,7 +189,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
                 }}>
                   {detail.map((d, i) => (
                     <div key={d.label} style={{
-                      padding:'13px 18px',
+                      padding:'10px 16px',
                       borderRight: i % 2 === 0 ? '1px solid rgba(255,255,255,0.07)' : 'none',
                       borderTop:   i >= 2 ? '1px solid rgba(255,255,255,0.07)' : 'none',
                     }}>
@@ -204,7 +197,7 @@ export default function PortalHero({ sport, nextFixture }: Props) {
                         textTransform:'uppercase', letterSpacing:'0.18em', marginBottom:4 }}>
                         {d.label}
                       </p>
-                      <p style={{ fontSize:13.5, fontWeight:600, color:'rgba(255,255,255,0.92)' }}>
+                      <p style={{ fontSize:12.5, fontWeight:600, color:'rgba(255,255,255,0.9)' }}>
                         {d.value}
                       </p>
                     </div>

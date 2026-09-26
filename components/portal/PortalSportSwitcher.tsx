@@ -4,24 +4,23 @@ import { useBranding } from '@/components/BrandingProvider';
 import { getSportLabel, getSportColor, type SportKey } from '@/lib/sports';
 
 // ─── PortalSportSwitcher ───────────────────────────────────────────────────────
-// Lets a parent move between the sports their school runs, without logging out.
+// Moving between the sports a school runs.
 //
-// This exists because the portal used to be locked to whichever sport the
-// access code belonged to. A parent with a hockey daughter and a rugby son
-// needed two codes and had to sign out to switch between their own children —
-// which is the sort of thing that makes an app feel broken even when every
-// screen works.
+// Rebuilt from flat text pills. The previous version was a row of grey
+// rounded rectangles — functional, but it read as a filter control on a
+// settings screen rather than navigation between a school's departments.
 //
-// Only renders when the school runs more than one sport; a single-sport school
-// gets no switcher, because there is nothing to switch to.
+// Now: a single continuous track with the active sport carried by that
+// sport's own colour and a sliding underline. The indicator moves rather
+// than appearing, which makes the relationship between the sports legible
+// instead of each one looking like an isolated button.
+//
+// Only renders when the school runs more than one sport — a switcher with a
+// single option is just a label.
 
 export default function PortalSportSwitcher({ current }: { current: SportKey }) {
   const { sports } = useBranding();
-  // Switching sports must not drop the school — without a portal code there is
-  // no cookie carrying it, so it lives in the URL.
-  // Keep whichever addressing the visitor arrived with: a /[school]/portal
-  // path stays on that path, a legacy ?school= link keeps its parameter.
-  // Switching sports must not quietly drop the school either way.
+
   const [base, setBase] = React.useState('/portal');
   const [schoolParam, setSchoolParam] = React.useState('');
   React.useEffect(() => {
@@ -31,35 +30,74 @@ export default function PortalSportSwitcher({ current }: { current: SportKey }) 
     setSchoolParam(slug ? `&school=${encodeURIComponent(slug)}` : '');
   }, []);
 
+  const trackRef = React.useRef<HTMLDivElement>(null);
+  const [ind, setInd] = React.useState<{ left: number; width: number } | null>(null);
+
+  // Measure the active item so the underline can slide to it. Recomputed on
+  // resize because the track scrolls horizontally on narrow screens.
+  React.useLayoutEffect(() => {
+    const measure = () => {
+      const el = trackRef.current?.querySelector<HTMLElement>('[data-active="true"]');
+      if (el) setInd({ left: el.offsetLeft, width: el.offsetWidth });
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [current, sports]);
+
   if (!sports || sports.length <= 1) return null;
 
+  const activeColor = getSportColor(current) || '#38bdf8';
+
   return (
-    <div style={{
-      display: 'flex', gap: 6, overflowX: 'auto',
-      padding: '10px 0 2px', WebkitOverflowScrolling: 'touch',
-    }}>
-      {sports.map(s => {
-        const active = s.key === current;
-        const colour = getSportColor(s.key as SportKey) || s.color;
-        return (
-          <a key={s.key} href={`${base}?sport=${encodeURIComponent(s.key)}${schoolParam}`}
-            style={{
-              flexShrink: 0,
-              padding: '7px 14px',
-              borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 700,
-              textDecoration: 'none',
-              whiteSpace: 'nowrap',
-              background: active ? colour + '22' : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${active ? colour + '66' : 'rgba(255,255,255,0.07)'}`,
-              color: active ? colour : 'rgba(255,255,255,0.45)',
-              transition: 'all 0.2s',
-            }}>
-            {getSportLabel(s.key as SportKey) || s.label}
-          </a>
-        );
-      })}
+    <div style={{ position:'relative', marginTop:4 }}>
+      <div
+        ref={trackRef}
+        style={{
+          position:'relative', display:'flex', gap:2, overflowX:'auto',
+          borderBottom:'1px solid rgba(255,255,255,0.08)',
+          scrollbarWidth:'none', msOverflowStyle:'none',
+        }}
+      >
+        <style>{`.psw::-webkit-scrollbar{display:none}`}</style>
+
+        {sports.map(sp => {
+          const active = sp.key === current;
+          const c = getSportColor(sp.key as SportKey) || sp.color;
+          return (
+            <a
+              key={sp.key}
+              data-active={active}
+              href={`${base}?sport=${encodeURIComponent(sp.key)}${schoolParam}`}
+              style={{
+                flexShrink:0, padding:'12px 18px 13px', textDecoration:'none',
+                fontSize:13, fontWeight:active ? 800 : 600, whiteSpace:'nowrap',
+                color: active ? 'white' : 'rgba(255,255,255,0.4)',
+                transition:'color .25s ease',
+              }}
+            >
+              {getSportLabel(sp.key as SportKey) || sp.label}
+              {active && (
+                <span style={{
+                  display:'inline-block', width:5, height:5, borderRadius:'50%',
+                  background:c, marginLeft:8, verticalAlign:'middle',
+                }}/>
+              )}
+            </a>
+          );
+        })}
+
+        {/* The underline slides between sports rather than snapping on and
+            off, so the set reads as one navigation strip. */}
+        {ind && (
+          <span style={{
+            position:'absolute', bottom:-1, height:2, borderRadius:2,
+            background:activeColor,
+            left:ind.left, width:ind.width,
+            transition:'left .34s cubic-bezier(.22,1,.36,1), width .34s cubic-bezier(.22,1,.36,1), background .3s ease',
+          }}/>
+        )}
+      </div>
     </div>
   );
 }
