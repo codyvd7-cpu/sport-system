@@ -87,10 +87,15 @@ export default function PortalHero({ sport, nextFixture }: Props) {
       {heroImg && (
         <div style={{ position:'absolute', inset:0, zIndex:0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* objectPosition 'center 30%' keeps faces and action in frame.
+              At 20% the crop sat too high and cut heads off — combined with
+              the crop that used to be baked into the file itself, subjects
+              were being cropped twice. The files now ship close to their
+              native aspect so this is the only crop applied. */}
           <img src={heroImg} alt="" style={{
-            width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 20%',
-            transform: mounted ? 'scale(1)' : 'scale(1.05)',
-            transition:'transform 1.8s cubic-bezier(.16,1,.3,1)',
+            width:'100%', height:'100%', objectFit:'cover', objectPosition:'center 30%',
+            transform: mounted ? 'scale(1)' : 'scale(1.04)',
+            transition:'transform 2.2s cubic-bezier(.16,1,.3,1)',
           }}/>
           <div style={{ position:'absolute', inset:0,
             background:'linear-gradient(180deg, rgba(3,8,16,0.30) 0%, rgba(3,8,16,0.62) 45%, #030810 94%)' }}/>

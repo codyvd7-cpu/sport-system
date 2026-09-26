@@ -16,7 +16,6 @@ import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 import { useBranding } from '@/components/BrandingProvider';
 import PortalSportSwitcher from '@/components/portal/PortalSportSwitcher';
-import MyAthleteCard from '@/components/portal/MyAthleteCard';
 
 type Row = Record<string, any>;
 
@@ -126,13 +125,11 @@ function PortalInner() {
           />
         </ScrollReveal>
 
-        {/* Sign-in prompt sits AFTER the fixtures — a parent arrives wanting
-            Saturday's kick-off time, and only then is "see your own results"
-            a useful offer rather than an interruption. */}
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px 44px' }}>
-          <MyAthleteCard/>
-        </div>
-
+        {/* The "see your own results" prompt was removed entirely. The nav
+            already carries Player Login, so anyone who wants their own data
+            has an obvious route — a second standing invitation on a page
+            whose job is fixtures and results was just clutter. MyAthleteCard
+            is kept for the signed-in states, which ARE useful. */}
         {/* Player Resources */}
         <ScrollReveal>
           <PlayerResources programs={data?.programs ?? []} color={color} loading={loading}/>
