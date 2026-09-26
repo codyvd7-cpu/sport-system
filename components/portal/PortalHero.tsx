@@ -102,12 +102,25 @@ export default function PortalHero({ sport, nextFixture }: Props) {
 
           <div>
             {/* A plain rule and label instead of a glowing pill badge. */}
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:20, ...rise(0) }}>
-              <span style={{ width:28, height:2, background:color }}/>
-              <span style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.62)',
-                textTransform:'uppercase', letterSpacing:'0.24em' }}>
-                {branding.name}
-              </span>
+            <div style={{ display:'flex', alignItems:'center', gap:13, marginBottom:20, ...rise(0) }}>
+              {branding.logoUrl && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={branding.logoUrl} alt="" style={{
+                  width:44, height:44, objectFit:'contain',
+                  filter:'drop-shadow(0 3px 10px rgba(0,0,0,.6))',
+                }}/>
+              )}
+              <div>
+                <p style={{ fontSize:12.5, fontWeight:700, color:'white', letterSpacing:'0.02em' }}>
+                  {branding.name}
+                </p>
+                {(branding.yearTheme || branding.motto) && (
+                  <p style={{ fontSize:10, fontWeight:600, color:'rgba(255,255,255,0.45)',
+                    textTransform:'uppercase', letterSpacing:'0.18em', marginTop:2 }}>
+                    {branding.yearTheme || branding.motto}
+                  </p>
+                )}
+              </div>
             </div>
 
             <h1 className="ph-anton" style={{
@@ -124,20 +137,23 @@ export default function PortalHero({ sport, nextFixture }: Props) {
               {cfg?.portal?.description ?? 'Fixtures, results and the week ahead.'}
             </p>
 
+            {/* One action only. The nav carries "Player Login" and the card
+                further down explains what signing in gets you — three prompts
+                for the same thing on one screen is noise, not emphasis. */}
             <div style={{ display:'flex', gap:10, flexWrap:'wrap', ...rise(0.2) }}>
               <a href="#this-week" style={{
-                fontSize:13.5, fontWeight:700, padding:'13px 24px', borderRadius:10,
+                fontSize:13.5, fontWeight:700, padding:'13px 26px', borderRadius:10,
                 background:color, color:'#03060c', textDecoration:'none',
               }}>
                 This week
               </a>
-              <Link href="/player/auth" style={{
+              <a href="#fixtures" style={{
                 fontSize:13.5, fontWeight:600, padding:'13px 24px', borderRadius:10,
                 background:'transparent', color:'rgba(255,255,255,0.75)',
                 border:'1px solid rgba(255,255,255,0.2)', textDecoration:'none',
               }}>
-                Sign in
-              </Link>
+                All {fixTerm.toLowerCase()}s
+              </a>
             </div>
           </div>
 

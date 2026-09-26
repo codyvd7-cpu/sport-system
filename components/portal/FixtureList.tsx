@@ -32,7 +32,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
   const HDR = { padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
 
   return (
-    <section id="fixtures" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto' }}>
+    <section id="fixtures" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto', scrollMarginTop: 84 }}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* Upcoming fixtures */}

@@ -30,15 +30,16 @@ export default function PortalNav({ sport }: Props) {
       <style>{`
         @media (max-width: 480px) {
           .pn-inner { padding: 0 14px !important; gap: 12px !important; height: 60px !important; }
-          .pn-school { display: none !important; }
+          .pn-school { font-size: 8.5px !important; letter-spacing: 0.14em !important; }
           .pn-login { padding: 9px 16px !important; font-size: 12px !important; }
         }
       `}</style>
       <div className="pn-inner" style={{ maxWidth: 1240, margin: '0 auto', padding: '0 24px', height: 68, display: 'flex', alignItems: 'center', gap: 24 }}>
 
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
+        <Link href={branding.slug && branding.slug !== 'default' ? `/${branding.slug}` : '/'}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', flexShrink: 0 }}>
           <div style={{ position: 'relative' }}>
-            <Image src={branding.logoUrl} alt={branding.abbreviation} width={34} height={34} style={{ objectFit: 'contain' }}/>
+            <Image src={branding.logoUrl} alt={branding.abbreviation} width={38} height={38} style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.5))' }}/>
           </div>
           <div style={{ lineHeight: 1.25 }}>
             <p className="pn-school" style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.16em' }}>{branding.name}</p>
