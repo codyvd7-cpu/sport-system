@@ -182,21 +182,36 @@ export async function POST(req: NextRequest) {
 
     // Athlete-linked data
     let athlete: any = null, attendance: any[] = [], perfTests: any[] = [], feedback: any = null, coachName: string | null = null;
-    let gymCheckins: any[] = [];
+    let gymCheckins: any[] = [], goals: any[] = [], clips: any[] = [];
     if (profile.athlete_id) {
-      const [aR, attR, pR, fbR, coachR, gymR] = await Promise.all([
+      const [aR, attR, pR, fbR, coachR, gymR, goalR, clipR] = await Promise.all([
         db.from('athletes').select(ATHLETE_FIELDS).eq('id', profile.athlete_id).maybeSingle(),
         db.from('attendance').select('id,status,session_date,session_type').eq('athlete_id', profile.athlete_id).order('session_date', { ascending: false }).limit(200),
         db.from('performance_tests').select('id,test_type,value,unit,test_date').eq('athlete_id', profile.athlete_id).order('test_date', { ascending: false }).limit(100),
         db.from('coach_notes').select('strengths,current_focus,coach_comment,created_at').eq('athlete_id', profile.athlete_id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(3),
         db.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
         db.from('gym_checkins').select('id,checkin_date,checkin_time,venue').eq('athlete_id', profile.athlete_id).order('checkin_date', { ascending: false }).limit(180),
+        // An athlete's own development goals. 268 of these exist and the
+        // athlete they describe has never been able to see them — the whole
+        // point of a baseline/target/retest loop is that the person doing
+        // the work knows what they're aiming at.
+        db.from('development_goals')
+          .select('id,goal,category,test_key,baseline_value,target_value,latest_value,unit,status,review_date,intervention')
+          .eq('athlete_id', profile.athlete_id).order('created_at', { ascending: false }).limit(12),
+        // Clips a coach explicitly ticked as visible to the player. The
+        // toggle was built on the coach side; this is the missing half.
+        db.from('video_clips')
+          .select('id,title,coach_note,start_seconds,end_seconds,created_at,video_id')
+          .eq('athlete_id', profile.athlete_id).eq('visible_to_player', true)
+          .order('created_at', { ascending: false }).limit(20),
       ]);
       athlete = aR.data;
       attendance = attR.data || [];
       perfTests = pR.data || [];
       feedback = fbR.data || [];
       gymCheckins = gymR.data || [];
+      goals = goalR.data || [];
+      clips = clipR.data || [];
       if (athlete) {
         const teamCoach = (coachR.data || []).find((c: any) => Array.isArray(c.teams) && c.teams.includes(athlete.team));
         coachName = teamCoach ? (teamCoach.full_name || teamCoach.email?.split('@')[0]?.replace(/[._]/g, ' ')) : null;
@@ -241,7 +256,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       profile, athlete, hpStudent,
-      attendance, perfTests, feedback, coachName,
+      attendance, perfTests, feedback, coachName, goals, clips,
       hpTests, hpInsights,
       gymCheckins,
       fixtures: fxR.data || [], results: resR.data || [],

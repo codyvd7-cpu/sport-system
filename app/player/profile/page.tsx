@@ -304,8 +304,16 @@ function TrainingLog({ D, C, onScan }: any) {
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 function Overview({ D, C, attPct, setNav, onScan }: any) {
   const { athlete: ath, fixtures, results, reminders, hpInsights, hpStudent } = D;
+  // A player's next fixture must be THEIR team's. This previously fell back
+  // to fixtures[0] — any team's next match — when their own team had none
+  // published. With 18 teams and fixtures often only loaded for the 1sts,
+  // that meant nearly every player was shown the 1st XI's match as if it
+  // were their own. No fixture is the honest answer; the school's full list
+  // is one tap away below.
   const teamFx = ath?.team ? fixtures.filter((f: Row) => f.team === ath.team) : fixtures;
-  const nxt = teamFx[0] || fixtures[0] || null;
+  const nxt = teamFx[0] || null;
+  // Kept separately so the empty state can still point at what IS on.
+  const schoolNextFx = fixtures[0] || null;
   const teamRes = ath?.team ? results.filter((r: Row) => r.team === ath.team) : results;
   const wins = teamRes.filter((r: Row) => outcome(r.final_score) === 'WIN').length;
   const draws = teamRes.filter((r: Row) => outcome(r.final_score) === 'DRAW').length;
@@ -340,7 +348,13 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         </div>
       </div>
     ) : (
-      <Card className="rise d1"><Empty icon="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" title="No upcoming fixtures" body="Your team's next fixtures will appear here once published."/></Card>
+      <Card className="rise d1">
+        <Empty icon="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
+          title={`No ${ath?.team || 'team'} fixtures yet`}
+          body={schoolNextFx
+            ? `Nothing published for your team. Next up at school: ${ath?.team ? '' : ''}${schoolNextFx.team || ''} vs ${schoolNextFx.opponent}.`
+            : "Your team's next fixtures will appear here once published."}/>
+      </Card>
     )}
 
     {/* Animated stat band */}
@@ -387,6 +401,86 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         <p style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>{reminders[0].title || reminders[0].message}</p>
         {reminders[0].details && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65, marginTop: 6 }}>{reminders[0].details}</p>}
         <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>{reminders[0].created_at ? ago(reminders[0].created_at) : ''}</p>
+      </Card>
+    )}
+
+    {/* ── YOUR GOALS ──────────────────────────────────────────────────────
+        Development goals are a closed loop — baseline, target, retest — and
+        until now the athlete doing the work was the one person who couldn't
+        see the target. Shows progress against their own numbers. */}
+    {(D.goals || []).filter((g: Row) => g.status !== 'archived').length > 0 && (
+      <Card className="rise d4">
+        <SecHead label="Your goals"/>
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+          {(D.goals || []).filter((g: Row) => g.status !== 'archived').slice(0, 4).map((g: Row) => {
+            const base = Number(g.baseline_value), tgt = Number(g.target_value), now = Number(g.latest_value);
+            const measurable = Number.isFinite(base) && Number.isFinite(tgt) && base !== tgt;
+            // Lower-is-better for times, higher-is-better for distances etc.
+            const lowerBetter = tgt < base;
+            const pct = measurable && Number.isFinite(now)
+              ? Math.max(0, Math.min(100, ((lowerBetter ? base - now : now - base) / Math.abs(tgt - base)) * 100))
+              : null;
+            const done = g.status === 'achieved';
+            return (
+              <div key={g.id} style={{
+                borderRadius:12, border:'1px solid rgba(255,255,255,0.07)',
+                borderLeft:`2px solid ${done ? '#34d399' : C}`,
+                background:'rgba(255,255,255,0.022)', padding:'12px 14px',
+              }}>
+                <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
+                  <p style={{ fontSize:13, fontWeight:700, color:'white', lineHeight:1.35 }}>{g.goal}</p>
+                  {done && <span style={{ fontSize:9.5, fontWeight:800, color:'#34d399', textTransform:'uppercase', letterSpacing:'0.12em', flexShrink:0 }}>Achieved</span>}
+                </div>
+                {measurable && (
+                  <>
+                    <div style={{ display:'flex', gap:14, marginTop:8, fontSize:11.5 }}>
+                      <span style={{ color:'rgba(255,255,255,0.35)' }}>From <b style={{ color:'rgba(255,255,255,0.62)' }}>{base}{g.unit}</b></span>
+                      {Number.isFinite(now) && <span style={{ color:'rgba(255,255,255,0.35)' }}>Now <b style={{ color:'white' }}>{now}{g.unit}</b></span>}
+                      <span style={{ color:'rgba(255,255,255,0.35)' }}>Target <b style={{ color:C }}>{tgt}{g.unit}</b></span>
+                    </div>
+                    {pct !== null && (
+                      <div style={{ height:3, borderRadius:2, background:'rgba(255,255,255,0.07)', marginTop:9, overflow:'hidden' }}>
+                        <div style={{ height:'100%', width:`${pct}%`, background: done ? '#34d399' : C,
+                          transition:'width .8s cubic-bezier(.16,1,.3,1)' }}/>
+                      </div>
+                    )}
+                  </>
+                )}
+                {g.intervention && (
+                  <p style={{ fontSize:11.5, color:'rgba(255,255,255,0.4)', marginTop:8, lineHeight:1.5 }}>{g.intervention}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+    )}
+
+    {/* ── CLIPS YOUR COACH SHARED ─────────────────────────────────────────
+        The coach side has had a "visible to player" toggle on every clip
+        since video review was built. This is the half that was missing —
+        without it, ticking that box did nothing. */}
+    {(D.clips || []).length > 0 && (
+      <Card className="rise d4">
+        <SecHead label="Clips from your coach"/>
+        <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
+          {(D.clips || []).slice(0, 5).map((c: Row) => (
+            <div key={c.id} style={{
+              borderRadius:12, border:'1px solid rgba(255,255,255,0.07)',
+              background:'rgba(255,255,255,0.022)', padding:'12px 14px',
+            }}>
+              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
+                <p style={{ fontSize:13, fontWeight:700, color:'white' }}>{c.title}</p>
+                <span style={{ fontSize:11, color:'rgba(255,255,255,0.3)', flexShrink:0 }}>
+                  {Math.max(1, Math.round((c.end_seconds - c.start_seconds)))}s
+                </span>
+              </div>
+              {c.coach_note && (
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:6, lineHeight:1.55 }}>{c.coach_note}</p>
+              )}
+            </div>
+          ))}
+        </div>
       </Card>
     )}
   </div>;
