@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { type SportKey, getSportLabel, getSportColor } from '@/lib/sports';
 import { useBranding } from '@/components/BrandingProvider';
+import PushAlerts from '@/components/PushAlerts';
 
 interface Props { sport: SportKey; }
 
@@ -51,6 +52,12 @@ export default function PortalNav({ sport }: Props) {
         </Link>
 
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Push notifications. This button was built to work for both
+              signed-in players and anonymous portal parents, and then placed
+              on no page at all — so nobody could ever subscribe, and the
+              whole notification system had no on-ramp. The portal is where
+              parents actually are, so this is where it belongs. */}
+          <PushAlerts color={color} compact/>
           <Link href="/login" style={{
             fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.32)',
             textDecoration: 'none', whiteSpace: 'nowrap', transition: 'color .15s',

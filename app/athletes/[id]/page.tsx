@@ -19,6 +19,7 @@ import ReturnToPlayPanel from '@/components/coach/ReturnToPlayPanel';
 import HPResultsPanel from '@/components/coach/HPResultsPanel';
 import AthleteVideoPanel from '@/components/coach/AthleteVideoPanel';
 import AthleteLoadPanel from '@/components/coach/AthleteLoadPanel';
+import { useRole } from '@/lib/useRole';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -354,6 +355,7 @@ function SeasonStats({attendance,performance,matchResults,team,year,sportColor}:
 }
 
 export default function AthleteProfile({params}:PageProps) {
+  const { isOwner } = useRole();
   const { branding } = useBranding();
   const {id} = React.use(params);
   const router = useRouter();
@@ -541,11 +543,33 @@ export default function AthleteProfile({params}:PageProps) {
 
   async function setAvail(status:string) {
     const previous = availability;
-    await supabase.from('athletes').update({availability:status}).eq('id',id);
-    setAvailability(status); showToast(`Status: ${status}`);
-    if (previous !== status) {
-      void logEvent('availability_changed', `Availability: ${previous} \u2192 ${status}`, {from:previous,to:status});
+
+    // Routed through /api/athlete/status rather than writing the column
+    // directly. That endpoint was built to do three things together —
+    // update availability, append to athlete_status_history, and record a
+    // timeline event — but nothing ever called it, so every availability
+    // change was overwriting the previous value with no record kept.
+    // athlete_status_history sat at zero rows as a result.
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/athlete/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+        body: JSON.stringify({ athleteId: id, status }),
+      });
+      if (!res.ok) throw new Error('status endpoint failed');
+    } catch {
+      // Availability is load-bearing for selection and the coach inbox, so a
+      // failure here must not leave the coach thinking it saved. Fall back to
+      // the direct write and still log the event.
+      await supabase.from('athletes').update({availability:status}).eq('id',id);
+      if (previous !== status) {
+        void logEvent('availability_changed', `Availability: ${previous} \u2192 ${status}`, {from:previous,to:status});
+      }
     }
+
+    setAvailability(status); showToast(`Status: ${status}`);
   }
 
   async function addAttendance(e:React.FormEvent) {
@@ -1184,6 +1208,53 @@ export default function AthleteProfile({params}:PageProps) {
             )}
           </div>
         )}
+
+        {/* ── POPIA ERASURE (owner only) ──────────────────────────────────
+            /api/admin/data-deletion has existed for months — owner-gated,
+            requires a written reason, writes an audit record — and nothing
+            in the app ever called it. That meant there was no way to honour
+            a parent's deletion request without going into the database by
+            hand, which is exactly the obligation the endpoint was built to
+            discharge. Placed on the Notes tab behind a confirmation rather
+            than anywhere it could be hit by accident. */}
+        {activeTab==='notes' && isOwner && (
+          <div style={{marginTop:28,paddingTop:20,borderTop:'1px solid rgba(248,113,113,0.18)'}}>
+            <p style={{fontSize:10.5,fontWeight:700,color:'rgba(248,113,113,0.75)',
+              textTransform:'uppercase',letterSpacing:'0.18em',marginBottom:6}}>
+              Data protection
+            </p>
+            <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:12,maxWidth:520}}>
+              Permanently erase this athlete and all associated records. Used to
+              honour a POPIA deletion request. This cannot be undone — an audit
+              entry is kept recording that the deletion happened and why.
+            </p>
+            <button
+              onClick={async()=>{
+                const reason = window.prompt('Reason for deletion (required, min 10 characters):');
+                if (!reason || reason.trim().length < 10) return;
+                if (!window.confirm(`Permanently delete ${name} and all their records? This cannot be undone.`)) return;
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  const res = await fetch('/api/admin/data-deletion', {
+                    method:'DELETE',
+                    headers:{'Content-Type':'application/json',
+                      ...(session?{Authorization:`Bearer ${session.access_token}`}:{})},
+                    body: JSON.stringify({ athleteId: id, reason: reason.trim() }),
+                  });
+                  const d = await res.json();
+                  if (!res.ok) { showToast(d.error || 'Deletion failed'); return; }
+                  showToast('Athlete erased');
+                  window.location.href = '/athletes';
+                } catch { showToast('Deletion failed'); }
+              }}
+              style={{padding:'9px 16px',borderRadius:10,fontSize:12,fontWeight:700,
+                border:'1px solid rgba(248,113,113,0.35)',background:'rgba(248,113,113,0.08)',
+                color:'#fca5a5',cursor:'pointer'}}>
+              Erase athlete record
+            </button>
+          </div>
+        )}
+
 
         {/* Danger zone */}
         <div className="mt-8 pt-6 border-t border-white/7">

@@ -5,6 +5,7 @@ import QueryProvider from '@/components/QueryProvider';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 import BrandingProvider from '@/components/BrandingProvider';
 import './globals.css';
+import UrgentAlertBanner from '@/components/UrgentAlertBanner';
 
 export const metadata: Metadata = {
   title:       'Altus Performance',
@@ -54,6 +55,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <QueryProvider>
           <BrandingProvider>
           <ToastProvider>
+            {/* The lightning/urgent alert banner. This component was written
+                months ago and rendered NOWHERE — activating an alert put a
+                red banner in front of precisely nobody. For a feature whose
+                only job is getting a weather warning to parents and coaches
+                fast, silently doing nothing is the worst possible failure.
+                Mounted at the root so it covers every page, which is what it
+                was always designed for. */}
+            <UrgentAlertBanner/>
             {children}
           </ToastProvider>
           </BrandingProvider>
