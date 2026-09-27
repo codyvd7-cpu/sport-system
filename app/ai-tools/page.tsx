@@ -111,13 +111,25 @@ export default function AIToolsPage() {
                   <label className={labelCls}>Week Focus *</label>
                   <input value={parentFocus} onChange={(e) => setParentFocus(e.target.value)} placeholder="e.g. Speed testing week, match preparation, fitness conditioning" className={inputCls} />
                 </div>
-                <div>
-                  <label className={labelCls}>Upcoming Fixtures</label>
-                  <input value={parentFixtures} onChange={(e) => setParentFixtures(e.target.value)} placeholder="e.g. vs Jeppe Saturday 10am" className={inputCls} />
+                {/* Fixtures and results are now pulled from the database for
+                    the selected team — the coach used to have to type out
+                    information the app already held, which made this slower
+                    than writing the message by hand. These boxes remain only
+                    as an override for anything not yet entered. */}
+                <div className="sm:col-span-2 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3">
+                  <p className="text-[11.5px] text-white/45">
+                    This week&apos;s fixtures, recent results and squad availability for{' '}
+                    <span className="text-white/75 font-semibold">{parentTeam || 'the selected team'}</span>{' '}
+                    are added automatically.
+                  </p>
                 </div>
                 <div>
-                  <label className={labelCls}>Recent Results</label>
-                  <input value={parentResults} onChange={(e) => setParentResults(e.target.value)} placeholder="e.g. Won 3-1 vs KES" className={inputCls} />
+                  <label className={labelCls}>Extra fixtures <span className="text-white/25">(optional)</span></label>
+                  <input value={parentFixtures} onChange={(e) => setParentFixtures(e.target.value)} placeholder="Only if not already in the system" className={inputCls} />
+                </div>
+                <div>
+                  <label className={labelCls}>Extra results <span className="text-white/25">(optional)</span></label>
+                  <input value={parentResults} onChange={(e) => setParentResults(e.target.value)} placeholder="Only if not already in the system" className={inputCls} />
                 </div>
                 <div>
                   <label className={labelCls}>Testing This Week</label>
@@ -190,7 +202,7 @@ export default function AIToolsPage() {
                 </div>
                 <div className="sm:col-span-2">
                   <label className={labelCls}>Special Considerations</label>
-                  <input value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="e.g. 3 players on modified, last hard session before match day" className={inputCls} />
+                  <input value={sessionNotes} onChange={(e) => setSessionNotes(e.target.value)} placeholder="Anything the system won't know — pitch unavailable, specific drill request" className={inputCls} />
                 </div>
               </div>
               <button onClick={generateSession} disabled={sessionLoading || !sessionTeam || !sessionFocus}
