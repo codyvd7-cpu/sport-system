@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getSchoolBranding } from '@/lib/schoolBranding';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { MODEL_REASONING, AI_GUARDRAILS } from '@/lib/aiModels';
 
 
 export async function POST(req: NextRequest) {
@@ -57,7 +58,8 @@ Write a report with these sections:
 4. PLAYERS REQUIRING ATTENTION - specific names and reasons
 5. RECOMMENDED FOCUS - what to prioritise this week
 
-Keep it professional, specific and actionable. 3-5 sentences per section. Use actual names from the data.`;
+Keep it professional, specific and actionable. 3-5 sentences per section. Use actual names from the data.
+${AI_GUARDRAILS}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -66,7 +68,7 @@ Keep it professional, specific and actionable. 3-5 sentences per section. Use ac
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: MODEL_REASONING,
         max_tokens: 800,
         messages: [{ role: 'user', content: prompt }],
       }),

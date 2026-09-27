@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getSchoolBranding } from '@/lib/schoolBranding';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { MODEL_REASONING, AI_GUARDRAILS } from '@/lib/aiModels';
 
 
 export async function POST(req: NextRequest) {
@@ -51,7 +52,8 @@ Write a summary that:
 - References specific test results where available
 - Is professional enough to share with parents
 - Does NOT make injury predictions or medical claims
-- Ends with one forward-looking sentence about development focus`;
+- Ends with one forward-looking sentence about development focus
+${AI_GUARDRAILS}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -60,7 +62,7 @@ Write a summary that:
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: MODEL_REASONING,
         max_tokens: 300,
         messages: [{ role: 'user', content: prompt }],
       }),

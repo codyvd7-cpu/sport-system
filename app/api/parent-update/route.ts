@@ -3,6 +3,7 @@ import { getAdmin } from '@/lib/supabaseAdmin';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getSchoolBranding } from '@/lib/schoolBranding';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { MODEL_QUICK, AI_GUARDRAILS } from '@/lib/aiModels';
 
 
 export async function POST(req: NextRequest) {
@@ -95,12 +96,13 @@ Write a message that:
 - Ends with a motivating close
 - Feels personal, not like a template
 - Is 150-200 words maximum
-- Ready to send directly on WhatsApp`;
+- Ready to send directly on WhatsApp
+${AI_GUARDRAILS}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 400, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: MODEL_QUICK, max_tokens: 400, messages: [{ role: 'user', content: prompt }] }),
     });
 
     const d = await response.json();

@@ -3,6 +3,7 @@ import { getAdmin } from '@/lib/supabaseAdmin';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getSchoolBranding } from '@/lib/schoolBranding';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { MODEL_REASONING, AI_GUARDRAILS } from '@/lib/aiModels';
 
 
 export async function POST(req: NextRequest) {
@@ -88,12 +89,13 @@ Write a complete session plan with:
 6. COACHING POINTS (2-3 key focus areas for the session)
 7. PROGRESSIONS/REGRESSIONS (how to make it harder or easier)
 
-Be specific with times, distances, and numbers. Make it practical and ready to run.`;
+Be specific with times, distances, and numbers. Make it practical and ready to run.
+${AI_GUARDRAILS}`;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: MODEL_REASONING, max_tokens: 1000, messages: [{ role: 'user', content: prompt }] }),
     });
 
     const d = await response.json();

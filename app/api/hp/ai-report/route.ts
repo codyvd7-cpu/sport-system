@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSchoolContext } from '@/lib/hpRepository';
 import { verifyHpCookie } from '@/lib/serverAuth';
+import { MODEL_QUICK, AI_GUARDRAILS } from '@/lib/aiModels';
 
 export async function POST(req: NextRequest) {
   if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -44,7 +45,8 @@ AREAS FOR DEVELOPMENT
 INDIVIDUAL HIGHLIGHTS
 TRAINING RECOMMENDATIONS
 
-Keep it concise, data-driven and practical. Plain text only, no bullet symbols or markdown.`;
+Keep it concise, data-driven and practical. Plain text only, no bullet symbols or markdown.
+${AI_GUARDRAILS}`;
 
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -54,7 +56,7 @@ Keep it concise, data-driven and practical. Plain text only, no bullet symbols o
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: MODEL_QUICK,
         max_tokens: 900,
         messages: [
           { role: 'system', content: 'You are a sports science analyst writing concise, data-driven coaching reports.' },

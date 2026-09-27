@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest } from '@/lib/serverAuth';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { MODEL_ASSISTANT, AI_GUARDRAILS } from '@/lib/aiModels';
 
 export async function POST(req: NextRequest) {
   // Rate limit
@@ -34,7 +35,7 @@ export async function POST(req: NextRequest) {
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: MODEL_ASSISTANT,
         max_tokens: 1000,
         messages: [
           { role: 'system', content: system },

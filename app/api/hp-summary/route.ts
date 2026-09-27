@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, verifyHpCookie } from '@/lib/serverAuth';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
+import { MODEL_QUICK, AI_GUARDRAILS } from '@/lib/aiModels';
 
 export async function POST(req: NextRequest) {
   // Rate limit: 20 calls per 5 mins per IP
@@ -35,7 +36,7 @@ export async function POST(req: NextRequest) {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-      body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
+      body: JSON.stringify({ model: MODEL_QUICK, max_tokens: 600, messages: [{ role: 'user', content: prompt }] }),
     });
 
     const data = await response.json();
