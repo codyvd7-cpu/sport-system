@@ -6,40 +6,28 @@ import * as React from 'react';
 //
 // REBUILT. This component previously had FOUR SPONSORS HARDCODED IN THE
 // SOURCE — the original pilot school's partners — so every school on the
-// platform displayed another school's commercial relationships. That is a
-// genuine problem, not a cosmetic one: it misrepresents a sponsorship that
-// doesn't exist, to that school's own parents.
+// platform displayed another school's commercial relationships. That
+// misrepresents a sponsorship that doesn't exist, to that school's parents.
 //
-// Sponsors now come from school_sponsors, scoped per school. A school with
-// no sponsors renders NOTHING — an empty "Our Partners" heading, or worse
-// invented logos, is more damaging than simply not having the section.
+// Sponsors come from portal_sponsors, which portal-admin already manages and
+// which a database trigger scopes to the signed-in coach's school. They
+// arrive with the rest of the portal payload, so no extra request is needed.
+//
+// A school with no sponsors renders NOTHING — an empty "Partners" heading,
+// or invented logos, is worse than simply not having the section.
 //
 // The presentation also dropped the hover lift and the shine sweep that
 // travelled across each logo. A sponsor's mark should sit still and be
 // legible; animating it is the sort of thing that reads as a template.
 
-type Sponsor = { id: string; name: string; logo_url: string | null; website_url: string | null; tier: string };
+type Sponsor = {
+  id: string; name: string; image_url: string | null;
+  sponsor_link: string | null; sort_order: number | null;
+};
 
-export default function SponsorStrip({ color, schoolId }: { color: string; schoolId?: string | null }) {
-  const [sponsors, setSponsors] = React.useState<Sponsor[]>([]);
-  const [loaded, setLoaded] = React.useState(false);
-
-  React.useEffect(() => {
-    let stop = false;
-    const slugFromPath = window.location.pathname.match(/^\/([^/]+)\/portal/)?.[1];
-    const slug = slugFromPath || new URLSearchParams(window.location.search).get('school');
-    const qs = schoolId ? `schoolId=${encodeURIComponent(schoolId)}` : slug ? `school=${encodeURIComponent(slug)}` : '';
-    if (!qs) { setLoaded(true); return; }
-
-    fetch(`/api/school/sponsors?${qs}`)
-      .then(r => r.json())
-      .then(d => { if (!stop) { setSponsors(d.sponsors || []); setLoaded(true); } })
-      .catch(() => { if (!stop) setLoaded(true); });
-    return () => { stop = true; };
-  }, [schoolId]);
-
+export default function SponsorStrip({ color, sponsors = [] }: { color: string; sponsors?: any[] }) {
   // Nothing at all until we know, and nothing at all if there are none.
-  if (!loaded || sponsors.length === 0) return null;
+  if (!sponsors || sponsors.length === 0) return null;
 
   return (
     <section style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto' }}>
@@ -64,7 +52,7 @@ export default function SponsorStrip({ color, schoolId }: { color: string; schoo
         {sponsors.map(s => {
           const inner = (
             <>
-              {s.logo_url ? (
+              {s.image_url ? (
                 /* A white plinth remains the right call — most brand marks are
                    drawn dark-on-white and become unreadable on a dark page. */
                 <div style={{
@@ -72,7 +60,7 @@ export default function SponsorStrip({ color, schoolId }: { color: string; schoo
                   display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 14px',
                 }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.logo_url} alt={s.name}
+                  <img src={s.image_url} alt={s.name}
                     style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}/>
                 </div>
               ) : (
@@ -83,14 +71,7 @@ export default function SponsorStrip({ color, schoolId }: { color: string; schoo
                   <p style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.75)' }}>{s.name}</p>
                 </div>
               )}
-              {s.tier === 'principal' && (
-                <p style={{
-                  fontSize: 9, fontWeight: 700, color, textTransform: 'uppercase',
-                  letterSpacing: '0.16em', marginTop: 8, textAlign: 'center',
-                }}>
-                  Principal partner
-                </p>
-              )}
+
             </>
           );
 
@@ -100,8 +81,8 @@ export default function SponsorStrip({ color, schoolId }: { color: string; schoo
             textDecoration: 'none', display: 'block',
           };
 
-          return s.website_url
-            ? <a key={s.id} href={s.website_url} target="_blank" rel="noopener noreferrer sponsored" style={box}>{inner}</a>
+          return s.sponsor_link
+            ? <a key={s.id} href={s.sponsor_link} target="_blank" rel="noopener noreferrer sponsored" style={box}>{inner}</a>
             : <div key={s.id} style={box}>{inner}</div>;
         })}
       </div>

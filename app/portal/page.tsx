@@ -31,7 +31,7 @@ function PortalInner() {
 
   const [data, setData] = React.useState<{
     weekItems: Row[]; reminders: Row[];
-    fixtures: Row[]; results: Row[]; programs: Row[]; spotlight: Row[];
+    fixtures: Row[]; results: Row[]; programs: Row[]; spotlight: Row[]; sponsors: Row[];
   } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -64,9 +64,10 @@ function PortalInner() {
           results:   d.results || [],
           programs:  (d.programs || []).slice(0, 6),
           spotlight: d.spotlight || [],
+          sponsors:  d.sponsors || [],
         });
       } catch {
-        setData({ weekItems: [], reminders: [], fixtures: [], results: [], programs: [], spotlight: [] });
+        setData({ weekItems: [], reminders: [], fixtures: [], results: [], programs: [], spotlight: [], sponsors: [] });
       }
       setLoading(false);
     }
@@ -142,7 +143,7 @@ function PortalInner() {
 
         {/* Sponsors */}
         <ScrollReveal>
-          <SponsorStrip color={color}/>
+          <SponsorStrip color={color} sponsors={data?.sponsors ?? []}/>
         </ScrollReveal>
 
         {/* Footer */}
