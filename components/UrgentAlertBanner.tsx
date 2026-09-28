@@ -19,21 +19,30 @@ export default function UrgentAlertBanner() {
 
   if (!alert) return null;
   return (
+    // Static, not sticky. The portal nav is ALSO sticky at top:0, so two
+    // sticky elements stacked at the same offset and this one (z-index 500)
+    // sat on top of the nav, hiding the crest and controls. A banner that
+    // pushes the page down is also more honest: it cannot be scrolled away
+    // and then forgotten while the alert is still live.
     <div role="alert" style={{
-      position: 'sticky', top: 0, zIndex: 500,
+      position: 'relative', zIndex: 60,
       background: 'linear-gradient(90deg, #7f1d1d, #b91c1c 30%, #dc2626 50%, #b91c1c 70%, #7f1d1d)',
       borderBottom: '1px solid rgba(255,255,255,0.25)',
-      boxShadow: '0 6px 26px rgba(220,38,38,0.5)',
-      padding: '11px 16px',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+      padding: '10px 14px',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
       animation: 'alertPulse 1.6s ease-in-out infinite',
     }}>
-      <style>{`@keyframes alertPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.22)}}`}</style>
-      <span style={{ fontSize: 17, flexShrink: 0 }}>⚡</span>
-      <p style={{ fontSize: 13, fontWeight: 900, color: 'white', letterSpacing: '0.02em', textAlign: 'center', lineHeight: 1.45, textShadow: '0 1px 3px rgba(0,0,0,0.35)' }}>
+      <style>{`@keyframes alertPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}`}</style>
+      <span style={{ fontSize: 15, flexShrink: 0 }}>⚡</span>
+      {/* minWidth:0 lets a long message wrap instead of forcing the row wider
+          than the viewport, which was pushing content off a phone screen. */}
+      <p style={{
+        fontSize: 12.5, fontWeight: 800, color: 'white', letterSpacing: '0.01em',
+        textAlign: 'center', lineHeight: 1.4, minWidth: 0, textShadow: '0 1px 3px rgba(0,0,0,0.35)',
+      }}>
         {alert.message}
       </p>
-      <span style={{ fontSize: 17, flexShrink: 0 }}>⚡</span>
+      <span style={{ fontSize: 15, flexShrink: 0 }}>⚡</span>
     </div>
   );
 }

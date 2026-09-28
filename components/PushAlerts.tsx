@@ -89,11 +89,48 @@ export default function PushAlerts({ color = '#10b981', compact = false }: { col
   }
 
   const on = state === 'on';
+  // COMPACT is now genuinely compact: a single bell icon button, no label.
+  // It previously rendered a 34px icon block plus a 13px text label even in
+  // compact mode, which in the portal nav — already carrying the crest,
+  // school name, "Coach" and "Player Login" — pushed straight off the edge
+  // of a phone screen and covered the controls beside it.
+  if (compact) {
+    return (
+      <button onClick={toggle} disabled={state === 'busy' || state === 'denied'}
+        aria-label={on ? 'Lightning alerts on' : 'Enable lightning alerts'}
+        title={state === 'denied' ? 'Alerts blocked in browser settings'
+          : on ? 'Lightning alerts on — tap to turn off'
+          : 'Get notified if training is suspended for lightning'}
+        style={{
+          position: 'relative', flexShrink: 0,
+          width: 34, height: 34, borderRadius: 10, padding: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          border: `1px solid ${on ? `${color}50` : 'rgba(255,255,255,0.1)'}`,
+          background: on ? `${color}18` : 'rgba(255,255,255,0.03)',
+          cursor: state === 'denied' ? 'default' : 'pointer',
+          opacity: state === 'denied' ? 0.45 : 1,
+        }}>
+        {state === 'busy'
+          ? <span style={{ width: 13, height: 13, borderRadius: '50%', border: `2px solid ${color}`,
+              borderTopColor: 'transparent', display: 'inline-block', animation: 'spin 0.7s linear infinite' }}/>
+          : <svg viewBox="0 0 24 24" fill="none" stroke={on ? color : 'rgba(255,255,255,0.45)'}
+              strokeWidth={1.9} strokeLinecap="round" style={{ width: 15, height: 15 }}>
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>}
+        {/* A dot rather than the word "ON" — it reads at a glance and costs
+            no horizontal space. */}
+        {on && <span style={{ position:'absolute', top:-2, right:-2, width:7, height:7,
+          borderRadius:'50%', background:color, border:'1.5px solid #05070d' }}/>}
+      </button>
+    );
+  }
+
   return (
     <div>
       <button onClick={toggle} disabled={state === 'busy' || state === 'denied'} style={{
-        display: 'flex', alignItems: 'center', gap: 10, width: compact ? 'auto' : '100%',
-        padding: compact ? '9px 16px' : '14px 16px', borderRadius: 13, cursor: state === 'denied' ? 'default' : 'pointer',
+        display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+        padding: '14px 16px', borderRadius: 13, cursor: state === 'denied' ? 'default' : 'pointer',
         border: `1px solid ${on ? `${color}45` : 'rgba(255,255,255,0.1)'}`,
         background: on ? `${color}14` : 'rgba(255,255,255,0.03)',
         color: 'white', textAlign: 'left', opacity: state === 'denied' ? 0.55 : 1,
@@ -107,9 +144,9 @@ export default function PushAlerts({ color = '#10b981', compact = false }: { col
           <span style={{ display: 'block', fontSize: 13, fontWeight: 800 }}>
             {state === 'denied' ? 'Alerts blocked in browser settings' : on ? 'Lightning & urgent alerts ON' : 'Enable lightning & urgent alerts'}
           </span>
-          {!compact && <span style={{ display: 'block', fontSize: 10.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+          <span style={{ display: 'block', fontSize: 10.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
             {on ? 'This device will be notified the moment an alert goes out.' : 'Get notified instantly if training is suspended for lightning.'}
-          </span>}
+          </span>
         </span>
         {on && <span style={{ fontSize: 9, fontWeight: 900, color, letterSpacing: '0.1em' }}>ON</span>}
       </button>
