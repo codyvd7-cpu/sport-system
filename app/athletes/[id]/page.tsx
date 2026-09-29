@@ -362,6 +362,7 @@ export default function AthleteProfile({params}:PageProps) {
   const {showToast} = useToast();
 
   const [rawAthlete, setRawAthlete] = React.useState<Row|null>(null);
+  const [signedPhoto, setSignedPhoto] = React.useState<string|null>(null);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [notes, setNotes] = React.useState<Row[]>([]);
@@ -427,6 +428,20 @@ export default function AthleteProfile({params}:PageProps) {
     ]);
     if(aRes.data){
       setRawAthlete(aRes.data);
+      // player-photos is private — the stored value is a path, not a usable
+      // URL. Ask the server to sign it (same-school check happens there).
+      if (aRes.data?.photo_path || aRes.data?.photo_url) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const r = await fetch('/api/photo/sign', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+            body: JSON.stringify({ athleteId: id }),
+          });
+          const d = await r.json();
+          setSignedPhoto(d.url || null);
+        } catch { setSignedPhoto(null); }
+      }
       setAvailability(aRes.data.availability||'Available');
       setEditName(fStr(aRes.data.full_name,aRes.data.name));
       setEditTeam(fStr(aRes.data.team));
@@ -667,9 +682,9 @@ export default function AthleteProfile({params}:PageProps) {
                 color:sportColor,
                 boxShadow:'0 8px 32px '+sportColor+'20',
               }}>
-              {fStr(rawAthlete.photo_url)
+              {signedPhoto
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={fStr(rawAthlete.photo_url)} alt={name} className="h-full w-full object-cover"/>
+                ? <img src={signedPhoto} alt={name} className="h-full w-full object-cover"/>
                 : initials(name)}
             </div>
             {/* Info */}

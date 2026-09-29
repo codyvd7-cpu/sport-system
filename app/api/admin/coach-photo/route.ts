@@ -29,10 +29,11 @@ export async function POST(req: NextRequest) {
       .from('coach-photos').upload(path, bytes, { contentType: file.type, upsert: true });
     if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
 
-    const { data: { publicUrl } } = supabase.storage.from('coach-photos').getPublicUrl(path);
-    await supabase.from('staff_roles').update({ photo_url: publicUrl }).eq('id', coachId);
+    // Private bucket — store the path, return a signed URL for display.
+    const { data: signed } = await supabase.storage.from('coach-photos').createSignedUrl(path, 3600);
+    await supabase.from('staff_roles').update({ photo_path: path, photo_url: null }).eq('id', coachId);
 
-    return NextResponse.json({ url: publicUrl });
+    return NextResponse.json({ url: signed?.signedUrl ?? null });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

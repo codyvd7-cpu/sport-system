@@ -4,6 +4,7 @@ import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { verifyPlayer } from '@/lib/playerAuth';
 import { GRADE8_TESTS, GRADE9_TESTS, getTier, type TestKey } from '@/lib/hpTests';
 import { cohortStats, termSeries, classifyChange, percentileRank } from '@/lib/hpAnalytics';
+import { signPhoto, pathFromLegacyUrl } from '@/lib/signedPhoto';
 
 // ─── /api/player/me ─────────────────────────────────────────────────────────────
 // The single data layer for the authed player/parent portal. The profile page
@@ -18,7 +19,7 @@ import { cohortStats, termSeries, classifyChange, percentileRank } from '@/lib/h
 //   save_profile → create/update the player_profiles row
 //   link         → set athlete_id (+ auto-link hp_student_id on exact name match)
 
-const ATHLETE_FIELDS = 'id,full_name,team,sport,age_group,position,availability,photo_url';
+const ATHLETE_FIELDS = 'id,full_name,team,sport,age_group,position,availability,photo_url,photo_path';
 
 export async function POST(req: NextRequest) {
   const ip = getClientId(req);
@@ -213,6 +214,13 @@ export async function POST(req: NextRequest) {
           .limit(10),
       ]);
       athlete = aR.data;
+      // player-photos is private: hand back a short-lived signed URL, never a
+      // public one. Falls back to extracting the path from a legacy public
+      // URL for rows uploaded before this change.
+      if (athlete) {
+        const path = athlete.photo_path || pathFromLegacyUrl(athlete.photo_url, 'player-photos');
+        athlete.photo_url = await signPhoto('player-photos', path);
+      }
       attendance = attR.data || [];
       perfTests = pR.data || [];
       feedback = fbR.data || [];

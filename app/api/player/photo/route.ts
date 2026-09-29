@@ -45,11 +45,11 @@ export async function POST(req: NextRequest) {
       .upload(path, bytes, { contentType: file.type, upsert: true });
     if (uploadError) return NextResponse.json({ error: uploadError.message }, { status: 500 });
 
-    const { data: { publicUrl } } = db.storage.from('player-photos').getPublicUrl(path);
-    const url = `${publicUrl}?v=${Date.now()}`; // cache-bust so the new photo shows immediately
-
-    await db.from('athletes').update({ photo_url: url }).eq('id', athleteId);
-    return NextResponse.json({ url });
+    // player-photos is a PRIVATE bucket now — a public URL would 403. Store
+    // the path and return a short-lived signed URL for immediate display.
+    const { data: signed } = await db.storage.from('player-photos').createSignedUrl(path, 3600);
+    await db.from('athletes').update({ photo_path: path, photo_url: null }).eq('id', athleteId);
+    return NextResponse.json({ url: signed?.signedUrl ?? null });
   } catch (e: any) {
     return NextResponse.json({ error: e.message || 'Upload failed' }, { status: 500 });
   }
