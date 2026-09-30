@@ -104,12 +104,27 @@ export default function PlayerAuthPage() {
     if (password.length < 8)  { setError('Password must be at least 8 characters.'); return; }
     setLoading(true);
     const { data, error: err } = await supabase.auth.signUp({ email: email.trim(), password });
-    if (err) { setError(err.message); setLoading(false); return; }
-    // If session returned immediately (email confirmation disabled) go straight to setup
+    if (err) {
+      // "Error sending confirmation email" means the account was created but
+      // the email couldn't be delivered (rate limit or no SMTP configured).
+      // Don't show that raw — the person can still sign in.
+      if (/sending.*email|rate limit|confirmation email/i.test(err.message)) {
+        setInfo('Account created. You can sign in now with the same details.');
+        setMode('signin');
+      } else if (/already registered|already exists/i.test(err.message)) {
+        setInfo('You already have an account — please sign in.');
+        setMode('signin');
+      } else {
+        setError(err.message);
+      }
+      setLoading(false);
+      return;
+    }
+    // Session returned immediately (email confirmation off) → straight in.
     if (data.session) {
       router.push('/player/setup');
     } else {
-      setInfo('Check your email to confirm your account, then sign in.');
+      setInfo('Account created. If confirmation is required, check your email — otherwise sign in now.');
       setMode('signin');
     }
     setLoading(false);
