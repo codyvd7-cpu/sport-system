@@ -1,234 +1,191 @@
 'use client';
 import * as React from 'react';
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useBranding } from '@/components/BrandingProvider';
 
-const C = '#3b82f6';
-const SPORTS = ['Hockey','Rugby','Cricket','Swimming','Rowing','Athletics'];
+// Player self-registration: identity -> physical -> sport -> medical. Creates
+// the athletes record the player owns; a coach selects them into a team later.
+// Medical goes to the separate access-controlled athlete_medical table.
+
+const SPORTS = ['Hockey','Rugby','Cricket','Swimming','Rowing','Athletics','Tennis','Basketball','Water Polo','Football'];
 const GRADES = ['Grade 8','Grade 9','Grade 10','Grade 11','Grade 12'];
+
+type Step = 'identity'|'physical'|'sport'|'medical'|'saving'|'done';
+type School = { id:string; name:string; slug:string; primary_color:string };
+
+// Hoisted out of render — defining a component inside render recreates it each
+// pass and can remount its subtree.
+function Btn({ onClick, children, primary, disabled, c }: { onClick?: ()=>void; children: React.ReactNode; primary?: boolean; disabled?: boolean; c: string }) {
+  return (
+    <button onClick={onClick} disabled={disabled}
+      style={{ flex:1,padding:'14px',borderRadius:11,fontSize:14,fontWeight:700,cursor:'pointer',
+        border: primary?'none':'1px solid rgba(255,255,255,0.12)',
+        background: primary?c:'transparent', color: primary?'#03060c':'rgba(255,255,255,0.7)',
+        opacity: disabled?0.4:1 }}>{children}</button>
+  );
+}
 
 export default function PlayerSetupPage() {
   const { branding } = useBranding();
   const router = useRouter();
-  const [userId, setUserId]         = React.useState<string|null>(null);
-  const [existingProfile, setExisting] = React.useState<any>(null);
-  const [step, setStep]             = React.useState<'form'|'matching'|'matched'|'nomatch'>('form');
-  const [fullName, setFullName]     = React.useState('');
-  const [grade, setGrade]           = React.useState('');
-  const [sports, setSports]         = React.useState<string[]>([]);
-  const [matches, setMatches]       = React.useState<any[]>([]);
-  const [error, setError]           = React.useState('');
-  const [isEdit, setIsEdit]         = React.useState(false);
+  const C = branding.primaryColor || '#3b82f6';
+
+  const [ready,setReady] = React.useState(false);
+  const [step,setStep] = React.useState<Step>('identity');
+  const [error,setError] = React.useState('');
+  const [schools,setSchools] = React.useState<School[]>([]);
+
+  const [fullName,setFullName] = React.useState('');
+  const [dob,setDob] = React.useState('');
+  const [grade,setGrade] = React.useState('');
+  const [schoolId,setSchoolId] = React.useState('');
+  const [sport,setSport] = React.useState('');
+  const [position,setPosition] = React.useState('');
+  const [heightCm,setHeightCm] = React.useState('');
+  const [weightKg,setWeightKg] = React.useState('');
+  const [med,setMed] = React.useState({ conditions:'',allergies:'',medications:'',injuryHistory:'',emergencyContactName:'',emergencyContactPhone:'',medicalAidName:'',medicalAidNumber:'' });
 
   React.useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data:{ user } }) => {
       if (!user) { router.replace('/player/auth'); return; }
-      setUserId(user.id);
-      supabase.from('player_profiles').select('*').eq('user_id', user.id).single()
-        .then(({ data }) => {
-          if (data) {
-            // Existing profile - pre-fill form for editing
-            setExisting(data);
-            setFullName(data.full_name || '');
-            setGrade(data.grade || '');
-            setSports(data.sports || []);
-            setIsEdit(true);
-          }
-        });
+      setReady(true);
     });
-  }, [router]);
-
-  async function api(body: Record<string, unknown>) {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.replace('/player/auth'); return null; }
-    const r = await fetch('/api/player/me', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-      body: JSON.stringify(body),
+    fetch('/api/school/list').then(r=>r.json()).then(d=>{
+      setSchools(d.schools||[]);
+      if (branding.slug && branding.slug!=='default') {
+        const m=(d.schools||[]).find((s:School)=>s.slug===branding.slug);
+        if (m) setSchoolId(m.id);
+      }
     });
-    return r.json();
+  }, [router, branding.slug]);
+
+  async function submit() {
+    setError(''); setStep('saving');
+    try {
+      const { data:{ session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/player/register', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', ...(session?{Authorization:`Bearer ${session.access_token}`}:{}) },
+        body: JSON.stringify({ fullName, dob, grade, schoolId, sport, position, heightCm, weightKg, ...med }),
+      });
+      const d = await res.json();
+      if (!res.ok) { setError(d.error||'Something went wrong.'); setStep('medical'); return; }
+      setStep('done');
+    } catch { setError('Something went wrong.'); setStep('medical'); }
   }
 
-  function toggleSport(s: string) {
-    setSports(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
-  }
+  if (!ready) return null;
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!fullName.trim() || !grade || sports.length === 0) {
-      setError('Please fill in all fields and select at least one sport.'); return;
-    }
-    setError('');
-
-    // If editing and name hasn't changed, skip matching and just save
-    if (isEdit && existingProfile?.athlete_id) {
-      await saveProfile(existingProfile.athlete_id);
-      return;
-    }
-
-    setStep('matching');
-    // Matching runs server-side — athlete data is staff-gated by RLS, so the
-    // API verifies your login and returns only safe fields for linking.
-    const d = await api({ action: 'match', name: fullName.trim() });
-    const athleteMatches = d?.matches || [];
-    setMatches(athleteMatches);
-    setStep(athleteMatches.length > 0 ? 'matched' : 'nomatch');
-  }
-
-  async function saveProfile(athleteId: string | null) {
-    if (!userId) return;
-    const saved = await api({ action: 'save_profile', full_name: fullName.trim(), grade, sports });
-    if (saved?.error) { setError(saved.error); setStep('form'); return; }
-    if (athleteId) {
-      const linked = await api({ action: 'link', athlete_id: athleteId });
-      if (linked?.error) { setError(linked.error); setStep('form'); return; }
-    }
-    router.push('/player/profile');
-  }
-
-  const pillStyle = (active: boolean): React.CSSProperties => ({
-    padding: '8px 16px', borderRadius: 20,
-    border: `1px solid ${active ? C + '60' : 'rgba(255,255,255,0.1)'}`,
-    background: active ? `${C}18` : 'rgba(255,255,255,0.04)',
-    color: active ? C : 'rgba(255,255,255,0.55)',
-    fontSize: 13, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-  });
+  const L: React.CSSProperties = { fontSize:11,fontWeight:700,color:'rgba(255,255,255,0.4)',textTransform:'uppercase',letterSpacing:'0.1em',marginBottom:6,display:'block' };
+  const I: React.CSSProperties = { width:'100%',borderRadius:10,border:'1px solid rgba(255,255,255,0.1)',background:'rgba(255,255,255,0.03)',padding:'12px 14px',fontSize:14,color:'white',outline:'none' };
+  const steps: Step[] = ['identity','physical','sport','medical'];
+  const stepIdx = steps.indexOf(step);
 
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-        * { font-family:'Inter',sans-serif; box-sizing:border-box; }
-        input:focus { outline:none; }
-        @keyframes spin { to { transform:rotate(360deg); } }
-      `}</style>
-      <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', background: '#080d1a', position: 'relative', overflow: 'hidden' }}>
+    <main style={{ minHeight:'100vh',background:'#05070d',color:'white',padding:'40px 20px' }}>
+      <div style={{ maxWidth:460,margin:'0 auto' }}>
+        <header style={{ marginBottom:28 }}>
+          <p style={{ fontSize:11,fontWeight:700,letterSpacing:'0.28em',color:C,textTransform:'uppercase',marginBottom:10 }}>
+            {branding.name!=='Altus Performance'?branding.name:'Altus Performance'}
+          </p>
+          <h1 style={{ fontSize:28,fontWeight:900,lineHeight:1.05 }}>Create your athlete profile</h1>
+          <p style={{ fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:8,lineHeight:1.5 }}>
+            This is yours &mdash; you own it and keep it up to date. Your coach selects you into a team once it&apos;s done.
+          </p>
+        </header>
 
-        <div style={{ position: 'absolute', top: -100, left: -100, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(59,130,246,0.2) 0%,transparent 70%)', pointerEvents: 'none' }} />
-
-        <div style={{ position: 'relative', zIndex: 10, width: '100%', maxWidth: 520, background: 'rgba(10,15,36,0.92)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, boxShadow: '0 32px 80px rgba(0,0,0,0.6)', overflow: 'hidden' }}>
-          <div style={{ height: 1, background: `linear-gradient(90deg,transparent,${C}90,${C},${C}90,transparent)` }} />
-          <div style={{ padding: '36px' }}>
-
-            {/* Header */}
-            {isEdit && (
-              <button type="button" onClick={() => router.push('/player/profile')}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.35)', cursor: 'pointer', marginBottom: 18, padding: 0 }}>
-                ← Cancel and back to profile
-              </button>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 28 }}>
-              <Image src={branding.logoUrl} alt={branding.abbreviation} width={46} height={46} style={{ objectFit: 'contain' }} />
-              <div>
-                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.18em', color: `${C}cc`, textTransform: 'uppercase', marginBottom: 2 }}>
-                  {isEdit ? 'Edit Profile' : 'Player Setup'}
-                </p>
-                <p style={{ fontSize: 18, fontWeight: 800, color: 'white', lineHeight: 1 }}>
-                  {isEdit ? 'Update your profile' : 'Complete your profile'}
-                </p>
-              </div>
-            </div>
-
-            {/* Form */}
-            {step === 'form' && (
-              <form onSubmit={handleSubmit}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-                  {/* Full name */}
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: 8 }}>Full Name</label>
-                    <input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="e.g. James van der Berg" required
-                      style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 14px', color: 'white', fontSize: 14, outline: 'none' }} />
-                    <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.28)', marginTop: 5 }}>Enter your name exactly as it appears in school records</p>
-                  </div>
-
-                  {/* Grade */}
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: 8 }}>Grade</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {GRADES.map(g => (
-                        <button key={g} type="button" onClick={() => setGrade(g)} style={pillStyle(grade === g)}>{g}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Sports */}
-                  <div>
-                    <label style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.6)', display: 'block', marginBottom: 8 }}>Sports I Play</label>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                      {SPORTS.map(s => (
-                        <button key={s} type="button" onClick={() => toggleSport(s)} style={pillStyle(sports.includes(s))}>{s}</button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {error && <p style={{ fontSize: 13, color: '#f87171', textAlign: 'center', margin: 0 }}>{error}</p>}
-
-                  <button type="submit" style={{ width: '100%', border: 'none', borderRadius: 10, padding: '14px', background: `linear-gradient(135deg,#2563eb,${C})`, boxShadow: `0 8px 28px ${C}40`, color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    {isEdit ? 'Save Changes' : 'Continue'}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.5} style={{ width: 14, height: 14 }}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* Matching */}
-            {step === 'matching' && (
-              <div style={{ textAlign: 'center', padding: '32px 0' }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', border: `3px solid ${C}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', margin: '0 auto 14px' }} />
-                <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.55)' }}>Searching for your athlete record...</p>
-              </div>
-            )}
-
-            {/* Matched */}
-            {step === 'matched' && (
-              <div>
-                <div style={{ background: `${C}10`, border: `1px solid ${C}25`, borderRadius: 12, padding: '12px 14px', marginBottom: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={2} style={{ width: 16, height: 16, flexShrink: 0 }}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
-                  <p style={{ fontSize: 13, color: C, fontWeight: 600 }}>
-                    {matches.length === 1 ? 'We found a match — is this you?' : `We found ${matches.length} possible matches`}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                  {matches.map(m => (
-                    <button key={m.id} onClick={() => saveProfile(m.id)}
-                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', cursor: 'pointer', textAlign: 'left' }}
-                      onMouseOver={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-                      onMouseOut={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}>
-                      <div>
-                        <p style={{ fontSize: 14, fontWeight: 700, color: 'white', marginBottom: 2 }}>{m.full_name}</p>
-                        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{m.team} · {m.sport}</p>
-                      </div>
-                      <svg viewBox="0 0 24 24" fill="none" stroke={C} strokeWidth={2.5} style={{ width: 15, height: 15 }}><path d="M5 12h14M12 5l7 7-7 7" /></svg>
-                    </button>
-                  ))}
-                </div>
-                <button onClick={() => saveProfile(null)} style={{ width: '100%', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer' }}>
-                  None of these — continue without linking
-                </button>
-              </div>
-            )}
-
-            {/* No match */}
-            {step === 'nomatch' && (
-              <div>
-                <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 16 }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 4 }}>No athlete record found yet</p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                    No problem — your profile is ready. Once your coach adds you to the system your personal stats will appear automatically.
-                  </p>
-                </div>
-                <button onClick={() => saveProfile(null)} style={{ width: '100%', border: 'none', borderRadius: 10, padding: '14px', background: `linear-gradient(135deg,#2563eb,${C})`, boxShadow: `0 8px 28px ${C}40`, color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
-                  Go to my profile
-                </button>
-              </div>
-            )}
-
+        {step!=='done' && step!=='saving' && (
+          <div style={{ display:'flex',gap:6,marginBottom:26 }}>
+            {steps.map((s,i)=>(<div key={s} style={{ flex:1,height:3,borderRadius:2,background:i<=stepIdx?C:'rgba(255,255,255,0.1)',transition:'background .3s' }}/>))}
           </div>
-        </div>
-      </main>
-    </>
+        )}
+
+        {error && <div style={{ marginBottom:16,padding:'11px 14px',borderRadius:10,background:'rgba(248,113,113,0.1)',border:'1px solid rgba(248,113,113,0.25)',fontSize:13,color:'#fca5a5' }}>{error}</div>}
+
+        {step==='identity' && (
+          <div>
+            <div style={{ marginBottom:16 }}><label style={L}>Full name</label>
+              <input style={I} value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Your full name"/></div>
+            <div style={{ marginBottom:16 }}><label style={L}>Date of birth</label>
+              <input style={I} type="date" value={dob} onChange={e=>setDob(e.target.value)}/>
+              <p style={{ fontSize:11,color:'rgba(255,255,255,0.3)',marginTop:5 }}>Used to work out your age group (U14, U16&hellip;).</p></div>
+            <div style={{ marginBottom:16 }}><label style={L}>Grade</label>
+              <select style={I} value={grade} onChange={e=>setGrade(e.target.value)}>
+                <option value="">Select grade</option>{GRADES.map(g=><option key={g} value={g}>{g}</option>)}</select></div>
+            <div style={{ marginBottom:24 }}><label style={L}>School</label>
+              <select style={I} value={schoolId} onChange={e=>setSchoolId(e.target.value)}>
+                <option value="">Select your school</option>{schools.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
+            <Btn c={C} primary disabled={!fullName||!dob||!schoolId} onClick={()=>setStep('physical')}>Continue</Btn>
+          </div>
+        )}
+
+        {step==='physical' && (
+          <div>
+            <p style={{ fontSize:13,color:'rgba(255,255,255,0.45)',marginBottom:18,lineHeight:1.5 }}>
+              Your height and weight help your coach track your development. You can skip these and add them later.</p>
+            <div style={{ display:'flex',gap:12,marginBottom:24 }}>
+              <div style={{ flex:1 }}><label style={L}>Height (cm)</label>
+                <input style={I} type="number" value={heightCm} onChange={e=>setHeightCm(e.target.value)} placeholder="e.g. 172"/></div>
+              <div style={{ flex:1 }}><label style={L}>Weight (kg)</label>
+                <input style={I} type="number" value={weightKg} onChange={e=>setWeightKg(e.target.value)} placeholder="e.g. 65"/></div></div>
+            <div style={{ display:'flex',gap:10 }}>
+              <Btn c={C} onClick={()=>setStep('identity')}>Back</Btn>
+              <Btn c={C} primary onClick={()=>setStep('sport')}>Continue</Btn></div>
+          </div>
+        )}
+
+        {step==='sport' && (
+          <div>
+            <label style={L}>Your main sport</label>
+            <div style={{ display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginBottom:20 }}>
+              {SPORTS.map(s=>(<button key={s} onClick={()=>setSport(s.toLowerCase())}
+                style={{ padding:'13px',borderRadius:10,fontSize:13,fontWeight:600,cursor:'pointer',
+                  border: sport===s.toLowerCase()?`1px solid ${C}`:'1px solid rgba(255,255,255,0.1)',
+                  background: sport===s.toLowerCase()?`${C}1f`:'rgba(255,255,255,0.02)',
+                  color: sport===s.toLowerCase()?'white':'rgba(255,255,255,0.55)' }}>{s}</button>))}</div>
+            <div style={{ marginBottom:24 }}><label style={L}>Position <span style={{ color:'rgba(255,255,255,0.25)' }}>(optional)</span></label>
+              <input style={I} value={position} onChange={e=>setPosition(e.target.value)} placeholder="e.g. Midfield, Fly-half"/></div>
+            <div style={{ display:'flex',gap:10 }}>
+              <Btn c={C} onClick={()=>setStep('physical')}>Back</Btn>
+              <Btn c={C} primary disabled={!sport} onClick={()=>setStep('medical')}>Continue</Btn></div>
+          </div>
+        )}
+
+        {step==='medical' && (
+          <div>
+            <div style={{ padding:'13px 15px',borderRadius:11,background:`${C}12`,border:`1px solid ${C}30`,marginBottom:18 }}>
+              <p style={{ fontSize:13,fontWeight:700,color:'white',marginBottom:4 }}>Medical &amp; emergency info</p>
+              <p style={{ fontSize:12,color:'rgba(255,255,255,0.5)',lineHeight:1.55 }}>
+                Private and optional, but important for your safety. Only the head of your sport and the head of sport can see the detail &mdash; your regular coach only sees that you have a note, not what it says.</p></div>
+            {([['conditions','Medical conditions','Asthma, diabetes, epilepsy\u2026'],['allergies','Allergies','e.g. penicillin, bee stings'],['medications','Medications','Anything you take regularly'],['injuryHistory','Injury history','Past injuries a coach should know about']] as const).map(([k,label,ph])=>(
+              <div key={k} style={{ marginBottom:13 }}><label style={L}>{label}</label>
+                <input style={I} value={(med as any)[k]} onChange={e=>setMed(m=>({ ...m,[k]:e.target.value }))} placeholder={ph}/></div>))}
+            <div style={{ display:'flex',gap:12,marginBottom:13 }}>
+              <div style={{ flex:1 }}><label style={L}>Emergency contact</label>
+                <input style={I} value={med.emergencyContactName} onChange={e=>setMed(m=>({ ...m,emergencyContactName:e.target.value }))} placeholder="Name"/></div>
+              <div style={{ flex:1 }}><label style={L}>&nbsp;</label>
+                <input style={I} value={med.emergencyContactPhone} onChange={e=>setMed(m=>({ ...m,emergencyContactPhone:e.target.value }))} placeholder="Phone"/></div></div>
+            <div style={{ display:'flex',gap:10,marginTop:14 }}>
+              <Btn c={C} onClick={()=>setStep('sport')}>Back</Btn>
+              <Btn c={C} primary onClick={submit}>Finish</Btn></div>
+          </div>
+        )}
+
+        {step==='saving' && <p style={{ textAlign:'center',padding:'40px 0',color:'rgba(255,255,255,0.4)',fontSize:14 }}>Creating your profile&hellip;</p>}
+
+        {step==='done' && (
+          <div style={{ textAlign:'center',padding:'20px 0' }}>
+            <div style={{ width:60,height:60,borderRadius:'50%',background:`${C}1f`,border:`2px solid ${C}`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px' }}>
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke={C} strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg></div>
+            <h2 style={{ fontSize:22,fontWeight:900,marginBottom:10 }}>You&apos;re all set</h2>
+            <p style={{ fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.6,maxWidth:360,margin:'0 auto 24px' }}>
+              Your profile is created. Your coach will select you into a team &mdash; once they do, your fixtures, results and stats appear automatically. You can start using the app now.</p>
+            <button onClick={()=>router.push('/player/profile')}
+              style={{ width:'100%',border:'none',borderRadius:11,padding:'14px',background:C,color:'#03060c',fontSize:15,fontWeight:700,cursor:'pointer' }}>Go to my profile</button>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
