@@ -20,7 +20,7 @@ export async function GET() {
   try {
     const { data } = await getAdmin()
       .from('schools')
-      .select('name,short_name,abbreviation,slug,primary_color,logo_url')
+      .select('id,name,short_name,abbreviation,slug,primary_color,logo_url')
       .eq('is_active', true)
       .order('name');
     return NextResponse.json({ schools: data || [] });

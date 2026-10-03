@@ -41,19 +41,25 @@ export async function POST(req: NextRequest) {
   // ── Validate the essentials ──────────────────────────────────────────────
   const fullName = String(body.fullName || '').trim();
   const dob = String(body.dob || '').trim();
-  const schoolId = String(body.schoolId || '').trim();
+  // Accept either a slug (what /api/school/list returns) or a raw id.
+  const schoolRef = String(body.schoolId || body.schoolSlug || '').trim();
   const sport = String(body.sport || '').trim();
 
   if (!fullName) return NextResponse.json({ error: 'Please enter your full name.' }, { status: 400 });
   if (!dob) return NextResponse.json({ error: 'Please enter your date of birth.' }, { status: 400 });
-  if (!schoolId) return NextResponse.json({ error: 'Please choose your school.' }, { status: 400 });
+  if (!schoolRef) return NextResponse.json({ error: 'Please choose your school.' }, { status: 400 });
   if (!sport) return NextResponse.json({ error: 'Please choose your main sport.' }, { status: 400 });
 
-  // The school must exist and be active — no registering into a made-up school.
-  const { data: school } = await db.from('schools').select('id,is_active').eq('id', schoolId).maybeSingle();
+  // Resolve by id if it looks like a uuid, otherwise by slug.
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(schoolRef);
+  const { data: school } = await db.from('schools')
+    .select('id,is_active')
+    .eq(isUuid ? 'id' : 'slug', schoolRef)
+    .maybeSingle();
   if (!school || school.is_active !== true) {
     return NextResponse.json({ error: 'That school is not available.' }, { status: 400 });
   }
+  const schoolId = school.id;
 
   const ageGroup = calcAgeGroup(dob);
 
