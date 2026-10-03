@@ -28,57 +28,74 @@ const I = {
   menu:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
   close:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M18 6L6 18M6 6l12 12"/></svg>,
   logout:  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-4 w-4"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>,
+  retest:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M3 2v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>,
+  video:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  clock:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
+  bell:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>,
+  sheet:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M9 2h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12l2 2 4-4"/></svg>,
   bolt:    <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>,
 };
 
-const COACH_NAV: NavItem[] = [
-  { href:'/dashboard',   label:'My Team',    icon:I.grid   },
-  { href:'/athletes',    label:'Athletes',   icon:I.users  },
-  { href:'/enrolment',   label:'New Players',icon:I.newplayer },
-  { href:'/attendance',  label:'Attendance', icon:I.check  },
-  { href:'/performance', label:'Testing',    icon:I.pulse  },
-  { href:'/retest',      label:'Retest Due', icon:I.pulse  },
-  { href:'/video',       label:'Video',      icon:I.pulse  },
-  { href:'/teams',       label:'Team Info',  icon:I.teams  },
+type NavGroup = { heading: string | null; items: NavItem[] };
+
+// ── Grouped navigation ───────────────────────────────────────────────────────
+// The old nav was a flat list of up to 17 items, which is why it read as a
+// wall. Now the 4 things a coach touches daily sit ungrouped at the top, and
+// everything else is filed under a heading so the eye isn't asked to scan 17
+// peers. Items a given role can't use simply don't appear.
+
+// What EVERY coach gets — the daily spine.
+const DAILY: NavItem[] = [
+  { href:'/dashboard',   label:'My Team',     icon:I.grid     },
+  { href:'/attendance',  label:'Attendance',  icon:I.check    },
+  { href:'/selection',   label:'Selection',   icon:I.sheet    },
+  { href:'/performance', label:'Testing',     icon:I.pulse    },
 ];
 
-const HOH_NAV: NavItem[] = [
-  { href:'/dashboard',       label:'Dashboard',   icon:I.grid   },
-  { href:'/athletes',        label:'Athletes',    icon:I.users  },
-  { href:'/enrolment',       label:'New Players', icon:I.newplayer },
-  { href:'/teams',           label:'Teams',       icon:I.team   },
-  { href:'/attendance',      label:'Attendance',  icon:I.check  },
-  { href:'/performance',     label:'Performance', icon:I.pulse  },
-  { href:'/retest',          label:'Retest Due',  icon:I.pulse  },
-  { href:'/squad',           label:'Squad',       icon:I.squad  },
-  { href:'/portal-admin',    label:'Portal',      icon:I.globe  },
-  { href:'/notifications',    label:'Notify',      icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> },
-  { href:'/results',         label:'Results',     icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> },
-  { href:'/video',           label:'Video',       icon:I.pulse  },
-  { href:'/claims',          label:'Requests',    icon:I.users  },
-  { href:'/coaches',         label:'Coaches',     icon:I.star   },
-  { href:'/assistant',       label:'AI Assistant',icon:I.chat   },
-  { href:'/ai-tools',        label:'AI Tools',    icon:I.brain  },
-  { href:'/export/attendance',label:'Export',     icon:I.export },
+// Managing the squad.
+const SQUAD: NavItem[] = [
+  { href:'/athletes',    label:'Athletes',    icon:I.users    },
+  { href:'/enrolment',   label:'New Players', icon:I.newplayer},
+  { href:'/retest',      label:'Retest Due',  icon:I.retest   },
+  { href:'/video',       label:'Video',       icon:I.video    },
+  { href:'/teams',       label:'Team Info',   icon:I.teams    },
 ];
 
-const COACH_TABS: NavItem[] = [
-  { href:'/dashboard',   label:'My Team',    icon:I.grid   },
-  { href:'/attendance',  label:'Attendance', icon:I.check  },
-  { href:'/performance', label:'Testing',    icon:I.pulse  },
-  { href:'/athletes',    label:'Athletes',   icon:I.users  },
-  { href:'/enrolment',   label:'New Players',icon:I.newplayer },
-  { href:'/teams',       label:'Team Info',  icon:I.teams  },
+// Head-of-sport only: publishing to parents + department management.
+const PUBLISH: NavItem[] = [
+  { href:'/portal-admin',label:'Portal',      icon:I.globe    },
+  { href:'/results',     label:'Results',     icon:I.clock    },
+  { href:'/notifications',label:'Notify',     icon:I.bell     },
+];
+const MANAGE: NavItem[] = [
+  { href:'/claims',      label:'Requests',    icon:I.users    },
+  { href:'/coaches',     label:'Coaches',     icon:I.star     },
+  { href:'/export/attendance', label:'Export',icon:I.export   },
+];
+const TOOLS: NavItem[] = [
+  { href:'/assistant',   label:'AI Assistant',icon:I.chat     },
+  { href:'/ai-tools',    label:'AI Tools',    icon:I.brain    },
 ];
 
-const HOH_TABS: NavItem[] = [
-  { href:'/dashboard',   label:'Dashboard',  icon:I.grid   },
-  { href:'/athletes',    label:'Athletes',   icon:I.users  },
-  { href:'/enrolment',   label:'New Players',icon:I.newplayer },
-  { href:'/attendance',  label:'Attendance', icon:I.check  },
-  { href:'/performance', label:'Performance',icon:I.pulse  },
-  { href:'/teams',       label:'Teams',      icon:I.team   },
-];
+function buildGroups(isHOH: boolean, canLightning: boolean): NavGroup[] {
+  const daily = canLightning
+    ? [DAILY[0], { href:'/lightning', label:'Lightning Alert', icon:I.bolt }, ...DAILY.slice(1)]
+    : DAILY;
+  const groups: NavGroup[] = [
+    { heading: null, items: daily },
+    { heading: 'Squad', items: SQUAD },
+  ];
+  if (isHOH) {
+    groups.push({ heading: 'Publish', items: PUBLISH });
+    groups.push({ heading: 'Manage', items: MANAGE });
+  }
+  groups.push({ heading: 'Tools', items: TOOLS });
+  return groups;
+}
+
+// Mobile bottom tabs — only the daily spine, same for everyone.
+const COACH_TABS: NavItem[] = DAILY;
+const HOH_TABS: NavItem[] = DAILY;
 
 export default function CoachNav() {
   const pathname = usePathname();
@@ -88,12 +105,9 @@ export default function CoachNav() {
   const { branding } = useBranding();
 
   const isHOH = isHOS || isMIC || isOwner;
-  const baseNav  = isHOH ? HOH_NAV : COACH_NAV;
-  // Lightning alert trigger — owner + head of sport only (matches /lightning's
-  // own access check), inserted right after Dashboard so it's impossible to miss.
-  const navItems = (isOwner || isHOS)
-    ? [baseNav[0], { href:'/lightning', label:'Lightning Alert', icon:I.bolt }, ...baseNav.slice(1)]
-    : baseNav;
+  const groups = buildGroups(isHOH, isOwner || isHOS);
+  // Flat list still needed for the mobile "more" sheet and active-state checks.
+  const navItems = groups.flatMap(g => g.items);
   const tabs = isHOH ? HOH_TABS : COACH_TABS;
 
   const sportLabel = sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports';
@@ -146,25 +160,37 @@ export default function CoachNav() {
           </Link>
         </div>
 
-        {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          {navItems.map(item => {
-            const active = isActive(item.href);
-            return (
-              <Link key={item.href} href={item.href}
-                className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150"
-                style={{
-                  background: active ? 'var(--sport-color-dim)' : 'transparent',
-                  color: active ? 'var(--sport-color)' : 'rgba(255,255,255,0.45)',
-                  borderLeft: active ? '2px solid var(--sport-color)' : '2px solid transparent',
-                }}
-                onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.8)'; } }}
-                onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='transparent'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'; } }}>
-                <span style={{opacity: active ? 1 : 0.6}}>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
+        {/* Grouped nav — daily items first (no heading), then sections. */}
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
+          {groups.map((group, gi) => (
+            <div key={gi} className={gi > 0 ? 'mt-5' : ''}>
+              {group.heading && (
+                <p className="px-3 mb-1.5 text-[9.5px] font-bold uppercase tracking-[0.18em]"
+                   style={{ color: 'rgba(255,255,255,0.22)' }}>
+                  {group.heading}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map(item => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link key={item.href} href={item.href}
+                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150"
+                      style={{
+                        background: active ? 'var(--sport-color-dim)' : 'transparent',
+                        color: active ? 'var(--sport-color)' : 'rgba(255,255,255,0.45)',
+                        borderLeft: active ? '2px solid var(--sport-color)' : '2px solid transparent',
+                      }}
+                      onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.8)'; } }}
+                      onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='transparent'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'; } }}>
+                      <span style={{opacity: active ? 1 : 0.6}}>{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* User + logout */}
