@@ -12,7 +12,7 @@ type NavItem = { href: string; label: string; icon: React.ReactNode };
 
 // ── Icons ────────────────────────────────────────────────────
 const I = {
-  sheet:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M9 2h6a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12l2 2 4-4"/></svg>,
+  newplayer: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>,
   grid:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
   users:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><circle cx="8" cy="7" r="3"/><circle cx="16" cy="7" r="3"/><path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6"/></svg>,
   check:   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} className="h-[18px] w-[18px]"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>,
@@ -34,8 +34,8 @@ const I = {
 const COACH_NAV: NavItem[] = [
   { href:'/dashboard',   label:'My Team',    icon:I.grid   },
   { href:'/athletes',    label:'Athletes',   icon:I.users  },
+  { href:'/enrolment',   label:'New Players',icon:I.newplayer },
   { href:'/attendance',  label:'Attendance', icon:I.check  },
-  { href:'/selection',   label:'Selection',  icon:I.sheet  },
   { href:'/performance', label:'Testing',    icon:I.pulse  },
   { href:'/retest',      label:'Retest Due', icon:I.pulse  },
   { href:'/video',       label:'Video',      icon:I.pulse  },
@@ -45,9 +45,9 @@ const COACH_NAV: NavItem[] = [
 const HOH_NAV: NavItem[] = [
   { href:'/dashboard',       label:'Dashboard',   icon:I.grid   },
   { href:'/athletes',        label:'Athletes',    icon:I.users  },
+  { href:'/enrolment',       label:'New Players', icon:I.newplayer },
   { href:'/teams',           label:'Teams',       icon:I.team   },
   { href:'/attendance',      label:'Attendance',  icon:I.check  },
-  { href:'/selection',       label:'Selection',   icon:I.sheet  },
   { href:'/performance',     label:'Performance', icon:I.pulse  },
   { href:'/retest',          label:'Retest Due',  icon:I.pulse  },
   { href:'/squad',           label:'Squad',       icon:I.squad  },
@@ -65,15 +65,16 @@ const HOH_NAV: NavItem[] = [
 const COACH_TABS: NavItem[] = [
   { href:'/dashboard',   label:'My Team',    icon:I.grid   },
   { href:'/attendance',  label:'Attendance', icon:I.check  },
-  { href:'/selection',   label:'Selection',  icon:I.sheet  },
   { href:'/performance', label:'Testing',    icon:I.pulse  },
   { href:'/athletes',    label:'Athletes',   icon:I.users  },
+  { href:'/enrolment',   label:'New Players',icon:I.newplayer },
   { href:'/teams',       label:'Team Info',  icon:I.teams  },
 ];
 
 const HOH_TABS: NavItem[] = [
   { href:'/dashboard',   label:'Dashboard',  icon:I.grid   },
   { href:'/athletes',    label:'Athletes',   icon:I.users  },
+  { href:'/enrolment',   label:'New Players',icon:I.newplayer },
   { href:'/attendance',  label:'Attendance', icon:I.check  },
   { href:'/performance', label:'Performance',icon:I.pulse  },
   { href:'/teams',       label:'Teams',      icon:I.team   },
