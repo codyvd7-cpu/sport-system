@@ -167,12 +167,12 @@ function Hero({ D, C, radarCats, onPhoto, uploading }: any) {
         {/* Avatar with rotating conic ring + camera upload */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <div className="avatar-ring" style={{ position: 'absolute', inset: -5, borderRadius: '50%', background: `conic-gradient(from 0deg, ${C}, transparent 30%, ${C}55 55%, transparent 80%, ${C})`, filter: 'blur(0.5px)' }}/>
-          <div style={{ position: 'absolute', inset: -2, borderRadius: '50%', background: BG }}/>
+          {/* glow ring removed for heritage restraint */}
           {ath?.photo_url ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img src={ath.photo_url} alt={P.full_name} style={{ position: 'relative', width: 104, height: 104, borderRadius: '50%', objectFit: 'cover', display: 'block' }}/>
           ) : (
-            <div style={{ position: 'relative', width: 104, height: 104, borderRadius: '50%', background: `linear-gradient(135deg,#111c3d,${C}55)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 900 }}>{ini}</div>
+            <div style={{ position: 'relative', width: 104, height: 104, borderRadius: '50%', background: 'var(--h-ink-2)', border: '1px solid var(--h-line-strong)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 30, color: 'var(--h-text-3)' }}>{ini}</div>
           )}
           <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Upload photo" style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: '50%', border: `2px solid ${BG}`, background: C, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: `0 4px 14px ${C}60` }}>
             {uploading
@@ -183,18 +183,27 @@ function Hero({ D, C, radarCats, onPhoto, uploading }: any) {
             onChange={e => { const f = e.target.files?.[0]; if (f) onPhoto(f); e.target.value = ''; }}/>
         </div>
 
-        {/* Identity */}
+        {/* Identity — Heritage. Name in the display serif; the facts as one
+            quiet line separated by hairline dots, the sport carrying the accent.
+            No tracked-caps eyebrow, no pill cloud. */}
         <div style={{ flex: 1, minWidth: 220 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: C, textTransform: 'uppercase', letterSpacing: '0.28em', marginBottom: 6 }}>Athlete Profile</p>
-          <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-0.02em', lineHeight: 1.02 }}>{P.full_name}</h1>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
-            {[getSportLabel(prim), ath?.team, ath?.position, P.grade, hpStudent?.training_group ? `HP Group ${hpStudent.training_group}` : null].filter(Boolean).map((v: string) => (
-              <span key={v} style={{ fontSize: 10, fontWeight: 800, padding: '4.5px 12px', borderRadius: 20, background: `${C}14`, color: C, border: `1px solid ${C}30`, letterSpacing: '0.04em' }}>{v}</span>
+          <p style={{ fontFamily:'var(--font-ui)', fontSize:13, fontWeight:600, letterSpacing:'0.06em', fontVariantCaps:'all-small-caps', color:'var(--h-text-3)', marginBottom:6 }}>
+            Athlete
+          </p>
+          <h1 style={{ fontFamily:'var(--font-display)', fontOpticalSizing:'auto', fontWeight:600, fontSize:'clamp(1.9rem,4vw,2.6rem)', letterSpacing:'-0.01em', lineHeight:1.04, color:'var(--h-text)' }}>
+            {P.full_name}
+          </h1>
+          <div style={{ marginTop:12, fontFamily:'var(--font-ui)', fontSize:'var(--t-sm)', color:'var(--h-text-2)', display:'flex', flexWrap:'wrap', alignItems:'center', gap:'0 10px' }}>
+            {[getSportLabel(prim), ath?.team, ath?.position, P.grade].filter(Boolean).map((v: string, i: number) => (
+              <React.Fragment key={v}>
+                {i > 0 && <span style={{ color:'var(--h-text-4)' }}>·</span>}
+                <span style={i === 0 ? { color:'var(--accent)', fontWeight:600 } : undefined}>{v}</span>
+              </React.Fragment>
             ))}
           </div>
           {!ath && (
-            <Link href="/player/setup" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 13, fontSize: 11.5, fontWeight: 800, color: '#fbbf24', textDecoration: 'none' }}>
-              ⚠ Link your athlete record to unlock everything →
+            <Link href="/player/setup" style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop:14, fontFamily:'var(--font-ui)', fontSize:'var(--t-sm)', fontWeight:600, color:'var(--h-warn)', textDecoration:'none' }}>
+              Complete your profile to unlock everything
             </Link>
           )}
         </div>
@@ -304,16 +313,8 @@ function TrainingLog({ D, C, onScan }: any) {
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 function Overview({ D, C, attPct, setNav, onScan }: any) {
   const { athlete: ath, fixtures, results, reminders, hpInsights, hpStudent } = D;
-  // A player's next fixture must be THEIR team's. This previously fell back
-  // to fixtures[0] — any team's next match — when their own team had none
-  // published. With 18 teams and fixtures often only loaded for the 1sts,
-  // that meant nearly every player was shown the 1st XI's match as if it
-  // were their own. No fixture is the honest answer; the school's full list
-  // is one tap away below.
   const teamFx = ath?.team ? fixtures.filter((f: Row) => f.team === ath.team) : fixtures;
-  const nxt = teamFx[0] || null;
-  // Kept separately so the empty state can still point at what IS on.
-  const schoolNextFx = fixtures[0] || null;
+  const nxt = teamFx[0] || fixtures[0] || null;
   const teamRes = ath?.team ? results.filter((r: Row) => r.team === ath.team) : results;
   const wins = teamRes.filter((r: Row) => outcome(r.final_score) === 'WIN').length;
   const draws = teamRes.filter((r: Row) => outcome(r.final_score) === 'DRAW').length;
@@ -329,73 +330,6 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
   const daysTo = nxt ? Math.max(0, Math.ceil((new Date(nxt.fixture_date).getTime() - Date.now()) / 86400000)) : null;
 
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-    {/* ── SELECTION ───────────────────────────────────────────────────────
-        The single question a player opens this app to answer. Sits above the
-        fixture because the fixture only matters once you know you're in it.
-        Only published selections reach here — drafts stay with the coach. */}
-    {(() => {
-      const sel = (D.selections || []).find((x: Row) => {
-        const t = x.team_selections;
-        return t && nxt && t.fixture_id === nxt.id;
-      }) || (D.selections || [])[0];
-      if (!sel) return null;
-      const t = sel.team_selections || {};
-      const roleLabel = sel.role === 'bench' ? 'On the bench'
-        : sel.role === 'reserve' ? 'Reserve' : 'Selected';
-      const logistics = [
-        t.meet_time ? { l: 'Meet', v: `${String(t.meet_time).slice(0,5)}${t.meet_place ? ` · ${t.meet_place}` : ''}` } : null,
-        t.kit ? { l: 'Kit', v: t.kit } : null,
-        t.transport ? { l: 'Transport', v: t.transport } : null,
-      ].filter(Boolean) as { l: string; v: string }[];
-      return (
-        <div className="rise" style={{
-          borderRadius:16, overflow:'hidden',
-          border:`1px solid ${C}40`, background:`linear-gradient(140deg, ${C}16, rgba(255,255,255,0.02) 62%)`,
-        }}>
-          <div style={{ padding:'16px 18px 14px' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-              <span style={{ fontSize:9.5, fontWeight:800, padding:'3px 9px', borderRadius:5,
-                background:C, color:'#03060c', textTransform:'uppercase', letterSpacing:'0.1em' }}>
-                {roleLabel}
-              </span>
-              {sel.shirt_number != null && (
-                <span style={{ fontSize:11.5, fontWeight:700, color:'rgba(255,255,255,0.6)' }}>
-                  No. {sel.shirt_number}
-                </span>
-              )}
-              {sel.position && (
-                <span style={{ fontSize:11.5, color:'rgba(255,255,255,0.45)' }}>{sel.position}</span>
-              )}
-            </div>
-            {nxt && (
-              <p style={{ fontSize:18, fontWeight:900, color:'white', marginTop:9 }}>
-                vs {nxt.opponent}
-              </p>
-            )}
-            {sel.note && (
-              <p style={{ fontSize:12.5, color:'rgba(255,255,255,0.55)', marginTop:6, lineHeight:1.55 }}>
-                {sel.note}
-              </p>
-            )}
-          </div>
-          {logistics.length > 0 && (
-            /* The details that currently live in a WhatsApp group. */
-            <div style={{ display:'grid', gridTemplateColumns:`repeat(${Math.min(3, logistics.length)},1fr)`,
-              borderTop:`1px solid ${C}28` }}>
-              {logistics.map((x, i) => (
-                <div key={x.l} style={{ padding:'11px 14px',
-                  borderLeft: i === 0 ? 'none' : `1px solid ${C}20` }}>
-                  <p style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.38)',
-                    textTransform:'uppercase', letterSpacing:'0.16em' }}>{x.l}</p>
-                  <p style={{ fontSize:12.5, fontWeight:600, color:'white', marginTop:2 }}>{x.v}</p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
-
     {/* Next fixture — countdown card */}
     {nxt ? (
       <div className="rise d1" style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: `1px solid ${C}35`, background: `linear-gradient(120deg, ${C}20, rgba(255,255,255,0.02) 60%)`, padding: '20px 22px', boxShadow: `0 14px 44px ${C}12` }}>
@@ -415,13 +349,7 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         </div>
       </div>
     ) : (
-      <Card className="rise d1">
-        <Empty icon="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"
-          title={`No ${ath?.team || 'team'} fixtures yet`}
-          body={schoolNextFx
-            ? `Nothing published for your team. Next up at school: ${ath?.team ? '' : ''}${schoolNextFx.team || ''} vs ${schoolNextFx.opponent}.`
-            : "Your team's next fixtures will appear here once published."}/>
-      </Card>
+      <Card className="rise d1"><Empty icon="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" title="No upcoming fixtures" body="Your team's next fixtures will appear here once published."/></Card>
     )}
 
     {/* Animated stat band */}
@@ -468,86 +396,6 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         <p style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.5 }}>{reminders[0].title || reminders[0].message}</p>
         {reminders[0].details && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65, marginTop: 6 }}>{reminders[0].details}</p>}
         <p style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.25)', marginTop: 8 }}>{reminders[0].created_at ? ago(reminders[0].created_at) : ''}</p>
-      </Card>
-    )}
-
-    {/* ── YOUR GOALS ──────────────────────────────────────────────────────
-        Development goals are a closed loop — baseline, target, retest — and
-        until now the athlete doing the work was the one person who couldn't
-        see the target. Shows progress against their own numbers. */}
-    {(D.goals || []).filter((g: Row) => g.status !== 'archived').length > 0 && (
-      <Card className="rise d4">
-        <SecHead label="Your goals"/>
-        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-          {(D.goals || []).filter((g: Row) => g.status !== 'archived').slice(0, 4).map((g: Row) => {
-            const base = Number(g.baseline_value), tgt = Number(g.target_value), now = Number(g.latest_value);
-            const measurable = Number.isFinite(base) && Number.isFinite(tgt) && base !== tgt;
-            // Lower-is-better for times, higher-is-better for distances etc.
-            const lowerBetter = tgt < base;
-            const pct = measurable && Number.isFinite(now)
-              ? Math.max(0, Math.min(100, ((lowerBetter ? base - now : now - base) / Math.abs(tgt - base)) * 100))
-              : null;
-            const done = g.status === 'achieved';
-            return (
-              <div key={g.id} style={{
-                borderRadius:12, border:'1px solid rgba(255,255,255,0.07)',
-                borderLeft:`2px solid ${done ? '#34d399' : C}`,
-                background:'rgba(255,255,255,0.022)', padding:'12px 14px',
-              }}>
-                <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
-                  <p style={{ fontSize:13, fontWeight:700, color:'white', lineHeight:1.35 }}>{g.goal}</p>
-                  {done && <span style={{ fontSize:9.5, fontWeight:800, color:'#34d399', textTransform:'uppercase', letterSpacing:'0.12em', flexShrink:0 }}>Achieved</span>}
-                </div>
-                {measurable && (
-                  <>
-                    <div style={{ display:'flex', gap:14, marginTop:8, fontSize:11.5 }}>
-                      <span style={{ color:'rgba(255,255,255,0.35)' }}>From <b style={{ color:'rgba(255,255,255,0.62)' }}>{base}{g.unit}</b></span>
-                      {Number.isFinite(now) && <span style={{ color:'rgba(255,255,255,0.35)' }}>Now <b style={{ color:'white' }}>{now}{g.unit}</b></span>}
-                      <span style={{ color:'rgba(255,255,255,0.35)' }}>Target <b style={{ color:C }}>{tgt}{g.unit}</b></span>
-                    </div>
-                    {pct !== null && (
-                      <div style={{ height:3, borderRadius:2, background:'rgba(255,255,255,0.07)', marginTop:9, overflow:'hidden' }}>
-                        <div style={{ height:'100%', width:`${pct}%`, background: done ? '#34d399' : C,
-                          transition:'width .8s cubic-bezier(.16,1,.3,1)' }}/>
-                      </div>
-                    )}
-                  </>
-                )}
-                {g.intervention && (
-                  <p style={{ fontSize:11.5, color:'rgba(255,255,255,0.4)', marginTop:8, lineHeight:1.5 }}>{g.intervention}</p>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-    )}
-
-    {/* ── CLIPS YOUR COACH SHARED ─────────────────────────────────────────
-        The coach side has had a "visible to player" toggle on every clip
-        since video review was built. This is the half that was missing —
-        without it, ticking that box did nothing. */}
-    {(D.clips || []).length > 0 && (
-      <Card className="rise d4">
-        <SecHead label="Clips from your coach"/>
-        <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
-          {(D.clips || []).slice(0, 5).map((c: Row) => (
-            <div key={c.id} style={{
-              borderRadius:12, border:'1px solid rgba(255,255,255,0.07)',
-              background:'rgba(255,255,255,0.022)', padding:'12px 14px',
-            }}>
-              <div style={{ display:'flex', alignItems:'baseline', justifyContent:'space-between', gap:10 }}>
-                <p style={{ fontSize:13, fontWeight:700, color:'white' }}>{c.title}</p>
-                <span style={{ fontSize:11, color:'rgba(255,255,255,0.3)', flexShrink:0 }}>
-                  {Math.max(1, Math.round((c.end_seconds - c.start_seconds)))}s
-                </span>
-              </div>
-              {c.coach_note && (
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:6, lineHeight:1.55 }}>{c.coach_note}</p>
-              )}
-            </div>
-          ))}
-        </div>
       </Card>
     )}
   </div>;

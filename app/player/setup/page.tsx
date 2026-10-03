@@ -86,10 +86,10 @@ export default function PlayerSetupPage() {
     <main style={{ minHeight:'100vh',background:'#05070d',color:'white',padding:'40px 20px' }}>
       <div style={{ maxWidth:460,margin:'0 auto' }}>
         <header style={{ marginBottom:28 }}>
-          <p style={{ fontSize:11,fontWeight:700,letterSpacing:'0.28em',color:C,textTransform:'uppercase',marginBottom:10 }}>
+          <p style={{ fontFamily:'var(--font-ui)', fontSize:13,fontWeight:600,letterSpacing:'0.06em',fontVariantCaps:'all-small-caps',color:'var(--h-text-3)',marginBottom:10 }}>
             {branding.name!=='Altus Performance'?branding.name:'Altus Performance'}
           </p>
-          <h1 style={{ fontSize:28,fontWeight:900,lineHeight:1.05 }}>Create your athlete profile</h1>
+          <h1 style={{ fontFamily:'var(--font-display)', fontOpticalSizing:'auto', fontWeight:600, fontSize:'clamp(1.8rem,4vw,2.3rem)', lineHeight:1.05, letterSpacing:'-0.01em', color:'var(--h-text)' }}>Create your athlete profile</h1>
           <p style={{ fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:8,lineHeight:1.5 }}>
             This is yours &mdash; you own it and keep it up to date. Your coach selects you into a team once it&apos;s done.
           </p>
@@ -178,7 +178,7 @@ export default function PlayerSetupPage() {
           <div style={{ textAlign:'center',padding:'20px 0' }}>
             <div style={{ width:60,height:60,borderRadius:'50%',background:`${C}1f`,border:`2px solid ${C}`,display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px' }}>
               <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke={C} strokeWidth={2.5}><polyline points="20 6 9 17 4 12"/></svg></div>
-            <h2 style={{ fontSize:22,fontWeight:900,marginBottom:10 }}>You&apos;re all set</h2>
+            <h2 style={{ fontFamily:'var(--font-display)', fontWeight:600, fontSize:'1.6rem', marginBottom:10, color:'var(--h-text)' }}>You&apos;re all set</h2>
             <p style={{ fontSize:13.5,color:'rgba(255,255,255,0.5)',lineHeight:1.6,maxWidth:360,margin:'0 auto 24px' }}>
               Your profile is created. Your coach will select you into a team &mdash; once they do, your fixtures, results and stats appear automatically. You can start using the app now.</p>
             <button onClick={()=>router.push('/player/profile')}
