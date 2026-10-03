@@ -19,7 +19,6 @@ import ReturnToPlayPanel from '@/components/coach/ReturnToPlayPanel';
 import HPResultsPanel from '@/components/coach/HPResultsPanel';
 import AthleteVideoPanel from '@/components/coach/AthleteVideoPanel';
 import AthleteLoadPanel from '@/components/coach/AthleteLoadPanel';
-import { useRole } from '@/lib/useRole';
 
 type Row = Record<string, any>;
 type PageProps = { params: Promise<{ id: string }> };
@@ -29,6 +28,7 @@ function fStr(...v: any[]) { for (const x of v) if (typeof x==='string'&&x.trim(
 function fVal(...v: any[]) { for (const x of v) if (x!==null&&x!==undefined&&x!=='') return String(x); return ''; }
 function fNum(...v: any[]) { for (const x of v) { if (x===null||x===undefined||x==='') continue; const n=Number(x); if (!Number.isNaN(n)) return n; } return null; }
 function fDate(d?: string|null) { if (!d) return '—'; const dt=new Date(d); if (Number.isNaN(dt.getTime())) return '—'; return dt.toLocaleDateString('en-ZA',{day:'2-digit',month:'short',year:'numeric'}); }
+function Dot() { return <span style={{ color:'var(--h-text-4)' }}>·</span>; }
 function initials(name: string) { return name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase(); }
 
 const STATUS_STYLES: Record<string,string> = {
@@ -355,14 +355,12 @@ function SeasonStats({attendance,performance,matchResults,team,year,sportColor}:
 }
 
 export default function AthleteProfile({params}:PageProps) {
-  const { isOwner } = useRole();
   const { branding } = useBranding();
   const {id} = React.use(params);
   const router = useRouter();
   const {showToast} = useToast();
 
   const [rawAthlete, setRawAthlete] = React.useState<Row|null>(null);
-  const [signedPhoto, setSignedPhoto] = React.useState<string|null>(null);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [performance, setPerformance] = React.useState<Row[]>([]);
   const [notes, setNotes] = React.useState<Row[]>([]);
@@ -428,20 +426,6 @@ export default function AthleteProfile({params}:PageProps) {
     ]);
     if(aRes.data){
       setRawAthlete(aRes.data);
-      // player-photos is private — the stored value is a path, not a usable
-      // URL. Ask the server to sign it (same-school check happens there).
-      if (aRes.data?.photo_path || aRes.data?.photo_url) {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const r = await fetch('/api/photo/sign', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-            body: JSON.stringify({ athleteId: id }),
-          });
-          const d = await r.json();
-          setSignedPhoto(d.url || null);
-        } catch { setSignedPhoto(null); }
-      }
       setAvailability(aRes.data.availability||'Available');
       setEditName(fStr(aRes.data.full_name,aRes.data.name));
       setEditTeam(fStr(aRes.data.team));
@@ -558,33 +542,11 @@ export default function AthleteProfile({params}:PageProps) {
 
   async function setAvail(status:string) {
     const previous = availability;
-
-    // Routed through /api/athlete/status rather than writing the column
-    // directly. That endpoint was built to do three things together —
-    // update availability, append to athlete_status_history, and record a
-    // timeline event — but nothing ever called it, so every availability
-    // change was overwriting the previous value with no record kept.
-    // athlete_status_history sat at zero rows as a result.
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/athlete/status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json',
-          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ athleteId: id, status }),
-      });
-      if (!res.ok) throw new Error('status endpoint failed');
-    } catch {
-      // Availability is load-bearing for selection and the coach inbox, so a
-      // failure here must not leave the coach thinking it saved. Fall back to
-      // the direct write and still log the event.
-      await supabase.from('athletes').update({availability:status}).eq('id',id);
-      if (previous !== status) {
-        void logEvent('availability_changed', `Availability: ${previous} \u2192 ${status}`, {from:previous,to:status});
-      }
-    }
-
+    await supabase.from('athletes').update({availability:status}).eq('id',id);
     setAvailability(status); showToast(`Status: ${status}`);
+    if (previous !== status) {
+      void logEvent('availability_changed', `Availability: ${previous} \u2192 ${status}`, {from:previous,to:status});
+    }
   }
 
   async function addAttendance(e:React.FormEvent) {
@@ -659,32 +621,22 @@ export default function AthleteProfile({params}:PageProps) {
         </Link>
 
         {/* ── PROFILE HEADER ── */}
-        <div className="mb-6 rounded-3xl overflow-hidden relative" style={{
-          background:'linear-gradient(135deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.01) 100%)',
-          boxShadow:'0 0 0 1px rgba(255,255,255,0.08), 0 32px 64px rgba(0,0,0,0.3)',
-        }}>
-          {/* Sport colour top bar */}
-          <div className="absolute top-0 left-0 right-0 h-[3px]"
-            style={{background:'linear-gradient(90deg,transparent,'+sportColor+'90,'+sportColor+','+sportColor+'90,transparent)'}}/>
-          {/* Background glow */}
-          <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full blur-[80px] pointer-events-none"
-            style={{background:sportColor+'18'}}/>
-          <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full blur-[60px] pointer-events-none"
-            style={{background:'rgba(167,139,250,0.08)'}}/>
-
-          {/* Hero content */}
-          <div className="relative px-6 pt-8 pb-6 flex items-start gap-5">
-            {/* Avatar — player-uploaded photo when present, initials otherwise */}
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-2xl font-black"
+        {/* Athlete dossier header — Heritage. A portrait, the name set in the
+            display serif, and the facts stated as a line rather than a cloud of
+            coloured pills. Reads like a team-sheet entry, not an app card. */}
+        <div className="mb-6" style={{ paddingTop: 8 }}>
+          <div className="flex items-start gap-5">
+            {/* Portrait — square, bordered, restrained. Photo or monogram. */}
+            <div className="flex shrink-0 items-center justify-center overflow-hidden"
               style={{
-                background:'linear-gradient(135deg,'+sportColor+'25,rgba(167,139,250,0.15))',
-                border:'1px solid '+sportColor+'30',
-                color:sportColor,
-                boxShadow:'0 8px 32px '+sportColor+'20',
+                height: 84, width: 84, borderRadius: 'var(--r-md)',
+                background: 'var(--h-ink-2)', border: '1px solid var(--h-line-strong)',
+                fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1.6rem',
+                color: 'var(--h-text-3)',
               }}>
-              {signedPhoto
+              {fStr(rawAthlete.photo_url)
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={signedPhoto} alt={name} className="h-full w-full object-cover"/>
+                ? <img src={fStr(rawAthlete.photo_url)} alt={name} className="h-full w-full object-cover"/>
                 : initials(name)}
             </div>
             {/* Info */}
@@ -725,17 +677,19 @@ export default function AthleteProfile({params}:PageProps) {
               ) : (
                 <>
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-3xl font-black text-white leading-tight tracking-tight">{name}</h1>
+                    <h1 className="h-title" style={{ fontSize: 'clamp(1.8rem,3.5vw,2.4rem)' }}>{name}</h1>
                     <button onClick={()=>setEditingInfo(true)}
-                      className="rounded-lg border border-white/8 bg-white/5 px-2 py-0.5 text-[10px] font-black text-white/35 hover:text-white transition">
+                      style={{ fontFamily:'var(--font-ui)', fontSize:'var(--t-label)', color:'var(--h-text-3)', border:'1px solid var(--h-line)', borderRadius:'var(--r-sm)', padding:'2px 8px' }}>
                       Edit
                     </button>
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full px-3 py-1 text-[11px] font-black"
-                      style={{background:sportColor+'15',color:sportColor,border:'1px solid '+sportColor+'25'}}>{team}</span>
-                    {ageGroup!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/60 border border-white/8">{ageGroup}</span>}
-                    {position!=='—'&&<span className="rounded-full bg-white/5 px-2.5 py-1 text-[11px] font-semibold text-white/60 border border-white/8">{position}</span>}
+                  {/* Facts as one quiet line, separated by hairline dots — a
+                      team-sheet entry, not a pill cloud. The team carries the
+                      accent; the rest stays secondary. */}
+                  <div className="mt-2.5" style={{ fontFamily:'var(--font-ui)', fontSize:'var(--t-sm)', color:'var(--h-text-2)', display:'flex', flexWrap:'wrap', alignItems:'center', gap:'0 10px' }}>
+                    <span style={{ color:'var(--accent)', fontWeight:600 }}>{team}</span>
+                    {ageGroup!=='—' && <><Dot/>{ageGroup}</>}
+                    {position!=='—' && <><Dot/>{position}</>}
                   </div>
                   {/* Sport assignments */}
                   {sportAssignments.length > 0 && (
@@ -1223,53 +1177,6 @@ export default function AthleteProfile({params}:PageProps) {
             )}
           </div>
         )}
-
-        {/* ── POPIA ERASURE (owner only) ──────────────────────────────────
-            /api/admin/data-deletion has existed for months — owner-gated,
-            requires a written reason, writes an audit record — and nothing
-            in the app ever called it. That meant there was no way to honour
-            a parent's deletion request without going into the database by
-            hand, which is exactly the obligation the endpoint was built to
-            discharge. Placed on the Notes tab behind a confirmation rather
-            than anywhere it could be hit by accident. */}
-        {activeTab==='notes' && isOwner && (
-          <div style={{marginTop:28,paddingTop:20,borderTop:'1px solid rgba(248,113,113,0.18)'}}>
-            <p style={{fontSize:10.5,fontWeight:700,color:'rgba(248,113,113,0.75)',
-              textTransform:'uppercase',letterSpacing:'0.18em',marginBottom:6}}>
-              Data protection
-            </p>
-            <p style={{fontSize:12,color:'rgba(255,255,255,0.4)',lineHeight:1.6,marginBottom:12,maxWidth:520}}>
-              Permanently erase this athlete and all associated records. Used to
-              honour a POPIA deletion request. This cannot be undone — an audit
-              entry is kept recording that the deletion happened and why.
-            </p>
-            <button
-              onClick={async()=>{
-                const reason = window.prompt('Reason for deletion (required, min 10 characters):');
-                if (!reason || reason.trim().length < 10) return;
-                if (!window.confirm(`Permanently delete ${name} and all their records? This cannot be undone.`)) return;
-                try {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  const res = await fetch('/api/admin/data-deletion', {
-                    method:'DELETE',
-                    headers:{'Content-Type':'application/json',
-                      ...(session?{Authorization:`Bearer ${session.access_token}`}:{})},
-                    body: JSON.stringify({ athleteId: id, reason: reason.trim() }),
-                  });
-                  const d = await res.json();
-                  if (!res.ok) { showToast(d.error || 'Deletion failed'); return; }
-                  showToast('Athlete erased');
-                  window.location.href = '/athletes';
-                } catch { showToast('Deletion failed'); }
-              }}
-              style={{padding:'9px 16px',borderRadius:10,fontSize:12,fontWeight:700,
-                border:'1px solid rgba(248,113,113,0.35)',background:'rgba(248,113,113,0.08)',
-                color:'#fca5a5',cursor:'pointer'}}>
-              Erase athlete record
-            </button>
-          </div>
-        )}
-
 
         {/* Danger zone */}
         <div className="mt-8 pt-6 border-t border-white/7">

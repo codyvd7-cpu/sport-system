@@ -186,29 +186,24 @@ export default function AthletesPage() {
       </div>
       <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
-        {/* Header */}
-        <div className="mb-8 flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:`${sportColor}b3`}}>
-              {sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All Sports'}
-            </p>
-            <h1 className="text-4xl font-black text-white leading-none tracking-tight">Athletes</h1>
-            <p className="mt-2 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>{athletes.length} players · {uniqueTeams.length} teams</p>
+        {/* Header — Heritage */}
+        <div className="mb-7">
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <p className="h-eyebrow">{sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'All sports'}</p>
+              <h1 className="h-hero" style={{ marginTop: 4 }}>Athletes</h1>
+            </div>
+            <div className="flex items-center gap-2" style={{ marginBottom: 6 }}>
+              <Link href="/athletes/import" className="h-btn h-btn--ghost">Import</Link>
+              <button onClick={() => setShowAddForm(v => !v)} className="h-btn">
+                {showAddForm ? 'Cancel' : 'Add athlete'}
+              </button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Bulk import — the only realistic way to onboard a full squad. */}
-            <Link href="/athletes/import"
-              className="rounded-2xl border border-white/8 px-4 py-3 text-sm font-black text-white/60 transition hover:bg-white/5 hover:text-white"
-              style={{background:'rgba(255,255,255,0.03)'}}>
-              Import
-            </Link>
-            <button onClick={() => setShowAddForm(v => !v)}
-              className="flex items-center gap-2 rounded-2xl border border-white/8 px-5 py-3 text-sm font-black text-white transition hover:bg-white/5"
-              style={{background:'rgba(255,255,255,0.03)'}}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              {showAddForm ? 'Cancel' : 'Add Athlete'}
-            </button>
-          </div>
+          <p style={{ marginTop: 8, fontFamily: 'var(--font-ui)', fontSize: 'var(--t-sm)', color: 'var(--h-text-3)' }}>
+            {athletes.length} {athletes.length === 1 ? 'player' : 'players'} · {uniqueTeams.length} {uniqueTeams.length === 1 ? 'team' : 'teams'}
+          </p>
+          <hr className="h-rule" style={{ marginTop: 18 }} />
         </div>
 
         {error && <div className="mb-5 rounded-2xl border border-red-500/20 bg-red-500/6 px-5 py-3 text-sm text-red-300">{error}</div>}
