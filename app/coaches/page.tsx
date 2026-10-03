@@ -113,12 +113,14 @@ export default function CoachesPage() {
     <main className="min-h-screen pb-24 text-white md:pb-0 overflow-x-hidden" style={{background:'var(--bg)'}}>
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6">
 
-        {/* Header */}
-        <div className="mb-6 flex items-start justify-between gap-4">
+        {/* Header — Heritage */}
+        <div className="mb-6 flex items-end justify-between gap-4" style={{ paddingTop: 8 }}>
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-amber-400">Head of Hockey</p>
-            <h1 className="mt-0.5 text-3xl font-black text-white tracking-tight">Coaching Staff</h1>
-            <p className="mt-1 text-sm text-white/35">{activeCoaches.length} active · tap a coach to edit</p>
+            <p className="h-eyebrow">Staff</p>
+            <h1 className="h-hero" style={{ marginTop: 4 }}>Coaching staff</h1>
+            <p style={{ marginTop: 8, fontFamily:'var(--font-ui)', fontSize:'var(--t-sm)', color:'var(--h-text-3)' }}>
+              {activeCoaches.length} active · tap a coach to edit
+            </p>
           </div>
           <button onClick={() => setShowInvite(v => !v)}
             className={`shrink-0 rounded-xl border px-4 py-2.5 text-xs font-black transition ${showInvite ? 'border-white/8 bg-white/5 text-white/50' : 'border-amber-500/40 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'}`}>

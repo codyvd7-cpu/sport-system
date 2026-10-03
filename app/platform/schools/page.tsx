@@ -13,7 +13,6 @@ type School = {
 const BLANK = {
   name: '', shortName: '', abbreviation: '', slug: '',
   logoUrl: '', primaryColor: '#38bdf8', accentColor: '#a78bfa',
-  motto: '', yearTheme: '',
   latitude: '', longitude: '',
   sports: ['hockey'] as string[],
 };
@@ -122,13 +121,14 @@ export default function PlatformSchoolsPage() {
   const label: React.CSSProperties = { fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.45)', marginBottom: 5, display: 'block' };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#05070d', color: 'white', padding: '32px 24px', fontFamily: 'Inter, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--h-ink)', color: 'white', padding: '40px 24px', fontFamily: 'var(--font-ui)' }}>
       <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#7dd3fc', marginBottom: 6 }}>Altus Platform</p>
-        <h1 style={{ fontSize: 30, fontWeight: 900, marginBottom: 6 }}>Schools</h1>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 28 }}>
-          Every school using Altus. Creating one here sets up its identity and branding — its own staff, athletes and data stay completely separate from every other school.
+        <p className="h-eyebrow">Altus Platform</p>
+        <h1 className="h-hero" style={{ marginTop: 4 }}>Schools</h1>
+        <p style={{ fontSize: 'var(--t-sm)', color: 'var(--h-text-3)', marginTop: 8, marginBottom: 8, maxWidth: '62ch', lineHeight: 1.6 }}>
+          Every school using Altus. Creating one sets up its identity and branding — its staff, athletes and data stay completely separate from every other school.
         </p>
+        <hr className="h-rule" style={{ marginBottom: 28 }} />
 
         {err && <div style={{ marginBottom: 16, borderRadius: 10, border: '1px solid rgba(248,113,113,0.3)', background: 'rgba(248,113,113,0.08)', padding: '10px 14px', fontSize: 12, color: '#fca5a5' }}>{err}</div>}
         {msg && <div style={{ marginBottom: 16, borderRadius: 10, border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)', padding: '10px 14px', fontSize: 12, color: '#6ee7b7' }}>{msg}</div>}
@@ -210,14 +210,6 @@ export default function PlatformSchoolsPage() {
           <div>
             <label style={label}>Logo URL (optional)</label>
             <input style={input} value={form.logoUrl} onChange={e => setForm(f => ({ ...f, logoUrl: e.target.value }))} placeholder="/school-logo.png" />
-          </div>
-          <div>
-            <label style={label}>Motto (optional)</label>
-            <input style={input} value={form.motto} onChange={e => setForm(f => ({ ...f, motto: e.target.value }))} placeholder="Ad Altiora" />
-          </div>
-          <div>
-            <label style={label}>Year theme (optional)</label>
-            <input style={input} value={form.yearTheme} onChange={e => setForm(f => ({ ...f, yearTheme: e.target.value }))} placeholder="Rise Together" />
           </div>
           <div>
             <label style={label}>Primary colour</label>

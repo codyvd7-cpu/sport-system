@@ -442,15 +442,15 @@ async function handleLogout() {
 
 
   return (
-    <main className="min-h-screen bg-slate-950 pb-20 text-white md:pb-0">
+    <main className="min-h-screen pb-20 text-white md:pb-0" style={{ background:'var(--h-ink)' }}>
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+        <div className="mb-8 flex items-start justify-between gap-4 flex-wrap" style={{ paddingTop: 8 }}>
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:sportColor+'b3'}}>
-              {SPORTS[activeSport]?.label || activeSport} · Portal Admin
+            <p className="h-eyebrow">{SPORTS[activeSport]?.label || activeSport}</p>
+            <h1 className="h-hero" style={{ marginTop: 4 }}>Portal admin</h1>
+            <p style={{ marginTop: 8, fontFamily:'var(--font-ui)', fontSize:'var(--t-sm)', color:'var(--h-text-3)' }}>
+              Fixtures, results, the week plan, programmes, notices and sponsors.
             </p>
-            <h1 className="mt-1 text-4xl font-black tracking-tight text-white leading-none">Portal Admin</h1>
-            <p className="mt-2 text-sm" style={{color:'rgba(255,255,255,0.3)'}}>Manage fixtures, results, week plan, programs, reminders and sponsors.</p>
           </div>
           <div className="flex gap-2 shrink-0 flex-wrap">
             {/* Sport switcher — only for HOS/owner who can manage all sports */}
@@ -470,14 +470,23 @@ async function handleLogout() {
           </div>
         </div>
 
-        <div className="mb-6 flex flex-wrap gap-2 border-b pb-4" style={{borderColor:'rgba(255,255,255,0.06)'}}>
-          {['fixtures','results','week','programs','workouts','reminders','sponsors','spotlight','players'].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className="rounded-xl px-4 py-2 text-sm font-black capitalize transition border"
-              style={{background:activeTab===tab?sportColor+'20':'rgba(255,255,255,0.02)',borderColor:activeTab===tab?sportColor+'66':'rgba(255,255,255,0.07)',color:activeTab===tab?'white':'rgba(255,255,255,0.35)'}}>
-              {tab === 'week' ? 'Week Plan' : tab === 'workouts' ? 'Workouts' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+        {/* Tabs as an underline strip — the institutional way, lighter than a
+            row of nine bordered pills. */}
+        <div className="mb-6 flex flex-wrap" style={{ gap:'0 20px', borderBottom:'1px solid var(--h-line)' }}>
+          {['fixtures','results','week','programs','workouts','reminders','sponsors','spotlight','players'].map((tab) => {
+            const on = activeTab===tab;
+            return (
+              <button key={tab} onClick={() => setActiveTab(tab)}
+                style={{
+                  fontFamily:'var(--font-ui)', fontSize:'var(--t-sm)', fontWeight: on?600:500,
+                  padding:'10px 0', background:'transparent',
+                  color: on?'var(--h-text)':'var(--h-text-3)',
+                  borderBottom:`2px solid ${on?'var(--accent)':'transparent'}`, marginBottom:'-1px',
+                }}>
+                {tab === 'week' ? 'Week plan' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            );
+          })}
         </div>
 
         {error && <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</div>}
