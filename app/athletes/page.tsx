@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { safeUUID } from '@/lib/uuid';
 import { useRole } from '@/lib/useRole';
 import { StaggerList, StaggerItem, HoverCard } from '@/components/Motion';
+import { EmptyState } from '@/components/Heritage';
 
 type GenericRow = Record<string, any>;
 
@@ -261,9 +262,11 @@ export default function AthletesPage() {
             ))}
           </div>
         ) : filteredAthletes.length === 0 ? (
-          <div className="rounded-2xl border border-white/5 py-14 text-center" style={{background:'rgba(255,255,255,0.02)'}}>
-            <p className="text-sm text-slate-500">No athletes found.</p>
-          </div>
+          <EmptyState
+            title={searchTerm ? 'No athletes match that search' : 'No athletes yet'}
+            body={searchTerm ? 'Try a different name or team.' : 'Add athletes individually, or import a full squad from a spreadsheet.'}
+            action={!searchTerm && <Link href="/athletes/import" className="h-btn">Import a squad</Link>}
+          />
         ) : (
           <StaggerList className="grid gap-2 sm:grid-cols-2" stagger={20}>
             {filteredAthletes.map(athlete => {
