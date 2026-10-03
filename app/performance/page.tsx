@@ -7,6 +7,7 @@ import { useRole } from '@/lib/useRole';
 import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
 import SpeedGateRunner from '@/components/coach/SpeedGateRunner';
+import PageHead from '@/components/coach/PageHead';
 
 type Row = Record<string, any>;
 
@@ -189,9 +190,8 @@ export default function PerformancePage() {
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
 
         {/* Header */}
-        <div className="mb-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.35em]" style={{color:"rgba(167,139,250,0.7)"}}>Testing</p>
-          <h1 className="text-4xl font-black tracking-tight text-white leading-none">Performance Testing</h1>
+        <PageHead eyebrow="Performance" title="Testing" />
+        <div className="mb-6" style={{ marginTop: -14 }}>
           {step === 'capture' && (
             <div className="mt-2 flex items-center gap-3">
               <button onClick={() => setStep('setup')} className="text-xs text-white/35 hover:text-white/65">← Back to setup</button>

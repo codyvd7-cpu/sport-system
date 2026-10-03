@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { getSportColor, type SportKey } from '@/lib/sports';
 import { useToast } from '@/components/Toast';
+import PageHead from '@/components/coach/PageHead';
 
 // New players who self-registered and are waiting to be placed in a team.
 // A coach sees only their sport's (and, if team-scoped, age-matched) pending
@@ -65,13 +66,11 @@ export default function EnrolmentPage() {
   return (
     <main className="min-h-screen pb-24 text-white md:pb-0" style={{ background: 'var(--bg)' }}>
       <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-        <header className="mb-7">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.35em]" style={{ color: 'rgba(255,255,255,0.25)' }}>
-            {sport ? sport[0].toUpperCase() + sport.slice(1) : 'Sport'}
-          </p>
-          <h1 className="text-4xl font-black leading-none tracking-tight">New players</h1>
-          <p className="mt-2 text-sm text-white/40">Players who signed up and are waiting to be added to a team.</p>
-        </header>
+        <PageHead
+          eyebrow={sport ? sport[0].toUpperCase() + sport.slice(1) : 'Sport'}
+          title="New players"
+          standfirst="Players who signed up and are waiting to be added to a team."
+        />
 
         {loading && <p className="py-10 text-center text-sm text-white/30">Loading…</p>}
 

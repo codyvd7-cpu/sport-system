@@ -8,6 +8,7 @@ import { getTeamGroups, getSportColor, type SportKey } from '@/lib/sports';
 import { useToast } from '@/components/Toast';
 import { fDateShort, fISODate } from '@/lib/dates';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import PageHead from '@/components/coach/PageHead';
 
 // Records attendance events. Deliberately only logs NON-present statuses:
 // marking a full squad present every session would bury the genuinely notable
@@ -240,22 +241,24 @@ export default function AttendancePage() {
 
         {/* Header */}
         <FadeUp delay={0}>
-        <div className="mb-8 flex items-start justify-between gap-4">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1" style={{color:"rgba(255,255,255,0.25)"}}>{sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : "Sport"}</p>
-            <h1 className="text-4xl font-black text-white tracking-tight leading-none">Attendance</h1>
-          </div>
-          <div className="flex rounded-xl border border-white/7 bg-[rgba(255,255,255,0.025)] p-0.5">
-            <button onClick={()=>setView('mark')}
-              className={`rounded-lg px-4 py-2 text-xs font-black transition ${view==='mark'?'bg-white/8 text-white':'text-white/35 hover:text-white'}`}>
-              Mark Register
-            </button>
-            <button onClick={()=>setView('history')}
-              className={`rounded-lg px-4 py-2 text-xs font-black transition ${view==='history'?'bg-white/8 text-white':'text-white/35 hover:text-white'}`}>
-              History
-            </button>
-          </div>
-        </div>
+        <PageHead
+          eyebrow={sport ? sport.charAt(0).toUpperCase() + sport.slice(1) : 'Sport'}
+          title="Attendance"
+          actions={
+            <div className="flex p-0.5" style={{ borderRadius:'var(--r-md)', border:'1px solid var(--h-line)', background:'var(--h-ink-inset)' }}>
+              <button onClick={()=>setView('mark')}
+                style={{ borderRadius:'var(--r-sm)', padding:'7px 16px', fontSize:'var(--t-sm)', fontWeight:600, fontFamily:'var(--font-ui)',
+                  background: view==='mark'?'var(--h-ink-3)':'transparent', color: view==='mark'?'var(--h-text)':'var(--h-text-3)' }}>
+                Mark register
+              </button>
+              <button onClick={()=>setView('history')}
+                style={{ borderRadius:'var(--r-sm)', padding:'7px 16px', fontSize:'var(--t-sm)', fontWeight:600, fontFamily:'var(--font-ui)',
+                  background: view==='history'?'var(--h-ink-3)':'transparent', color: view==='history'?'var(--h-text)':'var(--h-text-3)' }}>
+                History
+              </button>
+            </div>
+          }
+        />
         </FadeUp>
 
         {/* ── MARK REGISTER ── */}
