@@ -166,7 +166,7 @@ export default function CoachNav() {
       {/* ── DESKTOP SIDEBAR ─────────────────────── */}
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-[248px] flex-col border-r z-40"
         style={{
-          background:'rgba(4,6,14,0.98)',
+          background:'rgba(14,17,22,0.98)',
           borderColor:'rgba(255,255,255,0.06)',
           backdropFilter:'blur(20px)',
         }}>
@@ -283,7 +283,7 @@ export default function CoachNav() {
 
       {/* ── MOBILE TOP BAR ──────────────────────── */}
       <header className="md:hidden sticky top-0 z-50 flex h-14 items-center justify-between px-4 border-b"
-        style={{background:'rgba(4,6,14,0.98)',borderColor:'rgba(255,255,255,0.06)',backdropFilter:'blur(20px)'}}>
+        style={{background:'rgba(14,17,22,0.98)',borderColor:'rgba(255,255,255,0.06)',backdropFilter:'blur(20px)'}}>
 
         {/* Left — back button or logo */}
         {isDeepPage ? (
@@ -383,7 +383,7 @@ export default function CoachNav() {
       {!roleLoading && (
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t"
         style={{
-          background:'rgba(4,6,14,0.98)',
+          background:'rgba(14,17,22,0.98)',
           borderColor:'rgba(255,255,255,0.06)',
           backdropFilter:'blur(24px)',
           paddingBottom:'env(safe-area-inset-bottom)',

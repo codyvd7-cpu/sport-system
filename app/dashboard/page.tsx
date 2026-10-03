@@ -147,59 +147,47 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
   return (
     <div className="space-y-4">
 
-      {/* ── HERO HEADER ── */}
+      {/* ── MASTHEAD ──────────────────────────────────────────────────────
+          Rebuilt in the Heritage system. The team name is set in the display
+          serif, like the title on a school honours board — not a giant sans in
+          the accent colour. Structure comes from a hairline rule and the quiet
+          standfirst, not a gradient card with a glow. One entrance only. */}
       <FadeUp delay={0}>
-        <div className="relative overflow-hidden rounded-3xl border"
-          style={{background:`linear-gradient(135deg,${dimBg} 0%,rgba(255,255,255,0.015) 100%)`,borderColor:'rgba(255,255,255,0.07)'}}>
-          {/* Top accent bar */}
-          <div className="absolute top-0 left-0 right-0 h-px"
-            style={{background:`linear-gradient(90deg,transparent,${accent}80,transparent)`}}/>
-          {/* Glow */}
-          <div className="absolute -top-20 -right-20 h-48 w-48 rounded-full blur-[60px] pointer-events-none"
-            style={{background:`${accent}20`}}/>
+        <div style={{ paddingTop: 8 }}>
+          <p className="h-eyebrow">{new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'})}</p>
+          <div className="flex items-end justify-between gap-4" style={{ marginTop: 6 }}>
+            <h1 className="h-hero">{teamName}</h1>
+            <Link href={`/teams/${teamName}`}
+              style={{ flexShrink: 0, marginBottom: 6, fontFamily: 'var(--font-ui)', fontSize: 'var(--t-sm)', color: 'var(--h-text-3)' }}>
+              Team page
+            </Link>
+          </div>
+          <p style={{ marginTop: 8, fontFamily: 'var(--font-ui)', fontSize: 'var(--t-sm)', color: 'var(--h-text-3)' }}>
+            {squad.length} {squad.length === 1 ? 'player' : 'players'} on the roster
+          </p>
 
-          <div className="relative p-6">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.35em] mb-1.5"
-              style={{color:`${accent}90`}}>My Team</p>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-5xl font-black tracking-tight leading-none" style={{color:accent}}>{teamName}</h1>
-                <p className="mt-2 text-[13px] font-medium" style={{color:'rgba(255,255,255,0.4)'}}>
-                  {new Date().toLocaleDateString('en-ZA',{weekday:'long',day:'numeric',month:'long'})}
-                </p>
-                <p className="text-[13px]" style={{color:'rgba(255,255,255,0.25)'}}>
-                  {squad.length} players registered
-                </p>
-              </div>
-              <Link href={`/teams/${teamName}`}
-                className="shrink-0 mt-1 rounded-xl px-3 py-1.5 text-[11px] font-semibold border transition"
-                style={{background:'rgba(255,255,255,0.04)',borderColor:'rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.45)'}}>
-                Full page →
-              </Link>
-            </div>
-
-            {/* Unavailable pills */}
-            {unavail.length>0&&(
-              <div className="mt-4 pt-4 border-t flex flex-wrap gap-1.5"
-                style={{borderColor:'rgba(255,255,255,0.06)'}}>
-                {unavail.map(a=>{
-                  const inj=a.availability==='Injured';
-                  return(
+          {/* Unavailable — stated plainly as a line of names, the way a coach
+              would read a squad list, not as a row of coloured pills. */}
+          {unavail.length > 0 && (
+            <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--h-line)' }}>
+              <p className="h-eyebrow" style={{ marginBottom: 8 }}>Unavailable</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 16px' }}>
+                {unavail.map(a => {
+                  const inj = a.availability === 'Injured';
+                  return (
                     <Link key={a.id} href={`/athletes/${a.id}`}
-                      className="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-semibold transition hover:opacity-80"
-                      style={{
-                        background:inj?'rgba(248,113,113,0.1)':'rgba(251,191,36,0.1)',
-                        color:inj?'#fca5a5':'#fde68a',
-                        border:`1px solid ${inj?'rgba(248,113,113,0.2)':'rgba(251,191,36,0.2)'}`,
-                      }}>
-                      <span className="h-1 w-1 rounded-full" style={{background:inj?'#f87171':'#fbbf24'}}/>
-                      {a.full_name?.split(' ').pop()} · {a.availability}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontFamily: 'var(--font-ui)', fontSize: 'var(--t-sm)', color: 'var(--h-text-2)' }}>
+                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: inj ? 'var(--h-alert)' : 'var(--h-warn)' }} />
+                      {a.full_name?.split(' ').pop()}
+                      <span style={{ color: 'var(--h-text-4)' }}>{a.availability}</span>
                     </Link>
                   );
                 })}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          <hr className="h-rule" style={{ marginTop: 20 }} />
         </div>
       </FadeUp>
 
