@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import * as React from 'react';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
@@ -106,6 +107,20 @@ export default function CoachNav() {
 
   const isHOH = isHOS || isMIC || isOwner;
   const groups = buildGroups(isHOH, isOwner || isHOS);
+
+  // Live counts make the launcher feel alive — a coach sees "3 waiting" on
+  // New Players without opening it. One cheap call, refreshed on mount.
+  const [counts, setCounts] = useState<{ newPlayers?: number; needsAttention?: number; fixturesToday?: number }>({});
+  React.useEffect(() => {
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const r = await fetch('/api/coach/nav-counts', { headers: { Authorization: `Bearer ${session.access_token}` } });
+        if (r.ok) setCounts(await r.json());
+      } catch { /* counts are optional chrome */ }
+    })();
+  }, []);
   // Flat list still needed for the mobile "more" sheet and active-state checks.
   const navItems = groups.flatMap(g => g.items);
   const tabs = isHOH ? HOH_TABS : COACH_TABS;
@@ -135,12 +150,21 @@ export default function CoachNav() {
     router.push('/login');
   }
 
+
+  // Which count, if any, sits on a given destination.
+  function countFor(href: string): number | undefined {
+    if (href === '/enrolment') return counts.newPlayers || undefined;
+    if (href === '/dashboard') return counts.needsAttention || undefined;
+    if (href === '/selection') return counts.fixturesToday || undefined;
+    return undefined;
+  }
+
   const initials = (e: string) => e?.split('@')[0].slice(0,2).toUpperCase() || '??';
 
   return (
     <>
       {/* ── DESKTOP SIDEBAR ─────────────────────── */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-[220px] flex-col border-r z-40"
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-[248px] flex-col border-r z-40"
         style={{
           background:'rgba(4,6,14,0.98)',
           borderColor:'rgba(255,255,255,0.06)',
@@ -160,35 +184,72 @@ export default function CoachNav() {
           </Link>
         </div>
 
-        {/* Grouped nav — daily items first (no heading), then sections. */}
+        {/* ── LAUNCHER ─────────────────────────────────────────────────
+            The daily four as large, tactile tiles with live counts, then the
+            rest as quiet grouped links. A coach's eye lands on what they do
+            every day; everything else recedes. */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {groups.map((group, gi) => (
-            <div key={gi} className={gi > 0 ? 'mt-5' : ''}>
-              {group.heading && (
-                <p className="px-3 mb-1.5 text-[9.5px] font-bold uppercase tracking-[0.18em]"
-                   style={{ color: 'rgba(255,255,255,0.22)' }}>
-                  {group.heading}
-                </p>
+            <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
+              {group.heading ? (
+                <>
+                  <p className="px-2 mb-1.5 text-[9px] font-bold uppercase tracking-[0.2em]"
+                     style={{ color: 'rgba(255,255,255,0.2)' }}>{group.heading}</p>
+                  <div className="space-y-0.5">
+                    {group.items.map(item => {
+                      const active = isActive(item.href);
+                      const n = countFor(item.href);
+                      return (
+                        <Link key={item.href} href={item.href}
+                          className="flex items-center gap-3 rounded-lg px-2.5 py-2 text-[12.5px] font-medium transition-all duration-150"
+                          style={{
+                            background: active ? 'var(--sport-color-dim)' : 'transparent',
+                            color: active ? 'var(--sport-color)' : 'rgba(255,255,255,0.4)',
+                          }}
+                          onMouseEnter={e => { if(!active){(e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.03)';(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.75)';} }}
+                          onMouseLeave={e => { if(!active){(e.currentTarget as HTMLElement).style.background='transparent';(e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.4)';} }}>
+                          <span style={{ opacity: active ? 1 : 0.55 }}>{item.icon}</span>
+                          <span className="flex-1">{item.label}</span>
+                          {n !== undefined && (
+                            <span className="rounded-full px-1.5 py-0.5 text-[9.5px] font-bold tabular-nums"
+                              style={{ background: 'var(--sport-color-dim)', color: 'var(--sport-color)' }}>{n}</span>
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </>
+              ) : (
+                // The daily spine — larger tiles, two per row, with live counts.
+                <div className="grid grid-cols-2 gap-1.5">
+                  {group.items.map(item => {
+                    const active = isActive(item.href);
+                    const n = countFor(item.href);
+                    const short = item.label.replace('My Team','Team').replace('Lightning Alert','Alert');
+                    return (
+                      <Link key={item.href} href={item.href}
+                        className="relative flex flex-col justify-between rounded-xl p-2.5 transition-all duration-150"
+                        style={{
+                          minHeight: 62,
+                          background: active ? 'var(--sport-color-dim)' : 'rgba(255,255,255,0.025)',
+                          border: `1px solid ${active ? 'var(--sport-color)' : 'rgba(255,255,255,0.06)'}`,
+                        }}
+                        onMouseEnter={e => { if(!active) (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.055)'; }}
+                        onMouseLeave={e => { if(!active) (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.025)'; }}>
+                        <div className="flex items-start justify-between">
+                          <span style={{ color: active ? 'var(--sport-color)' : 'rgba(255,255,255,0.5)' }}>{item.icon}</span>
+                          {n !== undefined && n > 0 && (
+                            <span className="rounded-full px-1.5 text-[10px] font-black tabular-nums"
+                              style={{ background: 'var(--sport-color)', color: '#03060c' }}>{n}</span>
+                          )}
+                        </div>
+                        <span className="text-[12px] font-bold leading-tight"
+                          style={{ color: active ? 'var(--sport-color)' : 'rgba(255,255,255,0.85)' }}>{short}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
-              <div className="space-y-0.5">
-                {group.items.map(item => {
-                  const active = isActive(item.href);
-                  return (
-                    <Link key={item.href} href={item.href}
-                      className="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150"
-                      style={{
-                        background: active ? 'var(--sport-color-dim)' : 'transparent',
-                        color: active ? 'var(--sport-color)' : 'rgba(255,255,255,0.45)',
-                        borderLeft: active ? '2px solid var(--sport-color)' : '2px solid transparent',
-                      }}
-                      onMouseEnter={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.04)'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.8)'; } }}
-                      onMouseLeave={e => { if(!active) { (e.currentTarget as HTMLElement).style.background='transparent'; (e.currentTarget as HTMLElement).style.color='rgba(255,255,255,0.45)'; } }}>
-                      <span style={{opacity: active ? 1 : 0.6}}>{item.icon}</span>
-                      {item.label}
-                    </Link>
-                  );
-                })}
-              </div>
             </div>
           ))}
         </nav>
@@ -359,7 +420,7 @@ export default function CoachNav() {
       )}
 
       {/* Desktop spacer */}
-      <div className="hidden md:block md:w-[220px] shrink-0"/>
+      <div className="hidden md:block md:w-[248px] shrink-0"/>
     </>
   );
 }
