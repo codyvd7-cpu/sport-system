@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&family=Anton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Geist:wght@300;400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -16,11 +16,162 @@
   --amber:   #f59e0b;
   --red:     #f87171;
 
-  /* Surface */
+  /* Surface (legacy — kept so un-migrated screens still work) */
   --bg:      #04060e;
   --surface: rgba(255,255,255,0.025);
   --border:  rgba(255,255,255,0.07);
   --muted:   rgba(255,255,255,0.4);
+
+  /* ════════════════════════════════════════════════════════════════════════
+     HERITAGE DESIGN SYSTEM  (v1)
+     Grounded in SA school sport: institutional, considered, permanent. The
+     palette is a warm near-black — the inside cover of a school annual, a
+     blazer in low light — NOT SaaS slate and NOT the cream-SaaS cliché. Each
+     school's own crest colour is the single accent, injected as --accent.
+     ════════════════════════════════════════════════════════════════════════ */
+
+  /* Ink — the base. Warm near-black with a trace of blue-grey, stepped. */
+  --h-ink:        #0E1116;   /* page base */
+  --h-ink-2:      #141922;   /* raised surface */
+  --h-ink-3:      #1B212C;   /* raised further / hover */
+  --h-ink-inset:  #0A0D12;   /* wells, inputs */
+
+  /* Hairlines — institutional structure comes from rules, not shadows. */
+  --h-line:       rgba(242,241,234,0.08);
+  --h-line-strong:rgba(242,241,234,0.14);
+
+  /* Text — parchment-tinted white, never pure, in a clear scale. */
+  --h-text:       rgba(244,241,234,0.92);  /* primary */
+  --h-text-2:     rgba(244,241,234,0.56);  /* secondary */
+  --h-text-3:     rgba(244,241,234,0.34);  /* tertiary / labels */
+  --h-text-4:     rgba(244,241,234,0.20);  /* faint */
+
+  /* Accent — defaults to a heritage blue; overridden per-school at runtime. */
+  --accent:       #3b6ea5;
+  --accent-text:  #0A0D12;                 /* text ON the accent */
+  --accent-dim:   color-mix(in srgb, var(--accent) 14%, transparent);
+  --accent-line:  color-mix(in srgb, var(--accent) 34%, transparent);
+
+  /* Semantic (quiet, heritage-muted — not neon) */
+  --h-good:   #5e9e7e;
+  --h-warn:   #c49a53;
+  --h-alert:  #b5635a;
+
+  /* Type families */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-ui:      'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Type scale — Elements-of-Typographic-Style ratio (~1.25), named by use. */
+  --t-hero:   clamp(2.4rem, 5vw, 3.6rem);  /* page title, serif */
+  --t-title:  clamp(1.6rem, 3vw, 2.1rem);  /* section title, serif */
+  --t-head:   1.25rem;                      /* card heading */
+  --t-body:   0.9375rem;                    /* 15px body */
+  --t-sm:     0.8125rem;                    /* 13px */
+  --t-label:  0.6875rem;                    /* 11px, tracked labels */
+
+  /* Spacing scale (4px base) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+
+  /* Radii — restrained. Heritage isn't bubbly. */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
+
+  /* One motion curve, used everywhere for cohesion. */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── Heritage component primitives ──────────────────────────────────────────
+   Thin, composable classes the rebuilt screens use so the system is enforced
+   in one place rather than re-decided inline on every page. */
+
+.h-surface {
+  background: var(--h-ink-2);
+  border: 1px solid var(--h-line);
+  border-radius: var(--r-lg);
+}
+.h-inset {
+  background: var(--h-ink-inset);
+  border: 1px solid var(--h-line);
+  border-radius: var(--r-md);
+}
+
+/* Page title — serif, with optical sizing so it reads as display, not body. */
+.h-hero {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: var(--t-hero);
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--h-text);
+}
+.h-title {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: var(--t-title);
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  color: var(--h-text);
+}
+.h-head {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--t-head);
+  color: var(--h-text);
+}
+
+/* A section label — the institutional eyebrow, but done as a small-caps rule,
+   NOT the tracked-out ALL-CAPS SaaS tell. */
+.h-eyebrow {
+  font-family: var(--font-ui);
+  font-size: var(--t-label);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-caps: all-small-caps;
+  color: var(--h-text-3);
+}
+
+/* Hairline rule used for structure between sections. */
+.h-rule { height: 1px; background: var(--h-line); border: 0; }
+
+/* Primary action — solid accent, square-ish, confident. */
+.h-btn {
+  font-family: var(--font-ui);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--accent-text);
+  transition: filter .15s var(--ease);
+}
+.h-btn:hover { filter: brightness(1.08); }
+.h-btn--ghost {
+  background: transparent;
+  border-color: var(--h-line-strong);
+  color: var(--h-text-2);
+}
+.h-btn--ghost:hover { background: rgba(244,241,234,0.04); color: var(--h-text); filter: none; }
+
+/* Stat — a figure in display serif with a quiet label. The heritage answer to
+   the generic "big number + tracked caps label" card. */
+.h-stat-figure {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--h-text);
+  font-variant-numeric: tabular-nums;
+}
+.h-stat-label {
+  font-family: var(--font-ui);
+  font-size: var(--t-label);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--h-text-3);
 }
 
 html { scroll-behavior: smooth; }
