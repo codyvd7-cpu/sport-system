@@ -8,6 +8,8 @@ import PortalAmbient     from '@/components/portal/PortalAmbient';
 import ScrollReveal      from '@/components/portal/ScrollReveal';
 import PortalNav         from '@/components/portal/PortalNav';
 import PortalHero        from '@/components/portal/PortalHero';
+import CinematicHero     from '@/components/portal/CinematicHero';
+import { SPORTS } from '@/lib/sports';
 import ThisWeekBoard     from '@/components/portal/ThisWeekBoard';
 import FixtureList       from '@/components/portal/FixtureList';
 import PlayerResources   from '@/components/portal/PlayerResources';
@@ -16,11 +18,12 @@ import RecognitionPanel  from '@/components/portal/RecognitionPanel';
 import SponsorStrip      from '@/components/portal/SponsorStrip';
 import { useBranding } from '@/components/BrandingProvider';
 import PortalSportSwitcher from '@/components/portal/PortalSportSwitcher';
+import MyAthleteCard from '@/components/portal/MyAthleteCard';
 
 type Row = Record<string, any>;
 
 function PortalInner() {
-  const { branding } = useBranding();
+  const { branding, sports } = useBranding();
   const searchParams = useSearchParams();
   // The sport comes from the URL only. A leftover portal_sport cookie from the
   // old per-sport code model could otherwise override it, sending a parent to
@@ -31,7 +34,7 @@ function PortalInner() {
 
   const [data, setData] = React.useState<{
     weekItems: Row[]; reminders: Row[];
-    fixtures: Row[]; results: Row[]; programs: Row[]; spotlight: Row[]; sponsors: Row[];
+    fixtures: Row[]; results: Row[]; programs: Row[]; spotlight: Row[];
   } | null>(null);
   const [loading, setLoading] = React.useState(true);
 
@@ -44,13 +47,7 @@ function PortalInner() {
       try {
         // The school must travel with the request: without a code there's no
         // cookie to carry it, so it comes from the link the school handed out.
-        // School comes from the path (/ashford/portal) or, for legacy links,
-        // the query parameter. The path form is preferred because query
-        // parameters are being stripped in the deployed environment.
-        const pathMatch = window.location.pathname.match(/^\/([^/]+)\/portal/);
-        const schoolSlug = pathMatch
-          ? pathMatch[1]
-          : new URLSearchParams(window.location.search).get('school');
+        const schoolSlug = new URLSearchParams(window.location.search).get('school');
         const res = await fetch(
           `/api/portal/data?sport=${encodeURIComponent(sport)}` +
           (schoolSlug ? `&school=${encodeURIComponent(schoolSlug)}` : '')
@@ -64,10 +61,9 @@ function PortalInner() {
           results:   d.results || [],
           programs:  (d.programs || []).slice(0, 6),
           spotlight: d.spotlight || [],
-          sponsors:  d.sponsors || [],
         });
       } catch {
-        setData({ weekItems: [], reminders: [], fixtures: [], results: [], programs: [], spotlight: [], sponsors: [] });
+        setData({ weekItems: [], reminders: [], fixtures: [], results: [], programs: [], spotlight: [] });
       }
       setLoading(false);
     }
@@ -95,17 +91,48 @@ function PortalInner() {
         {/* The route from the shared portal to a family's own information.
             Adapts to whether they're signed in, waiting on approval, or
             already linked. */}
-        {/* Hero leads. The sign-in card and department notice used to render
-            ABOVE it, so a parent met a "sign in" prompt and a banner before
-            they ever saw the school's own hero — the page opened with an ask
-            instead of a statement. */}
-        <PortalHero sport={sport} nextFixture={nextFixture}/>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '14px 24px 0' }}>
+          <MyAthleteCard/>
+        </div>
 
         {/* Department notice — dismissible, reappears when a new notice is published */}
         <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>
 
-        {/* This Week — ThisWeekBoard carries its own #this-week anchor,
-            which the hero CTA scrolls to. */}
+        {/* Hero */}
+        {/* The cinematic hero — the showpiece. Fed real branding, the sport's
+            own photograph and the next fixture with a live countdown. */}
+        {(() => {
+          const cfg = SPORTS[sport];
+          const schoolSport = sports?.find(sp => sp.key === sport);
+          const heroImg = schoolSport?.heroImage || cfg?.portal?.heroImage || null;
+          const fx = nextFixture ? (() => {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const d = new Date(nextFixture.fixture_date); d.setHours(0,0,0,0);
+            const days = Math.round((d.getTime()-today.getTime())/86400000);
+            const countdown = days < 0 ? 'Played' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days < 7 ? `In ${days} days` : `In ${Math.floor(days/7)} week${days>=14?'s':''}`;
+            return {
+              opponent: nextFixture.opponent,
+              date: new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'}),
+              time: nextFixture.fixture_time ? String(nextFixture.fixture_time).slice(0,5) : null,
+              venue: nextFixture.venue || null,
+              homeAway: nextFixture.home_away || null,
+              countdown,
+            };
+          })() : null;
+          return (
+            <CinematicHero
+              schoolName={branding.name}
+              sportLabel={cfg?.portal?.headline ?? cfg?.label ?? sport}
+              crestUrl={branding.logoUrl}
+              photoUrl={heroImg}
+              accent={color}
+              description={cfg?.portal?.description ?? 'Fixtures, results and the week ahead.'}
+              nextFixture={fx}
+            />
+          );
+        })()}
+
+        {/* This Week */}
         <ScrollReveal>
           <ThisWeekBoard
             weekItems={data?.weekItems ?? []}
@@ -126,11 +153,6 @@ function PortalInner() {
           />
         </ScrollReveal>
 
-        {/* The "see your own results" prompt was removed entirely. The nav
-            already carries Player Login, so anyone who wants their own data
-            has an obvious route — a second standing invitation on a page
-            whose job is fixtures and results was just clutter. MyAthleteCard
-            is kept for the signed-in states, which ARE useful. */}
         {/* Player Resources */}
         <ScrollReveal>
           <PlayerResources programs={data?.programs ?? []} color={color} loading={loading}/>
@@ -143,7 +165,7 @@ function PortalInner() {
 
         {/* Sponsors */}
         <ScrollReveal>
-          <SponsorStrip color={color} sponsors={data?.sponsors ?? []}/>
+          <SponsorStrip color={color}/>
         </ScrollReveal>
 
         {/* Footer */}
