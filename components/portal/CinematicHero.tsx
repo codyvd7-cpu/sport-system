@@ -1,6 +1,10 @@
 'use client';
 import * as React from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// WebGL layer loads client-only — it can't server-render.
+const Hero3D = dynamic(() => import('./Hero3D'), { ssr: false });
 
 // ─── CinematicHero ─────────────────────────────────────────────────────────────
 // The showpiece. Cinematic, atmospheric — the school's identity emerging from
@@ -176,27 +180,20 @@ export default function CinematicHero({
       {/* Layer 1 — living canvas (embers + sheen) */}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }} />
 
+      {/* Layer 3.5 — the real WebGL scene: a dimensional crest in volumetric
+          light, depth particles, parallax to the pointer. This is the "3D" */}
+      <Hero3D accent={accent} crestUrl={crestUrl} />
+
       {/* Hidden detail — near-invisible film grain over everything */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', opacity: 0.04, mixBlendMode: 'overlay',
+      <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none', opacity: 0.04, mixBlendMode: 'overlay',
         backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'3\'/%3E%3C/filter%3E%3Crect width=\'120\' height=\'120\' filter=\'url(%23n)\'/%3E%3C/svg%3E")' }} />
 
       {/* Content */}
-      <div style={{ position: 'relative', zIndex: 4, width: '100%', maxWidth: 1180, margin: '0 auto', padding: '0 32px 64px', transform: `translateY(${-pFg}px)` }}>
+      <div style={{ position: 'relative', zIndex: 5, width: '100%', maxWidth: 1180, margin: '0 auto', padding: '0 32px 64px', transform: `translateY(${-pFg}px)` }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 360px', gap: 48, alignItems: 'end' }} className="ch-grid">
 
           <div>
-            {/* Crest — breathing glow, enters first */}
-            {crestUrl && (
-              <div style={{ ...stage(0, 14), marginBottom: 20 }}>
-                <div className="ch-crest" style={{ width: 72, height: 72, position: 'relative' }}>
-                  <div style={{ position: 'absolute', inset: -14, borderRadius: '50%',
-                    background: `radial-gradient(circle, ${accent}44, transparent 70%)` }} className="ch-breathe" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={crestUrl} alt="" style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 4px 20px rgba(0,0,0,0.6))' }} />
-                </div>
-              </div>
-            )}
-
+            {/* The crest now lives in the 3D scene above, floating in light. */}
             <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, letterSpacing: '0.12em',
               fontVariantCaps: 'all-small-caps', color: 'rgba(244,241,234,0.62)', marginBottom: 14, ...stage(0.25) }}>
               {schoolName}
@@ -252,7 +249,7 @@ export default function CinematicHero({
       </div>
 
       {/* Scroll cue — a hidden-ish detail at the base, fades in late and breathes */}
-      <div style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 4, ...stage(1.6) }}>
+      <div style={{ position: 'absolute', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 5, ...stage(1.6) }}>
         <div className="ch-scroll" />
       </div>
 
