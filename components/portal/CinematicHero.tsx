@@ -158,7 +158,7 @@ export default function CinematicHero({
   });
 
   return (
-    <section ref={rootRef} style={{ position: 'relative', minHeight: '92vh', display: 'flex', alignItems: 'flex-end', overflow: 'hidden', background: '#070a0f' }}>
+    <section ref={rootRef} style={{ position: 'relative', minHeight: 'clamp(440px, 66vh, 620px)', display: 'flex', alignItems: 'flex-end', overflow: 'hidden', background: '#070a0f' }}>
       {/* Layer 2 — photograph, Ken-Burns + parallax */}
       {photoUrl && (
         <div style={{ position: 'absolute', inset: '-8% 0', zIndex: 0, transform: `translateY(${pBg}px)` }}>

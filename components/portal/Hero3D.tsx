@@ -43,9 +43,9 @@ export default function Hero3D({ accent, crestUrl }: { accent: string; crestUrl:
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(42, W() / H(), 0.1, 100);
-    camera.position.z = 9;
-    camera.position.y = -1.6;   // frame the crest in the upper region
-    camera.position.x = 0.8;
+    camera.position.z = 15;   // further back = smaller crest, less dominant
+    camera.position.y = -2.4;
+    camera.position.x = -3.2;  // push the crest to the RIGHT of frame
 
     // Accent as THREE colour
     const col = new THREE.Color(accent || '#3b6ea5');
@@ -65,7 +65,7 @@ export default function Hero3D({ accent, crestUrl }: { accent: string; crestUrl:
 
     // Backing disc — brushed metal medallion the crest sits on.
     const disc = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.3, 2.3, 0.22, 64),
+      new THREE.CylinderGeometry(1.5, 1.5, 0.16, 64),
       new THREE.MeshStandardMaterial({ color: 0x1a2029, metalness: 0.85, roughness: 0.35 }),
     );
     disc.rotation.x = Math.PI / 2;
@@ -73,7 +73,7 @@ export default function Hero3D({ accent, crestUrl }: { accent: string; crestUrl:
 
     // Bevelled rim ring in the accent colour.
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(2.32, 0.07, 24, 96),
+      new THREE.TorusGeometry(1.52, 0.05, 24, 96),
       new THREE.MeshStandardMaterial({ color: col, metalness: 0.9, roughness: 0.25, emissive: col, emissiveIntensity: 0.3 }),
     );
     crest.add(ring);
@@ -83,7 +83,7 @@ export default function Hero3D({ accent, crestUrl }: { accent: string; crestUrl:
       new THREE.TextureLoader().load(crestUrl, (tex) => {
         tex.colorSpace = THREE.SRGBColorSpace;
         const plane = new THREE.Mesh(
-          new THREE.PlaneGeometry(3.1, 3.1),
+          new THREE.PlaneGeometry(2.0, 2.0),
           new THREE.MeshBasicMaterial({ map: tex, transparent: true }),
         );
         plane.position.z = 0.16;
@@ -101,7 +101,7 @@ export default function Hero3D({ accent, crestUrl }: { accent: string; crestUrl:
     gctx.fillStyle = gr; gctx.fillRect(0, 0, 256, 256);
     const glowTex = new THREE.CanvasTexture(glowCanvas);
     const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.6 }));
-    glow.scale.set(14, 14, 1);
+    glow.scale.set(9, 9, 1);
     glow.position.z = -1;
     scene.add(glow);
 
