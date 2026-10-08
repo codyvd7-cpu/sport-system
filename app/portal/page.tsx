@@ -8,8 +8,6 @@ import PortalAmbient     from '@/components/portal/PortalAmbient';
 import ScrollReveal      from '@/components/portal/ScrollReveal';
 import PortalNav         from '@/components/portal/PortalNav';
 import PortalHero        from '@/components/portal/PortalHero';
-import CinematicHero     from '@/components/portal/CinematicHero';
-import { SPORTS } from '@/lib/sports';
 import ThisWeekBoard     from '@/components/portal/ThisWeekBoard';
 import FixtureList       from '@/components/portal/FixtureList';
 import PlayerResources   from '@/components/portal/PlayerResources';
@@ -99,38 +97,7 @@ function PortalInner() {
         <NoticeCard reminders={data?.reminders ?? []} color={color} sport={sport}/>
 
         {/* Hero */}
-        {/* The cinematic hero — the showpiece. Fed real branding, the sport's
-            own photograph and the next fixture with a live countdown. */}
-        {(() => {
-          const cfg = SPORTS[sport];
-          const schoolSport = sports?.find(sp => sp.key === sport);
-          const heroImg = schoolSport?.heroImage || cfg?.portal?.heroImage || null;
-          const fx = nextFixture ? (() => {
-            const today = new Date(); today.setHours(0,0,0,0);
-            const d = new Date(nextFixture.fixture_date); d.setHours(0,0,0,0);
-            const days = Math.round((d.getTime()-today.getTime())/86400000);
-            const countdown = days < 0 ? 'Played' : days === 0 ? 'Today' : days === 1 ? 'Tomorrow' : days < 7 ? `In ${days} days` : `In ${Math.floor(days/7)} week${days>=14?'s':''}`;
-            return {
-              opponent: nextFixture.opponent,
-              date: new Date(nextFixture.fixture_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'}),
-              time: nextFixture.fixture_time ? String(nextFixture.fixture_time).slice(0,5) : null,
-              venue: nextFixture.venue || null,
-              homeAway: nextFixture.home_away || null,
-              countdown,
-            };
-          })() : null;
-          return (
-            <CinematicHero
-              schoolName={branding.name}
-              sportLabel={cfg?.portal?.headline ?? cfg?.label ?? sport}
-              crestUrl={branding.logoUrl}
-              photoUrl={heroImg}
-              accent={color}
-              description={cfg?.portal?.description ?? 'Fixtures, results and the week ahead.'}
-              nextFixture={fx}
-            />
-          );
-        })()}
+        <PortalHero sport={sport} nextFixture={nextFixture} />
 
         {/* This Week */}
         <ScrollReveal>
