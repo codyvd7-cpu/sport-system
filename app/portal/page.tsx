@@ -45,7 +45,12 @@ function PortalInner() {
       try {
         // The school must travel with the request: without a code there's no
         // cookie to carry it, so it comes from the link the school handed out.
-        const schoolSlug = new URLSearchParams(window.location.search).get('school');
+        // School can come from the PATH (/ridgemont/portal) or the query
+        // (?school=ridgemont). Reading only the query meant the path-based
+        // route fetched with no school and got empty data back — which is why
+        // the week, recognition and resources sections showed nothing.
+        const pathMatch = window.location.pathname.match(/^\/([^/]+)\/portal/);
+        const schoolSlug = pathMatch ? pathMatch[1] : new URLSearchParams(window.location.search).get('school');
         const res = await fetch(
           `/api/portal/data?sport=${encodeURIComponent(sport)}` +
           (schoolSlug ? `&school=${encodeURIComponent(schoolSlug)}` : '')
