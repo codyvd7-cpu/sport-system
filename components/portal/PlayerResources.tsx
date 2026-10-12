@@ -1,4 +1,5 @@
 'use client';
+import TiltCard from '@/components/portal/TiltCard';
 type Row = Record<string, any>;
 interface Props { programs: Row[]; color: string; loading: boolean; }
 
@@ -17,7 +18,7 @@ export default function PlayerResources({ programs, color, loading }: Props) {
         {loading ? [0,1,2].map(i => (
           <div key={i} style={{ height: 96, borderRadius: 18, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}/>
         )) : programs.map((p, i) => (
-          <div key={p.id || i} style={{
+          <TiltCard key={p.id || i} max={7} scale={1.02} lift={5} style={{
             borderRadius:18, border:'1px solid rgba(255,255,255,0.1)',
             background:'linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.01))',
             padding:'20px 22px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:14,
@@ -45,7 +46,7 @@ export default function PlayerResources({ programs, color, loading }: Props) {
                 Download
               </a>
             )}
-          </div>
+          </TiltCard>
         ))}
       </div>
     </section>

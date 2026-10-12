@@ -17,7 +17,12 @@ interface Props { weekItems: Row[]; fixtures: Row[]; color: string; sport: strin
 
 const PULSE_STYLE = `@keyframes todayPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,0.25)}50%{box-shadow:0 0 0 5px rgba(255,255,255,0)}}
 @keyframes dayModalIn{from{opacity:0;transform:translateY(14px) scale(0.98)}to{opacity:1;transform:none}}
-@keyframes backdropIn{from{opacity:0}to{opacity:1}}`;
+@keyframes backdropIn{from{opacity:0}to{opacity:1}}
+@keyframes todayDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
+@keyframes weekRowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+.twb-row{animation:weekRowIn .5s cubic-bezier(0.16,1,0.3,1) both}
+.twb-today-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:7px;vertical-align:middle;animation:todayDot 2s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.twb-row{animation:none}.twb-today-dot{animation:none}}`;
 
 const fTime = (t?: string) => fmtTime12h(t);
 function localISO(d: Date) { return d.toLocaleDateString('en-CA'); } // YYYY-MM-DD in local time
@@ -114,6 +119,7 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
 
           return (
             <div key={day}
+              className="twb-row"
               role={hasItems ? 'button' : undefined}
               tabIndex={hasItems ? 0 : undefined}
               onClick={() => hasItems && setOpenDay(i)}
@@ -124,9 +130,11 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
                 borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.055)',
                 borderLeft: isToday ? `2px solid ${color}` : '2px solid transparent',
                 background: isToday ? 'rgba(255,255,255,0.025)' : 'transparent',
+                boxShadow: isToday ? `inset 14px 0 28px -18px ${color}` : 'none',
                 cursor: hasItems ? 'pointer' : 'default',
                 transition:'background .2s ease',
                 outline:'none',
+                animationDelay: `${i * 0.05}s`,
               }}
               onMouseEnter={e => { if (hasItems) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = isToday ? 'rgba(255,255,255,0.025)' : 'transparent'; }}
@@ -187,6 +195,7 @@ export default function ThisWeekBoard({ weekItems, fixtures, color, sport, loadi
               {isToday && (
                 <span style={{ fontSize:9.5, fontWeight:700, color, textTransform:'uppercase',
                   letterSpacing:'0.14em', flexShrink:0, alignSelf:'center' }}>
+                  <span className="twb-today-dot" style={{ background:color }}/>
                   Today
                 </span>
               )}

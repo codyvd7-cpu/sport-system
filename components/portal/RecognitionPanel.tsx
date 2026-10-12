@@ -1,4 +1,5 @@
 'use client';
+import TiltCard from '@/components/portal/TiltCard';
 type Row = Record<string, any>;
 interface Props { spotlight: Row[]; color: string; loading: boolean; }
 
@@ -22,7 +23,7 @@ export default function RecognitionPanel({ spotlight, color, loading }: Props) {
           actually is. */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(260px, 1fr))', gap:10 }}>
         {spotlight.map((s, i) => (
-          <div key={s.id || i} style={{
+          <TiltCard key={s.id || i} max={6} scale={1.025} lift={4} style={{
             display:'flex', gap:13, alignItems:'flex-start',
             borderRadius:14, border:'1px solid rgba(255,255,255,0.075)',
             borderLeft:`2px solid ${color}`,
@@ -49,7 +50,7 @@ export default function RecognitionPanel({ spotlight, color, loading }: Props) {
                 </p>
               )}
             </div>
-          </div>
+          </TiltCard>
         ))}
       </div>
     </section>

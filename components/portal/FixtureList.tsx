@@ -1,4 +1,5 @@
 'use client';
+import * as React from 'react';
 import Link from 'next/link';
 import { type SportKey, getSportTerm } from '@/lib/sports';
 import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
@@ -31,15 +32,34 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
     borderRadius: 14, border: '1px solid rgba(255,255,255,0.075)',
     background: 'rgba(255,255,255,0.022)',
     overflow: 'hidden' as const,
+    transition: 'transform .35s cubic-bezier(0.16,1,0.3,1), box-shadow .35s cubic-bezier(0.16,1,0.3,1), border-color .35s cubic-bezier(0.16,1,0.3,1)',
   };
   const HDR = { padding: '15px 18px', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' };
+
+  // Gentle lift + accent ring on panel hover — the whole panel rises a touch
+  // and picks up the sport's colour, matching the tilt cards elsewhere without
+  // fighting the per-row hover inside. Skipped on touch/reduced-motion.
+  const canHover = typeof window !== 'undefined'
+    && window.matchMedia('(hover: hover)').matches
+    && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const liftOn = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canHover) return;
+    e.currentTarget.style.transform = 'translateY(-4px)';
+    e.currentTarget.style.boxShadow = `0 24px 60px -24px ${color}99`;
+    e.currentTarget.style.borderColor = `${color}55`;
+  };
+  const liftOff = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = 'translateY(0)';
+    e.currentTarget.style.boxShadow = 'none';
+    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.075)';
+  };
 
   return (
     <section id="fixtures" style={{ padding: '0 24px 64px', maxWidth: 1240, margin: '0 auto', scrollMarginTop: 84 }}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
         {/* Upcoming fixtures */}
-        <div style={CARD}>
+        <div style={CARD} onMouseEnter={liftOn} onMouseLeave={liftOff}>
           <div style={HDR}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <span style={{ width:20, height:2, background:color }}/>
@@ -89,7 +109,7 @@ export default function FixtureList({ sport, color, fixtures, results, loading }
         </div>
 
         {/* Latest results */}
-        <div style={CARD} id="results">
+        <div style={CARD} id="results" onMouseEnter={liftOn} onMouseLeave={liftOff}>
           <div style={HDR}>
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <span style={{ width:20, height:2, background:color }}/>
