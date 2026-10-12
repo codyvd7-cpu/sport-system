@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { type SportKey, getSportColor } from '@/lib/sports';
 import PortalAuthGuard from '@/components/PortalAuthGuard';
 import PortalAmbient     from '@/components/portal/PortalAmbient';
+import PortalCinematicLayer from '@/components/portal/PortalCinematicLayer';
 import ScrollReveal      from '@/components/portal/ScrollReveal';
 import PortalNav         from '@/components/portal/PortalNav';
 import PortalHero        from '@/components/portal/PortalHero';
@@ -83,6 +84,7 @@ function PortalInner() {
         {/* Subtle grid texture */}
         <div style={{ position:'fixed', inset:0, backgroundImage:'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize:'56px 56px', pointerEvents:'none', zIndex:0 }}/>
         <PortalAmbient color={color}/>
+        <PortalCinematicLayer color={color}/>
         <PortalNav sport={sport}/>
 
         {/* One code now opens the whole school, so a parent with children in
