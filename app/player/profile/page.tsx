@@ -10,6 +10,7 @@ import AlertOptIn from '@/components/AlertOptIn';
 import SafetyBanner from '@/components/SafetyBanner';
 import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
 import TrainingTab from '@/components/player/TrainingTab';
+import TiltCard from '@/components/portal/TiltCard';
 import { useBranding } from '@/components/BrandingProvider';
 
 type Row = Record<string, any>;
@@ -312,9 +313,34 @@ function TrainingLog({ D, C, onScan }: any) {
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 function Overview({ D, C, attPct, setNav, onScan }: any) {
-  const { athlete: ath, fixtures, results, reminders, hpInsights, hpStudent } = D;
+  const { athlete: ath, fixtures, results, reminders, hpInsights, hpStudent, selections } = D;
+  // Only the athlete's OWN team. No fallback to fixtures[0] — a 3rd-team
+  // player with no 3rd-team fixture must see the empty state, NOT a 1st-team
+  // match presented as theirs (the bug a parent spotted on day one).
   const teamFx = ath?.team ? fixtures.filter((f: Row) => f.team === ath.team) : fixtures;
-  const nxt = teamFx[0] || fixtures[0] || null;
+  const nxt = teamFx[0] || null;
+
+  // ── The player's own selection for an upcoming match. This is the single
+  // most useful thing on the page: when a coach has picked and published a
+  // side, the player sees they're in it and exactly what to do — meet time,
+  // place, kit, transport — paired to the real fixture. Draft selections never
+  // reach here (the API only returns status='published').
+  const today0 = new Date(); today0.setHours(0, 0, 0, 0);
+  const mySelection = React.useMemo(() => {
+    const rows = (selections || []).map((s: Row) => {
+      const ts = Array.isArray(s.team_selections) ? s.team_selections[0] : s.team_selections;
+      const fx = ts?.fixture_id ? fixtures.find((f: Row) => f.id === ts.fixture_id) : null;
+      return { s, ts, fx };
+    }).filter((x: any) => x.ts);
+    // Prefer selections tied to a still-upcoming fixture, soonest first;
+    // keep fixture-less selections at the end.
+    rows.sort((a: any, b: any) => {
+      const da = a.fx ? new Date(a.fx.fixture_date).getTime() : Infinity;
+      const db2 = b.fx ? new Date(b.fx.fixture_date).getTime() : Infinity;
+      return da - db2;
+    });
+    return rows.find((x: any) => !x.fx || new Date(x.fx.fixture_date) >= today0) || null;
+  }, [selections, fixtures]);
   const teamRes = ath?.team ? results.filter((r: Row) => r.team === ath.team) : results;
   const wins = teamRes.filter((r: Row) => outcome(r.final_score) === 'WIN').length;
   const draws = teamRes.filter((r: Row) => outcome(r.final_score) === 'DRAW').length;
@@ -330,9 +356,65 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
   const daysTo = nxt ? Math.max(0, Math.ceil((new Date(nxt.fixture_date).getTime() - Date.now()) / 86400000)) : null;
 
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+    {/* YOU'RE SELECTED — the headline. Only shows when a coach has published a
+        side this player is named in. Everything a player/parent actually needs
+        for match day, in one card. */}
+    {mySelection && (() => {
+      const { s, ts, fx } = mySelection as any;
+      const details = [
+        ts.meet_time  && { l: 'Meet',      v: ts.meet_place ? `${fTime(ts.meet_time)} · ${ts.meet_place}` : fTime(ts.meet_time) },
+        !ts.meet_time && ts.meet_place && { l: 'Meet at', v: ts.meet_place },
+        ts.kit        && { l: 'Kit',       v: ts.kit },
+        ts.transport  && { l: 'Transport', v: ts.transport },
+        ts.notes      && { l: 'Note',      v: ts.notes },
+      ].filter(Boolean) as { l: string; v: string }[];
+      return (
+        <TiltCard max={5} scale={1.01} lift={4} className="rise d1" style={{
+          borderRadius: 20, overflow: 'hidden', border: `1px solid ${C}55`,
+          background: `linear-gradient(135deg, ${C}2e 0%, ${C}12 40%, rgba(255,255,255,0.02) 100%)`,
+          padding: '22px 24px', boxShadow: `0 20px 60px -22px ${C}99`,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
+            <span style={{ fontSize: 16 }}>✅</span>
+            <p style={{ fontSize: 10.5, fontWeight: 900, color: C, textTransform: 'uppercase', letterSpacing: '0.22em' }}>You're selected</p>
+            {s.shirt_number != null && (
+              <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 900, color: '#04070f', background: C, borderRadius: 9, padding: '4px 11px' }}>
+                #{s.shirt_number}
+              </span>
+            )}
+          </div>
+          {fx ? (
+            <>
+              <p style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.01em', lineHeight: 1.05 }}>vs {fx.opponent}</p>
+              <p style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.6)', marginTop: 5 }}>
+                {[fx.team, fd(fx.fixture_date, { weekday: 'long', day: 'numeric', month: 'long' }), fx.fixture_time ? fTime(fx.fixture_time) : null, fx.venue].filter(Boolean).join(' · ')}
+              </p>
+            </>
+          ) : (
+            <p style={{ fontSize: 18, fontWeight: 900 }}>Squad named{s.position ? ` · ${s.position}` : ''}</p>
+          )}
+          {(s.position || s.role) && fx && (
+            <p style={{ fontSize: 11.5, color: C, fontWeight: 800, marginTop: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              {[s.position, s.role && s.role !== 'player' ? s.role : null].filter(Boolean).join(' · ')}
+            </p>
+          )}
+          {details.length > 0 && (
+            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
+              {details.map(d => (
+                <div key={d.l} style={{ borderRadius: 12, background: 'rgba(0,0,0,0.26)', border: `1px solid ${C}2a`, padding: '11px 13px' }}>
+                  <p style={{ fontSize: 8.5, fontWeight: 800, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4 }}>{d.l}</p>
+                  <p style={{ fontSize: 13, fontWeight: 700, color: 'white', lineHeight: 1.35 }}>{d.v}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </TiltCard>
+      );
+    })()}
+
     {/* Next fixture — countdown card */}
     {nxt ? (
-      <div className="rise d1" style={{ position: 'relative', borderRadius: 20, overflow: 'hidden', border: `1px solid ${C}35`, background: `linear-gradient(120deg, ${C}20, rgba(255,255,255,0.02) 60%)`, padding: '20px 22px', boxShadow: `0 14px 44px ${C}12` }}>
+      <TiltCard max={5} scale={1.01} lift={4} className="rise d1" style={{ borderRadius: 20, overflow: 'hidden', border: `1px solid ${C}35`, background: `linear-gradient(120deg, ${C}20, rgba(255,255,255,0.02) 60%)`, padding: '20px 22px', boxShadow: `0 14px 44px ${C}12` }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 18 }}>
           <div style={{ textAlign: 'center', flexShrink: 0, minWidth: 62, padding: '10px 12px', borderRadius: 14, background: 'rgba(0,0,0,0.28)', border: `1px solid ${C}30` }}>
             <p style={{ fontSize: 24, fontWeight: 900, color: C, lineHeight: 1 }}>{daysTo === 0 ? '🔥' : daysTo}</p>
@@ -347,7 +429,7 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
           </div>
           <button onClick={() => setNav('schedule')} style={{ background: `${C}18`, border: `1px solid ${C}40`, color: C, fontSize: 11.5, fontWeight: 800, cursor: 'pointer', padding: '9px 16px', borderRadius: 11, flexShrink: 0 }}>Schedule →</button>
         </div>
-      </div>
+      </TiltCard>
     ) : (
       <Card className="rise d1"><Empty icon="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" title="No upcoming fixtures" body="Your team's next fixtures will appear here once published."/></Card>
     )}
@@ -362,10 +444,10 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         { v: <><span style={{ color: '#22c55e' }}>{cW}</span><span style={{ color: 'rgba(255,255,255,0.18)', margin: '0 3px' }}>·</span><span style={{ color: '#fbbf24' }}>{cD}</span><span style={{ color: 'rgba(255,255,255,0.18)', margin: '0 3px' }}>·</span><span style={{ color: '#f87171' }}>{cL}</span></>, l: `${ath?.team || 'Team'} W·D·L`, c: 'white' },
         { v: hpStudent ? `${cT}/${(hpStudent.grade === 'Grade 9' ? GRADE9_TESTS : GRADE8_TESTS).length}` : '—', l: 'Tests done', c: hpStudent ? C : 'rgba(255,255,255,0.25)' },
       ].map((x, i) => (
-        <div key={i} style={{ borderRadius: 16, background: CARD, border: `1px solid ${B}`, padding: '16px 12px', textAlign: 'center' }}>
+        <TiltCard key={i} max={9} scale={1.03} lift={3} style={{ borderRadius: 16, background: CARD, border: `1px solid ${B}`, padding: '16px 12px', textAlign: 'center' }}>
           <p style={{ fontSize: 22, fontWeight: 900, color: x.c as string }}>{x.v}</p>
           <p style={{ fontSize: 8.5, fontWeight: 800, color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.12em', marginTop: 4 }}>{x.l}</p>
-        </div>
+        </TiltCard>
       ))}
     </div>
 
