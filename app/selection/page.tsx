@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useRole } from '@/lib/useRole';
 import { getSportColor, type SportKey } from '@/lib/sports';
 import { useToast } from '@/components/Toast';
+import TiltCard from '@/components/portal/TiltCard';
 
 // ─── Team Selection ────────────────────────────────────────────────────────────
 // Picking a side for a fixture — the ritual the app was missing. Fixtures
@@ -14,8 +15,9 @@ import { useToast } from '@/components/Toast';
 // down a squad list moving players into the side. Availability and recent
 // attendance sit inline as CONSEQUENCE — an injured player can't be selected,
 // a patchy trainer is flagged — so the register the coach takes finally has a
-// use. The one bold element is the live "picked / to go" count; everything
-// else stays quiet. Nothing here reaches a player until the coach publishes.
+// use. Shirt numbers, the match-day logistics and a note are captured here and
+// surface on each selected player's own page the moment the coach publishes.
+// Nothing reaches a player until then.
 
 type Row = Record<string, any>;
 type Fixture = { id: string; team: string; opponent: string; fixture_date: string; fixture_time: string | null; venue: string | null; home_away: string | null; sport: string };
@@ -24,6 +26,7 @@ type SquadMember = {
   availability: string | null; flag: string | null; selectable: boolean;
   attendedRecent: number | null; sessionsRecent: number | null;
 };
+type Pick = { role: 'starting' | 'bench'; shirt: string; position: string };
 
 export default function SelectionPage() {
   const { showToast } = useToast();
@@ -33,7 +36,7 @@ export default function SelectionPage() {
   const [fixtures, setFixtures] = React.useState<Fixture[]>([]);
   const [fixtureId, setFixtureId] = React.useState('');
   const [squad, setSquad] = React.useState<SquadMember[]>([]);
-  const [picked, setPicked] = React.useState<Record<string, 'starting' | 'bench'>>({});
+  const [picked, setPicked] = React.useState<Record<string, Pick>>({});
   const [logistics, setLogistics] = React.useState({ meetTime: '', meetPlace: '', kit: '', transport: '', notes: '' });
   const [loading, setLoading] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
@@ -65,9 +68,15 @@ export default function SelectionPage() {
         const d = await res.json();
         if (!res.ok) { showToast(d.error || 'Could not load squad'); setLoading(false); return; }
         setSquad(d.squad || []);
-        const p: Record<string, 'starting' | 'bench'> = {};
+        const p: Record<string, Pick> = {};
         for (const row of (d.picked || [])) {
-          if (row.role === 'starting' || row.role === 'bench') p[row.athlete_id] = row.role;
+          if (row.role === 'starting' || row.role === 'bench') {
+            p[row.athlete_id] = {
+              role: row.role,
+              shirt: row.shirt_number != null ? String(row.shirt_number) : '',
+              position: row.position || '',
+            };
+          }
         }
         setPicked(p);
         setStatus(d.selection?.status ?? null);
@@ -86,26 +95,39 @@ export default function SelectionPage() {
   }, [fixtureId, authHeader, showToast]);
 
   const fixture = fixtures.find(f => f.id === fixtureId);
-  const startingCount = Object.values(picked).filter(r => r === 'starting').length;
-  const benchCount = Object.values(picked).filter(r => r === 'bench').length;
+  const startingCount = Object.values(picked).filter(r => r.role === 'starting').length;
+  const benchCount = Object.values(picked).filter(r => r.role === 'bench').length;
 
-  function cycle(id: string, selectable: boolean) {
+  // Tap the role marker to cycle Starting → Bench → out. Shirt/position are
+  // preserved across the cycle so a coach doesn't lose a number by toggling.
+  function cycle(id: string, selectable: boolean, defaultPos: string | null) {
     if (!selectable) return;
     setPicked(prev => {
       const cur = prev[id];
       const next = { ...prev };
-      if (!cur) next[id] = 'starting';
-      else if (cur === 'starting') next[id] = 'bench';
+      if (!cur) next[id] = { role: 'starting', shirt: '', position: defaultPos || '' };
+      else if (cur.role === 'starting') next[id] = { ...cur, role: 'bench' };
       else delete next[id];
       return next;
     });
+  }
+
+  function setShirt(id: string, shirt: string) {
+    // Two digits, numbers only — a hockey/rugby shirt is never three digits.
+    const clean = shirt.replace(/\D/g, '').slice(0, 2);
+    setPicked(prev => prev[id] ? { ...prev, [id]: { ...prev[id], shirt: clean } } : prev);
   }
 
   async function save(publish: boolean) {
     if (!fixtureId) return;
     setSaving(true);
     try {
-      const players = Object.entries(picked).map(([athleteId, role]) => ({ athleteId, role }));
+      const players = Object.entries(picked).map(([athleteId, p]) => ({
+        athleteId,
+        role: p.role,
+        shirtNumber: p.shirt ? Number(p.shirt) : undefined,
+        position: p.position || undefined,
+      }));
       const res = await fetch('/api/coach/selection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
@@ -154,7 +176,7 @@ export default function SelectionPage() {
         {!loading && fixture && (
           <>
             {/* The one bold element: the live count and the fixture it's for. */}
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-4 rounded-2xl border p-5"
+            <TiltCard max={4} scale={1.004} lift={2} className="mb-5 flex flex-wrap items-end justify-between gap-4 rounded-2xl border p-5"
               style={{ borderColor: `${color}33`, background: `linear-gradient(135deg, ${color}14, rgba(255,255,255,0.01))` }}>
               <div>
                 <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color }}>{fixture.team}</p>
@@ -174,21 +196,20 @@ export default function SelectionPage() {
                   </div>
                 )}
               </div>
-            </div>
+            </TiltCard>
 
-            {/* Squad — tap a player to cycle Starting → Bench → out. Availability
-                and attendance are shown so the register has consequence. */}
+            {/* Squad — tap the marker to cycle Starting → Bench → out. Picked
+                players reveal a shirt-number box. Availability and attendance
+                are shown so the register has consequence. */}
             <div className="overflow-hidden rounded-2xl border border-white/8">
               {squad.length === 0 && <p className="p-8 text-center text-sm text-white/30">No athletes in this team yet.</p>}
               {squad.map((a, i) => {
-                const role = picked[a.id];
-                const surname = a.full_name.split(' ').slice(-1)[0];
+                const pick = picked[a.id];
+                const role = pick?.role;
                 return (
-                  <button
+                  <div
                     key={a.id}
-                    onClick={() => cycle(a.id, a.selectable)}
-                    disabled={!a.selectable}
-                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition disabled:cursor-not-allowed"
+                    className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors"
                     style={{
                       borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.05)',
                       background: role ? `${color}0f` : 'transparent',
@@ -196,16 +217,23 @@ export default function SelectionPage() {
                     }}
                   >
                     {/* Role marker doubles as the tap target's state. */}
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black"
+                    <button
+                      onClick={() => cycle(a.id, a.selectable, a.position)}
+                      disabled={!a.selectable}
+                      aria-label={role ? `${a.full_name}: ${role}, tap to change` : `Add ${a.full_name}`}
+                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[11px] font-black transition disabled:cursor-not-allowed"
                       style={{
                         background: role === 'starting' ? color : role === 'bench' ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)',
                         color: role === 'starting' ? '#03060c' : role === 'bench' ? 'white' : 'rgba(255,255,255,0.3)',
                         border: role ? 'none' : '1px solid rgba(255,255,255,0.1)',
                       }}>
                       {role === 'starting' ? 'XI' : role === 'bench' ? 'SUB' : '+'}
-                    </span>
+                    </button>
 
-                    <div className="min-w-0 flex-1">
+                    <button
+                      onClick={() => cycle(a.id, a.selectable, a.position)}
+                      disabled={!a.selectable}
+                      className="min-w-0 flex-1 text-left disabled:cursor-not-allowed">
                       <p className="truncate text-sm font-semibold">
                         {a.full_name}
                         {a.position && <span className="ml-2 text-xs font-normal text-white/35">{a.position}</span>}
@@ -215,13 +243,31 @@ export default function SelectionPage() {
                       ) : a.sessionsRecent ? (
                         <p className="mt-0.5 text-[11px] text-white/30">{a.attendedRecent}/{a.sessionsRecent} at training</p>
                       ) : null}
-                    </div>
-                  </button>
+                    </button>
+
+                    {/* Shirt number — appears only once a player is in the side.
+                        Tap target is separate from the cycle button so typing a
+                        number never drops the player. */}
+                    {role && (
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-white/25">No.</span>
+                        <input
+                          inputMode="numeric"
+                          value={pick.shirt}
+                          onChange={e => setShirt(a.id, e.target.value)}
+                          placeholder="—"
+                          className="w-11 rounded-lg border border-white/10 bg-[rgba(255,255,255,0.04)] px-2 py-1.5 text-center text-sm font-bold tabular-nums text-white outline-none focus:border-white/30"
+                          style={{ caretColor: color }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
 
-            {/* Logistics — the WhatsApp details, captured once. */}
+            {/* Logistics — the WhatsApp details, captured once and shown on each
+                selected player's own page when published. */}
             <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {([['meetTime', 'Meet time', 'time'], ['meetPlace', 'Meet place', 'text'], ['kit', 'Kit', 'text'], ['transport', 'Transport', 'text']] as const).map(([k, label, type]) => (
                 <div key={k}>
@@ -233,18 +279,30 @@ export default function SelectionPage() {
               ))}
             </div>
 
+            {/* Match note — free text that reaches every selected player. */}
+            <div className="mt-3">
+              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-white/30">Note to players</label>
+              <textarea value={logistics.notes}
+                onChange={e => setLogistics(l => ({ ...l, notes: e.target.value }))}
+                rows={2}
+                placeholder="e.g. Bus leaves sharp at 13:00 — be changed and ready."
+                className="w-full resize-none rounded-lg border border-white/8 bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-white outline-none focus:border-white/25" />
+            </div>
+
             {/* Actions */}
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <button onClick={() => save(true)} disabled={saving || startingCount === 0}
-                className="rounded-xl px-6 py-3 text-sm font-bold disabled:opacity-40"
+                className="rounded-xl px-6 py-3 text-sm font-bold transition disabled:opacity-40"
                 style={{ background: color, color: '#03060c' }}>
                 {saving ? 'Saving…' : status === 'published' ? 'Update published team' : 'Publish team'}
               </button>
               <button onClick={() => save(false)} disabled={saving}
-                className="rounded-xl border border-white/12 px-6 py-3 text-sm font-semibold text-white/70 disabled:opacity-40">
+                className="rounded-xl border border-white/12 px-6 py-3 text-sm font-semibold text-white/70 transition disabled:opacity-40">
                 Save draft
               </button>
-              {startingCount === 0 && <p className="self-center text-xs text-white/30">Pick at least one player to publish.</p>}
+              {startingCount === 0
+                ? <p className="self-center text-xs text-white/30">Pick at least one player to publish.</p>
+                : <p className="self-center text-xs text-white/30">Publishing shows the side, meet time, kit &amp; transport on each selected player&apos;s page.</p>}
             </div>
           </>
         )}
