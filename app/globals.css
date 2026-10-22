@@ -440,3 +440,88 @@ hr {
   .h-enter, .h-pulse { animation: none; }
   * { scroll-behavior: auto !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   GLOBAL UX POLISH  (whole-app)
+   The small things nobody lists but everybody feels: a dropdown that shows it's
+   a dropdown, taps that don't flash grey, buttons that depress, phones that
+   don't zoom when you focus a field. One block, last in the cascade, so it
+   lifts every screen at once without touching a single component.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* Kill the grey/blue tap flash on mobile, and stop iOS resizing text on
+   rotate. Both are pure "cheap-feeling app" tells. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* Every <select> has appearance:none (so it matches the dark UI) — which also
+   strips the native chevron and leaves a box with no sign it opens. Put a
+   quiet parchment chevron back on all of them. background-image only, so a
+   component setting its own background-color is untouched. */
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23a39e93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  background-size: 15px;
+  padding-right: 38px;
+}
+
+/* Placeholders across the app settle to one quiet tone instead of each input
+   inventing its own grey. */
+::placeholder { color: var(--h-text-4); opacity: 1; }
+
+/* Tactile press — plain buttons and links dip very slightly when pressed.
+   Elements that drive their own transform (the tilt cards) set it inline, which
+   outranks this, so they're left alone. */
+:where(button, a, [role="button"], summary) {
+  transition: transform .12s var(--ease), filter .15s var(--ease),
+              background-color .15s var(--ease), border-color .15s var(--ease),
+              color .15s var(--ease), opacity .15s var(--ease);
+}
+:where(button, a, [role="button"]):active { transform: translateY(0.5px) scale(0.985); }
+:where(button, [role="button"]):disabled:active { transform: none; }
+.h-btn:active { transform: translateY(1px); filter: brightness(1.04); }
+
+/* Disabled controls read clearly disabled, consistently. */
+:where(button, [role="button"], input, select, textarea):disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Autofill tuned to the heritage well, not the old navy, so a remembered email
+   doesn't flash a different-coloured box. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--h-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--h-ink-inset) inset;
+  caret-color: var(--accent);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* One scrollbar, on-palette. The file had two conflicting definitions that
+   left a navy (#020617) track not used anywhere else. Settle it. */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--h-line-strong);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(244,241,234,0.26); background-clip: padding-box; }
+* { scrollbar-width: thin; scrollbar-color: var(--h-line-strong) transparent; }
+
+/* On phones, any text input under 16px makes iOS zoom the whole page on focus —
+   the jarring lurch that screams "not a real app". Floor the font at 16px on
+   small screens; it also just reads better on a handset. */
+@media (max-width: 760px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select, textarea { font-size: 16px; }
+}
+
+/* Images never force a horizontal scroll out of a tight column. Width-only, so
+   fixed-size avatars/cover crops keep their dimensions. */
+img, video { max-width: 100%; }
