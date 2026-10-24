@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { recordAthleteEvent } from '@/lib/athleteEvents';
+import { pushToUsers } from '@/lib/push';
 
 // ─── /api/coach/selection ─────────────────────────────────────────────────────
 // Picking a side for a fixture.
@@ -211,6 +212,30 @@ export async function POST(req: NextRequest) {
         actor: auth.email || 'staff',
       });
     }
+
+    // The wrist moment: a targeted push to each selected player who has linked
+    // an account and allowed notifications. Apple Watch / Wear OS mirror it
+    // automatically, so "you're selected" lands on the wrist within seconds of
+    // the coach hitting publish. Best-effort — never blocks or fails the save.
+    void (async () => {
+      try {
+        const athleteIds = players.map(p => String(p.athleteId)).filter(Boolean);
+        if (!athleteIds.length) return;
+        const { data: profiles } = await db.from('player_profiles')
+          .select('user_id').in('athlete_id', athleteIds).not('user_id', 'is', null);
+        const userIds = (profiles || []).map((r: { user_id: string }) => r.user_id);
+        if (!userIds.length) return;
+        const when = new Date(fixture.fixture_date).toLocaleDateString('en-ZA', { weekday: 'short', day: 'numeric', month: 'short' });
+        const meet = body.meetTime ? ` · meet ${String(body.meetTime).slice(0, 5)}` : '';
+        await pushToUsers(db, userIds, {
+          title: 'You’re selected ✅',
+          body: `${fixture.team} vs ${fixture.opponent} · ${when}${meet}`,
+          url: '/watch',
+          tag: `selection-${selection.id}`,
+          urgent: true,
+        });
+      } catch { /* push is best-effort */ }
+    })();
   }
 
   return NextResponse.json({ ok: true, selectionId: selection.id, published: publish });
