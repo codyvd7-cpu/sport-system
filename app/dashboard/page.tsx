@@ -11,6 +11,7 @@ import SessionLoadPanel from '@/components/coach/SessionLoadPanel';
 import DepartmentHealth from '@/components/coach/DepartmentHealth';
 import GettingStarted from '@/components/coach/GettingStarted';
 import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import TiltCard from '@/components/portal/TiltCard';
 import { getTeamGroups, type SportKey } from '@/lib/sports';
 
 // Records attendance events. Deliberately only logs NON-present statuses:
@@ -201,16 +202,20 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
         <CoachInbox team={teamName} accent={accent}/>
       </FadeUp>
 
-      {/* ── NEXT MATCH CARD ── */}
+      {/* ── NEXT MATCH CARD ──
+          Now carries the TEAM's own accent (was a hardcoded violet that
+          matched nothing else on the page) and the signature tilt depth, so
+          the coach's daily hero reads as part of the same system as the portal
+          and the player page. */}
       {next&&(
         <FadeUp delay={60}>
-          <div className="relative overflow-hidden rounded-2xl border"
-            style={{background:'rgba(167,139,250,0.04)',borderColor:'rgba(167,139,250,0.15)'}}>
+          <TiltCard max={5} scale={1.01} lift={3} className="relative overflow-hidden rounded-2xl border"
+            style={{background:`${accent}0a`,borderColor:`${accent}26`,boxShadow:`0 16px 48px -24px ${accent}99`}}>
             <div className="absolute top-0 left-0 right-0 h-px"
-              style={{background:'linear-gradient(90deg,transparent,rgba(167,139,250,0.5),transparent)'}}/>
+              style={{background:`linear-gradient(90deg,transparent,${accent}80,transparent)`}}/>
             <div className="flex items-center gap-4 px-5 py-4">
               <div className="flex-1 min-w-0">
-                <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-violet-400 mb-1">Next Match</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.3em] mb-1" style={{color:accent}}>Next Match</p>
                 <p className="text-[15px] font-black text-white">vs {next.opponent}</p>
                 <p className="text-[11px] mt-0.5" style={{color:'rgba(255,255,255,0.35)'}}>
                   {new Date(next.fixture_date).toLocaleDateString('en-ZA',{weekday:'short',day:'numeric',month:'short'})}
@@ -219,11 +224,11 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-4xl font-black leading-none" style={{color:'#a78bfa'}}>{daysTo}</p>
-                <p className="text-[9px] font-semibold uppercase tracking-widest mt-1" style={{color:'rgba(167,139,250,0.5)'}}>days</p>
+                <p className="text-4xl font-black leading-none" style={{color:accent}}>{daysTo === 0 ? 'Today' : daysTo}</p>
+                <p className="text-[9px] font-semibold uppercase tracking-widest mt-1" style={{color:`${accent}80`}}>{daysTo === 0 ? '' : daysTo === 1 ? 'day' : 'days'}</p>
               </div>
             </div>
-          </div>
+          </TiltCard>
         </FadeUp>
       )}
 
@@ -390,7 +395,7 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
             {[
               {href:`/teams/${teamName}`,label:'Log Result',sub:'Post match score',color:accent,
                 icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M12 5v14M5 12h14"/></svg>},
-              {href:'/performance',label:'Testing',sub:'Enter results',color:'#a78bfa',
+              {href:'/performance',label:'Testing',sub:'Enter results',color:accent,
                 icon:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>},
             ].map(l=>(
               <Link key={l.href} href={l.href}
@@ -598,7 +603,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
             {label:'Modified', val:modified.length, color:modified.length>0?'#fbbf24':'rgba(255,255,255,0.15)', accent:modified.length>0?'#fbbf24':'rgba(255,255,255,0.08)', icon:'⚡'},
             {label:'Teams',    val:cards.length,    color:sportColor, accent:sportColor, icon:'🏆'},
           ].map(s=>(
-            <div key={s.label} className="relative overflow-hidden rounded-2xl p-4"
+            <TiltCard key={s.label} max={10} scale={1.03} lift={3} className="relative overflow-hidden rounded-2xl p-4"
               style={{
                 background:'rgba(255,255,255,0.02)',
                 border:'1px solid transparent',
@@ -608,7 +613,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
               <div className="absolute inset-x-0 top-0 h-px" style={{background:`linear-gradient(90deg,transparent,${s.accent}60,transparent)`}}/>
               <p className="text-[11px] mb-0.5" style={{color:s.accent === 'rgba(255,255,255,0.08)'?'rgba(255,255,255,0.2)':s.accent+'99'}}>{s.icon} {s.label}</p>
               <CountUp value={s.val} className="text-4xl font-black leading-none block tracking-tight" style={{color:s.color}}/>
-            </div>
+            </TiltCard>
           ))}
         </div>
       </FadeUp>
