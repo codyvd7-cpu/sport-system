@@ -10,7 +10,7 @@ import CoachInbox from '@/components/coach/CoachInbox';
 import SessionLoadPanel from '@/components/coach/SessionLoadPanel';
 import DepartmentHealth from '@/components/coach/DepartmentHealth';
 import GettingStarted from '@/components/coach/GettingStarted';
-import { FadeUp, StaggerList, StaggerItem, HoverCard, CountUp } from '@/components/Motion';
+import { FadeUp, StaggerList, StaggerItem, CountUp } from '@/components/Motion';
 import TiltCard from '@/components/portal/TiltCard';
 import { getTeamGroups, type SportKey } from '@/lib/sports';
 
@@ -70,7 +70,42 @@ function getDim(t:string, groups:{teams:string[];dim:string}[]){
   return groups.find(g=>g.teams.includes(t))?.dim||'rgba(255,255,255,0.04)';
 }
 function weekAgo(){return new Date(Date.now()-7*86400000).toISOString().split('T')[0];}
+function weeksAgo(n:number){return new Date(Date.now()-n*7*86400000).toISOString().split('T')[0];}
 function today(){return new Date().toISOString().split('T')[0];}
+
+// Eight weekly present-rates (present+late / total) from a set of attendance
+// rows. Weeks with no session are null so the sparkline can skip them rather
+// than draw a misleading drop to zero.
+function weeklyRates(recs:Row[]):(number|null)[]{
+  const out:(number|null)[]=[];
+  for(let i=7;i>=0;i--){
+    const end=new Date();end.setDate(end.getDate()-i*7);
+    const start=new Date(end);start.setDate(start.getDate()-6);
+    const s=start.toISOString().slice(0,10),e=end.toISOString().slice(0,10);
+    const wk=recs.filter(r=>r.session_date>=s&&r.session_date<=e);
+    out.push(wk.length?Math.round(wk.filter(r=>['present','late'].includes(r.status?.toLowerCase()||'')).length/wk.length*100):null);
+  }
+  return out;
+}
+
+// A tiny inline trend line — no library, no axes. Just the shape of the last
+// eight weeks' attendance, so a head of sport reads a team's direction at a
+// glance across the grid.
+function Sparkline({values,color}:{values:(number|null)[];color:string}){
+  const pts=values.map((v,i)=>({v,i})).filter(p=>p.v!==null) as {v:number;i:number}[];
+  if(pts.length<2) return null;
+  const W=72,H=22,P=2;
+  const xs=(i:number)=>P+(i/7)*(W-2*P);
+  const ys=(v:number)=>H-P-(v/100)*(H-2*P);
+  const d=pts.map((p,k)=>`${k===0?'M':'L'}${xs(p.i).toFixed(1)} ${ys(p.v).toFixed(1)}`).join(' ');
+  const last=pts[pts.length-1];
+  return (
+    <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{display:'block',overflow:'visible'}}>
+      <path d={d} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" opacity={0.85}/>
+      <circle cx={xs(last.i)} cy={ys(last.v)} r={2.1} fill={color}/>
+    </svg>
+  );
+}
 
 const STATUS_CFG = {
   Present: {bg:'rgba(16,185,129,0.12)',  color:'#6ee7b7', border:'rgba(16,185,129,0.3)' },
@@ -556,7 +591,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
       const rate=ta.length>0?Math.round((tp/ta.length)*100):null;
       const inj=sq.filter(a=>a.availability==='Injured').length;
       const mod=sq.filter(a=>a.availability==='Modified').length;
-      return{team,count:sq.length,rate,inj,mod,accent:getAccent(team,TEAM_GROUPS),dim:getDim(team,TEAM_GROUPS),coach:coachFor(team)};
+      return{team,count:sq.length,rate,inj,mod,trend:weeklyRates(ta),accent:getAccent(team,TEAM_GROUPS),dim:getDim(team,TEAM_GROUPS),coach:coachFor(team)};
     });
 
   const total=athletes.length;
@@ -723,14 +758,14 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
         <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.25em]"
           style={{color:'rgba(255,255,255,0.2)'}}>All Teams</p>
         <StaggerList className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" stagger={25}>
-          {cards.map(({team,count,rate,inj,mod,accent,dim,coach})=>(
+          {cards.map(({team,count,rate,inj,mod,trend,accent,dim,coach})=>(
             <StaggerItem key={team}>
-              <HoverCard>
+              <TiltCard max={8} scale={1.02} lift={4} className="rounded-2xl"
+                style={{boxShadow:`0 0 0 1px rgba(255,255,255,0.07), 0 10px 36px -18px ${accent}aa`}}>
                 <Link href={'/teams/'+encodeURIComponent(team)}
                   className="group relative overflow-hidden rounded-2xl block"
                   style={{
                     background:'rgba(255,255,255,0.015)',
-                    boxShadow:'0 0 0 1px rgba(255,255,255,0.07), 0 4px 24px rgba(0,0,0,0.2)',
                   }}>
                   {/* Top accent line */}
                   <div className="absolute inset-x-0 top-0 h-[2px]"
@@ -759,6 +794,13 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
                         background:'#10b981'
                       }}/>
                     </div>
+                    {/* 8-week attendance trend — the team's direction at a glance */}
+                    {trend.filter(v=>v!==null).length>=2&&(
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[8px] font-bold uppercase tracking-[0.14em]" style={{color:'rgba(255,255,255,0.22)'}}>8-wk trend</span>
+                        <Sparkline values={trend} color={accent}/>
+                      </div>
+                    )}
                     {/* Status badges */}
                     <div className="flex gap-1.5 flex-wrap">
                       {inj>0&&<span className="rounded-full px-2 py-0.5 text-[9px] font-bold" style={{background:'rgba(248,113,113,0.12)',color:'#fca5a5',border:'1px solid rgba(248,113,113,0.2)'}}>{inj} inj</span>}
@@ -767,7 +809,7 @@ function OverviewView({athletes,attendance,myTeams,canSeeAllTeams,coaches,sport}
                     </div>
                   </div>
                 </Link>
-              </HoverCard>
+              </TiltCard>
             </StaggerItem>
           ))}
         </StaggerList>
@@ -810,11 +852,15 @@ export default function DashboardPage() {
     else if(sport) q=q.eq('sport',sport);
     const [aRes,attRes,fixRes,coachRes]=await Promise.all([
       q,
+      // Eight weeks, not one — the trend chart and the per-team sparklines are
+      // built for 8 weeks but were being starved on a 7-day window (so the
+      // trend usually read "not enough data"). Today's register still just
+      // filters this set to today.
       supabase.from('attendance').select('id,athlete_id,status,session_date,session_type,sport')
         .eq('sport', sport || 'hockey')
-        .gte('session_date',weekAgo())
+        .gte('session_date',weeksAgo(8))
         .order('session_date',{ascending:false})
-        .limit(500),
+        .limit(1500),
       supabase.from('portal_fixtures').select('*')
         .eq('sport', sport || 'hockey')
         .order('fixture_date').limit(20),
@@ -846,12 +892,13 @@ export default function DashboardPage() {
 
   return(
     <main className="min-h-screen pb-24 text-white md:pb-8" style={{background:'var(--bg)'}}>
-      {/* Ambient light */}
+      {/* Ambient light — tinted to the sport's own colour rather than a fixed
+          sky/violet, so the whole surface belongs to the school in view. */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 left-1/4 h-80 w-80 rounded-full blur-[100px]"
-          style={{background:'rgba(56,189,248,0.05)'}}/>
+          style={{background:`${sportColor}0d`}}/>
         <div className="absolute top-0 right-0 h-64 w-64 rounded-full blur-[80px]"
-          style={{background:'rgba(167,139,250,0.04)'}}/>
+          style={{background:`${sportColor}0a`}}/>
       </div>
       <div className="relative mx-auto max-w-7xl px-4 py-6 sm:px-6">
         {isSingle&&singleTeam?(
