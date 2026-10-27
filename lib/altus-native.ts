@@ -34,7 +34,9 @@ export async function syncHealth(
   getAuthToken: () => Promise<string | null>,
 ): Promise<{ imported: number } | { error: string }> {
   if (!isNativeApp()) return { error: 'Only available in the Altus app.' };
-  const Health = cap()?.Plugins?.Health;
+  // The capacitor-health plugin registers under the name 'HealthPlugin'
+  // (not 'Health'). Accept either, for safety across versions.
+  const Health = cap()?.Plugins?.HealthPlugin || cap()?.Plugins?.Health;
   if (!Health) return { error: 'Health isn’t enabled in this app build yet.' };
 
   try {
