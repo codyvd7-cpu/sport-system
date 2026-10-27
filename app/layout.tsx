@@ -3,6 +3,7 @@ import { ToastProvider } from '@/components/Toast';
 import SplashScreen from '@/components/SplashScreen';
 import QueryProvider from '@/components/QueryProvider';
 import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
+import NativeShell from '@/components/NativeShell';
 import BrandingProvider from '@/components/BrandingProvider';
 import './globals.css';
 import UrgentAlertBanner from '@/components/UrgentAlertBanner';
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body style={{overflowX:"hidden",maxWidth:"100vw"}}>
         <SplashScreen/>
         <ServiceWorkerRegistrar/>
+        <NativeShell/>
         <QueryProvider>
           <BrandingProvider>
           <ToastProvider>

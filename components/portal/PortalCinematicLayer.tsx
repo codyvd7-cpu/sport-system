@@ -55,12 +55,13 @@ export default function PortalCinematicLayer({ color }: Props) {
         background:'radial-gradient(130% 100% at 50% 35%, transparent 55%, rgba(2,5,11,0.55) 100%)',
       }}/>
 
-      {/* Fine film grain — a tiled SVG noise, GPU-cheap, drifting slowly so it
-          never looks like a static dirty screen. Low opacity: felt, not seen. */}
+      {/* Fine film grain — a tiled SVG noise. STATIC: animating a full-screen
+          grain layer repaints the whole viewport every frame, which is a major
+          source of lag inside a mobile WebView. A still grain reads almost
+          identically and costs effectively nothing. Low opacity: felt, not seen. */}
       <div className="pcl-grain" style={{
-        position:'absolute', inset:'-50%', width:'200%', height:'200%',
-        opacity:0.045, mixBlendMode:'overlay',
-        animation:'pcl-grain 7s steps(6) infinite',
+        position:'absolute', inset:0,
+        opacity:0.04, mixBlendMode:'overlay',
         backgroundImage:
           "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
         backgroundSize:'160px 160px',
