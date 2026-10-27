@@ -10,6 +10,8 @@ import AlertOptIn from '@/components/AlertOptIn';
 import SafetyBanner from '@/components/SafetyBanner';
 import { fmtTime12h, matchOutcome, OUTCOME_COLOR } from '@/lib/format';
 import TrainingTab from '@/components/player/TrainingTab';
+import TrainingLoadCard from '@/components/player/TrainingLoadCard';
+import SyncWatchButton from '@/components/player/SyncWatchButton';
 import TiltCard from '@/components/portal/TiltCard';
 import { useBranding } from '@/components/BrandingProvider';
 
@@ -450,6 +452,11 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         </TiltCard>
       ))}
     </div>
+
+    {/* Training load from the athlete's watch (renders only once synced),
+        with the in-app "Sync my watch" control. */}
+    <TrainingLoadCard activities={D.activities || []} C={C}/>
+    <SyncWatchButton C={C} hasData={(D.activities || []).length > 0}/>
 
     {/* Best percentile tests with rings */}
     {bestTests.length > 0 && (

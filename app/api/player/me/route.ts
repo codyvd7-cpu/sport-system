@@ -183,7 +183,7 @@ export async function POST(req: NextRequest) {
 
     // Athlete-linked data
     let athlete: any = null, attendance: any[] = [], perfTests: any[] = [], feedback: any = null, coachName: string | null = null;
-    let gymCheckins: any[] = [], goals: any[] = [], clips: any[] = [], selections: any[] = [];
+    let gymCheckins: any[] = [], goals: any[] = [], clips: any[] = [], selections: any[] = [], activities: any[] = [];
     if (profile.athlete_id) {
       const [aR, attR, pR, fbR, coachR, gymR, goalR, clipR, selR] = await Promise.all([
         db.from('athletes').select(ATHLETE_FIELDS).eq('id', profile.athlete_id).maybeSingle(),
@@ -228,6 +228,13 @@ export async function POST(req: NextRequest) {
       goals = goalR.data || [];
       clips = clipR.data || [];
       selections = selR.data || [];
+      // Training sessions pulled from the athlete's watch/phone health store.
+      const { data: waData } = await db.from('wearable_activities')
+        .select('source,workout_type,start_time,end_time,duration_s,distance_m,calories,avg_hr,max_hr')
+        .eq('athlete_id', profile.athlete_id)
+        .gte('start_time', new Date(Date.now() - 70 * 86400000).toISOString())
+        .order('start_time', { ascending: false }).limit(150);
+      activities = waData || [];
       if (athlete) {
         const teamCoach = (coachR.data || []).find((c: any) => Array.isArray(c.teams) && c.teams.includes(athlete.team));
         coachName = teamCoach ? (teamCoach.full_name || teamCoach.email?.split('@')[0]?.replace(/[._]/g, ' ')) : null;
@@ -272,7 +279,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       profile, athlete, hpStudent,
-      attendance, perfTests, feedback, coachName, goals, clips, selections,
+      attendance, perfTests, feedback, coachName, goals, clips, selections, activities,
       hpTests, hpInsights,
       gymCheckins,
       fixtures: fxR.data || [], results: resR.data || [],
