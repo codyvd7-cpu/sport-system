@@ -38,6 +38,12 @@ export default function NativeShell() {
   React.useEffect(() => {
     const cap = (window as any).Capacitor;
     if (!cap?.isNativePlatform?.()) return;
+
+    // Mark the document as running in the native shell so CSS can drop the
+    // expensive frosted-glass (backdrop-filter) everywhere in the app, where a
+    // phone WebView struggles with it. The website keeps the effect.
+    document.documentElement.classList.add('native-app');
+
     const App = cap.Plugins?.App;
     if (!App?.addListener) return;
 

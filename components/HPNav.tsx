@@ -111,7 +111,7 @@ export default function HPNav() {
       {/* ── MOBILE TOP BAR ── */}
       <header className="hp-mob" style={{
         position:'fixed', top:0, left:0, right:0, zIndex:50,
-        background:'rgba(6,12,26,0.97)', backdropFilter:'blur(12px)',
+        background:'rgba(6,12,26,0.97)',
         borderBottom:`1px solid ${BORDER}`, height:54,
         alignItems:'center', justifyContent:'space-between', padding:'0 16px',
       }}>

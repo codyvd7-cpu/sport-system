@@ -168,7 +168,6 @@ export default function CoachNav() {
         style={{
           background:'rgba(14,17,22,0.98)',
           borderColor:'rgba(255,255,255,0.06)',
-          backdropFilter:'blur(20px)',
         }}>
 
         {/* Logo */}
@@ -283,7 +282,7 @@ export default function CoachNav() {
 
       {/* ── MOBILE TOP BAR ──────────────────────── */}
       <header className="md:hidden sticky top-0 z-50 flex h-14 items-center justify-between px-4 border-b"
-        style={{background:'rgba(14,17,22,0.98)',borderColor:'rgba(255,255,255,0.06)',backdropFilter:'blur(20px)'}}>
+        style={{background:'rgba(14,17,22,0.98)',borderColor:'rgba(255,255,255,0.06)'}}>
 
         {/* Left — back button or logo */}
         {isDeepPage ? (
@@ -385,7 +384,6 @@ export default function CoachNav() {
         style={{
           background:'rgba(14,17,22,0.98)',
           borderColor:'rgba(255,255,255,0.06)',
-          backdropFilter:'blur(24px)',
           paddingBottom:'env(safe-area-inset-bottom)',
         }}>
         <div className="flex">

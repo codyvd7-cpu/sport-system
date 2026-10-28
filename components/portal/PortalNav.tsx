@@ -23,8 +23,7 @@ export default function PortalNav({ sport }: Props) {
   return (
     <nav style={{
       position: 'sticky', top: 0, zIndex: 50,
-      background: scrolled ? 'rgba(3,8,16,0.85)' : 'rgba(3,8,16,0.4)',
-      backdropFilter: 'blur(20px) saturate(1.4)',
+      background: scrolled ? 'rgba(3,8,16,0.95)' : 'rgba(3,8,16,0.55)',
       borderBottom: `1px solid ${scrolled ? 'rgba(255,255,255,0.09)' : 'transparent'}`,
       transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
     }}>

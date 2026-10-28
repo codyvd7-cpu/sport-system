@@ -70,7 +70,7 @@ function TierBadge({ label }: { label: string }) {
   return <span style={{ display: 'inline-block', fontSize: 9, fontWeight: 800, padding: '2.5px 9px', borderRadius: 20, background: t.bg, color: t.color, border: `1px solid ${t.border}`, letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{t.label}</span>;
 }
 function Card({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
-  return <div className={className} style={{ borderRadius: 18, background: CARD, border: `1px solid ${B}`, padding: 20, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', ...style }}>{children}</div>;
+  return <div className={className} style={{ borderRadius: 18, background: CARD, border: `1px solid ${B}`, padding: 20, ...style }}>{children}</div>;
 }
 function SecHead({ label, right }: { label: string; right?: React.ReactNode }) {
   return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -1043,7 +1043,7 @@ export default function PlayerProfile() {
 
       {/* ── BODY ── */}
       <div className="body" style={{ flex: 1, minWidth: 0 }}>
-        <div className="mob-bar" style={{ position: 'sticky', top: 0, zIndex: 30, alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(5,8,20,0.94)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', borderBottom: `1px solid ${B}` }}>
+        <div className="mob-bar" style={{ position: 'sticky', top: 0, zIndex: 30, alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(5,8,20,0.985)', borderBottom: `1px solid ${B}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={branding.logoUrl} alt={branding.abbreviation} style={{ width: 26, height: 26, objectFit: 'contain' }}/>
@@ -1070,7 +1070,7 @@ export default function PlayerProfile() {
     )}
 
     {/* ── BOTTOM NAV (mobile) ── */}
-    <div className="bot-nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40, background: 'rgba(3,5,14,0.96)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', borderTop: `1px solid ${B}`, padding: '8px 6px calc(8px + env(safe-area-inset-bottom))', justifyContent: 'space-around' }}>
+    <div className="bot-nav" style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40, background: 'rgba(3,5,14,0.985)', borderTop: `1px solid ${B}`, padding: '8px 6px calc(8px + env(safe-area-inset-bottom))', justifyContent: 'space-around' }}>
       {botTabs.map(n => { const a = nav === n.id; return <button key={n.id} onClick={() => setNav(n.id)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', cursor: 'pointer', padding: '4px 10px', color: a ? C : 'rgba(255,255,255,0.35)' }}>
         <Ic d={n.i} sz={17} col={a ? C : 'rgba(255,255,255,0.35)'}/>
         <span style={{ fontSize: 8.5, fontWeight: a ? 800 : 600 }}>{n.l.split(' ')[0]}</span>
