@@ -13,6 +13,14 @@ import { verifyPlayer, requireAthleteContext } from '@/lib/playerAuth';
 const SOURCES = new Set(['apple_health', 'health_connect']);
 const num = (v: any): number | null => (Number.isFinite(Number(v)) ? Number(v) : null);
 const int = (v: any): number | null => (Number.isFinite(Number(v)) ? Math.round(Number(v)) : null);
+// Safe ISO conversion — a malformed date used to throw RangeError and 500 the
+// whole batch (AP-31). Now an unparseable date just yields null and the row is
+// dropped by the start_time filter below.
+const toISO = (v: any): string | null => {
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+};
 
 export async function POST(req: NextRequest) {
   const rl = await rateLimit(`health-ingest:${getClientId(req)}`, { max: 12, windowMs: 60_000 });
@@ -45,16 +53,16 @@ export async function POST(req: NextRequest) {
         if (max === null) max = Math.round(Math.max(...bpm));
       }
     }
-    const start = a.startDate || a.startTime || a.start;
-    const end = a.endDate || a.endTime || a.end || null;
-    const duration = int(a.duration) ?? (start && end ? Math.round((+new Date(end) - +new Date(start)) / 1000) : null);
+    const startISO = toISO(a.startDate || a.startTime || a.start);
+    const endISO = toISO(a.endDate || a.endTime || a.end);
+    const duration = int(a.duration) ?? (startISO && endISO ? Math.round((+new Date(endISO) - +new Date(startISO)) / 1000) : null);
     return {
       athlete_id: ctx.athleteId,
       school_id: ctx.schoolId,
       source,
       workout_type: a.workoutType ? String(a.workoutType).slice(0, 60) : null,
-      start_time: start ? new Date(start).toISOString() : null,
-      end_time: end ? new Date(end).toISOString() : null,
+      start_time: startISO,
+      end_time: endISO,
       duration_s: duration,
       distance_m: num(a.distance ?? a.distanceMeters),
       calories: num(a.calories),

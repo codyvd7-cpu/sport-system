@@ -15,7 +15,12 @@ function ConfirmInner() {
     async function confirm() {
       const tokenHash = searchParams.get('token_hash');
       const type = searchParams.get('type') as any;
-      const next = searchParams.get('next') || '/login';
+      // Only ever redirect to an internal path. A raw ?next= is an open-redirect
+      // (and javascript:-scheme XSS) sink — reject anything that isn't a single
+      // leading slash followed by a non-slash (blocks //evil.com, https://…,
+      // javascript:…). Falls back to /login.
+      const rawNext = searchParams.get('next') || '/login';
+      const next = /^\/(?!\/)/.test(rawNext) ? rawNext : '/login';
       if (!tokenHash || !type) { setError('Invalid confirmation link.'); setStatus('error'); return; }
       const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
       if (error) { setError(error.message); setStatus('error'); return; }

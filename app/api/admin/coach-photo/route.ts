@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req, ['owner', 'head_of_hockey']);
+  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'head_of_hockey']);
   if (!auth.ok) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+
+  const callerSchool = await resolveStaffSchoolId(auth.email);
+  if (!callerSchool) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
@@ -21,6 +24,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Image must be under 5MB.' }, { status: 400 });
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey);
+
+    // The target coach must belong to the caller's school (AP-09) — otherwise a
+    // school-A admin could overwrite a school-B coach's photo and metadata.
+    const { data: target } = await supabase.from('staff_roles').select('school_id').eq('id', coachId).maybeSingle();
+    if (!target || target.school_id !== callerSchool) {
+      return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    }
+
     const ext  = file.name.split('.').pop() || 'jpg';
     const path = `${coachId}.${ext}`;
     const bytes = await file.arrayBuffer();
