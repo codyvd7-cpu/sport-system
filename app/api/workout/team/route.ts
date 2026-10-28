@@ -17,11 +17,13 @@ export async function GET(req: NextRequest) {
   const athleteId = await requireAthleteId(player.userId);
   if (!athleteId) return NextResponse.json({ leaderboard: [] });
 
-  const { data: me } = await db.from('athletes').select('team').eq('id', athleteId).maybeSingle();
+  const { data: me } = await db.from('athletes').select('team,school_id').eq('id', athleteId).maybeSingle();
   const team = me?.team;
-  if (!team) return NextResponse.json({ leaderboard: [] });
+  if (!team || !me?.school_id) return NextResponse.json({ leaderboard: [] });
 
-  const { data: teammates } = await db.from('athletes').select('id,full_name').eq('team', team);
+  // Scope teammates to the player's own school (AP-10) — team names like "3rds"
+  // are not unique across schools.
+  const { data: teammates } = await db.from('athletes').select('id,full_name').eq('team', team).eq('school_id', me.school_id);
   const ids = (teammates || []).map(t => t.id);
   if (ids.length === 0) return NextResponse.json({ leaderboard: [] });
 

@@ -168,12 +168,17 @@ export async function POST(req: NextRequest) {
     const today = new Date().toISOString().split('T')[0];
     const year = new Date().getFullYear();
 
+    // Every portal query is scoped to the player's OWN school (AP-10). Without
+    // this, a player at one school could receive another school's fixtures,
+    // results, notices and programs whenever sport/labels overlapped.
+    const schoolId = profile.school_id;
+    const scope = (q: any) => (schoolId ? q.eq('school_id', schoolId) : q);
     const [fxR, resR, remR, planR, progR] = await Promise.all([
-      db.from('portal_fixtures').select('*').eq('sport', prim).eq('is_published', true).gte('fixture_date', today).order('fixture_date').order('fixture_time').limit(25),
-      db.from('portal_results').select('*').eq('sport', prim).eq('is_published', true).order('result_date', { ascending: false }).limit(20),
-      db.from('portal_reminders').select('*').eq('sport', prim).eq('is_published', true).order('created_at', { ascending: false }).limit(15),
-      db.from('portal_week_plans').select('id').eq('sport', prim).eq('published', true).order('created_at', { ascending: false }).limit(1),
-      db.from('portal_programs').select('id,title,category,day_label,details,file_name,file_url').eq('sport', prim).eq('is_published', true).order('sort_order').limit(20),
+      scope(db.from('portal_fixtures').select('*').eq('sport', prim).eq('is_published', true).gte('fixture_date', today)).order('fixture_date').order('fixture_time').limit(25),
+      scope(db.from('portal_results').select('*').eq('sport', prim).eq('is_published', true)).order('result_date', { ascending: false }).limit(20),
+      scope(db.from('portal_reminders').select('*').eq('sport', prim).eq('is_published', true)).order('created_at', { ascending: false }).limit(15),
+      scope(db.from('portal_week_plans').select('id').eq('sport', prim).eq('published', true)).order('created_at', { ascending: false }).limit(1),
+      scope(db.from('portal_programs').select('id,title,category,day_label,details,file_name,file_url').eq('sport', prim).eq('is_published', true)).order('sort_order').limit(20),
     ]);
     let weekItems: any[] = [];
     if (planR.data?.length) {
@@ -190,7 +195,7 @@ export async function POST(req: NextRequest) {
         db.from('attendance').select('id,status,session_date,session_type').eq('athlete_id', profile.athlete_id).order('session_date', { ascending: false }).limit(200),
         db.from('performance_tests').select('id,test_type,value,unit,test_date').eq('athlete_id', profile.athlete_id).order('test_date', { ascending: false }).limit(100),
         db.from('coach_notes').select('strengths,current_focus,coach_comment,created_at').eq('athlete_id', profile.athlete_id).eq('is_feedback', true).order('created_at', { ascending: false }).limit(3),
-        db.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true),
+        scope(db.from('staff_roles').select('full_name,email,teams').eq('role', 'coach').eq('is_active', true)),
         db.from('gym_checkins').select('id,checkin_date,checkin_time,venue').eq('athlete_id', profile.athlete_id).order('checkin_date', { ascending: false }).limit(180),
         // An athlete's own development goals. 268 of these exist and the
         // athlete they describe has never been able to see them — the whole

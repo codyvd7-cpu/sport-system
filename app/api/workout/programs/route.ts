@@ -26,15 +26,23 @@ export async function GET(req: NextRequest) {
 
   const athleteId = await requireAthleteId(player.userId);
   let athleteAgeGroup: string | null = null;
+  let athleteSchool: string | null = null;
   if (athleteId) {
-    const { data: ath } = await db.from('athletes').select('age_group').eq('id', athleteId).maybeSingle();
+    const { data: ath } = await db.from('athletes').select('age_group,school_id').eq('id', athleteId).maybeSingle();
     athleteAgeGroup = ath?.age_group || null;
+    athleteSchool = ath?.school_id || null;
   }
   const category = ageCategoryFor(athleteAgeGroup);
+
+  // Programs are a school's own training material — without this scope a player
+  // saw every school's uncategorised active programs (AP-10). No linked school
+  // ⇒ nothing to show.
+  if (!athleteSchool) return NextResponse.json({ programs: [] });
 
   const { data: programs, error: progErr } = await db.from('workout_programs')
     .select('id,title,age_category,sport,sort_order')
     .eq('is_active', true)
+    .eq('school_id', athleteSchool)
     .order('sort_order', { ascending: true });
   if (progErr) return NextResponse.json({ error: progErr.message }, { status: 500 });
 

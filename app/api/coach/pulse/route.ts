@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest } from '@/lib/serverAuth';
+import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { getActiveAlert } from '@/lib/alertsService';
 
@@ -11,15 +11,21 @@ import { getActiveAlert } from '@/lib/alertsService';
 // One call, so the dashboard needs one fetch for its whole intelligence strip.
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Staff only, and scoped to the caller's school — a team label like "U16A"
+  // is not globally unique, so an unscoped lookup leaked another school's
+  // gym/workout activity for the same name (AP-03).
+  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic', 'coach', 'head_of_hockey']);
+  if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
+
+  const schoolId = await resolveStaffSchoolId(auth.email);
+  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
 
   const team = (req.nextUrl.searchParams.get('team') || '').trim();
   if (!team) return NextResponse.json({ error: 'Team required.' }, { status: 400 });
 
   const db = getAdmin();
-  const { data: athletes } = await db.from('athletes').select('id,full_name').eq('team', team);
+  const { data: athletes } = await db.from('athletes').select('id,full_name').eq('team', team).eq('school_id', schoolId);
   const ids = (athletes || []).map(a => a.id);
   const nameById = new Map((athletes || []).map(a => [a.id, a.full_name as string]));
 

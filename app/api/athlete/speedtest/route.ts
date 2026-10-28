@@ -128,16 +128,22 @@ export async function POST(req: NextRequest) {
   // trend and profile query keeps working with no changes. Upsert, because
   // that table intentionally holds one row per athlete/test/day.
   if (status === 'valid') {
+    // Best of TODAY's valid attempts only (AP-23). The old query took the best
+    // across ALL dates and wrote it into today's row, so a faster run weeks ago
+    // became "today's" result and corrupted the trend.
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' });
+    const dayStartISO = new Date(`${todayStr}T00:00:00+02:00`).toISOString();
     const { data: sessionRows } = await db.from('speedtest_attempts')
       .select('elapsed_ms').eq('athlete_id', athleteId)
-      .eq('test_type', testType).eq('status', 'valid');
+      .eq('test_type', testType).eq('status', 'valid')
+      .gte('created_at', dayStartISO);
     const best = bestOf(sessionRows || []);
 
     if (best != null) {
       await db.from('performance_tests').upsert([{
         athlete_id: athleteId,
         school_id: schoolId,
-        test_date: new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' }),
+        test_date: todayStr,
         test_type: testType,
         value: best / 1000,            // seconds, for existing charts
         elapsed_ms: best,              // full precision preserved alongside
