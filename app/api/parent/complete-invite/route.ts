@@ -36,19 +36,29 @@ export async function POST(req: NextRequest) {
   const userId = user.id;
   const email = user.email.toLowerCase();
 
+  // The welcome link carries which athlete this activation is for. It's only a
+  // HINT for picking the right claim — never proof of anything — but a parent
+  // with more than one child has more than one pending claim on this email, so
+  // without it the lookup is ambiguous.
+  const body = await req.json().catch(() => ({} as Record<string, unknown>));
+  const hintAthleteId = body && typeof body.athleteId === 'string' ? body.athleteId : '';
+
   // The real authorization check: a server-created claim for THIS email,
   // still awaiting activation, not expired, not already consumed by another
   // account. This is what makes the invite unforgeable — it was written by
   // /api/parents/invite at send time, before this user's account existed, and
   // nothing the client sends can create or alter it.
-  const { data: claim } = await db
+  let claimQuery = db
     .from('athlete_claims')
     .select('id, athlete_id, school_id, status, expires_at, user_id')
     .eq('email', email)
     .eq('status', 'pending_activation')
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .maybeSingle();
+    .gt('expires_at', new Date().toISOString());
+  if (hintAthleteId) claimQuery = claimQuery.eq('athlete_id', hintAthleteId);
+  // limit(1), not maybeSingle(): a parent of several children legitimately has
+  // several pending claims on this email, and maybeSingle() throws on >1 row.
+  const { data: claims } = await claimQuery.order('created_at', { ascending: false }).limit(1);
+  const claim = claims?.[0] || null;
 
   if (!claim) {
     return NextResponse.json({

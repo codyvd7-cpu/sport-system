@@ -107,20 +107,27 @@ export async function POST(req: NextRequest) {
         continue;
       }
 
-      // Pre-approve the claim. The coach chose this athlete and the school
-      // already holds this email — mailing it is the verification, so making
-      // them wait for a second approval adds friction without adding safety.
+      // Open the claim as pending_activation — the ONE state the landing page
+      // (/api/parent/complete-invite) consumes (AP-18). The previous version
+      // wrote 'approved' with a zero-UUID placeholder user_id and conflicted on
+      // (athlete_id, user_id), which broke two ways: (1) complete-invite only
+      // ever looks for 'pending_activation', so an invited parent clicking the
+      // link got "no active invitation"; (2) two parents invited for the SAME
+      // athlete both resolved to the placeholder user_id and the second upsert
+      // overwrote the first. We now key on (athlete_id, email) — the invite's
+      // real identity — leave user_id null (bound for real at activation, which
+      // is the actual verification), and set an expiry the landing page checks.
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       await db.from('athlete_claims').upsert({
         school_id: schoolId,
         athlete_id: ath.id,
-        user_id: invited?.user?.id ?? '00000000-0000-0000-0000-000000000000',
+        user_id: null,
         email,
         claim_type: 'parent',
-        status: 'approved',
+        status: 'pending_activation',
         approved_via: 'coach_invite',
-        approved_by: auth.email || 'staff',
-        approved_at: new Date().toISOString(),
-      }, { onConflict: 'athlete_id,user_id' });
+        expires_at: expiresAt,
+      }, { onConflict: 'athlete_id,email' });
 
       results.push({ athleteId: ath.id, athleteName: ath.full_name, email, status: 'invited' });
     } catch (e) {

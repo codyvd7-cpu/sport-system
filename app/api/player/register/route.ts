@@ -65,10 +65,10 @@ export async function POST(req: NextRequest) {
 
   // ── Create or update the athlete record this account owns ────────────────
   // One athlete record per account (idx_athletes_user enforces it). A second
-  // registration updates the same row rather than creating duplicates.
-  const athleteRow = {
-    user_id: user.id,
-    school_id: schoolId,
+  // registration updates the SAME row, but must only touch the fields the
+  // athlete actually owns (AP-19). The fields below are self-service identity
+  // and physicals.
+  const ownFields = {
     full_name: fullName,
     date_of_birth: dob,
     age_group: ageGroup,
@@ -77,27 +77,44 @@ export async function POST(req: NextRequest) {
     height_cm: body.heightCm ? Number(body.heightCm) : null,
     weight_kg: body.weightKg ? Number(body.weightKg) : null,
     position: String(body.position || '').trim() || null,
-    availability: 'Available',
-    self_registered: true,
-    pending_team: true,          // not yet selected into a squad by a coach
-    team: null,                  // a coach assigns this
-    is_active: true,
   };
 
   const { data: existing } = await db.from('athletes')
-    .select('id').eq('user_id', user.id).maybeSingle();
+    .select('id,school_id,pending_team').eq('user_id', user.id).maybeSingle();
+
+  // On re-registration we keep the athlete at the school they already belong to.
+  // Letting a self-service form rewrite school_id would silently relocate the
+  // whole record — logs, tests, medical, video history — into another tenant
+  // (AP-19). A genuine school change is a coach/admin action, not self-service.
+  const effectiveSchoolId = existing ? existing.school_id : schoolId;
 
   let athleteId: string;
+  let pendingTeam: boolean;
   if (existing) {
-    await db.from('athletes').update(athleteRow).eq('id', existing.id);
+    // Update ONLY the owned fields. team / pending_team / availability /
+    // is_active are coach-managed — re-running setup must not drop the athlete
+    // out of their squad or clear an injury/availability status a coach set.
+    const { error: updErr } = await db.from('athletes').update(ownFields).eq('id', existing.id);
+    if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
     athleteId = existing.id;
+    pendingTeam = existing.pending_team !== false;
   } else {
     const { data: created, error } = await db.from('athletes')
-      .insert(athleteRow).select('id').single();
+      .insert({
+        user_id: user.id,
+        school_id: schoolId,
+        ...ownFields,
+        availability: 'Available',
+        self_registered: true,
+        pending_team: true,          // not yet selected into a squad by a coach
+        team: null,                  // a coach assigns this
+        is_active: true,
+      }).select('id').single();
     if (error || !created) {
       return NextResponse.json({ error: error?.message || 'Could not create your profile.' }, { status: 500 });
     }
     athleteId = created.id;
+    pendingTeam = true;
   }
 
   // ── Medical record — separate table, access-controlled ───────────────────
@@ -110,7 +127,7 @@ export async function POST(req: NextRequest) {
     const clearance = (body.conditions || body.medications) ? 'see_head' : 'cleared';
     await db.from('athlete_medical').upsert({
       athlete_id: athleteId,
-      school_id: schoolId,
+      school_id: effectiveSchoolId,
       conditions: String(body.conditions || '').trim() || null,
       allergies: String(body.allergies || '').trim() || null,
       medications: String(body.medications || '').trim() || null,
@@ -133,8 +150,8 @@ export async function POST(req: NextRequest) {
     grade: String(body.grade || '').trim() || null,
     sports: [sport],
     athlete_id: athleteId,
-    school_id: schoolId,
+    school_id: effectiveSchoolId,
   }, { onConflict: 'user_id' });
 
-  return NextResponse.json({ ok: true, athleteId, ageGroup, pendingTeam: true });
+  return NextResponse.json({ ok: true, athleteId, ageGroup, pendingTeam });
 }
