@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { rolesFor } from '@/lib/authz';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { broadcastPush, pushReady } from '@/lib/push';
 
@@ -9,7 +10,7 @@ import { broadcastPush, pushReady } from '@/lib/push';
 // and its own (mismatched) subscription-column assumptions.
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic']);
+  const auth = await authenticateRequest(req, rolesFor('notifications.send'));
   if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
   if (!adminConfigured() || !pushReady()) {
     return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });

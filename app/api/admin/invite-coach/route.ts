@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { authenticateRequest, type StaffRole } from '@/lib/serverAuth';
+import { rolesFor } from '@/lib/authz';
 import { canGrantRole } from '@/lib/staffAuth';
 
 export async function POST(req: NextRequest) {
   // Only roles that may administer staff — now including modern head_of_sport.
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'head_of_hockey']);
+  const auth = await authenticateRequest(req, rolesFor('staff.invite'));
   if (!auth.ok || !auth.role) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

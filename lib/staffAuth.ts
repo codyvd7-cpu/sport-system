@@ -2,6 +2,11 @@ import { NextRequest } from 'next/server';
 import { getAdmin } from './supabaseAdmin';
 import type { StaffRole } from './serverAuth';
 import { authenticateRequest } from './serverAuth';
+import { isSchoolWide, can, canGrantRole, type Capability } from './authz';
+
+// canGrantRole lives in the central contract (lib/authz) now; re-exported here
+// so existing imports from '@/lib/staffAuth' keep working.
+export { canGrantRole };
 
 // ─── requireStaffContext ───────────────────────────────────────────────────────
 // The single authorization check every privileged staff route should use.
@@ -37,8 +42,6 @@ export interface StaffContext {
   /** True for roles the app treats as "sees everything in the school". */
   isSchoolWide: boolean;
 }
-
-const SCHOOL_WIDE_ROLES: StaffRole[] = ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic', 'head_of_hockey'];
 
 /**
  * Resolves a fully-verified, currently-active staff identity from the
@@ -79,13 +82,26 @@ export async function requireStaffContext(req: NextRequest): Promise<StaffContex
     schoolId: staff.school_id,
     teams: Array.isArray(staff.teams) ? staff.teams : [],
     sport: staff.sport ?? null,
-    isSchoolWide: SCHOOL_WIDE_ROLES.includes(role),
+    isSchoolWide: isSchoolWide(role),
   };
 }
 
 /** Convenience wrapper for routes that only need "any active staff, any role". */
 export async function requireAnyStaff(req: NextRequest): Promise<StaffContext | null> {
   return requireStaffContext(req);
+}
+
+/**
+ * The recommended guard for a privileged route: resolves a fully-verified
+ * staff identity AND checks it holds the named capability, in one call. Returns
+ * the context on success, or null to reject. This is how new routes should
+ * authorize — a capability name, resolved against the central contract
+ * (lib/authz), never a hand-written role array.
+ */
+export async function authorize(req: NextRequest, capability: Capability): Promise<StaffContext | null> {
+  const ctx = await requireStaffContext(req);
+  if (!ctx || !can(ctx.role, capability)) return null;
+  return ctx;
 }
 
 /**
@@ -124,20 +140,3 @@ export async function requireOwnedAthlete(
   return athlete;
 }
 
-/**
- * A minimal role-grant matrix for A26: which roles may grant which other
- * roles. Prevents a head_of_hockey (a legacy role) from minting an owner.
- */
-const ROLE_GRANT_MATRIX: Record<StaffRole, StaffRole[]> = {
-  owner: ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic', 'coach', 'viewer', 'head_of_hockey'],
-  head_of_sport: ['deputy_head_of_sport', 'mic', 'coach', 'viewer'],
-  deputy_head_of_sport: ['mic', 'coach', 'viewer'],
-  head_of_hockey: ['coach', 'viewer'],
-  mic: ['coach', 'viewer'],
-  coach: [],
-  viewer: [],
-};
-
-export function canGrantRole(grantorRole: StaffRole, targetRole: StaffRole): boolean {
-  return ROLE_GRANT_MATRIX[grantorRole]?.includes(targetRole) ?? false;
-}

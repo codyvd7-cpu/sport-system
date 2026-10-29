@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { rolesFor } from '@/lib/authz';
 
 // For a personal best, timed/agility tests are better when LOWER; distance and
 // strength are better when HIGHER. (AP-24 — the old code always took the max,
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   // Staff only. This export carries full history AND private coach notes — the
   // old handler accepted ANY authenticated account (incl. a player/parent) and
   // any athlete id, with no school/role/ownership check (AP-02).
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'mic', 'coach', 'head_of_hockey']);
+  const auth = await authenticateRequest(req, rolesFor('athlete.view'));
   if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
 
   const id = req.nextUrl.searchParams.get('id');

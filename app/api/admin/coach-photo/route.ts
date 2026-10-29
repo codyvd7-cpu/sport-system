@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { rolesFor } from '@/lib/authz';
 import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'head_of_hockey']);
+  const auth = await authenticateRequest(req, rolesFor('school.admin'));
   if (!auth.ok) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
 
   const callerSchool = await resolveStaffSchoolId(auth.email);

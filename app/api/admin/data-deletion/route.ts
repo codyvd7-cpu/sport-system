@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { rolesFor } from '@/lib/authz';
 import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { createClient } from '@supabase/supabase-js';
 
@@ -8,7 +9,7 @@ export async function DELETE(req: NextRequest) {
   const rl = rateLimit(`data-deletion:${ip}`, { max: 5, windowMs: 60_000 });
   if (!rl.ok) return NextResponse.json({ error: 'Rate limit exceeded.' }, { status: 429 });
 
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport', 'deputy_head_of_sport', 'head_of_hockey']);
+  const auth = await authenticateRequest(req, rolesFor('school.admin'));
   if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorised' }, { status: 401 });
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

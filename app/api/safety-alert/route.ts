@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { rolesFor } from '@/lib/authz';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { getActiveAlert, activateAlert, clearAlert, type ActiveAlert } from '@/lib/alertsService';
 
@@ -29,7 +30,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   // Policy aligned with /lightning: alert activation is owner + head_of_sport only.
-  const auth = await authenticateRequest(req, ['owner', 'head_of_sport']);
+  const auth = await authenticateRequest(req, rolesFor('alerts.manage'));
   if (!auth.ok) return NextResponse.json({ error: auth.reason || 'Unauthorized.' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
