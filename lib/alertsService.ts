@@ -50,7 +50,8 @@ export async function activateAlert(db: SupabaseClient, opts: {
   if (error) throw new Error(error.message);
 
   const pushed = await broadcastPush(db, {
-    title: type === 'lightning' ? '⚡ LIGHTNING ALERT — Ridgemont Sport' : '⚠️ Safety Alert — Ridgemont Sport',
+    // No hard-coded school name — this service is multi-school (AP-12/AP-41).
+    title: type === 'lightning' ? '⚡ Lightning Alert' : '⚠️ Safety Alert',
     body: message,
     url: '/portal',
     urgent: true,
@@ -64,7 +65,7 @@ export async function clearAlert(db: SupabaseClient, schoolId: string | null): P
   query = schoolId ? query.eq('school_id', schoolId) : query.is('school_id', null);
   await query;
   const pushed = await broadcastPush(db, {
-    title: 'All clear — Ridgemont Sport',
+    title: '✅ All clear',
     body: 'The alert has been lifted. Activities may resume as directed by coaches.',
     url: '/portal',
     tag: 'altus-safety',

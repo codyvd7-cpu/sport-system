@@ -2,15 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { getActiveAlert, activateAlert, clearAlert } from '@/lib/alertsService';
+import { getSchoolBrandingBySlug } from '@/lib/schoolBranding';
 
 // ─── /api/alerts ────────────────────────────────────────────────────────────────
 // Thin adapter over lib/alertsService (shared with /api/safety-alert).
-// GET  → current active alert (public — the banner polls this)
+// GET  ?school=<slug> → current active alert for THAT school (public — banner polls)
 // POST → owner / head_of_sport: { action: 'activate', message? } | { action: 'clear' }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ alert: null });
-  const alert = await getActiveAlert(getAdmin());
+  // Scope the read to a school (AP-12). Without one, return nothing rather than
+  // leaking whichever school most recently raised an alert.
+  const slug = req.nextUrl.searchParams.get('school');
+  const noAlert = () => { const r = NextResponse.json({ alert: null }); r.headers.set('Cache-Control', 'no-store'); return r; };
+  if (!slug) return noAlert();
+  const branding = await getSchoolBrandingBySlug(slug);
+  if (!branding) return noAlert();
+  const alert = await getActiveAlert(getAdmin(), branding.id);
   const res = NextResponse.json({ alert });
   res.headers.set('Cache-Control', 'no-store');
   return res;

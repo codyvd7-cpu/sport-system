@@ -1,21 +1,27 @@
 'use client';
 import * as React from 'react';
+import { useBranding } from '@/components/BrandingProvider';
 
-// Global red banner — polls /api/alerts and takes over the top of every page
-// while a lightning (or other urgent) alert is active.
+// Global red banner — polls /api/alerts for the CURRENT school and takes over
+// the top of every page while a lightning (or other urgent) alert is active.
 
 export default function UrgentAlertBanner() {
+  const { branding } = useBranding();
+  const slug = branding?.slug || null;
   const [alert, setAlert] = React.useState<{ id: string; message: string; created_at: string } | null>(null);
 
   React.useEffect(() => {
+    // No school resolved yet ⇒ nothing to poll (and never show another school's
+    // alert — AP-12).
+    if (!slug) { setAlert(null); return; }
     let stop = false;
-    const load = () => fetch('/api/alerts').then(r => r.json()).then(d => { if (!stop) setAlert(d.alert || null); }).catch(() => {});
+    const load = () => fetch(`/api/alerts?school=${encodeURIComponent(slug)}`).then(r => r.json()).then(d => { if (!stop) setAlert(d.alert || null); }).catch(() => {});
     load();
     const iv = setInterval(load, 45_000);
     const onVis = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', onVis);
     return () => { stop = true; clearInterval(iv); document.removeEventListener('visibilitychange', onVis); };
-  }, []);
+  }, [slug]);
 
   if (!alert) return null;
   return (

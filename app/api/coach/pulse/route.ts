@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
     ids.length
       ? db.from('workout_logs').select('athlete_id,logged_date').in('athlete_id', ids).gte('logged_date', weekStart)
       : Promise.resolve({ data: [] as any[] }),
-    getActiveAlert(db),
+    getActiveAlert(db, schoolId),
   ]);
 
   const checkinsToday = (checkinsRes.data || []).map((c: any) => ({

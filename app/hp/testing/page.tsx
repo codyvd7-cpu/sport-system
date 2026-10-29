@@ -137,13 +137,25 @@ export default function HPTesting() {
         ? toSecs(vals[x.key] || '')
         : (vals[x.key] ? parseFloat(vals[x.key]) : null);
     });
-    await fetch('/api/hp/tests', {
-      method:'POST', credentials:'include',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'upsert', payload }),
-    });
-    setSaved(p => ({ ...p, [sid]:true }));
+    // Only acknowledge a save the server actually confirmed (AP-25). The old
+    // code marked results "saved ✓" without checking the response, so a 500 or
+    // expired session looked like success and the coach's work was silently
+    // lost. On failure, keep the modal and the entered values.
+    let ok = false;
+    try {
+      const res = await fetch('/api/hp/tests', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ action:'upsert', payload }),
+      });
+      ok = res.ok;
+    } catch { ok = false; }
     setSaving(p => ({ ...p, [sid]:false }));
+    if (!ok) {
+      showToast('Save failed — your entries are kept. Please try again.');
+      return;
+    }
+    setSaved(p => ({ ...p, [sid]:true }));
     setOpenStu(null);
     showToast('Results saved ✓');
   }
