@@ -22,7 +22,18 @@ export async function POST(req: NextRequest) {
     const player = await verifyPlayer(req);
     const userId: string | null = player?.userId || null;
     const ctx = player ? await requireAthleteContext(player.userId) : null;
-    const { error } = await getAdmin().from('push_subscriptions').upsert({
+    const db = getAdmin();
+    // If this endpoint already belongs to an identified user, don't let a
+    // different (or anonymous) caller take it over by re-posting it (AP-13).
+    // Possession of a push endpoint is possession of that device, and the real
+    // owner's own session resolves to the same user_id, so this only blocks
+    // someone who merely learned another person's endpoint string.
+    const { data: existing } = await db.from('push_subscriptions')
+      .select('user_id').eq('endpoint', sub.endpoint).maybeSingle();
+    if (existing?.user_id && existing.user_id !== userId) {
+      return NextResponse.json({ error: 'Subscription belongs to another account.' }, { status: 403 });
+    }
+    const { error } = await db.from('push_subscriptions').upsert({
       endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth,
       user_id: userId, label: String(body.label || 'portal').slice(0, 20),
       school_id: ctx?.schoolId || null,
@@ -39,7 +50,20 @@ export async function DELETE(req: NextRequest) {
     const body = await req.json();
     const endpoint = String(body.endpoint || '');
     if (!endpoint) return NextResponse.json({ error: 'Endpoint required.' }, { status: 400 });
-    await getAdmin().from('push_subscriptions').delete().eq('endpoint', endpoint);
+    const db = getAdmin();
+    const { data: sub } = await db.from('push_subscriptions')
+      .select('user_id').eq('endpoint', endpoint).maybeSingle();
+    if (!sub) return NextResponse.json({ ok: true }); // already gone — idempotent
+    // An owned subscription may only be removed by its owner (AP-13). Anonymous
+    // portal subscriptions (no user_id) stay removable by endpoint — a logged-out
+    // visitor has no other handle on their own device to unsubscribe it.
+    if (sub.user_id) {
+      const player = await verifyPlayer(req);
+      if (!player || player.userId !== sub.user_id) {
+        return NextResponse.json({ error: 'Not your subscription.' }, { status: 403 });
+      }
+    }
+    await db.from('push_subscriptions').delete().eq('endpoint', endpoint);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

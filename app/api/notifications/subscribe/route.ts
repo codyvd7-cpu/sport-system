@@ -24,15 +24,26 @@ export async function POST(req: NextRequest) {
     const authHeader = req.headers.get('authorization') || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
     let schoolId: string | null = null;
+    let userId: string | null = null;
     if (token) {
       const { data } = await getAdmin().auth.getUser(token);
-      if (data.user?.email) schoolId = await resolveStaffSchoolId(data.user.email);
+      if (data.user?.email) { schoolId = await resolveStaffSchoolId(data.user.email); userId = data.user.id; }
     }
-    const { error } = await getAdmin().from('push_subscriptions').upsert({
+    const db = getAdmin();
+    // Don't let one staff token overwrite another account's subscription for
+    // the same endpoint (AP-13). Legacy staff subs have a null user_id and stay
+    // claimable until their device re-subscribes with a session.
+    const { data: existing } = await db.from('push_subscriptions')
+      .select('user_id').eq('endpoint', subscription.endpoint).maybeSingle();
+    if (existing?.user_id && existing.user_id !== userId) {
+      return NextResponse.json({ error: 'Subscription belongs to another account.' }, { status: 403 });
+    }
+    const { error } = await db.from('push_subscriptions').upsert({
       endpoint: subscription.endpoint,
       p256dh: subscription.keys.p256dh,
       auth: subscription.keys.auth,
       label: 'staff',
+      user_id: userId,
       school_id: schoolId,
     }, { onConflict: 'endpoint' });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -47,7 +58,21 @@ export async function DELETE(req: NextRequest) {
   try {
     const { endpoint } = await req.json();
     if (!endpoint) return NextResponse.json({ error: 'Endpoint required.' }, { status: 400 });
-    await getAdmin().from('push_subscriptions').delete().eq('endpoint', endpoint);
+    const db = getAdmin();
+    const { data: sub } = await db.from('push_subscriptions')
+      .select('user_id').eq('endpoint', endpoint).maybeSingle();
+    if (!sub) return NextResponse.json({ ok: true }); // already gone — idempotent
+    // Only the owning staff account may remove an owned subscription (AP-13).
+    if (sub.user_id) {
+      const authHeader = req.headers.get('authorization') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      let callerId: string | null = null;
+      if (token) { const { data } = await getAdmin().auth.getUser(token); callerId = data.user?.id || null; }
+      if (!callerId || callerId !== sub.user_id) {
+        return NextResponse.json({ error: 'Not your subscription.' }, { status: 403 });
+      }
+    }
+    await db.from('push_subscriptions').delete().eq('endpoint', endpoint);
     return NextResponse.json({ ok: true });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });

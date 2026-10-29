@@ -56,6 +56,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid weight.' }, { status: 400 });
   }
 
+  // The program exercise must belong to the athlete's own school. Otherwise a
+  // player could log reps against another school's program by posting a foreign
+  // program_exercise_id (AP-11) — the insert's school_id comes from the trusted
+  // athlete context, so without this check the two would silently disagree.
+  const { data: pe } = await db.from('workout_program_exercises')
+    .select('school_id').eq('id', programExerciseId).maybeSingle();
+  if (!pe || pe.school_id !== ctx.schoolId) {
+    return NextResponse.json({ error: 'Exercise not found.' }, { status: 404 });
+  }
+
   // Previous best on this exact exercise, to detect a new PB
   let isNewPb = false;
   if (weightKg != null) {

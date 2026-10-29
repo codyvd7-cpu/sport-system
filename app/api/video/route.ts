@@ -32,6 +32,18 @@ function parseYouTube(url: string): string | null {
   return null;
 }
 
+/** True when a referenced row exists AND belongs to this school. An empty id
+ *  means "nothing referenced", which is allowed. Blocks attaching a tag or
+ *  clip to another school's athlete, goal or tag-type — the videoId is already
+ *  school-checked, but the body could still point athlete_id / goal_id /
+ *  tag_type_id at a foreign row (AP-11). */
+async function refInSchool(db: ReturnType<typeof getAdmin>, table: string, id: unknown, schoolId: string): Promise<boolean> {
+  const ref = id ? String(id) : '';
+  if (!ref) return true;
+  const { data } = await db.from(table).select('school_id').eq('id', ref).maybeSingle();
+  return !!data && data.school_id === schoolId;
+}
+
 export async function GET(req: NextRequest) {
   const auth = await authenticateRequest(req);
   if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -126,6 +138,10 @@ export async function POST(req: NextRequest) {
     }
     const { data: v } = await db.from('videos').select('id,school_id').eq('id', videoId).maybeSingle();
     if (!v || v.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    if (!(await refInSchool(db, 'athletes', body.athleteId, schoolId)))
+      return NextResponse.json({ error: 'Athlete not found.' }, { status: 404 });
+    if (!(await refInSchool(db, 'video_tag_types', body.tagTypeId, schoolId)))
+      return NextResponse.json({ error: 'Tag type not found.' }, { status: 404 });
 
     const { data, error } = await db.from('video_tags').insert([{
       school_id: schoolId, video_id: videoId,
@@ -151,6 +167,10 @@ export async function POST(req: NextRequest) {
     }
     const { data: v } = await db.from('videos').select('id,school_id').eq('id', videoId).maybeSingle();
     if (!v || v.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    if (!(await refInSchool(db, 'athletes', body.athleteId, schoolId)))
+      return NextResponse.json({ error: 'Athlete not found.' }, { status: 404 });
+    if (!(await refInSchool(db, 'development_goals', body.goalId, schoolId)))
+      return NextResponse.json({ error: 'Goal not found.' }, { status: 404 });
 
     const { data, error } = await db.from('video_clips').insert([{
       school_id: schoolId, video_id: videoId,
