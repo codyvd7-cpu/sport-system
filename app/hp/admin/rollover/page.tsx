@@ -2,7 +2,6 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
 
 type Row = Record<string, any>;
 const CLASSES = ['B','E','F','J','M'];
@@ -42,11 +41,15 @@ export default function Rollover() {
   }
 
   async function load() {
-    const { data } = await supabase.from('hp_students').select('*').eq('is_active', true);
-    setStudents((data || []).sort((a: Row, b: Row) => {
-      if (a.grade !== b.grade) return a.grade.localeCompare(b.grade);
-      return (a.full_name.trim().split(' ').pop()||'').localeCompare(b.full_name.trim().split(' ').pop()||'');
-    }));
+    try {
+      const res = await fetch('/api/hp/rollover', { credentials: 'include' });
+      const d = await res.json();
+      const data: Row[] = res.ok ? (d.students || []) : [];
+      setStudents(data.sort((a: Row, b: Row) => {
+        if (a.grade !== b.grade) return a.grade.localeCompare(b.grade);
+        return (a.full_name.trim().split(' ').pop()||'').localeCompare(b.full_name.trim().split(' ').pop()||'');
+      }));
+    } catch { setStudents([]); }
     setLoading(false);
   }
 
@@ -56,60 +59,50 @@ export default function Rollover() {
   const g9 = students.filter(s => s.grade === 'Grade 9');
   const year = new Date().getFullYear();
 
+  async function rollover(action: string, extra: Record<string, any> = {}) {
+    const res = await fetch('/api/hp/rollover', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...extra }),
+    });
+    const d = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(d.error || 'Something went wrong.');
+    return d as { ok: boolean; count: number };
+  }
+
   async function graduateG9() {
     setBusy(true);
-    if (g9.length > 0) {
-      const { error } = await supabase.from('hp_students').update({ is_active:false, notes:`Graduated ${year}` }).in('id', g9.map(s=>s.id));
-      if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
-    }
-    setDone(d=>[...d, `${g9.length} Grade 9 students graduated and archived`]);
     try {
-      await fetch('/api/hp/audit', {
-        method: 'POST', credentials: 'include',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          action: 'students_archived',
-          actor: 'HP Admin',
-          details: { count: g9.length, reason: `Graduated ${year}` }
-        }),
-      });
-    } catch {}
-    showToast(`${g9.length} Grade 9 students archived ✓`);
-    await load(); setBusy(false); setStep(3);
+      const { count } = await rollover('graduate');
+      setDone(d=>[...d, `${count} Grade 9 students graduated and archived`]);
+      showToast(`${count} Grade 9 students archived ✓`);
+      await load(); setStep(3);
+    } catch (e: any) { showToast(`Error: ${e.message}`); }
+    setBusy(false);
   }
 
   async function promoteG8() {
     setBusy(true);
-    if (g8.length > 0) {
-      const { error } = await supabase.from('hp_students').update({ grade:'Grade 9', training_group:null }).in('id', g8.map(s=>s.id));
-      if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
-    }
-    setDone(d=>[...d, `${g8.length} Grade 8 students promoted to Grade 9`]);
-    // Write audit log
     try {
-      await fetch('/api/hp/audit', {
-        method: 'POST', credentials: 'include',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          action: 'grade_promoted',
-          actor: 'HP Admin',
-          details: { count: g8.length, from: 'Grade 8', to: 'Grade 9', year: year }
-        }),
-      });
-    } catch {}
-    showToast(`${g8.length} students promoted to Grade 9 ✓`);
-    await load(); setBusy(false); setStep(4);
+      const { count } = await rollover('promote');
+      setDone(d=>[...d, `${count} Grade 8 students promoted to Grade 9`]);
+      showToast(`${count} students promoted to Grade 9 ✓`);
+      await load(); setStep(4);
+    } catch (e: any) { showToast(`Error: ${e.message}`); }
+    setBusy(false);
   }
 
   async function addG8s() {
     const list = names.split('\n').map(n=>n.trim()).filter(Boolean);
     if (!list.length) { showToast('No names entered.'); return; }
     setBusy(true);
-    const { error } = await supabase.from('hp_students').insert(list.map(full_name=>({ full_name, grade:'Grade 8', class_group:cls, is_active:true })));
-    if (error) { showToast(`Error: ${error.message}`); setBusy(false); return; }
-    setAdded(a=>a+list.length); setNames('');
-    showToast(`${list.length} students added to Grade 8${cls} ✓`);
-    await load(); setBusy(false);
+    try {
+      const { count } = await rollover('add', { names: list, class_group: cls });
+      setAdded(a=>a+count); setNames('');
+      showToast(`${count} students added to Grade 8${cls} ✓`);
+      await load();
+    } catch (e: any) { showToast(`Error: ${e.message}`); }
+    setBusy(false);
   }
 
   if (loading) return (
