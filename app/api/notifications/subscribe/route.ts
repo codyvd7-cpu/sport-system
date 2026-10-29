@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { resolveStaffSchoolId } from '@/lib/serverAuth';
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 
 // ─── /api/notifications/subscribe ───────────────────────────────────────────────
 // Adapter for the staff NotificationBell — consolidated onto the canonical
@@ -10,6 +11,8 @@ import { resolveStaffSchoolId } from '@/lib/serverAuth';
 // "enable notifications" subscriptions were silently going nowhere.
 
 export async function POST(req: NextRequest) {
+  const rl = rateLimit(`notif-sub:${getClientId(req)}`, { max: 10, windowMs: 60_000 });
+  if (!rl.ok) return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
   try {
     const { subscription } = await req.json();

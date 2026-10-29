@@ -1,18 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSchoolContext } from '@/lib/hpRepository';
 import { verifyHpCookie } from '@/lib/serverAuth';
+import { rateLimit, getClientId } from '@/lib/rateLimit';
 import { MODEL_QUICK, AI_GUARDRAILS } from '@/lib/aiModels';
 
 export async function POST(req: NextRequest) {
   if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  // Every other AI route is rate-limited; this one wasn't, so a valid HP
+  // session could fire OpenAI calls in a loop and run up the bill (AP-32).
+  const rl = rateLimit(`hp-ai-report:${getClientId(req)}`, { max: 20, windowMs: 5 * 60_000 });
+  if (!rl.ok) return NextResponse.json({ error: 'Too many reports — wait a few minutes.' }, { status: 429 });
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) return NextResponse.json({ error: 'OPENAI_API_KEY not set in Vercel environment variables.' }, { status: 500 });
 
   const { classId, grade, tests, students, avgs } = await req.json();
+  // Cap the client-supplied arrays before they become prompt tokens — a huge
+  // payload would otherwise inflate the OpenAI call arbitrarily (AP-32).
+  if (!Array.isArray(tests) || !Array.isArray(students) || tests.length > 40 || students.length > 300) {
+    return NextResponse.json({ error: 'Invalid request payload.' }, { status: 400 });
+  }
+  const safeAvgs = Array.isArray(avgs) ? avgs : [];
 
   const testLines = tests.map((t: any) => {
-    const a = avgs.find((x: any) => x.key === t.key);
+    const a = safeAvgs.find((x: any) => x.key === t.key);
     if (!a?.avg) return `- ${t.label}: no data`;
     return `- ${t.label}: class avg ${Number(a.avg).toFixed(2)}${t.unit} (${a.count}/${students.length} tested) — tier: ${a.tier}`;
   }).join('\n');

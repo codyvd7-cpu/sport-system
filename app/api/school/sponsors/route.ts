@@ -9,8 +9,12 @@ import { getSchoolBrandingBySlug } from '@/lib/schoolBranding';
 // puts on the boundary boards. It returns ONLY sponsor records: no athlete,
 // staff or fixture data, and it is scoped to one school per request.
 
-export const revalidate = 300;
-
+// NOTE: deliberately no `export const revalidate`. This response varies by the
+// ?school / ?schoolId query param, and segment-level revalidate caches the
+// route without discriminating on that param — the classic way one school ends
+// up served another's sponsors (AP-33). HTTP caches key on the FULL URL
+// (query string included), so we cache per-school correctly by setting an
+// explicit Cache-Control below instead.
 export async function GET(req: NextRequest) {
   if (!adminConfigured()) return NextResponse.json({ sponsors: [] });
 
@@ -33,5 +37,9 @@ export async function GET(req: NextRequest) {
     .eq('is_active', true)
     .order('sort_order');
 
-  return NextResponse.json({ sponsors: data || [] });
+  const res = NextResponse.json({ sponsors: data || [] });
+  // Public, per-school data — cache at the CDN keyed by the full URL (which
+  // carries the school param), so each school gets its own entry.
+  res.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+  return res;
 }
