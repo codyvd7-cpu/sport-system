@@ -134,16 +134,13 @@ export function verifyHpCookie(req: NextRequest): boolean {
   if (!match) return false;
 
   const secret = process.env.HP_SESSION_SECRET;
-  // If secret not configured, just check cookie exists with valid structure
-  if (!secret) {
-    try {
-      const value = decodeURIComponent(match[1]);
-      const [payload] = value.split('.');
-      if (!payload) return false;
-      const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
-      return !decoded.exp || decoded.exp > Date.now();
-    } catch { return false; }
-  }
+  // Fail CLOSED when the signing secret is absent (AP-06). The old fallback
+  // accepted any cookie with a valid base64 structure and an unexpired `exp` —
+  // but `exp` lives in the client-controlled payload, so a forged
+  // base64({role:'owner',schoolId:'…',exp:<far future>}) sailed straight
+  // through with full HP access. No secret ⇒ we cannot prove a cookie is ours,
+  // so we trust none. The secret is configured in every real environment.
+  if (!secret) return false;
 
   try {
     const value = decodeURIComponent(match[1]);
@@ -164,6 +161,22 @@ export function verifyHpCookie(req: NextRequest): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * The complete guard for an HP data route: a verified session AND a concrete
+ * school. Returns the school id, or null if the caller should be refused.
+ *
+ * Every current HP login bakes a real school into the signed cookie (a
+ * per-school access code, or a legacy env code mapped to School 1), and the
+ * cookie expires after 8 hours — so a null school here is never a legitimate
+ * session. Routes used to fall back to running UNSCOPED when the school was
+ * null, which meant one HP session could read or write across every school
+ * (AP-04 / AP-05). Callers must now reject a null instead of going unscoped.
+ */
+export function requireHpSchoolId(req: NextRequest): string | null {
+  if (!verifyHpCookie(req)) return null;
+  return getHpSchoolId(req);
 }
 
 // Resolves which school a staff member belongs to, from their email. Needed
@@ -192,18 +205,19 @@ export function verifyPortalCookie(req: NextRequest): { sport: string; schoolId:
   const match = (req.headers.get('cookie') || '').match(/portal_access=([^;]+)/);
   if (!match) return null;
   const secret = process.env.HP_SESSION_SECRET;
+  // Fail CLOSED without the secret (AP-06). Previously the signature check was
+  // skipped entirely when the secret was absent, so a client-crafted
+  // portal_access payload (any sport, any schoolId) was accepted unverified.
+  if (!secret) return null;
   try {
     const value = decodeURIComponent(match[1]);
     const [payload, sig] = value.split('.');
-    if (!payload) return null;
+    if (!payload || !sig) return null;
 
-    if (secret) {
-      if (!sig) return null;
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const crypto = require('crypto');
-      const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-      if (sig !== expected) return null;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const crypto = require('crypto');
+    const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+    if (sig !== expected) return null;
 
     const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
     if (decoded.exp && decoded.exp < Date.now()) return null;

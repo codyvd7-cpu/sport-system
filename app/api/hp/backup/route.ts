@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyHpCookie, getHpSchoolId } from '@/lib/serverAuth';
+import { requireHpSchoolId } from '@/lib/serverAuth';
 import { getHpAdmin } from '@/lib/hpRepository';
 
 // GET  → export full HP dataset as JSON download
 // POST → restore from JSON backup (requires confirm=true in body)
 export async function GET(req: NextRequest) {
-  if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const schoolId = requireHpSchoolId(req);
+  if (!schoolId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const db = getHpAdmin();
-    const schoolId = getHpSchoolId(req);
     // Export only this school's data — an unscoped export would hand one
     // school a full copy of every other school's students and results.
-    const scope = (q: any) => (schoolId ? q.eq('school_id', schoolId) : q);
+    const scope = (q: any) => q.eq('school_id', schoolId);
     const [students, tests, attendance] = await Promise.all([
       scope(db.from('hp_students').select('*')).order('full_name'),
       scope(db.from('hp_test_results').select('*')).order('year').order('term'),
@@ -37,7 +37,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!verifyHpCookie(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const schoolId = requireHpSchoolId(req);
+  if (!schoolId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
     const body = await req.json();
     if (!body.confirm) return NextResponse.json({ error: 'Must pass confirm:true to restore.' }, { status: 400 });
@@ -46,14 +47,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid backup format.' }, { status: 400 });
     }
     const db = getHpAdmin();
-    const schoolId = getHpSchoolId(req);
     // Force every incoming row to the restoring session's own school. The
     // uploaded file is untrusted input — if it carried another school's
     // school_id, an unscoped restore would write straight into their data.
-    const reTag = (rows: any[]) => (schoolId ? rows.map(r => ({ ...r, school_id: schoolId })) : rows);
+    const reTag = (rows: any[]) => rows.map(r => ({ ...r, school_id: schoolId }));
     const safeStudents = reTag(students);
     const safeTests    = reTag(test_results);
     const safeAtt      = reTag(attendance);
+
+    // Reject any id that already belongs to ANOTHER school. The upserts key on
+    // the global primary key `id`, so a crafted backup carrying another
+    // school's ids would otherwise overwrite their rows and reassign them to
+    // this school (AP-05). Re-tagging school_id alone doesn't stop that — the
+    // conflict is resolved on id, not school.
+    const collides = async (table: string, rows: any[]) => {
+      const ids = rows.map(r => r.id).filter(Boolean);
+      if (!ids.length) return false;
+      const { data } = await db.from(table).select('id').in('id', ids).neq('school_id', schoolId).limit(1);
+      return !!(data && data.length);
+    };
+    const [sClash, tClash, aClash] = await Promise.all([
+      collides('hp_students', safeStudents),
+      collides('hp_test_results', safeTests),
+      collides('hp_attendance', safeAtt),
+    ]);
+    if (sClash || tClash || aClash) {
+      return NextResponse.json({ error: 'This backup contains records that belong to another school and cannot be restored here.' }, { status: 409 });
+    }
+
     // Upsert all records — preserves existing data, fills in gaps
     const results = await Promise.allSettled([
       safeStudents.length > 0 ? db.from('hp_students').upsert(safeStudents, { onConflict: 'id' })  : Promise.resolve(),
