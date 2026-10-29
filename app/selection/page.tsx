@@ -118,7 +118,7 @@ export default function SelectionPage() {
     setPicked(prev => prev[id] ? { ...prev, [id]: { ...prev[id], shirt: clean } } : prev);
   }
 
-  async function save(publish: boolean) {
+  async function save(publish: boolean, override = false) {
     if (!fixtureId) return;
     setSaving(true);
     try {
@@ -131,9 +131,19 @@ export default function SelectionPage() {
       const res = await fetch('/api/coach/selection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
-        body: JSON.stringify({ fixtureId, publish, players, ...logistics }),
+        body: JSON.stringify({ fixtureId, publish, players, override, ...logistics }),
       });
       const d = await res.json();
+      // The server blocks publishing injured/unavailable players unless
+      // overridden — give the coach that explicit choice.
+      if (res.status === 409 && d.needsOverride) {
+        const names = (d.ineligible || []).map((x: any) => `${x.name} (${x.reason})`).join(', ');
+        setSaving(false);
+        if (typeof window !== 'undefined' && window.confirm(`These players are flagged unavailable:\n\n${names}\n\nPublish anyway?`)) {
+          return save(publish, true);
+        }
+        return;
+      }
       if (!res.ok) { showToast(d.error || 'Could not save'); setSaving(false); return; }
       setStatus(publish ? 'published' : 'draft');
       showToast(publish ? 'Team published — players can now see it' : 'Saved as draft');

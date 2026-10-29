@@ -156,7 +156,9 @@ function MyTeamView({teamName,athletes,attendance,fixtures,onRefresh}:{
   async function save() {
     setSaving(true);
     const ids=squad.map(a=>a.id);
-    await supabase.from('attendance').delete().eq('session_date',today()).in('athlete_id',ids);
+    // Replace only this session TYPE for today (AP-20) — not every session on
+    // the day, which would wipe a different register taken earlier.
+    await supabase.from('attendance').delete().eq('session_date',today()).eq('session_type',sessionType).in('athlete_id',ids);
     const attRows = squad.map(a=>({
       athlete_id:a.id,session_date:today(),session_type:sessionType,status:statuses[a.id]||'Present',
     }));

@@ -188,9 +188,11 @@ export default function AttendancePage() {
   async function saveSession() {
     if(!selTeam||squad.length===0) return;
     setSaving(true);
-    // Delete existing records for this date+team
+    // Replace existing records for this date + SESSION TYPE only (AP-20).
+    // Without the session_type predicate, saving an afternoon gym register
+    // erased the morning field session recorded on the same day.
     const ids=squad.map(a=>a.id);
-    await supabase.from('attendance').delete().eq('session_date',sessionDate).in('athlete_id',ids);
+    await supabase.from('attendance').delete().eq('session_date',sessionDate).eq('session_type',sessionType).in('athlete_id',ids);
     // Insert new
     const rows=squad.map(a=>({
       athlete_id:a.id,

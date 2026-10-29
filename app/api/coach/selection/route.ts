@@ -165,13 +165,36 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Eligibility at commit (AP-21): on publish, injured or unavailable athletes
+  // are rejected unless the coach explicitly overrides. The GET view shows this
+  // as a flag; the server must enforce it, not trust the client.
+  if (publish && athleteIds.length && body.override !== true) {
+    const [{ data: elig }, { data: openInj }] = await Promise.all([
+      db.from('athletes').select('id,full_name,availability').in('id', athleteIds),
+      db.from('rtp_cases').select('athlete_id').in('athlete_id', athleteIds).eq('status', 'open'),
+    ]);
+    const injured = new Set((openInj || []).map((r: { athlete_id: string }) => r.athlete_id));
+    const ineligible = (elig || []).filter((a: any) => injured.has(a.id) || (a.availability && a.availability !== 'Available'));
+    if (ineligible.length) {
+      return NextResponse.json({
+        error: 'Some selected players are unavailable.',
+        needsOverride: true,
+        ineligible: ineligible.map((a: any) => ({ id: a.id, name: a.full_name, reason: injured.has(a.id) ? 'Injured' : a.availability })),
+      }, { status: 409 });
+    }
+  }
+
+  // Save the HEADER AS DRAFT first. We only flip it to published AFTER the
+  // player list has been written successfully (AP-21) — the old code published
+  // the header before the squad was saved, so a failed player insert could
+  // publish an empty or stale side and still report success.
   const { data: selection, error: selErr } = await db.from('team_selections').upsert({
     school_id: schoolId,
     fixture_id: fixtureId,
     team: fixture.team,
-    status: publish ? 'published' : 'draft',
-    published_at: publish ? new Date().toISOString() : null,
-    published_by: publish ? auth.email || 'staff' : null,
+    status: 'draft',
+    published_at: null,
+    published_by: null,
     meet_time: body.meetTime || null,
     meet_place: body.meetPlace || null,
     kit: body.kit || null,
@@ -185,11 +208,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: selErr?.message || 'Could not save.' }, { status: 500 });
   }
 
-  // Replace the squad wholesale — simpler and less error-prone than diffing,
-  // and a selection is small.
-  await db.from('team_selection_players').delete().eq('selection_id', selection.id);
+  // Replace the squad wholesale, checking every write. A failure here must NOT
+  // leave a published selection behind (the header is still draft at this point).
+  const { error: delErr } = await db.from('team_selection_players').delete().eq('selection_id', selection.id);
+  if (delErr) return NextResponse.json({ error: 'Could not update the squad. Nothing was published.' }, { status: 500 });
   if (players.length) {
-    await db.from('team_selection_players').insert(players.map(p => ({
+    const { error: insErr } = await db.from('team_selection_players').insert(players.map(p => ({
       selection_id: selection.id,
       school_id: schoolId,
       athlete_id: p.athleteId,
@@ -198,20 +222,33 @@ export async function POST(req: NextRequest) {
       position: p.position || null,
       note: p.note || null,
     })));
+    if (insErr) return NextResponse.json({ error: 'Could not save the squad. Nothing was published.' }, { status: 500 });
+  }
+
+  // Only NOW, with the squad safely persisted, promote to published.
+  let published = false;
+  if (publish) {
+    const { error: pubErr } = await db.from('team_selections').update({
+      status: 'published',
+      published_at: new Date().toISOString(),
+      published_by: auth.email || 'staff',
+    }).eq('id', selection.id);
+    if (pubErr) return NextResponse.json({ error: 'Squad saved, but publishing failed — try publish again.' }, { status: 500 });
+    published = true;
   }
 
   // Publishing is the moment worth recording on an athlete's timeline —
-  // being picked is a genuine event in their season.
-  if (publish) {
-    for (const p of players) {
-      void recordAthleteEvent({
-        athleteId: p.athleteId, schoolId, type: 'note_added',
-        summary: `Selected for ${fixture.team} vs ${fixture.opponent}`,
-        detail: { fixtureId, role: p.role ?? 'starting' },
-        sourceTable: 'team_selections', sourceId: selection.id,
-        actor: auth.email || 'staff',
-      });
-    }
+  // being picked is a genuine event in their season. AWAIT the audit writes
+  // (AP-46) so a committed publish always has its record, even under a
+  // serverless lifecycle that may kill the worker after the response.
+  if (published) {
+    await Promise.all(players.map(p => recordAthleteEvent({
+      athleteId: p.athleteId, schoolId, type: 'note_added',
+      summary: `Selected for ${fixture.team} vs ${fixture.opponent}`,
+      detail: { fixtureId, role: p.role ?? 'starting' },
+      sourceTable: 'team_selections', sourceId: selection.id,
+      actor: auth.email || 'staff',
+    })).map(pr => Promise.resolve(pr).catch(() => {})));
 
     // The wrist moment: a targeted push to each selected player who has linked
     // an account and allowed notifications. Apple Watch / Wear OS mirror it
@@ -238,5 +275,5 @@ export async function POST(req: NextRequest) {
     })();
   }
 
-  return NextResponse.json({ ok: true, selectionId: selection.id, published: publish });
+  return NextResponse.json({ ok: true, selectionId: selection.id, published });
 }
