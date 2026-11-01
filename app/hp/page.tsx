@@ -3,6 +3,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePrintReport, PrintToast } from '@/components/HPPrintTrigger';
 import { useBranding } from '@/components/BrandingProvider';
+import { currentTerm as currentTermFn } from '@/lib/dates';
 
 type Row = Record<string, any>;
 
@@ -19,14 +20,6 @@ const CLASSES = [
   { id: '9M', grade: 'Grade 9', cls: 'M' },
 ];
 
-function getCurrentTerm(): string {
-  const month = new Date().getMonth() + 1;
-  // SA school holiday July = between T2 and T3, default to T2 until August
-  if (month <= 3) return 'Term 1';
-  if (month <= 7) return 'Term 2';
-  if (month <= 9) return 'Term 3';
-  return 'Term 4';
-}
 
 function formatDate(d: string) {
   return new Date(d).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
@@ -86,7 +79,7 @@ export default function HPDashboard() {
   const [testResults, setTestResults] = React.useState<Row[]>([]);
   const [attendance, setAttendance] = React.useState<Row[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [currentTerm, setCurrentTerm] = React.useState(getCurrentTerm());
+  const [currentTerm, setCurrentTerm] = React.useState(() => currentTermFn());
   const currentYear = new Date().getFullYear();
 
   React.useEffect(() => {

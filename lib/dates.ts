@@ -100,15 +100,32 @@ export function isLastMonth(d: string | Date): boolean {
 }
 
 // ── Session / HP ────────────────────────────────────────────
+// The single source of truth for "what term / year is it now". Every other
+// copy of this logic (lib/hpTests, the HP dashboard) delegates here, so they
+// can never drift apart again (AP-17). Two things were wrong before:
+//   1. three copies disagreed on the Term 2/3 boundary (June vs July);
+//   2. all of them read the SERVER clock, which on Vercel is UTC — two hours
+//      behind SA, so around midnight (and at year/term boundaries) the date,
+//      and occasionally the year, flipped a day early.
+// Everything now resolves in the schools' own timezone.
+
+const SA_TZ = 'Africa/Johannesburg';
+
+/** Today's date in Africa/Johannesburg, as plain numbers. */
+export function saToday(): { year: number; month: number; day: number } {
+  const iso = new Date().toLocaleDateString('en-CA', { timeZone: SA_TZ }); // YYYY-MM-DD
+  const [y, m, d] = iso.split('-').map(Number);
+  return { year: y, month: m, day: d };
+}
 
 export function currentTerm(): string {
-  const m = new Date().getMonth() + 1;
+  const { month: m } = saToday();
   if (m <= 3)  return 'Term 1';
-  if (m <= 6)  return 'Term 2';
+  if (m <= 7)  return 'Term 2';   // July = holidays between T2/T3 → stays T2
   if (m <= 9)  return 'Term 3';
   return 'Term 4';
 }
 
 export function currentYear(): number {
-  return new Date().getFullYear();
+  return saToday().year;
 }

@@ -2,6 +2,8 @@
 // Single source of truth for all HP pages.
 // Import from here — never hardcode test keys, labels or benchmarks elsewhere.
 
+import { currentTerm } from './dates';
+
 export type TestKey =
   | 'chin_up_hang'
   | 'broad_jump'
@@ -143,12 +145,10 @@ export function parseTestValue(key: TestKey, raw: string): number | null {
 export const TERM_ORDER = ['Term 1', 'Term 2', 'Term 3', 'Term 4'] as const;
 export type Term = typeof TERM_ORDER[number];
 
+// Delegates to the single term source of truth (lib/dates), which resolves in
+// the schools' timezone. Kept as a thin alias so existing HP imports don't move.
 export function getCurrentTerm(): Term {
-  const month = new Date().getMonth() + 1;
-  if (month <= 3) return 'Term 1';
-  if (month <= 7) return 'Term 2';   // July = holidays between T2/T3
-  if (month <= 9) return 'Term 3';
-  return 'Term 4';
+  return currentTerm() as Term;
 }
 
 // ── HP class config (Ridgemont — move to DB later) ──────────────────────────────
