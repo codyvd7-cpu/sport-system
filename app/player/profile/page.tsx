@@ -378,7 +378,7 @@ function Overview({ D, C, attPct, setNav, onScan }: any) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 14 }}>
             <span style={{ fontSize: 16 }}>✅</span>
-            <p style={{ fontSize: 10.5, fontWeight: 900, color: C, textTransform: 'uppercase', letterSpacing: '0.22em' }}>You're selected</p>
+            <p style={{ fontSize: 10.5, fontWeight: 900, color: C, textTransform: 'uppercase', letterSpacing: '0.22em' }}>You&apos;re selected</p>
             {s.shirt_number != null && (
               <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 900, color: '#04070f', background: C, borderRadius: 9, padding: '4px 11px' }}>
                 #{s.shirt_number}

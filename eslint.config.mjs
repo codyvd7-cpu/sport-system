@@ -23,6 +23,11 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/purity": "warn",
       "react-hooks/use-memo": "warn",
+      // The useTilt pattern passes the hook's ref/handlers straight to the
+      // element (ref={tilt.ref} etc). The rule reads that as "ref accessed
+      // during render"; it's intentional here, so it joins the rest of the
+      // react-hooks family as a warning rather than a build-breaking error.
+      "react-hooks/refs": "warn",
 
       // These patterns are acceptable in this codebase
       "@typescript-eslint/no-require-imports": "warn",
