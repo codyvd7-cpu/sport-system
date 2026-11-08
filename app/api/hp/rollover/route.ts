@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireHpSchoolId, getHpActor } from '@/lib/serverAuth';
+import { requireHpSchoolId, isHpAdmin, getHpActor } from '@/lib/serverAuth';
 import { getHpAdmin } from '@/lib/hpRepository';
 
 // ─── /api/hp/rollover ─────────────────────────────────────────────────────────
@@ -10,7 +10,7 @@ import { getHpAdmin } from '@/lib/hpRepository';
 // session, so those calls ran as the anon role — they either hit RLS and did
 // nothing, or (where a policy was permissive) read and wrote across EVERY
 // school's students, and newly-added Grade 8s were inserted with no school_id
-// at all. Everything now goes through this endpoint behind requireHpSchoolId,
+// at all. Everything now goes through this endpoint behind requireHpAdmin,
 // so each operation is proven to belong to exactly one school.
 
 type Action = 'graduate' | 'promote' | 'add';
@@ -24,6 +24,7 @@ async function writeAudit(db: ReturnType<typeof getHpAdmin>, schoolId: string, a
 export async function GET(req: NextRequest) {
   const schoolId = requireHpSchoolId(req);
   if (!schoolId) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  if (!isHpAdmin(req)) return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
   const db = getHpAdmin();
   const { data, error } = await db.from('hp_students')
     .select('id,full_name,grade,class_group,training_group')
@@ -35,6 +36,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const schoolId = requireHpSchoolId(req);
   if (!schoolId) return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
+  if (!isHpAdmin(req)) return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
 
   const db = getHpAdmin();
   const actor = getHpActor(req);

@@ -179,6 +179,35 @@ export function requireHpSchoolId(req: NextRequest): string | null {
   return getHpSchoolId(req);
 }
 
+/** The HP role carried in the session cookie payload, or null. Call
+ *  verifyHpCookie() first (or use requireHpAdmin, which does). */
+export function getHpRole(req: NextRequest): string | null {
+  const match = (req.headers.get('cookie') || '').match(/hp_session=([^;]+)/);
+  if (!match) return null;
+  try {
+    const [payload] = decodeURIComponent(match[1]).split('.');
+    const decoded = JSON.parse(Buffer.from(payload, 'base64').toString('utf8'));
+    return decoded.role || 'hp-coach';
+  } catch { return null; }
+}
+
+/**
+ * True only for a verified HP session whose role is hp-admin (Blocker 3). The
+ * role model has always distinguished hp-admin from hp-coach, but the admin
+ * operations (rollover, backup/restore, bulk changes) only checked for a
+ * signed cookie + a school, so any coach session reached them. Routes pair this
+ * with requireHpSchoolId so they can return 401 for an unauthenticated caller
+ * and 403 for a valid coach who lacks the role:
+ *
+ *   const schoolId = requireHpSchoolId(req);
+ *   if (!schoolId) return 401;
+ *   if (!isHpAdmin(req)) return 403;
+ */
+export function isHpAdmin(req: NextRequest): boolean {
+  if (!verifyHpCookie(req)) return false;
+  return getHpRole(req) === 'hp-admin';
+}
+
 // Resolves which school a staff member belongs to, from their email. Needed
 // by any service-role route acting on a staff member's behalf (inviting a
 // coach, activating an alert) — those bypass RLS entirely, so nothing

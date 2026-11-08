@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireHpSchoolId } from '@/lib/serverAuth';
+import { requireHpSchoolId, isHpAdmin } from '@/lib/serverAuth';
 import { getHpAdmin } from '@/lib/hpRepository';
 
 // GET  → export full HP dataset as JSON download
@@ -7,6 +7,7 @@ import { getHpAdmin } from '@/lib/hpRepository';
 export async function GET(req: NextRequest) {
   const schoolId = requireHpSchoolId(req);
   if (!schoolId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isHpAdmin(req)) return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
   try {
     const db = getHpAdmin();
     // Export only this school's data — an unscoped export would hand one
@@ -39,6 +40,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const schoolId = requireHpSchoolId(req);
   if (!schoolId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!isHpAdmin(req)) return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
   try {
     const body = await req.json();
     if (!body.confirm) return NextResponse.json({ error: 'Must pass confirm:true to restore.' }, { status: 400 });
