@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getHpActor, requireHpSchoolId } from '@/lib/serverAuth';
 import { createClient } from '@supabase/supabase-js';
-import { getDashboardData, saveTestResult, saveAttendance } from '@/lib/hpRepository';
+import { getDashboardData, saveTestResult, saveAttendance, assertStudentsInSchool } from '@/lib/hpRepository';
+
+// Generic insert/update targets that carry a student_id — a row here must
+// reference one of the caller's own students, not just carry the school stamp.
+const STUDENT_SCOPED_TABLES = new Set(['hp_test_results', 'hp_attendance']);
 
 // Whitelisted tables for HP writes — no arbitrary table injection
 const ALLOWED_HP_TABLES = ['hp_students', 'hp_attendance', 'hp_test_results'] as const;
@@ -145,6 +149,12 @@ export async function POST(req: NextRequest) {
       // school's row by id (matchCol/matchVal are client-supplied) and even
       // re-tag it into another school via payload.data.school_id (AP-04).
       const data = { ...(payload.data || {}), school_id: schoolId };
+      // If the row references a student, that student must be this school's —
+      // otherwise a generic update could attach/retarget another school's child
+      // (Blocker 1), the same hole closed in saveTestResult/saveAttendance.
+      if (STUDENT_SCOPED_TABLES.has(table) && data.student_id) {
+        await assertStudentsInSchool(admin, [data.student_id], schoolId);
+      }
       const { error } = await admin.from(table).update(data)
         .eq(payload.matchCol, payload.matchVal).eq('school_id', schoolId);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -156,6 +166,9 @@ export async function POST(req: NextRequest) {
       // client-supplied school_id, which would let one school plant rows in
       // another's data (AP-04).
       const row = { ...(payload.data || {}), school_id: schoolId };
+      if (STUDENT_SCOPED_TABLES.has(table) && row.student_id) {
+        await assertStudentsInSchool(admin, [row.student_id], schoolId);
+      }
       const { error } = await admin.from(table).insert([row]);
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       return NextResponse.json({ ok: true });
