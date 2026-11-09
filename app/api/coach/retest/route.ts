@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 // ─── /api/coach/retest ────────────────────────────────────────────────────────
@@ -15,12 +15,11 @@ import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 // why someone is on the list and disagree with the window if they want.
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.view');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
+  const schoolId = ctx.schoolId;
 
   const windowDays = Math.min(Math.max(parseInt(req.nextUrl.searchParams.get('days') || '90', 10) || 90, 14), 365);
   const cutoff = new Date(Date.now() - windowDays * 86400000);

@@ -28,6 +28,11 @@ test('capability contract: writes exclude the read-only viewer, reads include it
     assert.equal(can('viewer', cap), true, `viewer may ${cap}`);
     assert.equal(can('coach', cap), true, `coach may ${cap}`);
   }
+  // roster import is a coordinator action — a plain team coach and a viewer cannot
+  assert.equal(can('owner', 'roster.import'), true);
+  assert.equal(can('head_of_sport', 'roster.import'), true);
+  assert.equal(can('coach', 'roster.import'), false);
+  assert.equal(can('viewer', 'roster.import'), false);
 });
 
 // ── 2. authorize() against mocked infrastructure ──────────────────────────────

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize, requireOwnedAthlete } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 // ─── /api/athlete/load ────────────────────────────────────────────────────────
@@ -17,20 +17,16 @@ import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 // POST { athleteId, rpe, durationMin, sessionType?, sessionDate?, note? }
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.view');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
-
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
 
   const db = getAdmin();
   const athleteId = req.nextUrl.searchParams.get('athleteId');
   const fourWeeksAgo = new Date(Date.now() - 28 * 86400000).toISOString().slice(0, 10);
 
   if (athleteId) {
-    const { data: ath } = await db.from('athletes').select('school_id').eq('id', athleteId).maybeSingle();
-    if (!ath || ath.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+    if (!(await requireOwnedAthlete(ctx, athleteId))) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
     const { data } = await db.from('session_load')
       .select('id,session_date,session_type,rpe,duration_min,load_au,note')
@@ -60,8 +56,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -76,10 +72,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Duration must be a positive number of minutes.' }, { status: 400 });
   }
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
-  const { data: ath } = await db.from('athletes').select('school_id').eq('id', athleteId).maybeSingle();
-  if (!ath || ath.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  if (!(await requireOwnedAthlete(ctx, athleteId))) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   const { error } = await db.from('session_load').upsert([{
     athlete_id: athleteId,
@@ -89,7 +84,7 @@ export async function POST(req: NextRequest) {
     rpe: Math.round(rpe),
     duration_min: Math.round(durationMin),
     note: body.note ? String(body.note) : null,
-    recorded_by: auth.email || 'staff',
+    recorded_by: ctx.email || 'staff',
   }], { onConflict: 'athlete_id,session_date,session_type' });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

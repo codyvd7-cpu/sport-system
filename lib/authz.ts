@@ -64,6 +64,10 @@ export const CAPABILITIES = {
   // Write athlete-level records — development plans/goals, availability/status
   // changes, timeline events. Excludes the read-only viewer.
   'athlete.manage': WRITERS,
+  // Bulk-create the roster (CSV/paste import). A whole-school action that seeds
+  // athletes into arbitrary teams, so it's limited to school-wide coordinator
+  // roles rather than an individual team coach.
+  'roster.import': SCHOOL_WIDE_ROLES,
 
   // Parent/player → athlete claim review. View is read-only (any active staff);
   // approving/rejecting a link is a write, so it excludes the read-only viewer.

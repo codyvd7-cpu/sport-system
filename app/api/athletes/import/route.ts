@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 // ─── /api/athletes/import ─────────────────────────────────────────────────────
@@ -75,12 +75,13 @@ function parseRows(text: string): ParsedRow[] {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Roster import is a school-wide coordinator action (B2) — not an individual
+  // team coach, and never a read-only viewer.
+  const ctx = await authorize(req, 'roster.import');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
+  const schoolId = ctx.schoolId;
 
   const body = await req.json().catch(() => ({}));
   const text = String(body.text || '');
