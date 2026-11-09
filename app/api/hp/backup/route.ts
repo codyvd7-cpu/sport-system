@@ -10,21 +10,38 @@ export async function GET(req: NextRequest) {
   if (!isHpAdmin(req)) return NextResponse.json({ error: 'Admin access required.' }, { status: 403 });
   try {
     const db = getHpAdmin();
-    // Export only this school's data — an unscoped export would hand one
-    // school a full copy of every other school's students and results.
-    const scope = (q: any) => q.eq('school_id', schoolId);
-    const [students, tests, attendance] = await Promise.all([
-      scope(db.from('hp_students').select('*')).order('full_name'),
-      scope(db.from('hp_test_results').select('*')).order('year').order('term'),
-      scope(db.from('hp_attendance').select('*')).order('session_date'),
-    ]);
+    // Page through every row for this school. A single select is capped by the
+    // API row limit (≈1000), so a school with more attendance/test rows than
+    // that would have exported a SILENTLY TRUNCATED backup (Blocker 8).
+    const PAGE = 1000;
+    const fetchAll = async (table: string, orderCols: string[]): Promise<any[]> => {
+      const all: any[] = [];
+      for (let from = 0; ; from += PAGE) {
+        let q = db.from(table).select('*').eq('school_id', schoolId);
+        for (const c of orderCols) q = q.order(c);
+        const { data, error } = await q.range(from, from + PAGE - 1);
+        if (error) throw new Error(`${table}: ${error.message}`);
+        all.push(...(data || []));
+        if (!data || data.length < PAGE) break;
+      }
+      return all;
+    };
+
+    const students = await fetchAll('hp_students', ['full_name']);
+    const test_results = await fetchAll('hp_test_results', ['year', 'term']);
+    const attendance = await fetchAll('hp_attendance', ['session_date']);
+
     const backup = {
       exported_at:  new Date().toISOString(),
       exported_by:  'HP Admin',
       version:      '1.0',
-      students:     students.data  || [],
-      test_results: tests.data     || [],
-      attendance:   attendance.data || [],
+      school_id:    schoolId,
+      // Counts travel with the file so a restore (or the admin) can verify the
+      // export wasn't truncated.
+      row_counts:   { students: students.length, test_results: test_results.length, attendance: attendance.length },
+      students,
+      test_results,
+      attendance,
     };
     return new NextResponse(JSON.stringify(backup, null, 2), {
       headers: {
@@ -44,9 +61,17 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     if (!body.confirm) return NextResponse.json({ error: 'Must pass confirm:true to restore.' }, { status: 400 });
-    const { students, test_results, attendance } = body.backup;
-    if (!students || !test_results || !attendance) {
+    if (!body.backup || typeof body.backup !== 'object') {
       return NextResponse.json({ error: 'Invalid backup format.' }, { status: 400 });
+    }
+    const { students, test_results, attendance, version } = body.backup;
+    if (!Array.isArray(students) || !Array.isArray(test_results) || !Array.isArray(attendance)) {
+      return NextResponse.json({ error: 'Invalid backup format.' }, { status: 400 });
+    }
+    // Schema-version compatibility — only restore a backup this code understands.
+    const major = String(version || '1.0').split('.')[0];
+    if (major !== '1') {
+      return NextResponse.json({ error: `Unsupported backup version "${version}".` }, { status: 400 });
     }
     const db = getHpAdmin();
     // Force every incoming row to the restoring session's own school. The
@@ -77,22 +102,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'This backup contains records that belong to another school and cannot be restored here.' }, { status: 409 });
     }
 
-    // Upsert all records — preserves existing data, fills in gaps
-    const results = await Promise.allSettled([
-      safeStudents.length > 0 ? db.from('hp_students').upsert(safeStudents, { onConflict: 'id' })  : Promise.resolve(),
-      safeTests.length    > 0 ? db.from('hp_test_results').upsert(safeTests, { onConflict: 'id' }) : Promise.resolve(),
-      safeAtt.length      > 0 ? db.from('hp_attendance').upsert(safeAtt, { onConflict: 'id' })     : Promise.resolve(),
-    ]);
-    const errors = results.filter(r => r.status === 'rejected').map(r => (r as any).reason?.message);
-    if (errors.length) return NextResponse.json({ error: errors.join(', ') }, { status: 500 });
-    // Log the restore
+    // Restore with CHECKED results and the RIGHT ORDER. Two bugs here before:
+    //  1. Promise.allSettled only caught *rejected* promises, but a Supabase
+    //     upsert resolves with an { error } value — so three failed writes
+    //     returned 200 with "restored 1/1/1" (Blocker 8). We now read .error
+    //     and count the rows actually written (.select('id')).
+    //  2. All three ran concurrently, so test/attendance children could be
+    //     inserted before their parent student existed. Students go FIRST.
+    const restoreTable = async (table: string, rows: any[]): Promise<number> => {
+      if (rows.length === 0) return 0;
+      const { data, error } = await db.from(table).upsert(rows, { onConflict: 'id' }).select('id');
+      if (error) throw new Error(`${table}: ${error.message}`);
+      return data?.length ?? 0;
+    };
+
+    const restored = { students: 0, test_results: 0, attendance: 0 };
+    try {
+      restored.students = await restoreTable('hp_students', safeStudents);
+      // Children only after their parent students are in place.
+      const [t, a] = await Promise.all([
+        restoreTable('hp_test_results', safeTests),
+        restoreTable('hp_attendance', safeAtt),
+      ]);
+      restored.test_results = t;
+      restored.attendance = a;
+    } catch (e: any) {
+      // Honest failure — report what did land and that the restore did NOT
+      // complete. Never return success for a failed restore.
+      return NextResponse.json({ ok: false, error: e.message, restored, complete: false }, { status: 500 });
+    }
+
+    // Log the restore with the ACTUAL counts written.
     await db.from('hp_audit_log').insert([{
       action: 'backup_restored',
       actor: 'HP Admin',
-      details: { students: students.length, test_results: test_results.length, attendance: attendance.length },
+      details: restored,
       school_id: schoolId,
     }]);
-    return NextResponse.json({ ok: true, restored: { students: students.length, test_results: test_results.length, attendance: attendance.length } });
+    return NextResponse.json({ ok: true, restored });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
