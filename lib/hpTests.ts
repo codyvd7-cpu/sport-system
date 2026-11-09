@@ -94,13 +94,17 @@ export function getTier(key: TestKey, value: number, lower: boolean): Tier {
 // ── Value formatting ────────────────────────────────────────────────────────────
 export function fmtValue(key: TestKey, value: number): string {
   if (key === 'run_500m') {
-    const m = Math.floor(value / 60);
-    const s = Math.round(value % 60);
+    // Round the WHOLE number of seconds BEFORE splitting — rounding the seconds
+    // component alone turned 119.6 into "1:60" (engine review). 120 → "2:00".
+    const total = Math.round(value);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
   if (key === 'chin_up_hang' && value >= 60) {
-    const m = Math.floor(value / 60);
-    const s = value % 60;
+    const total = Math.round(value);   // same rounding-before-split fix
+    const m = Math.floor(total / 60);
+    const s = total % 60;
     return s ? `${m}m${s}s` : `${m}min`;
   }
   return value % 1 === 0 ? String(value) : value.toFixed(2);
@@ -116,19 +120,33 @@ export function fmtValueWithUnit(key: TestKey, value: number): string {
 }
 
 // ── 500m parsing (accepts mm:ss or mm.ss coach shorthand) ─────────────────────
+// Strict by design (engine review): a malformed clock like "1:90", a surplus
+// component like "2:15:30", or trailing junk must be REJECTED (null), not
+// silently coerced. The legitimate coach shorthand "2.15" = 2:15 and a
+// canonical seconds value like 119.6 are preserved.
 export function parseRunTime(raw: string): number | null {
   if (!raw || raw.trim() === '' || raw.trim() === '-') return null;
   const s = raw.trim();
+
   if (s.includes(':')) {
-    const [m, sec] = s.split(':').map(Number);
-    if (isNaN(m) || isNaN(sec)) return null;
+    const parts = s.split(':');
+    if (parts.length !== 2) return null;                 // reject h:m:s / surplus components
+    // minutes: whole number; seconds: up to two digits, optional decimal, 0–59.x
+    if (!/^\d+$/.test(parts[0]) || !/^\d{1,2}(\.\d+)?$/.test(parts[1])) return null;
+    const m = Number(parts[0]);
+    const sec = Number(parts[1]);
+    if (sec >= 60) return null;                           // reject "1:90"
     return m * 60 + sec;
   }
+
+  // No colon: must be a bare number (reject "2.1junk"); may be mm.ss shorthand.
+  if (!/^\d+(\.\d+)?$/.test(s)) return null;
   const n = parseFloat(s);
-  if (isNaN(n)) return null;
-  // mm.ss shorthand e.g. 2.15 = 2:15
+  if (!Number.isFinite(n)) return null;
+  // Coach shorthand e.g. 2.15 = 2:15 — only for small values with a valid
+  // seconds fragment; a canonical seconds value (≥10) is returned as-is.
   if (s.includes('.')) {
-    const secPart = parseInt(s.split('.')[1] || '0');
+    const secPart = parseInt(s.split('.')[1] || '0', 10);
     if (secPart <= 59 && n < 10) return Math.floor(n) * 60 + secPart;
   }
   return n;
@@ -137,8 +155,12 @@ export function parseRunTime(raw: string): number | null {
 export function parseTestValue(key: TestKey, raw: string): number | null {
   if (!raw || raw.trim() === '' || raw.trim() === '-') return null;
   if (key === 'run_500m') return parseRunTime(raw);
-  const n = parseFloat(raw.replace(',', '.'));
-  return isNaN(n) ? null : n;
+  // The ENTIRE input must be a valid finite number — parseFloat alone accepted
+  // trailing junk ("2.1junk" → 2.1) (engine review). Comma decimals allowed.
+  const cleaned = raw.trim().replace(',', '.');
+  if (!/^-?\d+(\.\d+)?$/.test(cleaned)) return null;
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : null;
 }
 
 // ── SA school terms ────────────────────────────────────────────────────────────
