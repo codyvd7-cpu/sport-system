@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize, requireOwnedAthlete } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { recordAthleteEvent } from '@/lib/athleteEvents';
 
@@ -39,12 +39,11 @@ async function loadBaselines(db: ReturnType<typeof getAdmin>, athleteId: string)
 }
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'rtp.view');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
 
   // Worklist: every open case in the school
@@ -62,8 +61,16 @@ export async function GET(req: NextRequest) {
     const aMap = new Map((athletes || []).map(a => [a.id, a]));
     const sMap = new Map((stages || []).map(s => [s.id, s]));
 
+    // Team scope: a team-assigned coach only sees cases for their own teams;
+    // school-wide roles see all (B2 — the API previously enforced school only).
+    const visibleCases = (cases || []).filter(c => {
+      if (ctx.isSchoolWide) return true;
+      const team = aMap.get(c.athlete_id)?.team ?? null;
+      return !!team && ctx.teams.includes(team);
+    });
+
     return NextResponse.json({
-      cases: (cases || []).map(c => ({
+      cases: visibleCases.map(c => ({
         id: c.id, athleteId: c.athlete_id,
         name: aMap.get(c.athlete_id)?.full_name ?? 'Athlete',
         team: aMap.get(c.athlete_id)?.team ?? null,
@@ -80,8 +87,9 @@ export async function GET(req: NextRequest) {
   const athleteId = req.nextUrl.searchParams.get('athleteId') || '';
   if (!athleteId) return NextResponse.json({ error: 'athleteId or open=1 required.' }, { status: 400 });
 
-  const { data: ath } = await db.from('athletes').select('school_id,sport').eq('id', athleteId).maybeSingle();
-  if (!ath || ath.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  // Same-school AND, for team-scoped staff, same-team (B2).
+  const owned = await requireOwnedAthlete(ctx, athleteId);
+  if (!owned) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   const [{ data: stages }, { data: cases }, baselines] = await Promise.all([
     db.from('rtp_stages')
@@ -109,8 +117,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'rtp.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -120,10 +128,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'athleteId and injurySummary are required.' }, { status: 400 });
   }
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
-  const { data: ath } = await db.from('athletes').select('school_id,availability').eq('id', athleteId).maybeSingle();
-  if (!ath || ath.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  // Must be this school's athlete, and this coach's team (B2).
+  const owned = await requireOwnedAthlete(ctx, athleteId);
+  if (!owned) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   // One open case at a time — reopening rather than stacking keeps the history readable
   const { data: existing } = await db.from('rtp_cases')
@@ -141,14 +150,14 @@ export async function POST(req: NextRequest) {
     occurred_on: body.occurredOn || null,
     expected_return: body.expectedReturn || null,
     current_stage_id: firstStage?.id ?? null,
-    opened_by: auth.email || 'staff',
+    opened_by: ctx.email || 'staff',
   }]).select('id').single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   if (firstStage) {
     await db.from('rtp_case_progress').insert([{
       school_id: schoolId, case_id: created.id, stage_id: firstStage.id,
-      stage_name: firstStage.name, outcome: 'entered', recorded_by: auth.email || 'staff',
+      stage_name: firstStage.name, outcome: 'entered', recorded_by: ctx.email || 'staff',
     }]);
     if (firstStage.sets_availability) {
       await db.from('athletes').update({ availability: firstStage.sets_availability }).eq('id', athleteId);
@@ -159,15 +168,15 @@ export async function POST(req: NextRequest) {
     athleteId, schoolId, type: 'injury_reported',
     summary: `Injury reported — ${injurySummary}`,
     detail: { bodyArea: body.bodyArea ?? null, expectedReturn: body.expectedReturn ?? null },
-    sourceTable: 'rtp_cases', sourceId: created.id, actor: auth.email || 'staff',
+    sourceTable: 'rtp_cases', sourceId: created.id, actor: ctx.email || 'staff',
   });
 
   return NextResponse.json({ ok: true, caseId: created.id });
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'rtp.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -175,11 +184,13 @@ export async function PATCH(req: NextRequest) {
   const action = String(body.action || '');
   if (!caseId || !action) return NextResponse.json({ error: 'caseId and action are required.' }, { status: 400 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
   const { data: c } = await db.from('rtp_cases')
     .select('id,school_id,athlete_id,current_stage_id,medical_cleared_on,injury_summary').eq('id', caseId).maybeSingle();
   if (!c || c.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  // Team scope: the case's athlete must be one this coach may act on (B2).
+  if (!(await requireOwnedAthlete(ctx, c.athlete_id))) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   const { data: stages } = await db.from('rtp_stages')
     .select('id,stage_order,name,requires_medical_clearance,sets_availability')
@@ -212,8 +223,8 @@ export async function PATCH(req: NextRequest) {
 
     await db.from('rtp_cases').update({ current_stage_id: next.id }).eq('id', caseId);
     await db.from('rtp_case_progress').insert([
-      { school_id: schoolId, case_id: caseId, stage_id: c.current_stage_id, stage_name: ordered[currentIdx]?.name ?? 'Stage', outcome: 'passed', note: body.note ? String(body.note) : null, test_results: body.testResults ?? {}, recorded_by: auth.email || 'staff' },
-      { school_id: schoolId, case_id: caseId, stage_id: next.id, stage_name: next.name, outcome: 'entered', recorded_by: auth.email || 'staff' },
+      { school_id: schoolId, case_id: caseId, stage_id: c.current_stage_id, stage_name: ordered[currentIdx]?.name ?? 'Stage', outcome: 'passed', note: body.note ? String(body.note) : null, test_results: body.testResults ?? {}, recorded_by: ctx.email || 'staff' },
+      { school_id: schoolId, case_id: caseId, stage_id: next.id, stage_name: next.name, outcome: 'entered', recorded_by: ctx.email || 'staff' },
     ]);
     if (next.sets_availability) {
       await db.from('athletes').update({ availability: next.sets_availability }).eq('id', c.athlete_id);
@@ -226,7 +237,7 @@ export async function PATCH(req: NextRequest) {
       void recordAthleteEvent({
         athleteId: c.athlete_id, schoolId, type: 'injury_cleared',
         summary: `Returned to full participation — ${c.injury_summary}`,
-        sourceTable: 'rtp_cases', sourceId: caseId, actor: auth.email || 'staff',
+        sourceTable: 'rtp_cases', sourceId: caseId, actor: ctx.email || 'staff',
       });
     }
     return NextResponse.json({ ok: true, stage: next.name, closed: isFinal });
@@ -238,7 +249,7 @@ export async function PATCH(req: NextRequest) {
       school_id: schoolId, case_id: caseId, stage_id: c.current_stage_id,
       stage_name: ordered[currentIdx]?.name ?? 'Stage', outcome: 'failed',
       note: body.note ? String(body.note) : null, test_results: body.testResults ?? {},
-      recorded_by: auth.email || 'staff',
+      recorded_by: ctx.email || 'staff',
     }]);
     return NextResponse.json({ ok: true });
   }

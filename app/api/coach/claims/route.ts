@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 
 // ─── /api/coach/claims ────────────────────────────────────────────────────────
@@ -12,13 +12,14 @@ import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 // PATCH { claimId, action: 'approve' | 'reject', reason? }
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Active staff of this school only (B2). authenticateRequest alone accepted
+  // any Supabase account whose email happened to resolve to a school, including
+  // a deactivated one; authorize() verifies active staff + active school + role.
+  const ctx = await authorize(req, 'claims.view');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
-
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
   const { data: claims } = await db.from('athlete_claims')
     .select('id,athlete_id,user_id,email,claim_type,status,approved_via,approved_by,approved_at,created_at')
@@ -72,8 +73,11 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // Approving/rejecting a claim is a write — a read-only viewer (or a
+  // deactivated account) must not reach it (B2). The isolated review test
+  // confirmed an inactive viewer could previously approve claims.
+  const ctx = await authorize(req, 'claims.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -83,7 +87,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "claimId and action ('approve' | 'reject') are required." }, { status: 400 });
   }
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
   const { data: claim } = await db.from('athlete_claims')
     .select('id,school_id,athlete_id,user_id').eq('id', claimId).maybeSingle();
@@ -92,7 +96,7 @@ export async function PATCH(req: NextRequest) {
   if (action === 'approve') {
     await db.from('athlete_claims').update({
       status: 'approved', approved_via: 'coach',
-      approved_by: auth.email || 'staff', approved_at: new Date().toISOString(),
+      approved_by: ctx.email || 'staff', approved_at: new Date().toISOString(),
     }).eq('id', claimId);
     // Only now does the user's profile actually point at the athlete
     await db.from('player_profiles').update({ athlete_id: claim.athlete_id }).eq('user_id', claim.user_id);
@@ -102,7 +106,7 @@ export async function PATCH(req: NextRequest) {
   await db.from('athlete_claims').update({
     status: 'rejected',
     rejected_reason: body.reason ? String(body.reason) : null,
-    approved_by: auth.email || 'staff', approved_at: new Date().toISOString(),
+    approved_by: ctx.email || 'staff', approved_at: new Date().toISOString(),
   }).eq('id', claimId);
   // Revoke any existing link for this user on this athlete
   await db.from('player_profiles').update({ athlete_id: null })

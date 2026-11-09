@@ -61,6 +61,16 @@ export const CAPABILITIES = {
   'notifications.send': SENIOR_MIC,
   // Read athlete-level data (coach dashboards, athlete PDFs). Any coach, not a viewer.
   'athlete.view': WRITERS,
+
+  // Parent/player → athlete claim review. View is read-only (any active staff);
+  // approving/rejecting a link is a write, so it excludes the read-only viewer.
+  'claims.view': [...STAFF_ROLES],
+  'claims.manage': WRITERS,
+
+  // Return-to-play / injury cases. Same read/write split — recording medical
+  // clearance and advancing a protocol is a write a viewer must not perform.
+  'rtp.view': [...STAFF_ROLES],
+  'rtp.manage': WRITERS,
 } as const;
 
 export type Capability = keyof typeof CAPABILITIES;
