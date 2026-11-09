@@ -61,7 +61,21 @@ export async function POST(req: NextRequest) {
   }
   const schoolId = school.id;
 
+  // Domain validation — a nonempty date string is not enough (Blocker 10).
+  const birth = new Date(dob);
+  if (isNaN(birth.getTime())) {
+    return NextResponse.json({ error: 'Please enter a valid date of birth.' }, { status: 400 });
+  }
   const ageGroup = calcAgeGroup(dob);
+  if (!ageGroup) {
+    return NextResponse.json({ error: 'Please check your date of birth.' }, { status: 400 });
+  }
+  // Optional physicals: keep only plausible values, otherwise store nothing
+  // rather than garbage.
+  const heightNum = Number(body.heightCm);
+  const weightNum = Number(body.weightKg);
+  const heightCm = Number.isFinite(heightNum) && heightNum >= 50 && heightNum <= 250 ? heightNum : null;
+  const weightKg = Number.isFinite(weightNum) && weightNum >= 20 && weightNum <= 250 ? weightNum : null;
 
   // ── Create or update the athlete record this account owns ────────────────
   // One athlete record per account (idx_athletes_user enforces it). A second
@@ -74,8 +88,8 @@ export async function POST(req: NextRequest) {
     age_group: ageGroup,
     grade: String(body.grade || '').trim() || null,
     sport,
-    height_cm: body.heightCm ? Number(body.heightCm) : null,
-    weight_kg: body.weightKg ? Number(body.weightKg) : null,
+    height_cm: heightCm,
+    weight_kg: weightKg,
     position: String(body.position || '').trim() || null,
   };
 
@@ -117,15 +131,31 @@ export async function POST(req: NextRequest) {
     pendingTeam = true;
   }
 
+  // The athlete row exists now. The two dependent writes below each have their
+  // result checked: on failure we report a CLEAR, RETRYABLE incomplete state
+  // rather than a false success (Blocker 10). A retry re-POSTs and finishes
+  // idempotently — the athlete update and both upserts are conflict-safe.
+  // (A single DB transaction across all three is the stronger guarantee and is
+  // tracked as the migration-layer enhancement; this makes the failure honest
+  // and recoverable today.)
+  const incomplete = (step: string, message: string) =>
+    NextResponse.json(
+      { ok: false, incomplete: true, step, athleteId, ageGroup, pendingTeam, error: message },
+      { status: 200 },
+    );
+
   // ── Medical record — separate table, access-controlled ───────────────────
-  // Only written if the athlete actually supplied something. The clearance
-  // flag defaults to 'cleared'; it becomes 'modified'/'see_head' only when a
-  // condition is recorded, so a normal coach is prompted to check.
   const hasMedical = body.conditions || body.allergies || body.medications
     || body.injuryHistory || body.emergencyContactName;
   if (hasMedical) {
-    const clearance = (body.conditions || body.medications) ? 'see_head' : 'cleared';
-    await db.from('athlete_medical').upsert({
+    // Preserve a clinician/admin-managed clearance decision: only SELF-SET the
+    // clearance flag when there is no existing medical record. On a re-register,
+    // clearance_status is omitted from the payload so a managed value survives
+    // (Blocker 10) — self-service emergency info must not silently re-clear.
+    const { data: existingMed } = await db.from('athlete_medical')
+      .select('clearance_status').eq('athlete_id', athleteId).maybeSingle();
+
+    const medicalRow: Record<string, unknown> = {
       athlete_id: athleteId,
       school_id: effectiveSchoolId,
       conditions: String(body.conditions || '').trim() || null,
@@ -136,14 +166,21 @@ export async function POST(req: NextRequest) {
       emergency_contact_phone: String(body.emergencyContactPhone || '').trim() || null,
       medical_aid_name: String(body.medicalAidName || '').trim() || null,
       medical_aid_number: String(body.medicalAidNumber || '').trim() || null,
-      clearance_status: clearance,
       updated_by: user.email || 'self',
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'athlete_id' });
+    };
+    if (!existingMed) {
+      medicalRow.clearance_status = (body.conditions || body.medications) ? 'see_head' : 'cleared';
+    }
+
+    const { error: medErr } = await db.from('athlete_medical').upsert(medicalRow, { onConflict: 'athlete_id' });
+    if (medErr) {
+      return incomplete('medical', 'Your profile was created, but your medical details did not save. Please try again.');
+    }
   }
 
   // Also keep the lightweight player_profiles row in step for existing UI.
-  await db.from('player_profiles').upsert({
+  const { error: profErr } = await db.from('player_profiles').upsert({
     user_id: user.id,
     email: user.email || '',
     full_name: fullName,
@@ -152,6 +189,9 @@ export async function POST(req: NextRequest) {
     athlete_id: athleteId,
     school_id: effectiveSchoolId,
   }, { onConflict: 'user_id' });
+  if (profErr) {
+    return incomplete('profile', 'Your profile was created, but finishing setup failed. Please try again.');
+  }
 
   return NextResponse.json({ ok: true, athleteId, ageGroup, pendingTeam });
 }
