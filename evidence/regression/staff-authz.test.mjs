@@ -18,7 +18,7 @@ const authz = loadTs('../../lib/authz.ts');
 test('capability contract: writes exclude the read-only viewer, reads include it', () => {
   const { can } = authz;
   // writes
-  for (const cap of ['claims.manage', 'rtp.manage']) {
+  for (const cap of ['claims.manage', 'rtp.manage', 'athlete.manage']) {
     assert.equal(can('owner', cap), true, `owner can ${cap}`);
     assert.equal(can('coach', cap), true, `coach can ${cap}`);
     assert.equal(can('viewer', cap), false, `viewer must NOT ${cap}`);

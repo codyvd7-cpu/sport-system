@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { recordAthleteEvents, type AthleteEventType } from '@/lib/athleteEvents';
 
@@ -12,8 +12,8 @@ import { recordAthleteEvents, type AthleteEventType } from '@/lib/athleteEvents'
 // timeline, so the attendance screens deliberately record absences only.
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -23,15 +23,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Too many events in one request.' }, { status: 400 });
   }
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
+  const schoolId = ctx.schoolId;
 
-  // Only accept athletes that genuinely belong to the caller's school — the
-  // client supplies these ids, so they can't be trusted on their own.
+  // Only accept athletes that genuinely belong to the caller's school AND, for a
+  // team-assigned coach, their own teams (B2) — the client supplies these ids,
+  // so they can't be trusted on their own.
   const ids = [...new Set(events.map((e: Record<string, unknown>) => String(e.athleteId || '')).filter(Boolean))];
   const { data: valid } = await getAdmin()
-    .from('athletes').select('id').eq('school_id', schoolId).in('id', ids);
-  const allowed = new Set((valid || []).map(a => a.id));
+    .from('athletes').select('id,team').eq('school_id', schoolId).in('id', ids);
+  const allowed = new Set((valid || [])
+    .filter(a => ctx.isSchoolWide || (!!a.team && ctx.teams.includes(a.team)))
+    .map(a => a.id));
 
   const toRecord = events
     .filter((e: Record<string, unknown>) => allowed.has(String(e.athleteId)) && e.type && e.summary)
@@ -42,7 +44,7 @@ export async function POST(req: NextRequest) {
       summary: String(e.summary),
       detail: (typeof e.detail === 'object' && e.detail ? e.detail : {}) as Record<string, unknown>,
       sourceTable: e.sourceTable ? String(e.sourceTable) : undefined,
-      actor: auth.email || 'staff',
+      actor: ctx.email || 'staff',
       occurredAt: e.occurredAt ? String(e.occurredAt) : undefined,
     }));
 

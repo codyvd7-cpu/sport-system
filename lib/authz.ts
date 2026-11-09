@@ -61,6 +61,9 @@ export const CAPABILITIES = {
   'notifications.send': SENIOR_MIC,
   // Read athlete-level data (coach dashboards, athlete PDFs). Any coach, not a viewer.
   'athlete.view': WRITERS,
+  // Write athlete-level records — development plans/goals, availability/status
+  // changes, timeline events. Excludes the read-only viewer.
+  'athlete.manage': WRITERS,
 
   // Parent/player → athlete claim review. View is read-only (any active staff);
   // approving/rejecting a link is a write, so it excludes the read-only viewer.

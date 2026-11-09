@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize, requireOwnedAthlete } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { recordAthleteEvent, getAthleteTimeline, type AthleteEventType } from '@/lib/athleteEvents';
 
@@ -12,23 +12,15 @@ import { recordAthleteEvent, getAthleteTimeline, type AthleteEventType } from '@
 // from the browser. Events are deliberately append-only: there is no edit or
 // delete, because a history you can quietly rewrite isn't a history.
 
-async function assertCanAccessAthlete(athleteId: string, schoolId: string | null) {
-  if (!schoolId) return false;
-  const { data } = await getAdmin()
-    .from('athletes').select('school_id').eq('id', athleteId).maybeSingle();
-  return !!data && data.school_id === schoolId;
-}
-
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.view');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const athleteId = req.nextUrl.searchParams.get('athleteId') || '';
   if (!athleteId) return NextResponse.json({ error: 'athleteId required.' }, { status: 400 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!(await assertCanAccessAthlete(athleteId, schoolId))) {
+  if (!(await requireOwnedAthlete(ctx, athleteId))) {
     return NextResponse.json({ error: 'Not found.' }, { status: 404 });
   }
 
@@ -37,8 +29,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -49,19 +41,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'athleteId, type and summary are required.' }, { status: 400 });
   }
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!(await assertCanAccessAthlete(athleteId, schoolId))) {
+  if (!(await requireOwnedAthlete(ctx, athleteId))) {
     return NextResponse.json({ error: 'Not found.' }, { status: 404 });
   }
 
   await recordAthleteEvent({
     athleteId,
-    schoolId,
+    schoolId: ctx.schoolId,
     type,
     summary,
     detail: typeof body.detail === 'object' && body.detail ? body.detail : {},
     sourceTable: body.sourceTable ? String(body.sourceTable) : undefined,
-    actor: auth.email || 'staff',
+    actor: ctx.email || 'staff',
   });
 
   return NextResponse.json({ ok: true });

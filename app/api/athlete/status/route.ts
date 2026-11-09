@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateRequest, resolveStaffSchoolId } from '@/lib/serverAuth';
+import { authorize, requireOwnedAthlete } from '@/lib/staffAuth';
 import { getAdmin, adminConfigured } from '@/lib/supabaseAdmin';
 import { recordAthleteEvent } from '@/lib/athleteEvents';
 
@@ -22,21 +22,23 @@ import { recordAthleteEvent } from '@/lib/athleteEvents';
 const VALID = ['Available', 'Modified', 'Injured', 'Resting'];
 
 export async function GET(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.view');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
-  if (!schoolId) return NextResponse.json({ error: 'No school for this account.' }, { status: 400 });
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
 
   // RTP worklist: who is due for review, and who is currently not fully available
   if (req.nextUrl.searchParams.get('review') === 'due') {
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Africa/Johannesburg' });
 
-    const { data: unavailable } = await db.from('athletes')
+    const { data: unavailableAll } = await db.from('athletes')
       .select('id,full_name,team,availability')
       .eq('school_id', schoolId).eq('is_active', true).neq('availability', 'Available');
+
+    // Team scope: a team-assigned coach only sees their own teams' athletes (B2).
+    const unavailable = (unavailableAll || []).filter(a => ctx.isSchoolWide || (!!a.team && ctx.teams.includes(a.team)));
 
     const ids = (unavailable || []).map(a => a.id);
     const { data: latest } = ids.length
@@ -68,8 +70,7 @@ export async function GET(req: NextRequest) {
   const athleteId = req.nextUrl.searchParams.get('athleteId') || '';
   if (!athleteId) return NextResponse.json({ error: 'athleteId or review=due required.' }, { status: 400 });
 
-  const { data: ath } = await db.from('athletes').select('school_id').eq('id', athleteId).maybeSingle();
-  if (!ath || ath.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  if (!(await requireOwnedAthlete(ctx, athleteId))) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   const { data } = await db.from('athlete_status_history')
     .select('id,status,previous_status,reason,detail,expected_return,review_date,changed_by,created_at')
@@ -79,8 +80,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = await authenticateRequest(req);
-  if (!auth.ok) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const ctx = await authorize(req, 'athlete.manage');
+  if (!ctx) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   if (!adminConfigured()) return NextResponse.json({ error: 'Server misconfigured.' }, { status: 500 });
 
   const body = await req.json().catch(() => ({}));
@@ -90,11 +91,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `status must be one of: ${VALID.join(', ')}` }, { status: 400 });
   }
 
-  const schoolId = await resolveStaffSchoolId(auth.email);
+  const schoolId = ctx.schoolId;
   const db = getAdmin();
   const { data: ath } = await db.from('athletes')
     .select('school_id,availability,full_name').eq('id', athleteId).maybeSingle();
   if (!ath || ath.school_id !== schoolId) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
+  if (!(await requireOwnedAthlete(ctx, athleteId))) return NextResponse.json({ error: 'Not found.' }, { status: 404 });
 
   const previous = ath.availability || 'Available';
 
@@ -112,7 +114,7 @@ export async function POST(req: NextRequest) {
     detail: typeof body.detail === 'object' && body.detail ? body.detail : {},
     expected_return: body.expectedReturn || null,
     review_date: body.reviewDate || null,
-    changed_by: auth.email || 'staff',
+    changed_by: ctx.email || 'staff',
   }]);
 
   // 3. The timeline entry
@@ -124,7 +126,7 @@ export async function POST(req: NextRequest) {
            : 'availability_changed',
       summary: `${previous} → ${status}${body.reason ? ` — ${body.reason}` : ''}`,
       detail: { from: previous, to: status, reason: body.reason ?? null, expectedReturn: body.expectedReturn ?? null },
-      sourceTable: 'athlete_status_history', actor: auth.email || 'staff',
+      sourceTable: 'athlete_status_history', actor: ctx.email || 'staff',
     });
   }
 
