@@ -34,15 +34,19 @@ const DEFAULT_MESSAGES: Record<string, string> = {
 export async function activateAlert(db: SupabaseClient, opts: {
   message?: string; type?: string; actor: string; schoolId: string | null;
 }): Promise<{ alert: ActiveAlert; pushed: number; pushConfigured: boolean }> {
+  // A safety alert must target a specific school — never a null/global one
+  // (which would broadcast to every school). Blocker 9.
+  if (!opts.schoolId) throw new Error('A school is required to raise an alert.');
   const type = opts.type || 'lightning';
   const message = (opts.message || '').trim() || DEFAULT_MESSAGES[type] || DEFAULT_MESSAGES.general;
 
   // One active alert at a time PER SCHOOL: retire any previous one from the
-  // same school first (not every school's alert — that would let School A
-  // accidentally clear School B's active alert).
-  let retireQuery = db.from('urgent_alerts').update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
-  retireQuery = opts.schoolId ? retireQuery.eq('school_id', opts.schoolId) : retireQuery.is('school_id', null);
-  await retireQuery;
+  // same school first. Checked — if the retire fails we stop, rather than
+  // inserting a second active alert on top of the old one.
+  const { error: retireErr } = await db.from('urgent_alerts')
+    .update({ active: false, cleared_at: new Date().toISOString() })
+    .eq('active', true).eq('school_id', opts.schoolId);
+  if (retireErr) throw new Error(retireErr.message);
 
   const { data, error } = await db.from('urgent_alerts')
     .insert([{ type, message, created_by: opts.actor, school_id: opts.schoolId }])
@@ -61,9 +65,16 @@ export async function activateAlert(db: SupabaseClient, opts: {
 }
 
 export async function clearAlert(db: SupabaseClient, schoolId: string | null): Promise<{ pushed: number; pushConfigured: boolean }> {
-  let query = db.from('urgent_alerts').update({ active: false, cleared_at: new Date().toISOString() }).eq('active', true);
-  query = schoolId ? query.eq('school_id', schoolId) : query.is('school_id', null);
-  await query;
+  if (!schoolId) throw new Error('A school is required to clear an alert.');
+  // CHECK the state change before announcing anything. The old code ignored
+  // this error and sent "All clear" even when the alert was still active in the
+  // database — a dangerously false reassurance during e.g. a lightning hold
+  // (Blocker 9). An all-clear is only emitted from a committed clear.
+  const { error } = await db.from('urgent_alerts')
+    .update({ active: false, cleared_at: new Date().toISOString() })
+    .eq('active', true).eq('school_id', schoolId);
+  if (error) throw new Error(error.message);
+
   const pushed = await broadcastPush(db, {
     title: '✅ All clear',
     body: 'The alert has been lifted. Activities may resume as directed by coaches.',
